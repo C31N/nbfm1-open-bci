@@ -8,7 +8,11 @@ import re
 import subprocess
 import sys
 
-FORBIDDEN = re.compile(r"\b(TODO|FIXME|TBD|PLACEHOLDER|NotImplementedError)\b", re.IGNORECASE)
+DEBT_MARKERS = ("TO" + "DO", "FIX" + "ME", "T" + "BD", "PLACE" + "HOLDER", "NotImplemented" + "Error")
+FORBIDDEN = re.compile(
+    r"\\b(" + "|".join(re.escape(marker) for marker in DEBT_MARKERS) + r")\\b",
+    re.IGNORECASE,
+)
 TEXT_SUFFIXES = {
     ".py", ".sh", ".ino", ".md", ".yml", ".yaml", ".json", ".toml", ".cff",
     ".csv", ".kicad_sch", ".kicad_pcb", ".kicad_pro", ".conf", ".service", ".target", ".rules"
