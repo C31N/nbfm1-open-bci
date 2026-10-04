@@ -10,7 +10,7 @@ import socket
 import struct
 import subprocess
 import time
-from typing import Optional
+from typing import Iterator, Optional
 
 import numpy as np
 
@@ -72,7 +72,7 @@ class LengthPrefixedUnixServer:
             data.extend(chunk)
         return bytes(data)
 
-    def frames(self):
+    def frames(self) -> Iterator[bytes]:
         while True:
             conn, _ = self.server.accept()
             with conn:
