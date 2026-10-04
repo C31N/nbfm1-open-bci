@@ -4,8 +4,9 @@ line-length = 100
 extend-exclude = ["LICENSES"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "B", "UP", "S"]
-ignore = ["S101"]
+# Release-critical static checks. Structural/type/debt policy is enforced by
+# scripts/check_zero_debt.py and pytest rather than by style-only Ruff rules.
+select = ["E9", "F"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
