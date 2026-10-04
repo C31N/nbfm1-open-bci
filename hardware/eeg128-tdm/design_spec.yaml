@@ -1,17 +1,23 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
 revision: A0
+
 board:
   name: eeg128-tdm
   width_mm: 190
   height_mm: 110
-  layers:
-    - F.Cu
-    - In1.Cu: solid AGND/DGND return plane with controlled single-point domain join
-    - In2.Cu: 3V3A/3V3D/VCM power plane
-    - B.Cu
   thickness_mm: 1.6
   copper_outer_um: 35
   copper_inner_um: 18
+  layers:
+    - "F.Cu: components, electrode inputs, analog acquisition and shortest local digital routes"
+    - "In1.Cu: continuous ground return plane; no arbitrary analog/digital moat cuts"
+    - "In2.Cu: controlled 3V3A / 3V3D / VCM power distribution"
+    - "B.Cu: controller-side digital, USB and low-sensitivity routing"
+  domain_control:
+    method: placement_and_return_current_management
+    ground_plane: continuous
+    adc_boundary_review: required
+
 acquisition:
   logical_channels: 128
   differential_conductors: 256
@@ -20,19 +26,54 @@ acquisition:
   adc_channels: 8
   adc_rate_sps: 32000
   target_logical_rate_sps: 250
+  adc_clock_hz: 8192000
+  adc_clock_source: "U27 external CMOS oscillator"
+  adc_osr: 128
+  adc_power_mode: HR
+  adc_pga_gain: 4
   discard_conversions_after_mux_switch: 4
   keep_conversions_per_slot: 4
+
+controller:
+  mcu: RP2040
+  spi_controller: SPI1
+  pins:
+    mux_a0_gpio: 2
+    mux_a1_gpio: 3
+    mux_a2_gpio: 4
+    mux_a3_gpio: 5
+    mux_enable_gpio: 6
+    spi_miso_gpio: 8
+    spi_cs_gpio: 9
+    spi_sck_gpio: 10
+    spi_mosi_gpio: 11
+    adc_drdy_gpio: 12
+    adc_sync_reset_gpio: 13
+
 components:
   mux: CD74HC4067M96
   buffer: TLV9064IPWR
   adc: ADS131M08IPBSR
   controller: RP2040
+  adc_clock: OT2JI-111-8.192M
   drl_vcm: OPA4171AIPWR
+
 connectors:
   electrode_banks: 8
   contacts_per_bank: 32
   mapping: "pins 1..16 = CH(16*b+0..15)+; pins 17..32 = CH(16*b+0..15)-"
+  subject_aux:
+    j10_pin1: CMS1
+    j10_pin2: CMS2
+    j10_pin3: DRL
+    j10_pin4: SHIELD
+  isolated_supply:
+    j11_pin1: 5V_ISO
+    j11_pin2: ISO_GND
+
 safety:
   patient_connected_release: prohibited
   required_power: isolated_battery_domain
   usb: isolated_only_when_electrodes_attached
+  release_status_file: RELEASE_STATUS.json
+  compliance_document: ../../docs/SAFETY_COMPLIANCE.md
