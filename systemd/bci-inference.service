@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+[Unit]
+Description=BCI NBFM-1 TensorRT Inference
+After=bci-bridge.service bci-simulator.service
+Wants=bci-bridge.service bci-simulator.service
+PartOf=bci-stack.target
+
+[Service]
+Type=simple
+User=bci
+Group=bci
+Environment=PYTHONUNBUFFERED=1
+Environment=CUDA_DEVICE_MAX_CONNECTIONS=1
+ExecStartPre=/opt/bci-stack/venv/bin/python /opt/bci-stack/bin/ensure_runtime.py
+ExecStart=/opt/bci-stack/venv/bin/python /opt/bci-stack/bin/bci_inference_daemon.py --source auto --ring /dev/shm/bci/raw-ring --onnx /opt/bci-stack/models/nbfm1.onnx --socket /run/bci/secure.sock --key-file /run/bci/master.key
+Restart=always
+RestartSec=1
+CPUSchedulingPolicy=rr
+CPUSchedulingPriority=95
+LimitRTPRIO=95
+LimitMEMLOCK=infinity
+CapabilityBoundingSet=CAP_SYS_NICE CAP_IPC_LOCK
+AmbientCapabilities=CAP_SYS_NICE CAP_IPC_LOCK
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/run/bci /dev/shm/bci /opt/bci-stack/engine-cache
+RestrictAddressFamilies=AF_UNIX
+LockPersonality=true
+MemoryDenyWriteExecute=false
+
+[Install]
+WantedBy=bci-stack.target
