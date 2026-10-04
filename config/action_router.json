@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "fallback": "noop",
+  "actions": {
+    "noop": {"type": "noop"},
+    "click_left": {"type": "cursor_click", "button": "left"},
+    "click_right": {"type": "cursor_click", "button": "right"},
+    "lock": {"type": "safety_lock"},
+    "message": {"type": "message"}
+  },
+  "aliases": {
+    "click left": "click_left",
+    "left click": "click_left",
+    "click right": "click_right",
+    "right click": "click_right",
+    "lock": "lock",
+    "stop": "lock"
+  }
+}
