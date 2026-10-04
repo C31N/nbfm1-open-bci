@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 from __future__ import annotations
 from pathlib import Path
-from typing import Dict
+from typing import Any
 import numpy as np
 
 class TensorRTRunner:
@@ -29,9 +29,9 @@ class TensorRTRunner:
             self.host[name]=arr;self.device[name]=int(ptr)
             self.is_input[name]=self.engine.get_tensor_mode(name)==trt.TensorIOMode.INPUT
             if not self.context.set_tensor_address(name,int(ptr)):raise RuntimeError(name)
-    def _check(self,err)->None:
+    def _check(self, err: Any) -> None:
         if int(err)!=0:raise RuntimeError(f"CUDA runtime error {err}")
-    def infer(self,inputs:Dict[str,np.ndarray])->Dict[str,np.ndarray]:
+    def infer(self, inputs: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
         kind=self.cudart.cudaMemcpyKind
         for name,src in inputs.items():
             host=self.host[name];np.copyto(host,np.asarray(src,dtype=host.dtype).reshape(host.shape),casting="unsafe")
