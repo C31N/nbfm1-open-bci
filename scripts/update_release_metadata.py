@@ -17,11 +17,11 @@ END = "<!-- END MANAGED RELEASE METADATA -->"
 
 
 def replace_yaml_scalar(text: str, key: str, value: str) -> str:
-    pattern = re.compile(rf"(?m)^{re.escape(key)}:\\s*.*$")
+    pattern = re.compile(rf"(?m)^{re.escape(key)}:\s*.*$")
     replacement = f'{key}: "{value}"'
     if pattern.search(text):
         return pattern.sub(replacement, text, count=1)
-    return text.rstrip() + "\\n" + replacement + "\\n"
+    return text.rstrip() + "\n" + replacement + "\n"
 
 
 def set_citation(version: str, release_date: str, repository: str, doi: str) -> None:
@@ -31,27 +31,27 @@ def set_citation(version: str, release_date: str, repository: str, doi: str) -> 
     text = replace_yaml_scalar(text, "repository-code", repository)
 
     doi_block_pattern = re.compile(
-        r"(?ms)^# BEGIN MANAGED DOI\\n.*?^# END MANAGED DOI\\n?"
+        r"(?ms)^# BEGIN MANAGED DOI\n.*?^# END MANAGED DOI\n?"
     )
     if doi:
         doi_block = (
-            "# BEGIN MANAGED DOI\\n"
-            "identifiers:\\n"
-            "  - type: doi\\n"
-            f'    value: "{doi}"\\n'
-            "# END MANAGED DOI\\n"
+            "# BEGIN MANAGED DOI\n"
+            "identifiers:\n"
+            "  - type: doi\n"
+            f'    value: "{doi}"\n'
+            "# END MANAGED DOI\n"
         )
     else:
         doi_block = (
-            "# BEGIN MANAGED DOI\\n"
-            "# No archival DOI has been assigned to this release.\\n"
-            "# END MANAGED DOI\\n"
+            "# BEGIN MANAGED DOI\n"
+            "# No archival DOI has been assigned to this release.\n"
+            "# END MANAGED DOI\n"
         )
 
     if doi_block_pattern.search(text):
         text = doi_block_pattern.sub(doi_block, text, count=1)
     else:
-        text = text.rstrip() + "\\n" + doi_block
+        text = text.rstrip() + "\n" + doi_block
 
     CITATION.write_text(text, encoding="utf-8")
 
@@ -60,13 +60,13 @@ def set_notice(version: str, release_date: str, repository: str, doi: str) -> No
     text = NOTICE.read_text(encoding="utf-8")
     archive_line = f"- Archival DOI: {doi}" if doi else "- Archival DOI: not assigned"
     block = (
-        f"{BEGIN}\\n"
-        "## Release metadata\\n\\n"
-        f"- Version: {version}\\n"
-        f"- Release/publication date: {release_date}\\n"
-        f"- Source repository: {repository}\\n"
-        f"{archive_line}\\n"
-        "- Exact released-file identity: PUBLICATION_SHA256SUMS\\n"
+        f"{BEGIN}\n"
+        "## Release metadata\n\n"
+        f"- Version: {version}\n"
+        f"- Release/publication date: {release_date}\n"
+        f"- Source repository: {repository}\n"
+        f"{archive_line}\n"
+        "- Exact released-file identity: PUBLICATION_SHA256SUMS\n"
         f"{END}"
     )
     pattern = re.compile(
@@ -76,7 +76,7 @@ def set_notice(version: str, release_date: str, repository: str, doi: str) -> No
     if pattern.search(text):
         text = pattern.sub(block, text, count=1)
     else:
-        text = text.rstrip() + "\\n\\n" + block + "\\n"
+        text = text.rstrip() + "\n\n" + block + "\n"
     NOTICE.write_text(text, encoding="utf-8")
 
 
