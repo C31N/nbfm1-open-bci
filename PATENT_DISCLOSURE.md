@@ -1,691 +1,527 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-only -->
-# Defensive Publication and Technical Disclosure — NBFM-1 Open BCI Stack
+# Defensive Publication and Enabling Technical Disclosure — NBFM-1 Open BCI Stack
 
-## 1. Purpose and publication statement
+## 1. Purpose, scope and public-availability statement
 
 This document is an enabling defensive publication of technical architectures, timing methods, signal-processing arrangements, machine-learning structures, privacy mechanisms and deployment methods for a non-invasive multimodal brain-computer interface.
 
 **Document preparation date:** 2026-10-04.
 
-The objective is to make the combinations described below publicly searchable and reproducible technical literature when this repository is publicly available without confidentiality restrictions.
+**Repository:** `C31N/nbfm1-open-bci`.
 
-This document is not a patent application, legal opinion, freedom-to-operate opinion, or representation that every later patent claim covering related subject matter is invalid. Public disclosure can also affect the authors' own ability to obtain patent protection. The legally relevant date for prior-art analysis is the date on which the technical disclosure was actually made available to the public, not merely the date written inside this file.
+This document is intended to make the disclosed combinations publicly searchable and reproducible technical literature when the repository is publicly accessible without confidentiality restrictions.
 
-The disclosed subject matter is intended to be enabling to a skilled engineer. Component names are examples unless explicitly stated as required. Ordinary substitutions that preserve the described signal, timing, privacy and architectural relationships are within the scope of this disclosure.
+For United States patent-law analysis, public availability before the effective filing date may be relevant under 35 U.S.C. 102(a)(1), including a printed publication or other disclosure available to the public. For European patent-law analysis, Article 54(2) EPC defines the state of the art as everything made available to the public before the filing date by written or oral description, use, or any other way. An alleged documentary disclosure must also teach the relevant technical subject matter sufficiently for the skilled person to carry it out.
+
+This file therefore distinguishes:
+
+1. **preparation date** — the date written above;
+2. **public-availability evidence** — public Git commit, tag, release, archive, DOI or equivalent record; and
+3. **technical enablement** — concrete parameters, relationships, timing and implementation details below.
+
+No statement in this repository guarantees that every later patent application concerning related subject matter will be refused or invalidated. Patentability depends on the actual later claims, effective filing/priority dates, applicable law, novelty, inventive step/non-obviousness, enablement and evidence of public availability. The objective is to create strong, independently verifiable prior-art evidence for the specific teachings disclosed here.
+
+Public disclosure may also limit or destroy the publishers' own future patent rights in jurisdictions without an applicable grace period. Publication should therefore occur only after any desired patent strategy has been decided.
+
+## 2. Terminology
+
+The following project terms are used for searchability and do not imply exclusive trademark or patent rights:
+
+- **NBFM-1** — Neural Brain Foundation Model, revision 1;
+- **Fast Neural Path** — causal EEG and/or OPM-MEG processing;
+- **Slow Context Path** — native-rate fNIRS context processing;
+- **Intent Gate** — an explicit probability-gated privacy and control boundary;
+- **Fixed-shape zeroization** — replacing sensitive logits with a same-shape zero tensor before export;
+- **EEG128-TDM** — 128-channel differential time-division-multiplexed EEG front end.
 
 ---
 
 # PART I — ASYNCHRONOUS MULTIMODAL NEURAL FOUNDATION MODEL
 
-## 2. System overview
+## 3. Sensor domains and asynchronous clocks
 
-A representative system contains three non-invasive neural sensing modalities:
+A representative system contains:
 
-- **EEG:** 128 electrical channels, nominally 1 kHz after acquisition decimation;
-- **OPM-MEG:** up to 128 logical channels, each associated with sensor position and orientation data;
-- **fNIRS:** approximately 20 Hz slow hemodynamic context, with long-separation and short-separation source-detector measurements.
+- 128-channel EEG, nominally 1 kHz after acquisition decimation;
+- OPM-MEG channels carrying position/orientation metadata;
+- fNIRS at approximately 20 Hz using long- and short-separation source-detector measurements.
 
-The principal architectural distinction is that the modalities are **not forced into a single artificial synchronous sampling rate**.
-
-The system is separated into:
-
-1. a **Fast Neural Path** for EEG and/or OPM-MEG;
-2. a **Slow Context Path** for fNIRS; and
-3. an asynchronous fusion layer in which causal fast neural tokens cross-attend to already-available slow context tokens.
-
-This permits millisecond-scale compute response after a fast signal window becomes available without pretending that fNIRS has millisecond neurophysiological latency.
-
-Representative flow:
+The modalities are deliberately **not** resampled into one artificial common-rate stream before representation learning.
 
 ```text
-EEG 1 kHz ──────┐
-                 ├─ causal fast encoders ── fast tokens ───────┐
-OPM-MEG ────────┘                                              │
-                                                                ├─ NBFM-1
-fNIRS 20 Hz ─ slow encoder ─ persistent context memory ─ XATTN ┘
-                                                                  │
-                            ┌───────────────────────────────────────┼──────────────┐
-                            ▼                                       ▼              ▼
-                    Gaussian motor head                       Intent gate      CTC speech
+EEG 1 kHz -----+
+               +--> causal fast encoders --> fast tokens --------+
+OPM-MEG -------+                                                   |
+                                                                   +--> NBFM-1
+fNIRS 20 Hz --> slow encoder --> persistent context --> XATTN ----+
+                                                                   |
+                          +----------------------------------------+-----------+
+                          |                                        |           |
+                          v                                        v           v
+                 Gaussian motor head                         Intent gate   CTC speech
 ```
 
-## 3. EEG/MEG causal patch encoding
+At fast-path inference timestamp `t`, the model may use only slow-context measurements with acquisition timestamps `<= t`.
 
-Let:
+## 4. Causal EEG/MEG patch encoding
 
-[
-X_{EEG} in mathbb{R}^{B 	imes 128 	imes T}
-]
-
-and:
-
-[
-X_{MEG} in mathbb{R}^{B 	imes C_M 	imes T}
-]
-
-where (B) is batch size and (T) is the currently available fast-path history.
-
-A representative patch encoder is:
-
-1. left-only causal Conv1D;
-2. normalization;
-3. nonlinear activation;
-4. second left-only causal Conv1D with temporal stride.
-
-Example implementation parameters:
+Representative fast inputs are:
 
 ```text
-Conv1: kernel=17, stride=8
-Conv2: kernel=5,  stride=2
-D_model=384
+EEG: [batch, 128, T_fast]
+MEG: [batch, C_meg, T_fast]
 ```
 
-The left-only padding is:
-
-[
-P_{left}=d(k-1)
-]
-
-for dilation (d) and kernel size (k). No future sample is supplied to the output corresponding to the current time.
-
-The resulting token stream is:
-
-[
-Z_f in mathbb{R}^{B 	imes N_f 	imes D}
-]
-
-## 4. OPM-MEG geometry conditioning
-
-An OPM sensor is represented not solely by an arbitrary channel index but by a six-component pose vector:
-
-[
-g_i=(x_i,y_i,z_i,n_{x,i},n_{y,i},n_{z,i})
-]
-
-where ((x,y,z)) is position and ((n_x,n_y,n_z)) is measurement-axis orientation.
-
-Two geometry-conditioning paths may be used simultaneously:
-
-### 4.1 Sensor-level affine conditioning
-
-[
-(alpha_i,eta_i)=MLP(g_i)
-]
-
-[
-x'_i=x_i(1+lambda	anh(alpha_i))+etaeta_i
-]
-
-with small fixed conditioning coefficients (lambda,eta).
-
-### 4.2 Token-level geometry embedding
-
-[
-e_g=rac{1}{C_M}sum_i MLP_g(g_i)
-]
-
-and:
-
-[
-Z_{MEG}'=Z_{MEG}+e_g
-]
-
-This permits a trained model to distinguish different physical OPM layouts without assuming that “channel 12” always occupies the same location and orientation.
-
-## 5. Slow fNIRS context
-
-fNIRS is retained at a slow update rate such as 20 Hz.
-
-A representative raw context vector contains:
-
-[
-128 	imes 2
-]
-
-long-separation wavelength intensities and:
-
-[
-32 	imes 2
-]
-
-short-separation wavelength intensities, producing 320 scalar inputs per time step.
-
-The slow encoder produces:
-
-[
-Z_s in mathbb{R}^{B 	imes N_s 	imes D}
-]
-
-using a causal temporal encoder.
-
-Short-separation channels can be used to model extracerebral and systemic components. Long-separation channels provide the primary hemodynamic cortical measurements.
-
-The system maintains a rolling slow-context memory. When no new fNIRS sample has arrived, the latest valid slow context remains available rather than manufacturing interpolated “new” physiology.
-
-## 6. Asynchronous cross-attention
-
-For each fast transformer block, fast tokens provide queries and slow tokens provide keys and values:
-
-[
-Q=W_QZ_f
-]
-
-[
-K=W_KZ_s,quad V=W_VZ_s
-]
-
-[
-A=	ext{softmax}left(rac{QK^T}{sqrt{d_h}}ight)
-]
-
-[
-Z'_f=Z_f+AV
-]
-
-The critical timing rule is:
-
-> A fast-path inference at time (t) may attend only to slow-context samples whose acquisition timestamps are not later than (t).
-
-Therefore the architecture is causal across modalities even when their sample rates differ substantially.
-
-This asynchronous cross-attention arrangement is specifically disclosed as an alternative to concatenating resampled EEG, MEG and fNIRS data on a single uniform time grid.
-
-## 7. NBFM-1 transformer
-
-A representative edge model uses:
+A representative causal patch encoder uses:
 
 ```text
-D_model:       384
-attention:     6 heads
-layers:        6 to 8
-FF multiplier: 4
-fast context:  hundreds to thousands of EEG/MEG samples
-slow context:  independently sized fNIRS history
-precision:     FP16 or INT8 where validated
+Conv1D: kernel 17, stride 8, left-only padding
+normalization
+GELU
+Conv1D: kernel 5, stride 2, left-only padding
+normalization
+GELU
+D_model = 384
+```
+
+For kernel length `k` and dilation `d`, left padding is:
+
+```text
+P_left = d * (k - 1)
+```
+
+No future fast sample contributes to the current output token.
+
+## 5. OPM-MEG geometry conditioning
+
+For sensor `i` use:
+
+```text
+g_i = (x_i, y_i, z_i, nx_i, ny_i, nz_i)
+```
+
+where the first three components are position and the latter three are measurement-axis orientation.
+
+A sensor-level affine conditioning may be:
+
+```text
+(alpha_i, beta_i) = MLP(g_i)
+x_i' = x_i * (1 + lambda * tanh(alpha_i)) + eta * beta_i
+```
+
+A token-level geometry embedding may additionally be:
+
+```text
+e_geometry = mean_i(MLP_geometry(g_i))
+Z_MEG' = Z_MEG + e_geometry
+```
+
+This explicitly separates physical sensor geometry from arbitrary channel numbering.
+
+## 6. Slow fNIRS context
+
+A representative 20-Hz fNIRS context sample contains:
+
+```text
+128 long-separation paths x 2 wavelengths
+32 short-separation paths x 2 wavelengths
+= 320 scalar values
+```
+
+A causal slow encoder produces:
+
+```text
+Z_slow: [batch, N_slow, D_model]
+```
+
+The most recent valid context remains available until a new fNIRS sample arrives. The fast path does not fabricate intermediate hemodynamic observations.
+
+## 7. Asynchronous fast-query/slow-context cross-attention
+
+For each fusion block:
+
+```text
+Q = Wq * Z_fast
+K = Wk * Z_slow
+V = Wv * Z_slow
+
+Attention = softmax((Q * transpose(K)) / sqrt(d_head))
+Z_fast' = Z_fast + Attention * V
+```
+
+The disclosed feature is the use of native-rate slow context as persistent memory while fast causal tokens provide queries. This differs from mandatory upsampling/concatenation of fNIRS to every EEG/MEG sample.
+
+## 8. Representative NBFM-1 edge model
+
+```text
+D_model        = 384
+heads          = 6
+layers         = 6..8
+FF multiplier  = 4
+fast context   = hundreds to thousands of samples
+slow context   = independently sized fNIRS history
+edge precision = FP16 or validated INT8
 ```
 
 Each block contains:
 
 ```text
 pre-norm
-→ causal fast self-attention
-→ residual
-→ fast-query / slow-context cross-attention
-→ residual
-→ feed-forward network
-→ residual
+--> causal fast self-attention
+--> residual
+--> fast-query / slow-context cross-attention
+--> residual
+--> feed-forward network
+--> residual
 ```
 
-The architecture is referred to in this project as **NBFM-1 — Neural Brain Foundation Model**.
+## 9. Self-supervised pretraining
 
-## 8. Self-supervised pretraining
-
-The architecture may be pretrained without task labels using one or more of:
+Pretraining can combine:
 
 - masked temporal reconstruction;
 - masked channel reconstruction;
 - modality masking;
-- sensor-geometry perturbation;
+- geometry perturbation;
 - cross-modal prediction;
-- subject-contrastive objectives;
+- subject-contrastive learning;
 - covariance/domain alignment;
 - teacher-student latent reconstruction.
 
-A representative objective is:
+Representative total objective:
 
-[
-L=
-lambda_1L_{masked}
-+lambda_2L_{crossmodal}
-+lambda_3L_{contrastive}
-+lambda_4L_{domain}
-+lambda_5L_{task}
-]
+```text
+L_total =
+    lambda_masked      * L_masked
+  + lambda_crossmodal  * L_crossmodal
+  + lambda_contrastive * L_contrastive
+  + lambda_domain      * L_domain
+  + lambda_task        * L_task
+```
 
-This permits downstream motor, intent and speech heads to share the same multimodal representation.
+## 10. Gaussian motor-intent head
 
-## 9. Motor-intent head
+The motor head emits:
 
-The motor head predicts mean and uncertainty:
+```text
+mu       = [vx, vy, vz, grip]
+log_std  = [sx, sy, sz, sgrip]
+```
 
-[
-mu=[v_x,v_y,v_z,g]
-]
+with diagonal Gaussian interpretation:
 
-and:
+```text
+p(y | X) = Normal(mu, diag(exp(2 * log_std)))
+```
 
-[
-logsigma=[s_x,s_y,s_z,s_g]
-]
+A separate safety stage may implement:
 
-The modeled output distribution is a diagonal Gaussian:
+```text
+if P(intent) > T_motor and every std < std_max:
+    u_safe = clamp(mu)
+else:
+    u_safe = 0
+```
 
-[
-p(y|X)=mathcal{N}(mu,operatorname{diag}(sigma^2))
-]
+The AI decoder therefore does not directly command an actuator without uncertainty and safety checks.
 
-with negative log-likelihood training.
+## 11. Dedicated intent gate
 
-An independent safety layer may suppress the output when uncertainty exceeds a threshold:
+The intent head computes a scalar probability:
 
-[
-u_{safe}=
-egin{cases}
-clip(mu), & P(intent)>T_m land sigma<sigma_{max} \
-0, & otherwise
-end{cases}
-]
+```text
+p_intent = sigmoid(w^T z + b)
+```
 
-This uncertainty-gated motor path is independent from speech decoding.
+Representative speech/privacy threshold:
 
-## 10. Intent gate
+```text
+T_gate = 0.95
+```
 
-The model has a dedicated scalar intent classification head:
-
-[
-p=sigma(w^Tz+b)
-]
-
-A representative speech-release threshold is:
-
-[
-T_{gate}=0.95
-]
-
-The intent gate is not merely an accuracy feature. It is used as a privacy boundary controlling whether sensitive speech logits can leave the neural inference boundary.
+The intent output is explicitly used as a **privacy/export boundary**, not solely as another classification metric.
 
 ---
 
-# PART II — ZERO-SIDECHANNEL LOCAL-FIRST NEURO-PRIVACY
+# PART II — LOCAL-FIRST ZERO-SIDECHANNEL PRIVACY
 
-## 11. Privacy states
-
-A representative explicit state machine is:
+## 12. State machine
 
 ```text
 LOCKED
-  │ explicit local user action
-  ▼
+  |
+  | explicit local arm
+  v
 ARMED
-  │ P(intent) >= T_gate
-  ▼
+  |
+  | P(intent) >= T_gate
+  v
 DECODING
 ```
 
-Transitions back to `LOCKED` can occur on explicit lock, timeout, watchdog fault, authentication failure, or system restart.
+A high neural probability alone cannot arm a locked device. Explicit lock, timeout, watchdog or authentication failure may return the device to `LOCKED`.
 
-A high neural intent probability alone does not arm a locked system.
+## 13. Fixed-shape speech-logit zeroization
 
-## 12. Fixed-shape zeroization gate
+Let speech logits have shape:
 
-Let speech logits be:
+```text
+L: [T_speech, vocabulary]
+```
 
-[
-L in mathbb{R}^{T_s	imes V}
-]
+Export rule:
 
-The export rule is:
+```text
+if local_state permits decoding and P(intent) >= T_gate:
+    L_export = L
+    speech_valid = 1
+else:
+    L_export = zeros_like(L)
+    speech_valid = 0
+```
 
-[
-L_{export}=
-egin{cases}
-L, & state=ARMED/DECODING land P(intent)geq T_{gate} \
-0_{T_s	imes V}, & otherwise
-end{cases}
-]
+The **shape and serialized field layout remain unchanged**. Zeroization occurs before encryption and before the data leaves the local inference boundary.
 
-The crucial disclosed property is that **the tensor dimensions are preserved**.
+This design reduces straightforward content-presence and message-length side channels.
 
-When the privacy gate is closed:
+## 14. Local-first processing
 
-- the original speech logits are not serialized;
-- a same-shape zero tensor is substituted;
-- the same fixed payload layout is retained;
-- an explicit validity bit is set to zero;
-- encryption occurs only after zeroization.
-
-This reduces simple side channels based on the existence, shape or serialized length of a private speech hypothesis.
-
-## 13. Local-first processing
-
-Raw neural signals, latent embeddings and un-gated speech logits remain local by default.
-
-The default production path is:
+Default path:
 
 ```text
 neural sensors
-→ local preprocessing
-→ local NBFM inference
-→ local intent/privacy gate
-→ fixed-shape zeroization if closed
-→ authenticated encryption
-→ local authenticated consumer
+--> local preprocessing
+--> local NBFM inference
+--> local intent/privacy gate
+--> same-shape zeroization when closed
+--> authenticated encryption
+--> local authenticated consumer
 ```
 
-Cloud processing is not required for core decoding or motor control.
+Raw EEG/MEG/fNIRS, latent embeddings and ungated speech logits do not require cloud transport.
 
-## 14. Authenticated frame encryption
+## 15. Authenticated encrypted export
 
-A representative implementation uses AES-256-GCM.
+Representative implementation:
 
-A random 128-bit session identifier is generated. A 256-bit session key is derived from a device/master key using HKDF-SHA256:
+- AES-256-GCM;
+- random 128-bit session ID;
+- HKDF-SHA256 session-key derivation;
+- 96-bit nonce = random 32-bit stream ID || monotonic 64-bit frame sequence;
+- envelope authenticated as AEAD associated data;
+- replay and sequence rollback rejected.
 
-[
-K_s=HKDF(K_m,salt=session_id,info="NBFM-1/local-export/v1")
-]
-
-A 96-bit GCM nonce consists of:
+Representative key derivation:
 
 ```text
-32-bit random stream identifier
-64-bit monotonically increasing sequence number
+K_session = HKDF-SHA256(
+    input_key_material = K_master,
+    salt = session_id,
+    info = "NBFM-1/local-export/v1",
+    output_length = 32 bytes
+)
 ```
 
-The unencrypted envelope is authenticated as Additional Authenticated Data and contains:
+The encrypted payload includes intent probability, speech-valid bit, motor mean/uncertainty, fixed tensor dimensions and fixed-shape speech logits.
+
+## 16. Deterministic action boundary
+
+CTC output is never interpreted as unrestricted shell text.
 
 ```text
-magic
-protocol version
-flags
-sequence
-timestamp_ns
-session_id
-nonce
-plaintext_length
+CTC tokens
+--> normalization
+--> exact fixed allowlist mapping when possible
+--> optional local LLM constrained to an enum-only JSON schema
+--> confidence rejection
+--> fixed action ID
+--> code-side fixed handler
 ```
 
-The encrypted payload contains:
-
-```text
-intent_probability
-speech_valid
-motor mean[4]
-motor log_std[4]
-speech_time
-speech_vocabulary
-fixed-shape speech logits
-```
-
-The receiver rejects authentication failure, nonce/sequence mismatch, replay and rollback.
-
-## 15. Deterministic action boundary
-
-Decoded speech or CTC token sequences must not be interpreted as unrestricted operating-system commands.
-
-The disclosed action router uses:
-
-1. normalized CTC text;
-2. exact mapping to a fixed action identifier when possible;
-3. optionally, a local language model constrained to select only an identifier from an enumerated JSON schema;
-4. confidence rejection;
-5. a fixed code-side handler table.
-
-The language model is not allowed to invent executable code, shell strings, file paths, network targets, URLs, motor parameters or new action identifiers.
-
-Example fixed identifiers:
-
-```text
-noop
-click_left
-click_right
-cursor_center
-vector_left
-vector_right
-vector_up
-vector_down
-grip
-robot_stop
-dashboard_open
-lock_interface
-```
-
-This is a disclosed separation between probabilistic interpretation and deterministic actuation.
+The language model cannot create shell strings, file paths, URLs, arbitrary motor parameters or new handlers.
 
 ---
 
-# PART III — LOW-COST 128-CHANNEL DIFFERENTIAL EEG TDM FRONT END
+# PART III — 128-CHANNEL DIFFERENTIAL EEG TDM FRONT END
 
-## 16. Architecture
+## 17. Physical topology
 
-A representative acquisition board implements 128 logical differential EEG channels using time-division multiplexing before a small simultaneous-sampling ADC array.
-
-The structure is:
+Representative EEG128-TDM arrangement:
 
 ```text
-128 differential channels
+128 logical differential channels
 = 256 electrode conductors
 
-8 banks × 16 logical channels
-        │
-        ▼
+8 banks x 16 differential channels
+        |
+        v
 16 paired 16:1 analog multiplexers
-(one P and one N MUX per bank)
-        │
-        ▼
-16 unity-gain low-noise buffers
-        │
-        ▼
-8 differential ADC inputs
-        │
-        ▼
-ADS131M08-class simultaneous delta-sigma converter
-32 kSPS
-        │
-        ▼
-RP2040-class MCU
-SPI + DMA
-        │
-        ▼
-settling-aware demultiplexer
-        │
-        ▼
-128 logical channels × 250 SPS
+(positive and negative MUX per bank)
+        |
+        v
+16 low-noise unity buffers
+        |
+        v
+8 simultaneous differential ADC channels
+        |
+        v
+ADS131M08-class delta-sigma ADC at 32 kSPS
+        |
+        v
+RP2040-class controller, SPI + DMA
+        |
+        v
+settling-aware demultiplexing
+        |
+        v
+128 logical channels x 250 SPS
 ```
 
-A representative low-cost implementation uses:
+A concrete implementation uses 16 CD74HC4067-class multiplexers, TLV9064-class buffers, one ADS131M08-class converter and an RP2040-class controller.
 
-- 16 × CD74HC4067-class 16:1 analog multiplexers;
-- 16 buffer amplifier channels;
-- one ADS131M08-class 8-channel simultaneous-sampling delta-sigma ADC;
-- one RP2040-class MCU;
-- common MUX address lines so all eight differential banks advance together.
+The component brands themselves are not asserted as novel; the disclosed architecture concerns their particular signal topology, synchronized differential switching, settling schedule and system integration.
 
-The commodity components themselves are not asserted to be novel. The disclosure concerns their arrangement, timing, settling-aware demultiplexing and integration with the described BCI stack.
+## 18. Differential bank mapping
 
-## 17. Differential bank mapping
-
-Bank (b) contains channels:
-
-[
-16b ldots 16b+15
-]
-
-Each bank has two synchronized multiplexers:
+For bank `b = 0..7`:
 
 ```text
-CH(16b+0)+  ─┐
-...           ├─ MUX_P[b] ─ buffer ─ ADC[b].P
-CH(16b+15)+ ─┘
+logical channels = 16*b .. 16*b+15
 
-CH(16b+0)-  ─┐
-...           ├─ MUX_N[b] ─ buffer ─ ADC[b].N
-CH(16b+15)- ─┘
+CH(16*b+0)+  --+
+...              +--> MUX_P[b] --> buffer --> ADC[b].P
+CH(16*b+15)+ --+
+
+CH(16*b+0)-  --+
+...              +--> MUX_N[b] --> buffer --> ADC[b].N
+CH(16*b+15)- --+
 ```
 
-The P and N multiplexers for every bank use the same four-bit address.
+All paired multiplexers share the same four address bits.
 
-Thus one address selection simultaneously presents eight logical differential EEG channels to the eight ADC channels.
+## 19. TDM timing
 
-## 18. TDM rate
-
-A 250-SPS logical rate gives:
-
-[
-T_{frame}=4ms
-]
-
-There are 16 MUX positions:
-
-[
-T_{slot}=4ms/16=250mu s
-]
-
-At:
-
-[
-f_{ADC}=32kHz
-]
-
-there are eight ADC conversions per MUX slot.
-
-## 19. Settling-aware SINC3 discard algorithm
-
-The ADC digital filter and analog signal path are intentionally allowed to settle after every MUX change.
-
-A representative sequence is:
+At 250 logical samples/s:
 
 ```text
-t = 0 us:
+T_frame = 1 / 250 s = 4 ms
+T_slot  = 4 ms / 16 = 250 us
+```
+
+At 32 kSPS:
+
+```text
+T_conversion = 31.25 us
+N_slot = 8 conversions per 250-us MUX slot
+```
+
+## 20. SINC3/digital-filter settling discard
+
+Concrete implementation:
+
+```text
+0 us:
     disable/switch paired MUX address
 
-t ≈ 2 us:
-    enable selected MUX path
+approximately 2 us:
+    enable MUX path
     issue ADC synchronization event
 
 conversion 1: discard
 conversion 2: discard
 conversion 3: discard
 conversion 4: discard
-
 conversion 5: retain
 conversion 6: retain
 conversion 7: retain
 conversion 8: retain
 
 logical_sample =
-    mean(conversion5,
-         conversion6,
-         conversion7,
-         conversion8)
+    arithmetic_mean(conversion 5..8)
 
 advance MUX address
 repeat
 ```
 
-For an ADS131M08-class SINC3 conversion chain using an OSR and clock combination whose post-synchronization settling fits inside the first half of the 250-µs slot, the first conversions are explicitly excluded.
+Generalized rule:
 
-The algorithm is generalized as:
+```text
+N_discard = ceil(
+    (t_analog_settle + t_digital_filter_settle) / T_conversion
+)
 
-[
-N_{discard}
-=
-leftlceil
-rac{t_{analog-settle}+t_{digital-settle}}
-{T_{conversion}}
-ightceil
-]
+N_discard + N_keep <= N_slot
 
-and:
+logical_sample =
+    sum(samples[N_discard : N_discard + N_keep]) / N_keep
+```
 
-[
-x_{logical}
-=
-rac{1}{N_{keep}}
-sum_{i=N_{discard}+1}^{N_{discard}+N_{keep}}
-x_i
-]
+The 4-discard/4-retain schedule is a concrete embodiment for the 32-kSPS, 250-us slot configuration. Other component choices may require a different discard count calculated from measured and specified settling.
 
-subject to:
+## 21. Multiplexing crosstalk controls
 
-[
-N_{discard}+N_{keep}leq N_{slot}
-]
+The architecture combines:
 
-The disclosed concept is therefore not limited to exactly four discarded and four retained samples. That 4+4 schedule is a concrete implementation for the 32-kSPS/250-µs design.
+- differential P/N paths switched synchronously;
+- break-before-make multiplexers;
+- short matched MUX-to-buffer routes;
+- no digital clock routing under electrode inputs;
+- ADC synchronization following every MUX transition;
+- explicit rejection of early conversions;
+- averaging only settled late conversions;
+- per-logical-channel offset/gain calibration.
 
-## 20. Crosstalk control
+## 22. Common-mode and driven reference
 
-Multiplexer crosstalk and charge injection are mitigated by the combination of:
+A representative implementation establishes `VCM` near mid-supply and uses dedicated common-mode sense electrodes plus an active driven-reference/DRL stage.
 
-- paired differential switching;
-- break-before-make analog multiplexers;
-- shared P/N address timing;
-- short MUX-to-buffer traces;
-- low-capacitance routing;
-- ADC resynchronization after address changes;
-- explicit discard of unsettled conversions;
-- averaging only late settled conversions;
-- independent offset calibration per logical channel.
+```text
+V_DRL = V_CM - G_DRL * (V_CMS - V_CM)
+```
 
-This is materially different from treating every raw ADC conversion immediately after a MUX transition as a valid EEG sample.
+The DRL reduces common-mode voltage presented to the acquisition path. It does **not** change the converter manufacturer's intrinsic CMRR specification.
 
-## 21. Common-mode and DRL arrangement
+A large series resistor limits current into the driven body electrode. Human-connected prototypes additionally require independently reviewed patient isolation and leakage-current controls.
 
-The front end may use a center potential (V_{CM}) and a driven-reference/driven-right-leg loop.
+## 23. Calibration
 
-A representative DRL implementation measures one or more dedicated common-mode sense electrodes, averages or sums them relative to (V_{CM}), inverts the error with bandwidth limiting, and returns the correction through a large current-limiting resistor to a dedicated body electrode.
+Each logical channel has:
 
-Representative relation:
+```text
+offset[channel]
+gain[channel]
+corrected = gain[channel] * (raw - offset[channel])
+```
 
-[
-V_{DRL}=V_{CM}-G(V_{CMS}-V_{CM})
-]
-
-The DRL reduces the common-mode voltage presented to the ADC input chain. It does not convert a lower specified ADC CMRR into a guaranteed >100-dB intrinsic converter CMRR.
-
-Human-connected implementations require independent electrical-safety analysis, battery operation and/or medically appropriate isolation.
-
-## 22. Channel calibration
-
-For each logical channel (c), store:
-
-[
-offset_c
-]
-
-and a gain correction:
-
-[
-g_c
-]
-
-Then:
-
-[
-x'_c=g_c(x_c-offset_c)
-]
-
-A startup calibration may estimate only DC baseline. Precision absolute calibration can instead inject known calibration voltages through a dedicated test path.
+Startup averaging can estimate baseline offset. Precision voltage calibration should use a known injected calibration source.
 
 ---
 
-# PART IV — PACKET AND EDGE ACQUISITION ARCHITECTURE
+# PART IV — PACKET, DMA AND ASYNCHRONOUS fNIRS FORMAT
 
-## 23. Fixed DMA slot
+## 24. Fixed DMA slot
 
-A representative shared-memory/DMA slot is 4096 bytes.
-
-The logical fast packet is:
+Representative shared-memory slot:
 
 ```text
+4096 bytes total
+
 128-byte header
 512-byte EEG int32[128]
 512-byte MEG int32[128]
 optional fNIRS sub-frame
-unused remainder of 4096-byte DMA slot
+unused remainder
 ```
 
-Representative packet sizes:
+Representative packet lengths:
 
 ```text
-fast EEG+MEG packet:    1152 bytes
-with fNIRS sub-frame:   2456 bytes
-DMA slot:               4096 bytes
+EEG+MEG only: 1152 bytes
+EEG+MEG+fNIRS: 2456 bytes
+DMA slot: 4096 bytes
 ```
 
-## 24. Header
-
-The fixed header includes:
+## 25. Header fields
 
 ```text
 uint32 magic
@@ -705,17 +541,11 @@ uint32 payload_crc32c
 uint32 header_crc32c
 ```
 
-The header is fixed at 128 bytes.
+Header size is fixed at 128 bytes. CRC uses CRC32C/Castagnoli. The header CRC excludes only its own field. Payload CRC covers bytes `header_bytes .. packet_bytes-1`.
 
-CRC32C uses the Castagnoli polynomial.
+## 26. Native-rate fNIRS sub-frame
 
-The header CRC excludes only the header CRC field itself. The payload CRC covers bytes from `header_bytes` through `packet_bytes-1`.
-
-## 25. Asynchronous fNIRS sub-frame
-
-fNIRS is appended only when a new 20-Hz context sample is available. Fast EEG/MEG packets need not carry a duplicate fNIRS sample every millisecond.
-
-A representative sub-frame contains:
+A slow sub-frame is appended only when a new 20-Hz fNIRS sample exists.
 
 ```text
 timestamp_ns
@@ -729,235 +559,131 @@ long_intensity[128][2]
 short_intensity[32][2]
 ```
 
-This preserves the asynchronous acquisition model down to the hardware packet layer.
+This preserves asynchronous sensor timing in the transport itself.
 
 ---
 
 # PART V — LOW-LATENCY EDGE DEPLOYMENT
 
-## 26. Compute-latency definition
+## 27. Latency definition
 
-The stated target of less than 5 ms refers to:
+The project target of `<5 ms` means **compute and local transport latency after the last sample required by the selected neural inference window has become available**.
 
-> compute and transport latency after the final sample required by the current neural inference window has become available.
+It does not include the neural observation-window duration and does not imply millisecond fNIRS hemodynamics.
 
-It does not include the duration of the neural observation window and does not imply a sub-5-ms hemodynamic response from fNIRS.
-
-## 27. Deployment structure
-
-Representative process separation:
+## 28. Deployment pipeline
 
 ```text
-sensor / simulator
-    ↓
-DMA shared-memory ring
-    ↓
-preprocessing + inference daemon
-    ↓
-TensorRT 10.x / ONNX Runtime
-    ↓
-privacy zeroization
-    ↓
-AES-256-GCM
-    ↓
-length-prefixed Unix-domain socket
-    ↓
-control bridge
-    ↓
-telemetry / deterministic actions
+sensor or simulator
+--> DMA/shared-memory ring
+--> preprocessing
+--> NBFM-1 TensorRT/ORT inference
+--> intent/privacy gate
+--> fixed-shape zeroization
+--> AES-256-GCM
+--> Unix-domain socket
+--> deterministic control bridge
+--> telemetry / bounded action sink
 ```
 
-## 28. TensorRT static-shape execution
-
-A representative edge deployment uses static tensor shapes for:
+Representative static tensor shapes:
 
 ```text
-EEG:          [1,128,512]
-MEG:          [1,128,512]
-MEG geometry: [1,128,6]
-fNIRS:        [1,320,20]
+EEG          [1, 128, 512]
+MEG          [1, 128, 512]
+MEG geometry [1, 128, 6]
+fNIRS        [1, 320, 20]
 ```
 
-The ONNX graph is compiled to an FP16 TensorRT engine when supported.
+Deployment may use persistent TensorRT contexts, page-locked host memory, persistent device allocations, named tensor addresses, asynchronous copies, `execute_async_v3`, engine/timing caches and CUDA Graph replay where supported.
 
-Runtime optimization includes:
+## 29. Independent latency audit
 
-- persistent execution context;
-- page-locked host buffers;
-- persistent device allocations;
-- named tensor addresses;
-- asynchronous H2D copies;
-- `execute_async_v3`;
-- asynchronous D2H copies;
-- optional CUDA Graph replay where the platform supports stable address replay;
-- TensorRT engine/timing cache.
-
-## 29. System service separation
-
-A representative Linux deployment has:
+A benchmark may inject synthetic packets into the same 4096-byte ring and measure:
 
 ```text
-bci-simulator.service
-bci-inference.service
-bci-bridge.service
-bci-dashboard.service
-bci-stack.target
+ring -> preprocessing -> inference -> privacy gate
+     -> AEAD framing -> Unix socket -> bridge
 ```
 
-The inference service may run with a high real-time scheduling priority and locked memory. Lower-priority telemetry/dashboard workloads must not share the highest real-time priority.
-
-## 30. Latency audit
-
-A complete benchmark can inject synthetic packets through the actual shared-memory ring and measure:
-
-```text
-DMA ring
-→ preprocessing
-→ TensorRT/ORT
-→ privacy gate
-→ AES-GCM
-→ Unix socket
-→ bridge
-```
-
-Reported statistics include:
-
-- P50;
-- P99;
-- P99.9;
-- maximum;
-- fraction under 5 ms;
-- timestamp jitter;
-- saturation throughput in frames per second.
-
-The benchmark reports a PASS only if the measured threshold is achieved. The architecture does not transform a target into an unmeasured performance claim.
+Reports include P50, P99, P99.9, maximum, fraction below 5 ms, timestamp jitter and saturation throughput. A target is not reported as achieved unless the measured percentile passes.
 
 ---
 
-# PART VI — COMBINED EMBODIMENTS
+# PART VI — COMBINED EMBODIMENTS AND EQUIVALENTS
 
-## 31. Combined embodiment A
+## 30. Combined embodiments
 
-A complete embodiment combines:
+**Embodiment A:** EEG128-TDM + OPM-MEG geometry + 20-Hz fNIRS + asynchronous NBFM-1 + Gaussian motor head + intent gate + fixed-shape zeroization + encrypted local transport + deterministic action router.
 
-1. the 128-channel TDM EEG board;
-2. OPM-MEG sensor input and geometry metadata;
-3. 20-Hz long/short-separation fNIRS;
-4. asynchronous NBFM-1 fast/slow fusion;
-5. Gaussian motor output;
-6. explicit intent gate;
-7. fixed-shape zeroization;
-8. AES-GCM local transport;
-9. deterministic action routing.
+**Embodiment B:** EEG128-TDM + fNIRS slow context + the same asynchronous fusion/privacy path, with MEG omitted.
 
-## 32. Combined embodiment B
+**Embodiment C:** synthetic DMA producer using the identical packet format, allowing the complete cryptographic/inference/control path to be tested without a connected subject.
 
-A reduced-cost embodiment omits MEG and uses:
+## 31. Equivalent implementations
 
-```text
-EEG128-TDM
-+
-fNIRS slow context
-+
-NBFM-1 compatible fast/slow encoders
-+
-privacy gate
-```
-
-The architecture remains asynchronous.
-
-## 33. Combined embodiment C
-
-A development embodiment replaces real neural hardware with a synthetic producer that emits the identical 4096-byte DMA slot format. The inference, cryptographic, IPC, action and telemetry layers are unchanged.
-
-This permits end-to-end timing and privacy tests without a connected human subject.
-
-## 34. Equivalent implementations
-
-The disclosure is not limited to the literal component brands used in examples.
-
-Equivalent implementations include:
-
-- another 16:1 low-leakage analog MUX in place of CD74HC4067;
-- another simultaneous-sampling multi-channel delta-sigma ADC;
-- FPGA or another MCU in place of RP2040;
-- ChaCha20-Poly1305 in place of AES-256-GCM;
-- another local inference accelerator in place of TensorRT;
-- another causal neural architecture implementing the disclosed asynchronous fast-query/slow-context relationship.
-
-The invariant technical concepts are the relationships, timing methods, privacy boundary and dataflow described above.
+The teachings are not limited to example vendors. Equivalent embodiments include another low-leakage 16:1 MUX, another simultaneous delta-sigma ADC, FPGA or alternative MCU, ChaCha20-Poly1305 instead of AES-GCM, another edge accelerator instead of TensorRT, or another causal neural architecture preserving the described fast-query/slow-context relation.
 
 ---
 
-# PART VII — PUBLICATION EVIDENCE
+# PART VII — PRIOR-ART EVIDENCE CHAIN
 
-## 35. Recommended evidence chain
+## 32. Recommended immutable evidence
 
-For a durable publication record:
+For each defensive-publication release:
 
-1. publish this repository publicly;
-2. retain the immutable commit identifier;
-3. create a cryptographically signed annotated tag;
-4. generate SHA-256 hashes of the released files;
-5. create a public release from the tag;
-6. archive the release in an independent public archival repository;
-7. retain any DOI and archival metadata.
+1. freeze an exact repository tree;
+2. generate `PUBLICATION_SHA256SUMS`;
+3. create a cryptographically signed commit and annotated signed tag where possible;
+4. publish a public release from that immutable tag;
+5. retain the public commit/tag/release timestamps;
+6. archive the exact release in an independent repository such as Zenodo or another long-term archive;
+7. retain the DOI/archive identifier;
+8. do not rewrite or move the historical publication tag.
 
-A later correction should be made as a new revision rather than rewriting the historical publication record.
+The SHA-256 manifest proves file identity relative to the released tree. It does not itself establish the legal publication date; public availability evidence does that.
 
-## 36. Licensing
+## 33. Legal limitation
 
-Hardware and device firmware in this project are intended to be distributed under:
+This disclosure is designed to be useful as prior art against later claims that are not novel or inventive/non-obvious over the teachings actually made public and enabled here.
 
-```text
-CERN-OHL-S-2.0
-```
+It does **not** guarantee:
 
-Software, inference, privacy, deployment and related project code are intended to be distributed under:
+- refusal or invalidity of every later patent mentioning the same field;
+- freedom to operate;
+- ownership of all underlying intellectual property;
+- that unrelated or narrower improvements cannot themselves be patented.
 
-```text
-AGPL-3.0-only
-```
-
-Third-party components remain under their own terms.
-
-## 37. Safety and medical-use limitation
-
-The disclosure describes research hardware and software.
-
-It does not state that the system is:
-
-- a certified medical device;
-- suitable for diagnosis;
-- clinically validated;
-- electrically safe for human connection without additional engineering;
-- a validated free-form thought reader;
-- certified for direct control of safety-critical actuators.
-
-Human-connected versions require appropriate isolation, leakage-current control, EMC review, electrical-safety assessment and applicable regulatory work.
+Patent analysis is claim-specific and jurisdiction-specific.
 
 ---
 
-# 38. Summary of specifically disclosed concepts
+# PART VIII — SEARCHABLE DISCLOSURE SUMMARY
 
-For searchability, this publication expressly discloses the following combinations and methods:
+This publication expressly discloses, separately and in combination:
 
-1. causal EEG/OPM-MEG fast tokens combined with native-rate slow fNIRS through asynchronous cross-attention;
-2. OPM-MEG token conditioning from sensor position and orientation embeddings;
-3. a shared neural foundation representation with Gaussian motor, intent-gate and phonemic CTC heads;
-4. an intent probability used as a neuro-privacy export gate rather than only a classifier output;
-5. fixed-shape zeroization of sensitive speech logits before authenticated encryption;
-6. retention of identical serialized speech tensor dimensions whether the gate is open or closed;
-7. local-first neural processing with no required raw-neural cloud transport;
-8. enumerated, deterministic action identifiers separating probabilistic speech interpretation from execution;
-9. 128 differential EEG channels implemented by eight banks of paired 16:1 multiplexing ahead of eight simultaneous differential ADC channels;
-10. a 16-position, 250-µs TDM schedule producing 128 × 250-SPS logical channels from a 32-kSPS eight-channel ADC;
-11. explicit post-MUX ADC synchronization followed by SINC/filter-settling conversion discard;
-12. averaging only late conversions after settling, including the concrete 4-discard/4-retain schedule;
-13. asynchronous fNIRS sub-frames carried only when new slow samples exist;
-14. a fixed 4096-byte DMA-slot architecture with nanosecond timestamps, channel masks and CRC32C;
-15. static-shape FP16 TensorRT execution with persistent pinned/device buffers and optional CUDA Graph replay;
-16. a synthetic DMA producer using the identical packet format for end-to-end validation;
-17. measurement of the full ring-to-inference-to-privacy-to-socket path using percentile latency and timestamp-jitter metrics.
+1. causal EEG/OPM-MEG fast tokens with native-rate fNIRS slow memory through asynchronous cross-attention;
+2. OPM-MEG conditioning by sensor position and orientation;
+3. shared representation with Gaussian motor, intent-gate and phonemic CTC heads;
+4. use of intent probability as a neuro-privacy export boundary;
+5. same-shape zeroization of sensitive speech logits before authenticated encryption;
+6. constant speech tensor dimensions whether the gate is open or closed;
+7. local-first neural processing without required raw-neural cloud transport;
+8. enum-only deterministic action routing after probabilistic interpretation;
+9. 128 differential EEG channels using eight banks of paired 16:1 multiplexers ahead of eight simultaneous differential ADC inputs;
+10. 16-position, 250-us TDM scheduling from a 32-kSPS eight-channel ADC to 128 x 250-SPS logical channels;
+11. synchronization after each MUX change followed by explicit digital-filter/analog-settling conversion discard;
+12. the concrete four-discard/four-retain averaging schedule;
+13. asynchronous fNIRS sub-frames present only when a new slow sample exists;
+14. fixed 4096-byte DMA slots with nanosecond timestamps, masks and CRC32C;
+15. static-shape FP16 TensorRT inference with persistent/pinned buffers and optional CUDA Graph replay;
+16. synthetic DMA production in the identical binary format for full-stack validation;
+17. percentile/jitter measurement of the ring-to-inference-to-privacy-to-socket path.
 
-These teachings may be implemented separately or in combination.
+---
+
+## 34. Safety and regulatory status
+
+This publication describes research engineering. It does not assert medical-device certification, diagnostic suitability, clinical validation, patient electrical safety, validated free-form thought reading or certification for safety-critical actuator control.
+
+Human-connected implementations require separate electrical-safety, EMC, biocompatibility, clinical, cybersecurity and regulatory assessment appropriate to their actual intended purpose and jurisdiction.
