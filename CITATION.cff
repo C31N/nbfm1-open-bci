@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this software or hardware design, cite the archived release and this project."
+title: "NBFM-1 Open BCI Stack"
+type: software
+version: "1.0.0"
+authors:
+  - name: "NBFM-1 Open BCI Contributors"
+abstract: >-
+  Open-source multimodal non-invasive BCI architecture combining a causal EEG/MEG fast
+  path, asynchronous fNIRS context cross-attention, local-first privacy gating,
+  authenticated edge deployment, and a low-cost 128-channel differential TDM EEG
+  acquisition architecture.
+keywords:
+  - brain-computer interface
+  - EEG
+  - OPM-MEG
+  - fNIRS
+  - transformer
+  - neuroprivacy
+  - open hardware
+  - defensive publication
+license: "AGPL-3.0-only"
