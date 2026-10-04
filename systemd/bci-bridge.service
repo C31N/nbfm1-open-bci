@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+[Unit]
+Description=BCI Privacy Gate and Control Bridge
+After=local-fs.target
+Before=bci-inference.service bci-dashboard.service
+PartOf=bci-stack.target
+
+[Service]
+Type=simple
+User=bci
+Group=bci
+Environment=PYTHONUNBUFFERED=1
+ExecStartPre=/opt/bci-stack/venv/bin/python /opt/bci-stack/bin/ensure_runtime.py
+ExecStart=/opt/bci-stack/venv/bin/python /opt/bci-stack/bin/bci_bridge_runtime.py --socket /run/bci/secure.sock --key-file /run/bci/master.key --arm-file /run/bci/arm --telemetry /dev/shm/bci/telemetry --router /opt/bci-stack/config/action_router.json --vocabulary /opt/bci-stack/config/phonemes.json
+Restart=always
+RestartSec=1
+CPUSchedulingPolicy=rr
+CPUSchedulingPriority=90
+LimitRTPRIO=95
+LimitMEMLOCK=infinity
+CapabilityBoundingSet=CAP_SYS_NICE CAP_IPC_LOCK
+AmbientCapabilities=CAP_SYS_NICE CAP_IPC_LOCK
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/run/bci /dev/shm/bci
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+LockPersonality=true
+
+[Install]
+WantedBy=bci-stack.target
