@@ -55,6 +55,12 @@ flowchart LR
     D --> O["128 channels x 250 SPS<br/>offset/gain correction"]
 ```
 
+## Hardware revision status
+
+The repository contains **EEG128-TDM Revision A0** KiCad/BOM/CPL/netlist sources, but A0 is **not released for fabrication or human-connected use**. The board still requires independent routing and footprint verification followed by clean KiCad 8 ERC/DRC and the safety release gates in [`docs/SAFETY_COMPLIANCE.md`](docs/SAFETY_COMPLIANCE.md).
+
+The manufacturing exporter is fail-closed: [`hardware/eeg128-tdm/generate_manufacturing.py`](hardware/eeg128-tdm/generate_manufacturing.py) refuses to generate Gerber output while [`RELEASE_STATUS.json`](hardware/eeg128-tdm/RELEASE_STATUS.json) contains an unmet release gate.
+
 ## Privacy-state machine
 
 ```text
