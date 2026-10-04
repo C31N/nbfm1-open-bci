@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "revision": "A0",
+  "fabrication_release": false,
+  "routing_completed": false,
+  "footprints_verified": false,
+  "erc_passed": false,
+  "drc_passed": false,
+  "patient_safety_validated": false,
+  "bom_cpl_crosscheck_passed": false,
+  "human_connected_use_authorized": false,
+  "blockers": [
+    "Complete and independently review all copper routing and return-current paths.",
+    "Verify every generated footprint against manufacturer land-pattern data and JLCPCB assembly orientation.",
+    "Run KiCad 8 ERC with zero release-blocking violations.",
+    "Run KiCad 8 PCB DRC with zero release-blocking violations.",
+    "Cross-check BOM, CPL, schematic/netlist and PCB reference designators.",
+    "Perform bring-up on current-limited isolated bench power without a human subject.",
+    "Complete the release gates in docs/SAFETY_COMPLIANCE.md before any human-connected use."
+  ]
+}
