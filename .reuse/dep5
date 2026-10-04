@@ -1,0 +1,10 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: NBFM-1 Open BCI Stack
+
+Files: hardware/* firmware/*
+Copyright: 2026 NBFM-1 Open BCI Contributors
+License: CERN-OHL-S-2.0
+
+Files: bin/* config/* systemd/* deploy_bci_stack.sh requirements.txt pyproject.toml requirements-dev.txt software/* scripts/* docs/* .github/* README.md PATENT_DISCLOSURE.md SECURITY.md CONTRIBUTING.md NOTICE.md CITATION.cff .gitignore LICENSE_SOFTWARE LICENSE_HARDWARE
+Copyright: 2026 NBFM-1 Open BCI Contributors
+License: AGPL-3.0-only
