@@ -109,7 +109,11 @@ def wait_for(path: Path, timeout: float = 20.0) -> None:
     raise TimeoutError(f"timeout waiting for {path}")
 
 
-def collect_telemetry(path: Path, duration: float, warmup: float = 0.0):
+def collect_telemetry(
+    path: Path,
+    duration: float,
+    warmup: float = 0.0,
+) -> tuple[list[float], int, int, float]:
     wait_for(path)
     reader = TelemetryReader(str(path))
     start = time.monotonic()
