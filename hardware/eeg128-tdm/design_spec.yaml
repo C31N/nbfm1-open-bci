@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+revision: A0
+board:
+  name: eeg128-tdm
+  width_mm: 190
+  height_mm: 110
+  layers:
+    - F.Cu
+    - In1.Cu: solid AGND/DGND return plane with controlled single-point domain join
+    - In2.Cu: 3V3A/3V3D/VCM power plane
+    - B.Cu
+  thickness_mm: 1.6
+  copper_outer_um: 35
+  copper_inner_um: 18
+acquisition:
+  logical_channels: 128
+  differential_conductors: 256
+  banks: 8
+  mux_positions_per_bank: 16
+  adc_channels: 8
+  adc_rate_sps: 32000
+  target_logical_rate_sps: 250
+  discard_conversions_after_mux_switch: 4
+  keep_conversions_per_slot: 4
+components:
+  mux: CD74HC4067M96
+  buffer: TLV9064IPWR
+  adc: ADS131M08IPBSR
+  controller: RP2040
+  drl_vcm: OPA4171AIPWR
+connectors:
+  electrode_banks: 8
+  contacts_per_bank: 32
+  mapping: "pins 1..16 = CH(16*b+0..15)+; pins 17..32 = CH(16*b+0..15)-"
+safety:
+  patient_connected_release: prohibited
+  required_power: isolated_battery_domain
+  usb: isolated_only_when_electrodes_attached
