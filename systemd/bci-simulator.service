@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+[Unit]
+Description=BCI Synthetic DMA Source
+After=local-fs.target
+Before=bci-inference.service
+PartOf=bci-stack.target
+
+[Service]
+Type=simple
+User=bci
+Group=bci
+ExecStartPre=/opt/bci-stack/venv/bin/python /opt/bci-stack/bin/ensure_runtime.py
+ExecCondition=/opt/bci-stack/venv/bin/python /opt/bci-stack/bin/detect_esp32.py --absent
+ExecStart=/opt/bci-stack/venv/bin/python /opt/bci-stack/bin/bci_signal_simulator.py --ring /dev/shm/bci/raw-ring --slot-count 4096
+Restart=always
+RestartSec=1
+CPUSchedulingPolicy=rr
+CPUSchedulingPriority=60
+LimitRTPRIO=95
+LimitMEMLOCK=infinity
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/run/bci /dev/shm/bci
+RestrictAddressFamilies=AF_UNIX
+LockPersonality=true
+
+[Install]
+WantedBy=bci-stack.target
