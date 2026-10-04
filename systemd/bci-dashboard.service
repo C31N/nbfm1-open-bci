@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+[Unit]
+Description=BCI Local Web Telemetry Dashboard
+After=bci-bridge.service
+Wants=bci-bridge.service
+PartOf=bci-stack.target
+
+[Service]
+Type=simple
+User=bci
+Group=bci
+Environment=PYTHONUNBUFFERED=1
+ExecStartPre=/opt/bci-stack/venv/bin/python /opt/bci-stack/bin/ensure_runtime.py
+ExecStart=/opt/bci-stack/venv/bin/python /opt/bci-stack/bin/dashboard.py --mode web --telemetry /dev/shm/bci/telemetry --host 127.0.0.1 --port 8088
+Restart=always
+RestartSec=1
+Nice=5
+LimitMEMLOCK=infinity
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/run/bci /dev/shm/bci
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+LockPersonality=true
+
+[Install]
+WantedBy=bci-stack.target
