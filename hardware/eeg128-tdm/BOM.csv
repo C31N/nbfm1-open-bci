@@ -1,0 +1,17 @@
+Comment,Designator,Footprint,LCSC Part #,Manufacturer,Manufacturer Part #,Qty
+16:1 analog multiplexer,"U1,U2,U3,U4,U5,U6,U7,U8,U9,U10,U11,U12,U13,U14,U15,U16",SOIC-24_7.5x15.4mm_P1.27mm,C496123,Texas Instruments,CD74HC4067M96,16
+Quad RRIO low-noise buffer,"U17,U18,U19,U20",TSSOP-14_4.4x5mm_P0.65mm,C779410,Texas Instruments,TLV9064IPWR,4
+8ch 24-bit delta-sigma ADC,U21,TQFP-32_5x5mm_P0.5mm,C2862610,Texas Instruments,ADS131M08IPBSR,1
+Quad DRL/VCM op amp,U22,TSSOP-14_4.4x5mm_P0.65mm,C529553,Texas Instruments,OPA4171AIPWR,1
+Microcontroller,U23,QFN-56_7x7mm_P0.4mm,C2040,Raspberry Pi,RP2040,1
+Analog 3V3 LDO,U24,SOT-23-5,C2862740,Texas Instruments,TPS7A2033PDBVR,1
+Digital 3V3 LDO,U25,SOT-23-5,C51118,Diodes Inc.,AP2112K-3.3TRG1,1
+16Mbit QSPI flash,U26,SOIC-8_5.3x5.3mm_P1.27mm,C82317,Winbond,W25Q16JVSSIQ,1
+32-pin 0.5mm FPC,"J1,J2,J3,J4,J5,J6,J7,J8",FPC_32P_P0.5mm_RA,C2919488,HDGC,0.5K-QX-32PWB,8
+USB-C 16-pin receptacle,J9,USB-C-16P_RA,C165948,Korean Hroparts Elec,TYPE-C-31-M-12,1
+12MHz crystal,Y1,Crystal_SMD_3225-4Pin,C9002,YXC,X322512MSB4SI,1
+10Mohm input bias,"R1-R256",R_0603_1608Metric,C2092526,Vishay,RCS060310M0FKEA,256
+100kohm input protection,"R257-R512",R_0603_1608Metric,C2989131,UNI-ROYAL,TC0325F1003T5F,256
+10kohm precision/control resistors,"R513-R528",R_0603_1608Metric,C25804,UNI-ROYAL,0603WAF1002T5E,16
+5.1kohm USB-C CC resistors,"R529,R530",R_0603_1608Metric,C105580,Yageo,RC0603FR-075K1L,2
+1uF decoupling/bulk,"C1-C20",C_0603_1608Metric,C15849,Samsung Electro-Mechanics,CL10A105KB8NNNC,20
