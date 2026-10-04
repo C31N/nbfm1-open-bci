@@ -26,33 +26,33 @@ A repository commit is evidence, not magic. For a stronger publication record, p
 
 ```mermaid
 flowchart LR
-    EEG[128-ch EEG\n1 kHz after decimation] --> FAST[Fast neural path]
-    MEG[OPM-MEG\ngeometry embeddings] --> FAST
-    FNIRS[fNIRS\n20 Hz short/long separation] --> SLOW[Slow context encoder]
-    FAST --> NBFM[NBFM-1 causal transformer]
-    SLOW --> XATTN[Cross-attention]
+    EEG["128-ch EEG<br/>1 kHz after decimation"] --> FAST["Fast neural path"]
+    MEG["OPM-MEG<br/>geometry embeddings"] --> FAST
+    FNIRS["fNIRS<br/>20 Hz short/long separation"] --> SLOW["Slow context encoder"]
+    FAST --> NBFM["NBFM-1 causal transformer"]
+    SLOW --> XATTN["Cross-attention"]
     XATTN --> NBFM
-    NBFM --> MOTOR[Motor Gaussian head\nmu + sigma]
-    NBFM --> GATE[Intent gate\nP(intent)]
-    NBFM --> CTC[Phonemic CTC head]
-    GATE --> PRIVACY[Local-first privacy gate]
+    NBFM --> MOTOR["Motor Gaussian head<br/>mu + sigma"]
+    NBFM --> GATE["Intent gate<br/>P(intent)"]
+    NBFM --> CTC["Phonemic CTC head"]
+    GATE --> PRIVACY["Local-first privacy gate"]
     CTC --> PRIVACY
-    PRIVACY --> ENC[AES-256-GCM local export]
-    MOTOR --> SAFETY[Rate/uncertainty limiter]
-    ENC --> AGENT[Local agent adapter]
-    SAFETY --> ACT[Cursor / bench actuator interface]
+    PRIVACY --> ENC["AES-256-GCM local export"]
+    MOTOR --> SAFETY["Rate/uncertainty limiter"]
+    ENC --> AGENT["Local agent adapter"]
+    SAFETY --> ACT["Cursor / bench actuator interface"]
 ```
 
 ### EEG128-TDM acquisition path
 
 ```mermaid
 flowchart LR
-    E[128 differential EEG channels\n256 electrode conductors] --> M[8 banks x paired 16:1 MUX\n16 CD74HC4067 total]
-    M --> B[16 low-noise unity buffers]
-    B --> A[ADS131M08\n8 simultaneous 24-bit delta-sigma channels\n32 kSPS]
-    A --> R[RP2040\nSPI + DMA]
-    R --> D[16-position demultiplex\nsettling discard + averaging]
-    D --> O[128 channels x 250 SPS\noffset/gain correction]
+    E["128 differential EEG channels<br/>256 electrode conductors"] --> M["8 banks x paired 16:1 MUX<br/>16 CD74HC4067 total"]
+    M --> B["16 low-noise unity buffers"]
+    B --> A["ADS131M08<br/>8 simultaneous 24-bit delta-sigma channels<br/>32 kSPS"]
+    A --> R["RP2040<br/>SPI + DMA"]
+    R --> D["16-position demultiplex<br/>settling discard + averaging"]
+    D --> O["128 channels x 250 SPS<br/>offset/gain correction"]
 ```
 
 ## Privacy-state machine
