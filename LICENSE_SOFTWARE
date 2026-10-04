@@ -1,0 +1,20 @@
+NBFM-1 Open BCI Stack — Software License Notice
+
+Copyright (c) 2026 NBFM-1 Open BCI Contributors
+
+The software in software/, deployment and repository automation in scripts/ and
+.github/, and project documentation except hardware/ and firmware/ are licensed under
+the GNU Affero General Public License, version 3 only.
+
+SPDX-License-Identifier: AGPL-3.0-only
+Canonical license identifier: https://spdx.org/licenses/AGPL-3.0-only.html
+
+This project intentionally selects version 3 only, not "or any later version".
+Network deployment of a modified covered program remains subject to the corresponding-source
+obligations of AGPLv3, including its network-interaction provisions.
+
+The authoritative unmodified license text must be retained in:
+
+    LICENSES/AGPL-3.0-only.txt
+
+Third-party dependencies retain their own licenses and are not relicensed by this notice.
