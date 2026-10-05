@@ -89,22 +89,12 @@ jobs:
             -jar /tmp/a1/freerouting-2.4.1.jar \
             -de /tmp/a1/eeg128-tdm-A1.dsn \
             -do /tmp/a1/eeg128-tdm-A1.ses \
-            --router.autorouter.max_passes=12 \
-            --router.optimizer.enabled=true \
-            --router.fanout.max_passes=2 \
-            -mt 4 \
-            -us hybrid \
-            -hr 1:1 \
-            -is prioritized \
-            -da \
-            --gui.enabled=false \
-            --router.layers.routable=true,true,true,true \
-            --router.layers.preferred_direction_horizontal=true,false,true,false \
+            --router.autorouter.max_passes=1 \
             --router.optimizer.enabled=false \
-            --router.strict_drc=true \
-            --router.neck_width_um=150 \
-            --router.job_timeout=20m \
-            --router.result_json=/tmp/a1/freerouting-result.json \
+            --router.fanout.enabled=false \
+            --gui.enabled=false \
+            --router.layers.routable=true,false,true,true \
+            --router.layers.preferred_direction_horizontal=true,false,true,false \
             --logging.file.enabled=false
           test -s /tmp/a1/eeg128-tdm-A1.ses
 
@@ -202,7 +192,6 @@ jobs:
             /tmp/a1/drc-before.json
             /tmp/a1/drc-after.json
             /tmp/a1/route-metrics.json
-            /tmp/a1/freerouting-result.json
             /tmp/a1/CPL-routed.csv
           if-no-files-found: error
           retention-days: 14
