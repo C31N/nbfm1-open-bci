@@ -61,9 +61,27 @@ jobs:
           severities = collections.Counter(
               item.get("severity", "unknown") for item in violations + unconnected
           )
+          board_text = Path(
+              "/tmp/a1-preflight/eeg128-tdm-A1-prepared.kicad_pcb"
+          ).read_text(encoding="utf-8")
+          import re
+
           summary = {
               "violations": len(violations),
               "unconnected": len(unconnected),
+              "errors": sum(
+                  item.get("severity") == "error"
+                  for item in violations + unconnected
+              ),
+              "warnings": sum(
+                  item.get("severity") == "warning"
+                  for item in violations + unconnected
+              ),
+              "segments": len(
+                  re.findall(r"(?m)^\\s*\\(segment\\b", board_text)
+              ),
+              "vias": len(re.findall(r"(?m)^\\s*\\(via\\b", board_text)),
+              "zones": len(re.findall(r"(?m)^\\s*\\(zone\\b", board_text)),
               "severities": dict(sorted(severities.items())),
               "classes": dict(sorted(classes.items())),
           }
