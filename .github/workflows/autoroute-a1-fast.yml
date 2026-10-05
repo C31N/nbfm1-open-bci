@@ -2,11 +2,6 @@ name: A1 Fast Multi-Pass Four-Layer Route
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - ".github/workflows/autoroute-a1-fast.yml"
-      - "hardware/eeg128-tdm/prepare_autoroute.py"
-
 permissions:
   contents: read
 
