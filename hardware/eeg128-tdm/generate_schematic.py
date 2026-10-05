@@ -86,10 +86,6 @@ def parse_components() -> list[Component]:
     components: list[Component] = []
 
     ref_re = re.compile(r'\(property "Reference" "([^"]+)"')
-    pad_re = re.compile(
-        r'\(pad "([^"]+)"[^\n]*'
-        r'(?:\n(?:.|\n)*?)?'
-    )
 
     for block in balanced_blocks(pcb, "footprint"):
         ref_match = ref_re.search(block)
