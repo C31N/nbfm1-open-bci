@@ -22,6 +22,7 @@ REQUIRED = (
     "eeg128-tdm.kicad_pcb",
     "eeg128-tdm.kicad_pro",
     "RELEASE_STATUS.json",
+    "generate_schematic.py",
     "EDA_AUDIT.md",
     "COMPONENT_AUDIT.md",
 )
