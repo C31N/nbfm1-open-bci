@@ -160,7 +160,6 @@ jobs:
             /tmp/a1/eeg128-tdm-A1-routed.kicad_pcb
             /tmp/a1/drc-before.json
             /tmp/a1/drc-after.json
-            /tmp/a1/freerouting-drc.json
             /tmp/a1/route-metrics.json
             /tmp/a1/CPL-routed.csv
           if-no-files-found: error
