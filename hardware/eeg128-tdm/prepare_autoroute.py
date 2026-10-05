@@ -65,8 +65,8 @@ def place_input_bank(board: pcbnew.BOARD, bank: int) -> None:
 
     p_mux = f"U{2 * bank + 1}"
     n_mux = f"U{2 * bank + 2}"
-    place(board, p_mux, bank_center_x - 4.4, 45.0, 90.0)
-    place(board, n_mux, bank_center_x + 4.4, 45.0, 90.0)
+    place(board, p_mux, bank_center_x - 5.1, 45.0, 0.0)
+    place(board, n_mux, bank_center_x + 5.1, 45.0, 0.0)
 
     first_channel = bank * 16
     for local_channel in range(16):
@@ -86,8 +86,8 @@ def place_input_bank(board: pcbnew.BOARD, bank: int) -> None:
         place(board, f"R{series_n}", cx - 1.15, cy + 1.35, 90.0)
         place(board, f"R{bias_n}", cx + 1.15, cy + 1.35, 90.0)
 
-    place(board, f"C{21 + 2 * bank}", bank_center_x - 4.4, 51.0, 0.0)
-    place(board, f"C{22 + 2 * bank}", bank_center_x + 4.4, 51.0, 0.0)
+    place(board, f"C{21 + 2 * bank}", bank_center_x - 5.1, 54.5, 0.0)
+    place(board, f"C{22 + 2 * bank}", bank_center_x + 5.1, 54.5, 0.0)
 
 
 def place_analog_core(board: pcbnew.BOARD) -> None:
