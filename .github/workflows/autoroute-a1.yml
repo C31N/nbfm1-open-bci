@@ -14,6 +14,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: eeg128-a1-autoroute
+  cancel-in-progress: true
+
 jobs:
   route:
     runs-on: ubuntu-24.04
@@ -96,6 +100,11 @@ jobs:
             --gui.enabled=false \
             --router.layers.routable=true,true,true,true \
             --router.layers.preferred_direction_horizontal=true,false,true,false \
+            --router.optimizer.enabled=false \
+            --router.strict_drc=true \
+            --router.neck_width_um=150 \
+            --router.job_timeout=20m \
+            --router.result_json=/tmp/a1/freerouting-result.json \
             --logging.file.enabled=false
           test -s /tmp/a1/eeg128-tdm-A1.ses
 
@@ -193,6 +202,7 @@ jobs:
             /tmp/a1/drc-before.json
             /tmp/a1/drc-after.json
             /tmp/a1/route-metrics.json
+            /tmp/a1/freerouting-result.json
             /tmp/a1/CPL-routed.csv
           if-no-files-found: error
           retention-days: 14
