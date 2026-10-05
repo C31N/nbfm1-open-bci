@@ -127,6 +127,18 @@ jobs:
               "unconnected_by_net": dict(
                   unconnected_by_net.most_common()
               ),
+              "error_samples": [
+                  {
+                      "type": item.get("type"),
+                      "severity": item.get("severity"),
+                      "items": [
+                          entry.get("description", "")
+                          for entry in item.get("items", [])
+                      ],
+                  }
+                  for item in violations
+                  if item.get("severity") == "error"
+              ][:30],
           }
           print(json.dumps(summary, indent=2, sort_keys=True))
           Path("/tmp/a1-preflight/summary.json").write_text(
