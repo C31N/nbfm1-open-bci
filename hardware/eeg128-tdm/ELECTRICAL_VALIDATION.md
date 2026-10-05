@@ -1,6 +1,38 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
 # EEG128-TDM A1 electrical validation plan
 
+## Validation status model
+
+Two independent statuses are used:
+
+```text
+theoretical_electrical_review_passed
+physical_electrical_lab_validation_passed
+```
+
+### Theoretical electrical review
+
+This status may be set to `true` without a fabricated board only when the design has no unresolved theoretical electrical concern and all relevant EDA/datasheet/calculation gates are closed, including:
+
+- complete schematic;
+- complete routing and copper zones;
+- 0 ERC errors;
+- 0 DRC errors;
+- 0 unconnected PCB items;
+- verified footprints;
+- verified ground/reference/power/clock/USB/DRL topology;
+- analytically closed TDM settling budget;
+- valid ADC/common-mode/headroom calculations;
+- no unresolved stability, rating or return-current issue.
+
+This status means **design review passed**, not “measured hardware passed”.
+
+### Physical laboratory validation
+
+`physical_electrical_lab_validation_passed` may be `true` only after measurements on a fabricated board produce the required evidence.
+
+A theoretical review, SPICE simulation, ERC/DRC result or datasheet calculation shall never be represented as a completed physical measurement.
+
 ## Release rule
 
 No value in this document is a simulated substitute for a physical measurement.
