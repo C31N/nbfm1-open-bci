@@ -39,7 +39,7 @@ RP2040 SPI1 + DMA
 | `NETLIST.csv` | Detailed endpoint-to-endpoint logical connectivity |
 | `BOM.csv` | JLCPCB/LCSC-oriented bill of materials |
 | `CPL.csv` | JLCPCB-oriented component placement |
-| `eeg128-tdm.kicad_sch` | KiCad 8 schematic/connectivity index |
+| `eeg128-tdm.kicad_sch` | KiCad 8 schematic/connectivity index |\n| `generate_schematic.py` | Deterministically generates a 640-component KiCad connectivity schematic from PCB pad/net assignments |
 | `eeg128-tdm.kicad_pcb` | KiCad 8 four-layer A0 placement/net board |
 | `eeg128-tdm.kicad_pro` | KiCad project |
 | `validate_eda.py` | Source/BOM/CPL/net validation |
@@ -116,3 +116,26 @@ The current logical source uses separate `AGND` and `DGND` names while the inten
 The selected low-noise reference network must be reviewed explicitly before A0 fabrication. The present logical netlist records `ADC_REFIN` as unpopulated; for EEG noise optimization, provision for local REFIN filtering must be evaluated against TI guidance and the chosen converter mode.
 
 See `EDA_AUDIT.md` and `RELEASE_STATUS.json`.
+
+
+## Generated connectivity schematic
+
+The deterministic generator can materialize every PCB/BOM component and every assigned pad net into a KiCad 8 schematic representation:
+
+```bash
+python3 generate_schematic.py
+```
+
+Default output:
+
+```text
+eeg128-tdm.generated.kicad_sch
+```
+
+It uses real component references and PCB pad numbers and emits local labeled wire stubs for assigned nets. It intentionally uses conservative generic passive-pin symbols. Therefore it is useful for reproducible connectivity review and schematic/PCB parity, but it does **not** replace manufacturer-symbol pin-type review or independently establish ERC/fabrication readiness.
+
+Only after review may it replace the primary schematic:
+
+```bash
+python3 generate_schematic.py --replace-primary
+```
