@@ -18,8 +18,8 @@
   "patient_safety_validated": false,
   "human_connected_use_authorized": false,
   "observed_source_metrics": {
-    "schematic_instantiated_symbols": 0,
-    "schematic_wires": 0,
+    "schematic_instantiated_symbols": 640,
+    "schematic_wires": 1875,
     "pcb_footprints": 640,
     "pcb_segments": 0,
     "pcb_vias": 0,
@@ -38,5 +38,23 @@
     "Perform bring-up on current-limited isolated bench power without a human subject.",
     "Measure input-referred noise, TDM settling, crosstalk and common-mode performance on physical hardware.",
     "Complete the release gates in docs/SAFETY_COMPLIANCE.md before any human-connected use."
-  ]
+  ],
+  "native_kicad8_audit": {
+    "kicad_version": "8.0.9",
+    "audit_date": "2026-10-05",
+    "primary_schematic_parse": true,
+    "generated_schematic_parse": true,
+    "native_netlist_export": true,
+    "erc_report_generated": true,
+    "erc_total": 3338,
+    "erc_errors": 183,
+    "erc_warnings": 3155,
+    "pcb_drc_report_generated": true,
+    "pcb_unconnected_errors": 499,
+    "pcb_drc_violations": 1503,
+    "pcb_drc_errors": 897,
+    "pcb_drc_warnings": 606,
+    "schematic_parity_items": 0,
+    "placement_export_parse": true
+  }
 }
