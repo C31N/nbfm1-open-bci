@@ -1,0 +1,108 @@
+name: A1 Fast DRC Precheck
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/a1-precheck.yml"
+      - "hardware/eeg128-tdm/prepare_autoroute.py"
+      - "hardware/eeg128-tdm/eeg128-tdm.kicad_pcb"
+
+permissions:
+  contents: write
+
+jobs:
+  precheck:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Install KiCad 8
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            kicad kicad-footprints
+          kicad-cli version
+
+      - name: Prepare A1
+        run: |
+          mkdir -p /tmp/a1
+          /usr/bin/python3 hardware/eeg128-tdm/prepare_autoroute.py \
+            --input hardware/eeg128-tdm/eeg128-tdm.kicad_pcb \
+            --output /tmp/a1/eeg128-tdm-A1-prepared.kicad_pcb
+
+      - name: Run native DRC snapshot
+        run: |
+          set +e
+          kicad-cli pcb drc \
+            --format json \
+            --severity-all \
+            --all-track-errors \
+            --output /tmp/a1/drc.json \
+            /tmp/a1/eeg128-tdm-A1-prepared.kicad_pcb
+          echo "exit_code=$?" > /tmp/a1/drc-exit.txt
+          set -e
+
+      - name: Summarize DRC by type
+        run: |
+          python3 - <<'PY'
+          from collections import Counter
+          from datetime import datetime, timezone
+          import json
+          from pathlib import Path
+
+          raw = json.loads(Path("/tmp/a1/drc.json").read_text(encoding="utf-8"))
+          violations = raw.get("violations", [])
+          unconnected = raw.get("unconnected_items", [])
+
+          def kind(item):
+              return (
+                  item.get("type")
+                  or item.get("description")
+                  or item.get("rule")
+                  or "unknown"
+              )
+
+          def severity(items):
+              return Counter(item.get("severity", "unknown") for item in items)
+
+          type_counts = Counter(kind(item) for item in violations)
+          type_severity = {}
+          for item in violations:
+              key = kind(item)
+              type_severity.setdefault(key, Counter())
+              type_severity[key][item.get("severity", "unknown")] += 1
+
+          report = {
+              "generated_at": datetime.now(timezone.utc).isoformat(),
+              "violations": len(violations),
+              "unconnected": len(unconnected),
+              "severity": dict(severity(violations + unconnected)),
+              "types": [
+                  {
+                      "type": key,
+                      "count": count,
+                      "severity": dict(type_severity[key]),
+                  }
+                  for key, count in type_counts.most_common()
+              ],
+              "sample_items": violations[:50],
+          }
+          out = Path("hardware/eeg128-tdm/A1_PRECHECK.json")
+          out.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+          print(json.dumps(report, indent=2))
+          PY
+
+      - name: Commit precheck report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add hardware/eeg128-tdm/A1_PRECHECK.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "Record A1 native DRC precheck"
+          git push
