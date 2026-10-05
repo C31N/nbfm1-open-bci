@@ -26,6 +26,15 @@ jobs:
           kicad-cli version
           kicad-cli version | grep -E '^8\.'
 
+      - name: Parse primary connectivity-index schematic
+        run: |
+          mkdir -p /tmp/kicad-audit
+          kicad-cli sch export netlist \
+            --format kicadsexpr \
+            --output /tmp/kicad-audit/primary.net \
+            hardware/eeg128-tdm/eeg128-tdm.kicad_sch
+          test -s /tmp/kicad-audit/primary.net
+
       - name: Parse generated schematic and export native netlist
         run: |
           mkdir -p /tmp/kicad-audit
@@ -77,6 +86,7 @@ jobs:
         with:
           name: kicad8-audit
           path: |
+            /tmp/kicad-audit/primary.net
             /tmp/kicad-audit/eeg128-tdm.net
             /tmp/kicad-audit/erc.json
             /tmp/kicad-audit/drc.json
