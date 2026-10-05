@@ -367,8 +367,8 @@ def main() -> int:
     args = parser.parse_args()
 
     components = parse_components()
-    if len(components) != 640:
-        raise RuntimeError(f"expected 640 BOM/PCB components, got {len(components)}")
+    if len(components) != 642:
+        raise RuntimeError(f"expected 642 BOM/PCB components, got {len(components)}")
 
     text = render(components)
     output = Path(args.output)
