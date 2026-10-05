@@ -14,6 +14,7 @@
   )
   (lib_symbols
     (symbol "NBFM1_A0:GEN_2_a2422ced9e0c"
+      (pin_numbers hide)
       (pin_names (offset 0.508))
       (exclude_from_sim no)
       (in_bom yes)
@@ -21,7 +22,8 @@
       (property "Reference" "U" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
       (property "Value" "GEN_2_a2422ced9e0c" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
       (property "Footprint" "" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
-      (property "Datasheet" "" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
+      (property "Datasheet" "~" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
+      (property "Description" "Generated connectivity symbol" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
       (symbol "GEN_2_a2422ced9e0c_1_1"
         (rectangle (start -1.27 2.540) (end 1.27 -2.540) (stroke (width 0.254) (type default)) (fill (type background)))
         (pin passive line
@@ -39,6 +41,7 @@
       )
     )
     (symbol "NBFM1_A0:GEN_4_067597446688"
+      (pin_numbers hide)
       (pin_names (offset 0.508))
       (exclude_from_sim no)
       (in_bom yes)
@@ -46,7 +49,8 @@
       (property "Reference" "U" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
       (property "Value" "GEN_4_067597446688" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
       (property "Footprint" "" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
-      (property "Datasheet" "" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
+      (property "Datasheet" "~" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
+      (property "Description" "Generated connectivity symbol" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
       (symbol "GEN_4_067597446688_1_1"
         (rectangle (start -1.27 3.175) (end 1.27 -3.175) (stroke (width 0.254) (type default)) (fill (type background)))
         (pin passive line
@@ -76,6 +80,7 @@
       )
     )
     (symbol "NBFM1_A0:GEN_5_fa8018c02eb7"
+      (pin_numbers hide)
       (pin_names (offset 0.508))
       (exclude_from_sim no)
       (in_bom yes)
@@ -83,7 +88,8 @@
       (property "Reference" "U" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
       (property "Value" "GEN_5_fa8018c02eb7" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
       (property "Footprint" "" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
-      (property "Datasheet" "" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
+      (property "Datasheet" "~" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
+      (property "Description" "Generated connectivity symbol" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
       (symbol "GEN_5_fa8018c02eb7_1_1"
         (rectangle (start -1.27 3.810) (end 1.27 -3.810) (stroke (width 0.254) (type default)) (fill (type background)))
         (pin passive line
@@ -119,6 +125,7 @@
       )
     )
     (symbol "NBFM1_A0:GEN_8_1aebed635e99"
+      (pin_numbers hide)
       (pin_names (offset 0.508))
       (exclude_from_sim no)
       (in_bom yes)
@@ -126,7 +133,8 @@
       (property "Reference" "U" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
       (property "Value" "GEN_8_1aebed635e99" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
       (property "Footprint" "" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
-      (property "Datasheet" "" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
+      (property "Datasheet" "~" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
+      (property "Description" "Generated connectivity symbol" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
       (symbol "GEN_8_1aebed635e99_1_1"
         (rectangle (start -1.27 5.715) (end 1.27 -5.715) (stroke (width 0.254) (type default)) (fill (type background)))
         (pin passive line
@@ -180,6 +188,7 @@
       )
     )
     (symbol "NBFM1_A0:GEN_14_f8792c52b475"
+      (pin_numbers hide)
       (pin_names (offset 0.508))
       (exclude_from_sim no)
       (in_bom yes)
@@ -187,7 +196,8 @@
       (property "Reference" "U" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
       (property "Value" "GEN_14_f8792c52b475" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
       (property "Footprint" "" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
-      (property "Datasheet" "" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
+      (property "Datasheet" "~" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
+      (property "Description" "Generated connectivity symbol" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
       (symbol "GEN_14_f8792c52b475_1_1"
         (rectangle (start -1.27 9.525) (end 1.27 -9.525) (stroke (width 0.254) (type default)) (fill (type background)))
         (pin passive line
@@ -277,6 +287,7 @@
       )
     )
     (symbol "NBFM1_A0:GEN_18_30158393f200"
+      (pin_numbers hide)
       (pin_names (offset 0.508))
       (exclude_from_sim no)
       (in_bom yes)
@@ -284,7 +295,8 @@
       (property "Reference" "U" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
       (property "Value" "GEN_18_30158393f200" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
       (property "Footprint" "" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
-      (property "Datasheet" "" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
+      (property "Datasheet" "~" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
+      (property "Description" "Generated connectivity symbol" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
       (symbol "GEN_18_30158393f200_1_1"
         (rectangle (start -1.27 12.065) (end 1.27 -12.065) (stroke (width 0.254) (type default)) (fill (type background)))
         (pin passive line
@@ -398,6 +410,7 @@
       )
     )
     (symbol "NBFM1_A0:GEN_24_f2c9dae44f1c"
+      (pin_numbers hide)
       (pin_names (offset 0.508))
       (exclude_from_sim no)
       (in_bom yes)
@@ -405,7 +418,8 @@
       (property "Reference" "U" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
       (property "Value" "GEN_24_f2c9dae44f1c" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
       (property "Footprint" "" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
-      (property "Datasheet" "" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
+      (property "Datasheet" "~" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
+      (property "Description" "Generated connectivity symbol" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
       (symbol "GEN_24_f2c9dae44f1c_1_1"
         (rectangle (start -1.27 15.875) (end 1.27 -15.875) (stroke (width 0.254) (type default)) (fill (type background)))
         (pin passive line
@@ -555,6 +569,7 @@
       )
     )
     (symbol "NBFM1_A0:GEN_32_481fa60fb64f"
+      (pin_numbers hide)
       (pin_names (offset 0.508))
       (exclude_from_sim no)
       (in_bom yes)
@@ -562,7 +577,8 @@
       (property "Reference" "U" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
       (property "Value" "GEN_32_481fa60fb64f" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
       (property "Footprint" "" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
-      (property "Datasheet" "" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
+      (property "Datasheet" "~" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
+      (property "Description" "Generated connectivity symbol" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
       (symbol "GEN_32_481fa60fb64f_1_1"
         (rectangle (start -1.27 20.955) (end 1.27 -20.955) (stroke (width 0.254) (type default)) (fill (type background)))
         (pin passive line
@@ -760,6 +776,7 @@
       )
     )
     (symbol "NBFM1_A0:GEN_57_485a32be38ba"
+      (pin_numbers hide)
       (pin_names (offset 0.508))
       (exclude_from_sim no)
       (in_bom yes)
@@ -767,7 +784,8 @@
       (property "Reference" "U" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
       (property "Value" "GEN_57_485a32be38ba" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
       (property "Footprint" "" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
-      (property "Datasheet" "" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
+      (property "Datasheet" "~" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
+      (property "Description" "Generated connectivity symbol" (at 0 0 0) (effects (font (size 1.0 1.0)) (hide yes)))
       (symbol "GEN_57_485a32be38ba_1_1"
         (rectangle (start -1.27 36.830) (end 1.27 -36.830) (stroke (width 0.254) (type default)) (fill (type background)))
         (pin passive line
