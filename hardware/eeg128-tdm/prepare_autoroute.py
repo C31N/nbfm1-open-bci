@@ -43,6 +43,161 @@ def clear_routing(board: pcbnew.BOARD) -> None:
         board.Remove(zone)
 
 
+def ensure_net(board: pcbnew.BOARD, name: str) -> pcbnew.NETINFO_ITEM:
+    net = board.FindNet(name)
+    if net is None:
+        net = pcbnew.NETINFO_ITEM(board, name)
+        board.Add(net)
+    return net
+
+
+def set_pad_net(
+    board: pcbnew.BOARD,
+    reference: str,
+    pad_number: str,
+    net_name: str,
+) -> None:
+    item = footprint(board, reference)
+    pad = item.FindPadByNumber(pad_number)
+    if pad is None:
+        raise RuntimeError(f"missing pad {reference}.{pad_number}")
+    pad.SetNet(ensure_net(board, net_name))
+
+
+def set_two_pad_net(
+    board: pcbnew.BOARD,
+    reference: str,
+    first: str,
+    second: str,
+) -> None:
+    set_pad_net(board, reference, "1", first)
+    set_pad_net(board, reference, "2", second)
+
+
+def load_library_footprint(library: str, name: str) -> pcbnew.FOOTPRINT:
+    roots = (
+        Path("/usr/share/kicad/footprints"),
+        Path("/usr/share/kicad/footprints"),
+    )
+    for root in roots:
+        pretty = root / f"{library}.pretty"
+        if not pretty.is_dir():
+            continue
+        item = pcbnew.FootprintLoad(str(pretty), name)
+        if item is not None:
+            return item
+    raise RuntimeError(f"KiCad footprint not found: {library}:{name}")
+
+
+def replace_usb_connector(board: pcbnew.BOARD) -> None:
+    old = footprint(board, "J9")
+    board.Remove(old)
+
+    item = load_library_footprint(
+        "Connector_USB",
+        "USB_C_Receptacle_HRO_TYPE-C-31-M-12",
+    )
+    item.SetReference("J9")
+    item.SetValue("TYPE-C-31-M-12")
+    board.Add(item)
+    item.SetPosition(point(185.0, 77.0))
+    item.SetOrientationDegrees(90.0)
+
+    mapping = {
+        "1": "AGND",
+        "2": "5V_ISO",
+        "4": "USB_CC1",
+        "5": "USB_DM",
+        "6": "USB_DP",
+        "7": "USB_DM",
+        "8": "USB_DP",
+        "10": "USB_CC2",
+        "11": "5V_ISO",
+        "12": "AGND",
+        "13": "SHIELD",
+    }
+    for pad_number, net_name in mapping.items():
+        set_pad_net(board, "J9", pad_number, net_name)
+
+
+def add_cc_resistor(
+    board: pcbnew.BOARD,
+    reference: str,
+    cc_net: str,
+    x_mm: float,
+    y_mm: float,
+) -> None:
+    item = load_library_footprint("Resistor_SMD", "R_0603_1608Metric")
+    item.SetReference(reference)
+    item.SetValue("5.1k")
+    board.Add(item)
+    item.SetPosition(point(x_mm, y_mm))
+    item.SetOrientationDegrees(0.0)
+    set_pad_net(board, reference, "1", cc_net)
+    set_pad_net(board, reference, "2", "AGND")
+
+
+def assign_missing_functional_nets(board: pcbnew.BOARD) -> None:
+    # Local board ground is one continuous return plane in A1.
+    for item in board.GetFootprints():
+        for pad in item.Pads():
+            if pad.GetNetname() in {"DGND", "ISO_GND"}:
+                pad.SetNet(ensure_net(board, "AGND"))
+
+    # LDOs: DBV/SOT-25 pinout IN=1, GND=2, EN=3, NC=4, OUT=5.
+    for reference, output_net in (("U24", "3V3A"), ("U25", "3V3D")):
+        set_pad_net(board, reference, "1", "5V_ISO")
+        set_pad_net(board, reference, "2", "AGND")
+        set_pad_net(board, reference, "3", "5V_ISO")
+        set_pad_net(board, reference, "5", output_net)
+
+    # 8.192 MHz oscillator: 1=Tri-state, 2=GND, 3=OUT, 4=VDD.
+    set_pad_net(board, "U27", "1", "3V3D")
+    set_pad_net(board, "U27", "2", "AGND")
+    set_pad_net(board, "U27", "3", "ADC_CLKIN")
+    set_pad_net(board, "U27", "4", "3V3D")
+
+    # RP2040 crystal case/ground pads.
+    set_pad_net(board, "Y1", "2", "AGND")
+    set_pad_net(board, "Y1", "4", "AGND")
+
+    # Isolated local power input return is the same local continuous ground.
+    set_pad_net(board, "J11", "1", "5V_ISO")
+    set_pad_net(board, "J11", "2", "AGND")
+
+    # MUX local bulk + HF decoupling.
+    for index in range(1, 17):
+        set_two_pad_net(board, f"C{index}", "3V3A", "AGND")
+        set_two_pad_net(board, f"C{20 + index}", "3V3A", "AGND")
+
+    # TLV9064 local decoupling.
+    for index in range(37, 41):
+        set_two_pad_net(board, f"C{index}", "3V3A", "AGND")
+
+    # ADC analog, digital, and REFIN local capacitors.
+    set_two_pad_net(board, "C41", "3V3A", "AGND")
+    set_two_pad_net(board, "C42", "3V3D", "AGND")
+    set_two_pad_net(board, "C43", "ADC_REFIN", "AGND")
+    set_two_pad_net(board, "C61", "ADS_CAP", "AGND")
+
+    # LDO input/output capacitors.
+    set_two_pad_net(board, "C17", "5V_ISO", "AGND")
+    set_two_pad_net(board, "C18", "3V3A", "AGND")
+    set_two_pad_net(board, "C19", "5V_ISO", "AGND")
+    set_two_pad_net(board, "C20", "3V3D", "AGND")
+
+    # Digital-domain local decoupling. Reserve C50-C52 for the 1.1 V core rail.
+    for index in range(44, 50):
+        set_two_pad_net(board, f"C{index}", "3V3D", "AGND")
+    for index in range(50, 53):
+        set_two_pad_net(board, f"C{index}", "VREG_1V1", "AGND")
+    for index in range(53, 61):
+        set_two_pad_net(board, f"C{index}", "3V3D", "AGND")
+
+    set_two_pad_net(board, "C63", "XIN_12M", "AGND")
+    set_two_pad_net(board, "C64", "XOUT_12M", "AGND")
+
+
 def merge_digital_ground(board: pcbnew.BOARD) -> int:
     agnd = board.FindNet("AGND")
     if agnd is None:
@@ -134,7 +289,7 @@ def place_digital_core(board: pcbnew.BOARD) -> None:
     place(board, "U26", 177.0, 88.0, 0.0)
     place(board, "U24", 153.0, 101.0, 0.0)
     place(board, "U25", 163.0, 101.0, 0.0)
-    place(board, "J9", 190.0, 77.0, 270.0)
+    place(board, "J9", 185.0, 77.0, 90.0)
     place(board, "J10", 188.0, 99.0, 270.0)
     place(board, "J11", 188.0, 107.0, 270.0)
 
@@ -154,6 +309,10 @@ def prepare(input_path: Path, output_path: Path) -> None:
         raise RuntimeError(f"cannot load {input_path}")
 
     clear_routing(board)
+    replace_usb_connector(board)
+    add_cc_resistor(board, "R538", "USB_CC1", 181.0, 70.5)
+    add_cc_resistor(board, "R539", "USB_CC2", 184.0, 70.5)
+    assign_missing_functional_nets(board)
     merged = merge_digital_ground(board)
 
     for bank in range(8):
@@ -174,6 +333,7 @@ def prepare(input_path: Path, output_path: Path) -> None:
             "output": str(output_path),
             "merged_dgnd_pads": merged,
             "footprints": len(list(board.GetFootprints())),
+            "usb_cc_resistors": ["R538", "R539"],
         }
     )
 
