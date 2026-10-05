@@ -40739,7 +40739,7 @@
     )
   )
   (sheet_instances
-    (path "/00000000-0000-4000-8000-00000000e128" (page "1"))
+    (path "/" (page "1"))
   )
   (embedded_fonts no)
 )
