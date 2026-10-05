@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-10-05T23:27:50.527632+00:00",
-  "violations": 737,
+  "generated_at": "2026-10-05T23:29:30.239770+00:00",
+  "violations": 598,
   "unconnected": 499,
   "severity": {
-    "warning": 597,
-    "error": 639
+    "warning": 598,
+    "error": 499
   },
   "types": [
     {
@@ -29,45 +29,10 @@
       }
     },
     {
-      "type": "drill_out_of_range",
-      "count": 102,
+      "type": "isolated_copper",
+      "count": 1,
       "severity": {
-        "error": 102
-      }
-    },
-    {
-      "type": "clearance",
-      "count": 16,
-      "severity": {
-        "error": 16
-      }
-    },
-    {
-      "type": "shorting_items",
-      "count": 10,
-      "severity": {
-        "error": 10
-      }
-    },
-    {
-      "type": "solder_mask_bridge",
-      "count": 5,
-      "severity": {
-        "error": 5
-      }
-    },
-    {
-      "type": "hole_clearance",
-      "count": 5,
-      "severity": {
-        "error": 5
-      }
-    },
-    {
-      "type": "hole_near_hole",
-      "count": 2,
-      "severity": {
-        "error": 2
+        "warning": 1
       }
     }
   ],
@@ -3413,20 +3378,20 @@
       "description": "Missing connection between items",
       "items": [
         {
-          "description": "Pad A4 [5V_ISO] of J9 on F.Cu",
+          "description": "Pad B9 [5V_ISO] of J9 on F.Cu",
           "pos": {
             "x": 180.955,
             "y": 79.45
           },
-          "uuid": "508ddf56-6d06-40e3-af91-621a7c5bae78"
+          "uuid": "677a1cb1-5b00-4595-8436-71c876f82e5e"
         },
         {
-          "description": "Pad B4 [5V_ISO] of J9 on F.Cu",
+          "description": "Pad A9 [5V_ISO] of J9 on F.Cu",
           "pos": {
             "x": 180.955,
             "y": 74.55
           },
-          "uuid": "775ce06a-62f1-4891-bfa0-80695801ef8b"
+          "uuid": "591d1b68-5f2c-4f33-a7f2-a1cf34caaaeb"
         }
       ],
       "severity": "error",
@@ -3459,12 +3424,12 @@
       "description": "Missing connection between items",
       "items": [
         {
-          "description": "Pad A4 [5V_ISO] of J9 on F.Cu",
+          "description": "Pad B9 [5V_ISO] of J9 on F.Cu",
           "pos": {
             "x": 180.955,
             "y": 79.45
           },
-          "uuid": "508ddf56-6d06-40e3-af91-621a7c5bae78"
+          "uuid": "677a1cb1-5b00-4595-8436-71c876f82e5e"
         },
         {
           "description": "Pad 1 [5V_ISO] of J11 on F.Cu",
