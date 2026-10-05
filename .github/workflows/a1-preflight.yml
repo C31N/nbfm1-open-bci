@@ -64,6 +64,19 @@ jobs:
           board_text = Path(
               "/tmp/a1-preflight/eeg128-tdm-A1-prepared.kicad_pcb"
           ).read_text(encoding="utf-8")
+          def item_nets(item):
+              nets = []
+              for entry in item.get("items", []):
+                  description = entry.get("description", "")
+                  if "[" in description and "]" in description:
+                      nets.append(description.split("[", 1)[1].split("]", 1)[0])
+              return nets
+
+          unconnected_by_net = collections.Counter()
+          for item in unconnected:
+              for net in set(item_nets(item)):
+                  unconnected_by_net[net] += 1
+
           summary = {
               "violations": len(violations),
               "unconnected": len(unconnected),
@@ -75,11 +88,14 @@ jobs:
                   item.get("severity") == "warning"
                   for item in violations + unconnected
               ),
-              "segments": board_text.count("(segment "),
-              "vias": board_text.count("(via "),
-              "zones": board_text.count("(zone "),
+              "segments": board_text.count("(segment\n"),
+              "vias": board_text.count("(via\n"),
+              "zones": board_text.count("(zone\n"),
               "severities": dict(sorted(severities.items())),
               "classes": dict(sorted(classes.items())),
+              "unconnected_by_net": dict(
+                  unconnected_by_net.most_common()
+              ),
           }
           print(json.dumps(summary, indent=2, sort_keys=True))
           Path("/tmp/a1-preflight/summary.json").write_text(
