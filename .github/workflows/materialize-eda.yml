@@ -21,9 +21,23 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install KiCad 8
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            kicad kicad-footprints
+          kicad-cli version
+
       - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
+
+      - name: Normalize primary A1 connectivity
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/normalize_connectivity.py \
+            --input hardware/eeg128-tdm/eeg128-tdm.kicad_pcb \
+            --output hardware/eeg128-tdm/eeg128-tdm.kicad_pcb
 
       - name: Generate deterministic KiCad connectivity schematic
         run: |
@@ -42,8 +56,8 @@ jobs:
           text = path.read_text(encoding="utf-8")
           instances = len(re.findall(r"(?m)^  \(symbol$", text))
           wires = len(re.findall(r"(?m)^  \(wire$", text))
-          if instances != 640:
-              raise SystemExit(f"expected 640 symbol instances, got {instances}")
+          if instances != 642:
+              raise SystemExit(f"expected 642 symbol instances, got {instances}")
           if wires < 1000:
               raise SystemExit(f"expected >1000 wire stubs, got {wires}")
           print({"instances": instances, "wires": wires, "bytes": path.stat().st_size})
@@ -55,6 +69,7 @@ jobs:
       - name: Commit generated EDA and manifest if changed
         run: |
           git add \
+            hardware/eeg128-tdm/eeg128-tdm.kicad_pcb \
             hardware/eeg128-tdm/eeg128-tdm.generated.kicad_sch \
             hardware/eeg128-tdm/eeg128-tdm.kicad_sch \
             PUBLICATION_SHA256SUMS
