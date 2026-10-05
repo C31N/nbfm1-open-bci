@@ -38,16 +38,51 @@ jobs:
             hardware/eeg128-tdm/eeg128-tdm.kicad_sch
           test -s /tmp/kicad-audit/primary.net
 
+      - name: Generate current connectivity schematic
+        run: |
+          python3 hardware/eeg128-tdm/generate_schematic.py \
+            --output /tmp/kicad-audit/eeg128-tdm.generated.kicad_sch
+          test -s /tmp/kicad-audit/eeg128-tdm.generated.kicad_sch
+
       - name: Parse generated schematic and export native netlist
         run: |
-          mkdir -p /tmp/kicad-audit
-          kicad-cli sch export netlist             --format kicadsexpr             --output /tmp/kicad-audit/eeg128-tdm.net             hardware/eeg128-tdm/eeg128-tdm.generated.kicad_sch
+          kicad-cli sch export netlist \
+            --format kicadsexpr \
+            --output /tmp/kicad-audit/eeg128-tdm.net \
+            /tmp/kicad-audit/eeg128-tdm.generated.kicad_sch
           test -s /tmp/kicad-audit/eeg128-tdm.net
 
       - name: Run schematic ERC report
         run: |
-          kicad-cli sch erc             --format json             --severity-all             --output /tmp/kicad-audit/erc.json             hardware/eeg128-tdm/eeg128-tdm.generated.kicad_sch
+          kicad-cli sch erc \
+            --format json \
+            --severity-all \
+            --output /tmp/kicad-audit/erc.json \
+            /tmp/kicad-audit/eeg128-tdm.generated.kicad_sch
           test -s /tmp/kicad-audit/erc.json
+
+      - name: Summarize ERC
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(
+              Path("/tmp/kicad-audit/erc.json").read_text(encoding="utf-8")
+          )
+          violations = report.get("violations", [])
+          counts = {
+              severity: sum(
+                  1 for item in violations if item.get("severity") == severity
+              )
+              for severity in ("error", "warning", "info")
+          }
+          print({"total": len(violations), **counts})
+          Path("/tmp/kicad-audit/erc-summary.json").write_text(
+              json.dumps({"total": len(violations), **counts}, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          PY
 
       - name: Parse PCB and run DRC report
         run: |
@@ -92,6 +127,7 @@ jobs:
             /tmp/kicad-audit/primary.net
             /tmp/kicad-audit/eeg128-tdm.net
             /tmp/kicad-audit/erc.json
+            /tmp/kicad-audit/erc-summary.json
             /tmp/kicad-audit/drc.json
             /tmp/kicad-audit/placement.csv
           if-no-files-found: error
