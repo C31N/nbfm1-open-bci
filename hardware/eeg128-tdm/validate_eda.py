@@ -78,7 +78,7 @@ def validate_bom_cpl() -> None:
         *(f"U{i}" for i in range(1, 28)),
         *(f"J{i}" for i in range(1, 12)),
         "Y1",
-        *(f"R{i}" for i in range(1, 538)),
+        *(f"R{i}" for i in range(1, 540)),
         *(f"C{i}" for i in range(1, 65)),
     }
     if bom_refs != expected:
