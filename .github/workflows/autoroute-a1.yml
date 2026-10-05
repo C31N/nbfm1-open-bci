@@ -71,21 +71,23 @@ jobs:
           PY
           test -s /tmp/a1/eeg128-tdm-A1.dsn
 
-      - name: Download pinned FreeRouting 2.4.1
+      - name: Download pinned FreeRouting 2.5.0
         run: |
           curl -fL \
-            -o /tmp/a1/freerouting-2.4.1.jar \
-            https://github.com/freerouting/freerouting/releases/download/v2.4.1/freerouting-2.4.1.jar
-          echo "251101c3eeac22d7e7dfcf6796603279e5d1000283eb82d8f093780f7afc6aa9  /tmp/a1/freerouting-2.4.1.jar" \
+            -o /tmp/a1/freerouting-2.5.0.jar \
+            https://github.com/freerouting/freerouting/releases/download/v2.4.1/freerouting-2.5.0.jar
+          echo "f6f51bb02245e8e717f9359bd260cc9c5c0b1bc0acc8b7cb2cd5b8ffeb5de3c7  /tmp/a1/freerouting-2.5.0.jar" \
             | sha256sum -c -
 
       - name: Autoroute F.Cu + In2.Cu + B.Cu, reserve In1.Cu for ground plane
         run: |
           java -Djava.awt.headless=true \
-            -jar /tmp/a1/freerouting-2.4.1.jar \
+            -jar /tmp/a1/freerouting-2.5.0.jar \
             -de /tmp/a1/eeg128-tdm-A1.dsn \
             -do /tmp/a1/eeg128-tdm-A1.ses \
-            -mp 1 \
+            --router.autorouter.max_passes=3 \
+            --router.optimizer.enabled=false \
+            --router.fanout.max_passes=2 \
             -mt 4 \
             -us hybrid \
             -hr 1:1 \
