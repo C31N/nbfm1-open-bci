@@ -516,8 +516,11 @@ def place_input_bank(board: pcbnew.BOARD, bank: int) -> None:
         place(board, f"R{series_n}", n_center - 1.05, y, 0.0)
         place(board, f"R{bias_n}", n_center + 1.05, y, 0.0)
 
-    place(board, f"C{21 + 2 * bank}", bank_center_x - 4.0, 55.0, 0.0)
-    place(board, f"C{22 + 2 * bank}", bank_center_x + 4.0, 55.0, 0.0)
+    # One bulk (1 uF) and one HF (100 nF) capacitor per MUX, placed locally.
+    place(board, f"C{1 + 2 * bank}", bank_center_x - 4.0, 55.0, 0.0)
+    place(board, f"C{2 + 2 * bank}", bank_center_x + 4.0, 55.0, 0.0)
+    place(board, f"C{21 + 2 * bank}", bank_center_x - 4.0, 57.2, 0.0)
+    place(board, f"C{22 + 2 * bank}", bank_center_x + 4.0, 57.2, 0.0)
 
 def place_analog_core(board: pcbnew.BOARD) -> None:
     for index, x_mm in enumerate((62.0, 80.0, 98.0, 116.0), start=17):
@@ -586,8 +589,11 @@ def place_digital_core(board: pcbnew.BOARD) -> None:
         for pad in item.Pads():
             pad.SetSize(pcbnew.VECTOR2I(mm(0.6), mm(1.0)))
 
-    for index in range(1, 21):
-        place(board, f"C{index}", 121.0 + 3.3 * ((index - 1) % 10), 104.0 + 3.0 * ((index - 1) // 10), 0.0)
+    # LDO input/output bulk capacitors stay next to the regulators.
+    place(board, "C17", 149.5, 101.0, 0.0)
+    place(board, "C18", 156.5, 101.0, 0.0)
+    place(board, "C19", 159.5, 106.0, 0.0)
+    place(board, "C20", 166.5, 101.0, 0.0)
 
 
 def prepare(input_path: Path, output_path: Path) -> None:
