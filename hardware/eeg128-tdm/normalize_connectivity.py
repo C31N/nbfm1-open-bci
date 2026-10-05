@@ -13,15 +13,67 @@ from prepare_autoroute import (
     assign_missing_functional_nets,
     ensure_net,
     footprint,
+    point,
     replace_usb_connector,
     set_pad_net,
 )
 
 
-def remove_if_present(board: pcbnew.BOARD, reference: str) -> None:
-    item = board.FindFootprintByReference(reference)
+def ensure_usb_connector(board: pcbnew.BOARD) -> None:
+    item = board.FindFootprintByReference("J9")
+    canonical = False
     if item is not None:
-        board.Remove(item)
+        try:
+            canonical = (
+                item.GetFPID().GetLibItemName()
+                == "USB_C_Receptacle_HRO_TYPE-C-31-M-12"
+            )
+        except Exception:
+            canonical = False
+    if not canonical:
+        replace_usb_connector(board)
+        return
+
+    item.SetValue("TYPE-C-31-M-12")
+    item.SetPosition(point(185.0, 77.0))
+    item.SetOrientationDegrees(90.0)
+    mapping = {
+        "A1": "AGND",
+        "B12": "AGND",
+        "A12": "AGND",
+        "B1": "AGND",
+        "A4": "5V_ISO",
+        "B9": "5V_ISO",
+        "A9": "5V_ISO",
+        "B4": "5V_ISO",
+        "A5": "USB_CC1",
+        "B5": "USB_CC2",
+        "A6": "USB_DP",
+        "B6": "USB_DP",
+        "A7": "USB_DM",
+        "B7": "USB_DM",
+        "S1": "SHIELD",
+    }
+    for pad_number, net_name in mapping.items():
+        set_pad_net(board, "J9", pad_number, net_name)
+
+
+def ensure_cc_resistor(
+    board: pcbnew.BOARD,
+    reference: str,
+    cc_net: str,
+    x_mm: float,
+    y_mm: float,
+) -> None:
+    item = board.FindFootprintByReference(reference)
+    if item is None:
+        add_cc_resistor(board, reference, cc_net, x_mm, y_mm)
+        return
+    item.SetValue("5.1k")
+    item.SetPosition(point(x_mm, y_mm))
+    item.SetOrientationDegrees(0.0)
+    set_pad_net(board, reference, "1", cc_net)
+    set_pad_net(board, reference, "2", "AGND")
 
 
 def normalize(input_path: Path, output_path: Path) -> None:
@@ -29,12 +81,9 @@ def normalize(input_path: Path, output_path: Path) -> None:
     if board is None:
         raise RuntimeError(f"cannot load {input_path}")
 
-    replace_usb_connector(board)
-
-    for reference in ("R538", "R539"):
-        remove_if_present(board, reference)
-    add_cc_resistor(board, "R538", "USB_CC1", 181.0, 70.5)
-    add_cc_resistor(board, "R539", "USB_CC2", 184.0, 70.5)
+    ensure_usb_connector(board)
+    ensure_cc_resistor(board, "R538", "USB_CC1", 181.0, 70.5)
+    ensure_cc_resistor(board, "R539", "USB_CC2", 184.0, 70.5)
 
     assign_missing_functional_nets(board)
 
