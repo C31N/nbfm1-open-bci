@@ -13,6 +13,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v7
         with:
@@ -26,10 +28,10 @@ jobs:
           python -m pip install numpy cryptography
 
       - name: Python syntax
-        run: python -m compileall -q bin scripts tests
+        run: python -m compileall -q bin scripts tests hardware/eeg128-tdm
 
       - name: Ruff
-        run: ruff check bin scripts tests
+        run: ruff check bin scripts tests hardware/eeg128-tdm
 
       - name: Pytest
         run: pytest -q
@@ -48,8 +50,17 @@ jobs:
           find scripts -type f -name '*.sh' -print0 | xargs -0 -r bash -n
           bash -n deploy_bci_stack.sh
 
-      - name: Release manifest
-        run: ./scripts/verify_release_manifest.sh
+      - name: Release manifest freshness and verification
+        run: |
+          test -f PUBLICATION_SHA256SUMS
+          cp PUBLICATION_SHA256SUMS /tmp/PUBLICATION_SHA256SUMS.committed
+          ./scripts/generate_release_manifest.sh
+          cmp --silent /tmp/PUBLICATION_SHA256SUMS.committed PUBLICATION_SHA256SUMS || {
+            echo "PUBLICATION_SHA256SUMS is stale. Run ./scripts/generate_release_manifest.sh and commit it."
+            diff -u /tmp/PUBLICATION_SHA256SUMS.committed PUBLICATION_SHA256SUMS || true
+            exit 1
+          }
+          ./scripts/verify_release_manifest.sh
 
-      - name: KiCad source sanity
+      - name: KiCad source integrity
         run: python hardware/eeg128-tdm/validate_eda.py
