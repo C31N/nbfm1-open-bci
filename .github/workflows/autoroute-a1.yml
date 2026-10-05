@@ -1,0 +1,167 @@
+name: A1 Four-Layer Autoroute Experiment
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/autoroute-a1.yml"
+      - "hardware/eeg128-tdm/prepare_autoroute.py"
+      - "hardware/eeg128-tdm/eeg128-tdm.kicad_pcb"
+      - "hardware/eeg128-tdm/BOM.csv"
+      - "hardware/eeg128-tdm/CPL.csv"
+      - "hardware/eeg128-tdm/NETLIST.csv"
+
+permissions:
+  contents: read
+
+jobs:
+  route:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install KiCad 8 and support tools
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends             kicad curl jq unzip
+          kicad-cli version
+          /usr/bin/python3 - <<'PY'
+          import pcbnew
+          print("pcbnew", pcbnew.GetBuildVersion())
+          print("ExportSpecctraDSN", hasattr(pcbnew, "ExportSpecctraDSN"))
+          print("ImportSpecctraSES", hasattr(pcbnew, "ImportSpecctraSES"))
+          print("newImportSpecctraSES", hasattr(pcbnew, "newImportSpecctraSES"))
+          PY
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Prepare non-overlapping A1 placement
+        run: |
+          mkdir -p /tmp/a1
+          /usr/bin/python3 hardware/eeg128-tdm/prepare_autoroute.py             --input hardware/eeg128-tdm/eeg128-tdm.kicad_pcb             --output /tmp/a1/eeg128-tdm-A1-prepared.kicad_pcb
+
+      - name: Pre-route DRC snapshot
+        run: |
+          set +e
+          kicad-cli pcb drc             --format json             --severity-all             --all-track-errors             --output /tmp/a1/drc-before.json             /tmp/a1/eeg128-tdm-A1-prepared.kicad_pcb
+          echo "drc_exit=$?" > /tmp/a1/drc-before-exit.txt
+          set -e
+
+      - name: Export Specctra DSN through pcbnew
+        run: |
+          /usr/bin/python3 - <<'PY'
+          import pcbnew
+          board = pcbnew.LoadBoard("/tmp/a1/eeg128-tdm-A1-prepared.kicad_pcb")
+          ok = pcbnew.ExportSpecctraDSN(board, "/tmp/a1/eeg128-tdm-A1.dsn")
+          if not ok:
+              raise SystemExit("ExportSpecctraDSN returned False")
+          PY
+          test -s /tmp/a1/eeg128-tdm-A1.dsn
+
+      - name: Download pinned FreeRouting 2.4.1
+        run: |
+          curl -fL             -o /tmp/a1/freerouting-2.4.1.jar             https://github.com/freerouting/freerouting/releases/download/v2.4.1/freerouting-2.4.1.jar
+          echo "251101c3eeac22d7e7dfcf6796603279e5d1000283eb82d8f093780f7afc6aa9  /tmp/a1/freerouting-2.4.1.jar"             | sha256sum -c -
+
+      - name: Autoroute F.Cu + In2.Cu + B.Cu, reserve In1.Cu for ground plane
+        run: |
+          java -Djava.awt.headless=true             -jar /tmp/a1/freerouting-2.4.1.jar             -de /tmp/a1/eeg128-tdm-A1.dsn             -do /tmp/a1/eeg128-tdm-A1.ses             -drc /tmp/a1/freerouting-drc.json             -mp 25             -mt 4             -us hybrid             -hr 1:1             -is prioritized             -da             --gui.enabled=false             --router.layers.routable=true,false,true,true             --router.layers.preferred_direction_horizontal=true,false,true,false             --router.via_costs=80             --logging.file.enabled=false
+          test -s /tmp/a1/eeg128-tdm-A1.ses
+
+      - name: Import Specctra session into KiCad
+        run: |
+          /usr/bin/python3 - <<'PY'
+          import pcbnew
+
+          source = "/tmp/a1/eeg128-tdm-A1-prepared.kicad_pcb"
+          session = "/tmp/a1/eeg128-tdm-A1.ses"
+          output = "/tmp/a1/eeg128-tdm-A1-routed.kicad_pcb"
+          board = pcbnew.LoadBoard(source)
+
+          importer = getattr(pcbnew, "ImportSpecctraSES", None)
+          if importer is None:
+              importer = getattr(pcbnew, "newImportSpecctraSES", None)
+          if importer is None:
+              raise SystemExit("No Specctra SES importer exposed by pcbnew")
+
+          try:
+              result = importer(board, session)
+          except TypeError:
+              result = importer(session)
+
+          if result is False:
+              raise SystemExit("Specctra SES import returned False")
+
+          pcbnew.SaveBoard(output, board)
+          print("saved", output)
+          PY
+          test -s /tmp/a1/eeg128-tdm-A1-routed.kicad_pcb
+
+      - name: Post-route native KiCad DRC
+        run: |
+          set +e
+          kicad-cli pcb drc             --format json             --severity-all             --all-track-errors             --output /tmp/a1/drc-after.json             /tmp/a1/eeg128-tdm-A1-routed.kicad_pcb
+          echo "drc_exit=$?" > /tmp/a1/drc-after-exit.txt
+          set -e
+
+      - name: Summarize route metrics
+        run: |
+          /usr/bin/python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import re
+
+          board = Path("/tmp/a1/eeg128-tdm-A1-routed.kicad_pcb").read_text(encoding="utf-8")
+          before = json.loads(Path("/tmp/a1/drc-before.json").read_text(encoding="utf-8"))
+          after = json.loads(Path("/tmp/a1/drc-after.json").read_text(encoding="utf-8"))
+
+          def count_report(report):
+              violations = report.get("violations", [])
+              unconnected = report.get("unconnected_items", [])
+              return {
+                  "violations": len(violations),
+                  "unconnected": len(unconnected),
+                  "errors": sum(1 for x in violations + unconnected if x.get("severity") == "error"),
+                  "warnings": sum(1 for x in violations + unconnected if x.get("severity") == "warning"),
+              }
+
+          metrics = {
+              "segments": len(re.findall(r"(?m)^\s*\(segment\b", board)),
+              "vias": len(re.findall(r"(?m)^\s*\(via\b", board)),
+              "zones": len(re.findall(r"(?m)^\s*\(zone\b", board)),
+              "drc_before": count_report(before),
+              "drc_after": count_report(after),
+          }
+          Path("/tmp/a1/route-metrics.json").write_text(
+              json.dumps(metrics, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(metrics, indent=2))
+          PY
+
+      - name: Export routed placement
+        run: |
+          kicad-cli pcb export pos             --format csv             --units mm             --side both             --smd-only             --exclude-dnp             --output /tmp/a1/CPL-routed.csv             /tmp/a1/eeg128-tdm-A1-routed.kicad_pcb
+
+      - name: Upload A1 routing experiment
+        uses: actions/upload-artifact@v6
+        with:
+          name: eeg128-a1-autoroute
+          path: |
+            /tmp/a1/eeg128-tdm-A1-prepared.kicad_pcb
+            /tmp/a1/eeg128-tdm-A1.dsn
+            /tmp/a1/eeg128-tdm-A1.ses
+            /tmp/a1/eeg128-tdm-A1-routed.kicad_pcb
+            /tmp/a1/drc-before.json
+            /tmp/a1/drc-after.json
+            /tmp/a1/freerouting-drc.json
+            /tmp/a1/route-metrics.json
+            /tmp/a1/CPL-routed.csv
+          if-no-files-found: error
+          retention-days: 14
