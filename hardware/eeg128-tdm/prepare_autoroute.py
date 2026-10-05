@@ -212,8 +212,6 @@ def merge_digital_ground(board: pcbnew.BOARD) -> int:
             if pad.GetNetname() == "DGND":
                 pad.SetNet(agnd)
                 changed += 1
-    if changed == 0:
-        raise RuntimeError("no DGND pads found to merge")
     return changed
 
 
