@@ -54,13 +54,13 @@ jobs:
         run: |
           test -f PUBLICATION_SHA256SUMS
           cp PUBLICATION_SHA256SUMS /tmp/PUBLICATION_SHA256SUMS.committed
-          ./scripts/generate_release_manifest.sh
+          bash scripts/generate_release_manifest.sh
           cmp --silent /tmp/PUBLICATION_SHA256SUMS.committed PUBLICATION_SHA256SUMS || {
             echo "PUBLICATION_SHA256SUMS is stale. Run ./scripts/generate_release_manifest.sh and commit it."
             diff -u /tmp/PUBLICATION_SHA256SUMS.committed PUBLICATION_SHA256SUMS || true
             exit 1
           }
-          ./scripts/verify_release_manifest.sh
+          bash scripts/verify_release_manifest.sh
 
       - name: KiCad source integrity
         run: python hardware/eeg128-tdm/validate_eda.py
