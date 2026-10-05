@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import math
 from pathlib import Path
 import sys
 
@@ -433,12 +432,11 @@ def mux_channel_pin(local_channel: int) -> str:
 
 
 def add_channel_to_mux_routes(board: pcbnew.BOARD) -> int:
-    """Route protected channel junctions to CD74HC4067 inputs on B.Cu.
+    """Route aligned protected EEG channels directly to mux inputs on F.Cu.
 
-    Escape vias are placed on the actual source-to-target trajectory so one
-    channel cannot be intersected by the neighboring channel's escape via.
-    In1.Cu remains the uninterrupted AGND reference plane; the plane is
-    refilled only after all foreign-net vias have been created.
+    VCM is routed on In2.Cu, leaving the high-impedance signal corridor free
+    of the former VCM collection bus. The source and destination ordering is
+    monotonic inside each of the four 8-channel groups.
     """
     routed = 0
     for bank in range(8):
@@ -448,7 +446,6 @@ def add_channel_to_mux_routes(board: pcbnew.BOARD) -> int:
         for local_channel in range(16):
             channel = bank * 16 + local_channel
             pin_number = mux_channel_pin(local_channel)
-
             for polarity, mux, series_ref in (
                 ("P", p_mux, 257 + 2 * channel),
                 ("N", n_mux, 258 + 2 * channel),
@@ -461,75 +458,22 @@ def add_channel_to_mux_routes(board: pcbnew.BOARD) -> int:
                         f"missing channel route endpoint "
                         f"CH{channel:03d}_{polarity}"
                     )
-
-                net_name = source.GetNetname()
                 expected = f"CH{channel:03d}_{polarity}_MUX"
-                if net_name != expected or target.GetNetname() != expected:
-                    raise RuntimeError(
-                        f"net mismatch for {expected}: "
-                        f"{net_name!r}/{target.GetNetname()!r}"
-                    )
-
-                source_pos = source.GetPosition()
-                target_pos = target.GetPosition()
-                mux_center = mux.GetPosition()
-                direction = -1 if target_pos.x < mux_center.x else 1
-                target_via = pcbnew.VECTOR2I(
-                    target_pos.x + direction * mm(1.20),
-                    target_pos.y,
-                )
-
-                dx = target_via.x - source_pos.x
-                dy = target_via.y - source_pos.y
-                length = math.hypot(dx, dy)
-                if length <= 0:
-                    raise RuntimeError(f"zero-length route for {expected}")
-                escape = mm(0.90) / length
-                source_via = pcbnew.VECTOR2I(
-                    int(round(source_pos.x + dx * escape)),
-                    int(round(source_pos.y + dy * escape)),
-                )
+                if (
+                    source.GetNetname() != expected
+                    or target.GetNetname() != expected
+                ):
+                    raise RuntimeError(f"net mismatch for {expected}")
 
                 add_track(
                     board,
-                    net_name,
-                    source_pos,
-                    source_via,
-                    pcbnew.F_Cu,
-                    0.15,
-                )
-                add_through_via(
-                    board,
-                    net_name,
-                    source_via,
-                    diameter_mm=0.65,
-                    drill_mm=0.30,
-                )
-                add_track(
-                    board,
-                    net_name,
-                    source_via,
-                    target_via,
-                    pcbnew.B_Cu,
-                    0.15,
-                )
-                add_through_via(
-                    board,
-                    net_name,
-                    target_via,
-                    diameter_mm=0.65,
-                    drill_mm=0.30,
-                )
-                add_track(
-                    board,
-                    net_name,
-                    target_via,
-                    target_pos,
+                    expected,
+                    source.GetPosition(),
+                    target.GetPosition(),
                     pcbnew.F_Cu,
                     0.15,
                 )
                 routed += 1
-
     return routed
 
 def add_channel_mux_preroutes(board: pcbnew.BOARD) -> int:
@@ -580,11 +524,12 @@ def add_channel_mux_preroutes(board: pcbnew.BOARD) -> int:
     return routed
 
 def add_vcm_preroute(board: pcbnew.BOARD) -> int:
-    """Collect all 10 MOhm bias returns on F.Cu without vias.
+    """Route the 10 MOhm bias returns on In2.Cu.
 
-    The VCM collection traces stay on the VCM side of the high-value bias
-    resistors.  No copper plane is placed below the high-impedance electrode
-    signal path, and no extra via capacitance is added to the signal side.
+    Only a short F.Cu stub exists on the VCM side of each 10 MOhm resistor.
+    A through-via transfers VCM to In2.Cu, where four bank-local vertical
+    spines and one horizontal collection bus carry the reference. This keeps
+    F.Cu available for the microvolt channel paths.
     """
     routed = 0
     global_bus_y = 36.4
@@ -619,14 +564,28 @@ def add_vcm_preroute(board: pcbnew.BOARD) -> int:
                     raise RuntimeError(f"invalid VCM bias pad R{bias_ref}.2")
 
                 pad_pos = pad.GetPosition()
-                target = point(target_x, pcbnew.ToMM(pad_pos.y))
-                add_track(board, "VCM", pad_pos, target, pcbnew.F_Cu, 0.15)
+                via_pos = point(target_x, pcbnew.ToMM(pad_pos.y))
                 add_track(
                     board,
                     "VCM",
-                    target,
-                    point(target_x, global_bus_y),
+                    pad_pos,
+                    via_pos,
                     pcbnew.F_Cu,
+                    0.15,
+                )
+                add_through_via(
+                    board,
+                    "VCM",
+                    via_pos,
+                    diameter_mm=0.65,
+                    drill_mm=0.30,
+                )
+                add_track(
+                    board,
+                    "VCM",
+                    via_pos,
+                    point(target_x, global_bus_y),
+                    pcbnew.In2_Cu,
                     0.20,
                 )
                 routed += 1
@@ -636,7 +595,7 @@ def add_vcm_preroute(board: pcbnew.BOARD) -> int:
             "VCM",
             point(spine_x[0], global_bus_y),
             point(spine_x[3], global_bus_y),
-            pcbnew.F_Cu,
+            pcbnew.In2_Cu,
             0.25,
         )
 
@@ -646,7 +605,7 @@ def add_vcm_preroute(board: pcbnew.BOARD) -> int:
             "VCM",
             point(min(all_spines), global_bus_y),
             point(max(all_spines), global_bus_y),
-            pcbnew.F_Cu,
+            pcbnew.In2_Cu,
             0.25,
         )
 
