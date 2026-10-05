@@ -29,6 +29,8 @@ jobs:
         run: |
           python hardware/eeg128-tdm/generate_schematic.py \
             --output hardware/eeg128-tdm/eeg128-tdm.generated.kicad_sch
+          cp hardware/eeg128-tdm/eeg128-tdm.generated.kicad_sch \
+            hardware/eeg128-tdm/eeg128-tdm.kicad_sch
 
       - name: Validate generated object counts
         run: |
@@ -54,6 +56,7 @@ jobs:
         run: |
           git add \
             hardware/eeg128-tdm/eeg128-tdm.generated.kicad_sch \
+            hardware/eeg128-tdm/eeg128-tdm.kicad_sch \
             PUBLICATION_SHA256SUMS
           if git diff --cached --quiet; then
             echo "Generated EDA and manifest are already current."
