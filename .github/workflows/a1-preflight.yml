@@ -1,0 +1,87 @@
+name: A1 PCB Preflight
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/a1-preflight.yml"
+      - "hardware/eeg128-tdm/prepare_autoroute.py"
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install KiCad 8 and footprint library
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            kicad kicad-footprints
+          kicad-cli version
+
+      - name: Prepare corrected A1 board
+        run: |
+          mkdir -p /tmp/a1-preflight
+          /usr/bin/python3 hardware/eeg128-tdm/prepare_autoroute.py \
+            --input hardware/eeg128-tdm/eeg128-tdm.kicad_pcb \
+            --output /tmp/a1-preflight/eeg128-tdm-A1-prepared.kicad_pcb
+
+      - name: Run native KiCad DRC
+        run: |
+          set +e
+          kicad-cli pcb drc \
+            --format json \
+            --severity-all \
+            --all-track-errors \
+            --output /tmp/a1-preflight/drc.json \
+            /tmp/a1-preflight/eeg128-tdm-A1-prepared.kicad_pcb
+          echo "drc_exit=$?" > /tmp/a1-preflight/drc-exit.txt
+          set -e
+
+      - name: Summarize DRC classes
+        run: |
+          python3 - <<'PY'
+          import collections
+          import json
+          from pathlib import Path
+
+          report = json.loads(
+              Path("/tmp/a1-preflight/drc.json").read_text(encoding="utf-8")
+          )
+          violations = report.get("violations", [])
+          unconnected = report.get("unconnected_items", [])
+          classes = collections.Counter(
+              item.get("type", "unknown") for item in violations
+          )
+          severities = collections.Counter(
+              item.get("severity", "unknown") for item in violations + unconnected
+          )
+          summary = {
+              "violations": len(violations),
+              "unconnected": len(unconnected),
+              "severities": dict(sorted(severities.items())),
+              "classes": dict(sorted(classes.items())),
+          }
+          print(json.dumps(summary, indent=2, sort_keys=True))
+          Path("/tmp/a1-preflight/summary.json").write_text(
+              json.dumps(summary, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Upload A1 preflight
+        uses: actions/upload-artifact@v6
+        with:
+          name: eeg128-a1-preflight
+          path: |
+            /tmp/a1-preflight/eeg128-tdm-A1-prepared.kicad_pcb
+            /tmp/a1-preflight/drc.json
+            /tmp/a1-preflight/drc-exit.txt
+            /tmp/a1-preflight/summary.json
+          if-no-files-found: error
+          retention-days: 14
