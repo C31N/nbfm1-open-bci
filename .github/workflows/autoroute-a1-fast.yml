@@ -1,0 +1,177 @@
+name: A1 Fast Multi-Pass Four-Layer Route
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/autoroute-a1-fast.yml"
+      - "hardware/eeg128-tdm/prepare_autoroute.py"
+
+permissions:
+  contents: read
+
+jobs:
+  route-fast:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install KiCad 8
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            kicad kicad-footprints curl jq unzip
+          kicad-cli version
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Prepare A1 board
+        run: |
+          mkdir -p /tmp/a1fast
+          /usr/bin/python3 hardware/eeg128-tdm/prepare_autoroute.py \
+            --input hardware/eeg128-tdm/eeg128-tdm.kicad_pcb \
+            --output /tmp/a1fast/round0.kicad_pcb
+
+      - name: Download FreeRouting 2.4.1
+        run: |
+          curl -fL \
+            -o /tmp/a1fast/freerouting.jar \
+            https://github.com/freerouting/freerouting/releases/download/v2.4.1/freerouting-2.4.1.jar
+          echo "251101c3eeac22d7e7dfcf6796603279e5d1000283eb82d8f093780f7afc6aa9  /tmp/a1fast/freerouting.jar" \
+            | sha256sum -c -
+
+      - name: Run three routing rounds on all four copper layers
+        run: |
+          /usr/bin/python3 - <<'PY'
+          from pathlib import Path
+          import pcbnew
+          import subprocess
+
+          root = Path("/tmp/a1fast")
+          jar = root / "freerouting.jar"
+
+          for round_index in range(1, 4):
+              source = root / f"round{round_index - 1}.kicad_pcb"
+              dsn = root / f"round{round_index}.dsn"
+              ses = root / f"round{round_index}.ses"
+              target = root / f"round{round_index}.kicad_pcb"
+
+              board = pcbnew.LoadBoard(str(source))
+              if not pcbnew.ExportSpecctraDSN(board, str(dsn)):
+                  raise SystemExit(f"DSN export failed in round {round_index}")
+
+              cmd = [
+                  "java",
+                  "-Djava.awt.headless=true",
+                  "-jar",
+                  str(jar),
+                  "-de",
+                  str(dsn),
+                  "-do",
+                  str(ses),
+                  "--router.autorouter.max_passes=4",
+                  "--router.optimizer.enabled=false",
+                  "--router.fanout.max_passes=2",
+                  "-mt",
+                  "4",
+                  "-us",
+                  "hybrid",
+                  "-hr",
+                  "1:1",
+                  "-is",
+                  "prioritized",
+                  "-da",
+                  "--gui.enabled=false",
+                  "--router.layers.routable=true,true,true,true",
+                  "--router.layers.preferred_direction_horizontal=true,false,true,false",
+                  "--logging.file.enabled=false",
+              ]
+              subprocess.run(cmd, check=True)
+              if not ses.is_file() or ses.stat().st_size == 0:
+                  raise SystemExit(f"SES missing in round {round_index}")
+
+              board = pcbnew.LoadBoard(str(source))
+              if pcbnew.ImportSpecctraSES(board, str(ses)) is False:
+                  raise SystemExit(f"SES import failed in round {round_index}")
+              pcbnew.SaveBoard(str(target), board)
+              print(f"round {round_index}: {target}")
+          PY
+
+      - name: Native DRC after each round
+        run: |
+          for round in 0 1 2 3; do
+            set +e
+            kicad-cli pcb drc \
+              --format json \
+              --severity-all \
+              --all-track-errors \
+              --output "/tmp/a1fast/drc-round${round}.json" \
+              "/tmp/a1fast/round${round}.kicad_pcb"
+            echo "$?" > "/tmp/a1fast/drc-round${round}.exit"
+            set -e
+          done
+
+      - name: Compare routing progress
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          import re
+
+          def count(report):
+              items = report.get("violations", []) + report.get("unconnected_items", [])
+              return {
+                  "violations": len(report.get("violations", [])),
+                  "unconnected": len(report.get("unconnected_items", [])),
+                  "errors": sum(item.get("severity") == "error" for item in items),
+                  "warnings": sum(item.get("severity") == "warning" for item in items),
+              }
+
+          result = {}
+          for round_index in range(4):
+              board_text = Path(
+                  f"/tmp/a1fast/round{round_index}.kicad_pcb"
+              ).read_text(encoding="utf-8")
+              report = json.loads(
+                  Path(f"/tmp/a1fast/drc-round{round_index}.json").read_text(
+                      encoding="utf-8"
+                  )
+              )
+              result[f"round{round_index}"] = {
+                  "segments": len(
+                      re.findall(r"(?m)^\\s*\\(segment\\b", board_text)
+                  ),
+                  "vias": len(re.findall(r"(?m)^\\s*\\(via\\b", board_text)),
+                  "zones": len(re.findall(r"(?m)^\\s*\\(zone\\b", board_text)),
+                  **count(report),
+              }
+
+          Path("/tmp/a1fast/progress.json").write_text(
+              json.dumps(result, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(result, indent=2))
+          PY
+
+      - name: Upload routing rounds
+        uses: actions/upload-artifact@v6
+        with:
+          name: eeg128-a1-fast-multipass
+          path: |
+            /tmp/a1fast/round0.kicad_pcb
+            /tmp/a1fast/round1.kicad_pcb
+            /tmp/a1fast/round2.kicad_pcb
+            /tmp/a1fast/round3.kicad_pcb
+            /tmp/a1fast/drc-round0.json
+            /tmp/a1fast/drc-round1.json
+            /tmp/a1fast/drc-round2.json
+            /tmp/a1fast/drc-round3.json
+            /tmp/a1fast/progress.json
+          if-no-files-found: error
+          retention-days: 14
