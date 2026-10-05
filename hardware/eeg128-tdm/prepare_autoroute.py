@@ -306,8 +306,8 @@ def place_analog_core(board: pcbnew.BOARD) -> None:
         place(
             board,
             f"R{513 + index}",
-            122.0 + 3.0 * column,
-            54.0 + 3.0 * row,
+            112.0 + 3.2 * column,
+            67.0 + 3.2 * row,
             90.0,
         )
 
@@ -331,14 +331,21 @@ def place_digital_core(board: pcbnew.BOARD) -> None:
     place(board, "U24", 153.0, 101.0, 0.0)
     place(board, "U25", 163.0, 101.0, 0.0)
     place(board, "J9", 185.0, 77.0, 90.0)
-    place(board, "J10", 188.0, 99.0, 270.0)
-    place(board, "J11", 188.0, 107.0, 270.0)
+    place(board, "J10", 188.0, 99.0, 0.0)
+    place(board, "J11", 188.0, 107.0, 0.0)
 
     digital_caps = list(range(44, 61))
     for offset, cap in enumerate(digital_caps):
         column = offset % 6
         row = offset // 6
         place(board, f"C{cap}", 151.0 + 5.0 * column, 93.0 + 4.0 * row, 0.0)
+    place(board, "C56", 147.0, 101.0, 0.0)
+    place(board, "C58", 157.0, 106.0, 0.0)
+
+    for reference in ("U24", "U25"):
+        item = footprint(board, reference)
+        for pad in item.Pads():
+            pad.SetSize(pcbnew.VECTOR2I(mm(0.6), mm(1.0)))
 
     for index in range(1, 21):
         place(board, f"C{index}", 121.0 + 3.3 * ((index - 1) % 10), 104.0 + 3.0 * ((index - 1) // 10), 0.0)
