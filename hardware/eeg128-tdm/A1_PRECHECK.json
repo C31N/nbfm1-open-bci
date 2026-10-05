@@ -1,12 +1,26 @@
 {
-  "generated_at": "2026-10-05T22:35:11.439366+00:00",
-  "violations": 598,
+  "generated_at": "2026-10-05T22:39:26.622069+00:00",
+  "violations": 1542,
   "unconnected": 499,
   "severity": {
     "warning": 598,
-    "error": 499
+    "error": 1443
   },
   "types": [
+    {
+      "type": "clearance",
+      "count": 502,
+      "severity": {
+        "error": 502
+      }
+    },
+    {
+      "type": "solder_mask_bridge",
+      "count": 202,
+      "severity": {
+        "error": 202
+      }
+    },
     {
       "type": "silk_overlap",
       "count": 199,
@@ -26,6 +40,20 @@
       "count": 199,
       "severity": {
         "warning": 199
+      }
+    },
+    {
+      "type": "shorting_items",
+      "count": 199,
+      "severity": {
+        "error": 199
+      }
+    },
+    {
+      "type": "tracks_crossing",
+      "count": 41,
+      "severity": {
+        "error": 41
       }
     },
     {
