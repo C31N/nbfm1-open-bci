@@ -46,15 +46,19 @@ jobs:
           print({"instances": instances, "wires": wires, "bytes": path.stat().st_size})
           PY
 
-      - name: Commit generated schematic if changed
+      - name: Refresh release manifest
+        run: bash scripts/generate_release_manifest.sh
+
+      - name: Commit generated EDA and manifest if changed
         run: |
-          if git diff --quiet -- hardware/eeg128-tdm/eeg128-tdm.generated.kicad_sch &&
-             git ls-files --error-unmatch hardware/eeg128-tdm/eeg128-tdm.generated.kicad_sch >/dev/null 2>&1; then
-            echo "Generated schematic is already current."
+          git add \
+            hardware/eeg128-tdm/eeg128-tdm.generated.kicad_sch \
+            PUBLICATION_SHA256SUMS
+          if git diff --cached --quiet; then
+            echo "Generated EDA and manifest are already current."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add hardware/eeg128-tdm/eeg128-tdm.generated.kicad_sch
-          git commit -m "Materialize generated KiCad connectivity schematic"
+          git commit -m "Materialize generated KiCad schematic and release manifest"
           git push
