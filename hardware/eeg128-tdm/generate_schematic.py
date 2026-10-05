@@ -329,7 +329,6 @@ def render(components: list[Component]) -> str:
         "  (sheet_instances",
         '    (path "/" (page "1"))',
         "  )",
-        "  (embedded_fonts no)",
         ")",
     ]
     return "\n".join([*header, *wires, *labels, *instances, *footer]) + "\n"
