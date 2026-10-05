@@ -424,105 +424,28 @@ def fanout_net_to_bus(
 
 
 def add_power_and_reference_preroutes(board: pcbnew.BOARD) -> dict[str, int]:
-    # Continuous reference plane. Keep In1.Cu unavailable to the autorouter.
-    add_rect_zone(board, "AGND", pcbnew.In1_Cu, 3.5, 3.5, 199.5, 114.5)
+    """Reserve In1.Cu as a continuous AGND reference plane.
 
-    counts: dict[str, int] = {}
-
-    counts["VCM"] = fanout_net_to_bus(
-        board,
-        "VCM",
-        [f"R{i}" for i in range(1, 257)] + ["U22", "R530", "R531", "R532"],
-        39.0,
-        5.0,
-        194.0,
-        0.50,
-    )
-
-    counts["3V3A"] = fanout_net_to_bus(
-        board,
-        "3V3A",
-        [f"U{i}" for i in range(1, 23)]
-        + ["U24"]
-        + [f"C{i}" for i in range(1, 44)]
-        + ["R529"],
-        57.0,
-        5.0,
-        155.0,
-        0.60,
-    )
-
-    counts["3V3D"] = fanout_net_to_bus(
-        board,
-        "3V3D",
-        ["U21", "U23", "U25", "U26", "U27"]
-        + [f"C{i}" for i in range(42, 61)],
-        92.0,
-        145.0,
-        191.0,
-        0.60,
-    )
-
-    counts["5V_ISO"] = fanout_net_to_bus(
-        board,
-        "5V_ISO",
-        ["J9", "J11", "U24", "U25", "C17", "C19"],
-        108.5,
-        145.0,
-        195.0,
-        0.80,
-    )
-
-    counts["VREG_1V1"] = fanout_net_to_bus(
-        board,
-        "VREG_1V1",
-        ["U23", "C50", "C51", "C52"],
-        87.5,
-        160.0,
-        180.0,
-        0.45,
-    )
-
-    # Ground fanout for the most noise-sensitive/local decoupling components.
-    ground_refs = (
-        [f"C{i}" for i in range(1, 65)]
-        + [f"U{i}" for i in range(17, 28)]
-        + ["J9", "J10", "J11", "Y1", "R538", "R539"]
-    )
-    ground_count = 0
-    seen: set[tuple[int, int]] = set()
-    for reference in ground_refs:
-        item = board.FindFootprintByReference(reference)
-        if item is None:
-            continue
-        for pad in item.Pads():
-            if pad.GetNetname() != "AGND":
-                continue
-            via_pos = outward_fanout_position(item, pad, 0.85)
-            key = (via_pos.x, via_pos.y)
-            if key in seen:
-                continue
-            seen.add(key)
-            add_track(
-                board,
-                "AGND",
-                pad.GetPosition(),
-                via_pos,
-                pcbnew.F_Cu,
-                0.30,
-            )
-            add_through_via(board, "AGND", via_pos, 0.70, 0.30)
-            ground_count += 1
-    counts["AGND"] = ground_count
-
+    Do not pre-route power/reference buses with blind geometric fanout. The previous
+    implementation created deterministic shorts and via/clearance violations around
+    fine-pitch devices and densely placed passives. Signal and power traces are left
+    to the constrained router; only the continuous low-impedance ground reference is
+    created here.
+    """
+    add_rect_zone(board, "AGND", pcbnew.In1_Cu, 5.8, 5.8, 198.2, 113.2)
     try:
         filler = pcbnew.ZONE_FILLER(board)
         filler.Fill(board.Zones())
     except Exception as exc:
         print(f"zone fill deferred to KiCad CLI: {exc}")
-
-    return counts
-
+    return {
+        "AGND_plane": 1,
+        "VCM": 0,
+        "3V3A": 0,
+        "3V3D": 0,
+        "5V_ISO": 0,
+        "VREG_1V1": 0,
+    }
 
 def merge_digital_ground(board: pcbnew.BOARD) -> int:
     agnd = board.FindNet("AGND")
