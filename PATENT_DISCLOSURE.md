@@ -191,7 +191,7 @@ Z_slow: [batch, N_slow, D_model]
 
 The most recent valid context remains available until a new fNIRS sample arrives. The fast path does not fabricate intermediate hemodynamic observations.
 
-## 7. Asynchronous fast-query/slow-context cross-attention
+## 8. Asynchronous fast-query/slow-context cross-attention
 
 For each fusion block:
 
@@ -206,7 +206,7 @@ Z_fast' = Z_fast + Attention * V
 
 The disclosed feature is the use of native-rate slow context as persistent memory while fast causal tokens provide queries. This differs from mandatory upsampling/concatenation of fNIRS to every EEG/MEG sample.
 
-## 8. Representative NBFM-1 edge model
+## 9. Representative NBFM-1 edge model
 
 ```text
 D_model        = 384
@@ -254,7 +254,7 @@ L_total =
   + lambda_task        * L_task
 ```
 
-## 10. Gaussian motor-intent head
+## 11. Gaussian motor-intent head
 
 The motor head emits:
 
@@ -280,7 +280,7 @@ else:
 
 The AI decoder therefore does not directly command an actuator without uncertainty and safety checks.
 
-## 11. Dedicated intent gate
+## 12. Dedicated intent gate
 
 The intent head computes a scalar probability:
 
@@ -300,7 +300,7 @@ The intent output is explicitly used as a **privacy/export boundary**, not solel
 
 # PART II — LOCAL-FIRST ZERO-SIDECHANNEL PRIVACY
 
-## 12. State machine
+## 13. State machine
 
 ```text
 LOCKED
@@ -316,7 +316,7 @@ DECODING
 
 A high neural probability alone cannot arm a locked device. Explicit lock, timeout, watchdog or authentication failure may return the device to `LOCKED`.
 
-## 13. Fixed-shape speech-logit zeroization
+## 14. Fixed-shape speech-logit zeroization
 
 Let speech logits have shape:
 
@@ -339,7 +339,7 @@ The **shape and serialized field layout remain unchanged**. Zeroization occurs b
 
 This design reduces straightforward content-presence and message-length side channels.
 
-## 14. Local-first processing
+## 15. Local-first processing
 
 Default path:
 
@@ -355,7 +355,7 @@ neural sensors
 
 Raw EEG/MEG/fNIRS, latent embeddings and ungated speech logits do not require cloud transport.
 
-## 15. Authenticated encrypted export
+## 16. Authenticated encrypted export
 
 Representative implementation:
 
@@ -379,7 +379,7 @@ K_session = HKDF-SHA256(
 
 The encrypted payload includes intent probability, speech-valid bit, motor mean/uncertainty, fixed tensor dimensions and fixed-shape speech logits.
 
-## 16. Deterministic action boundary
+## 17. Deterministic action boundary
 
 CTC output is never interpreted as unrestricted shell text.
 
@@ -399,7 +399,7 @@ The language model cannot create shell strings, file paths, URLs, arbitrary moto
 
 # PART III — 128-CHANNEL DIFFERENTIAL EEG TDM FRONT END
 
-## 17. Physical topology
+## 18. Physical topology
 
 Representative EEG128-TDM arrangement:
 
@@ -436,7 +436,7 @@ A concrete implementation uses 16 CD74HC4067-class multiplexers, TLV9064-class b
 
 The component brands themselves are not asserted as novel; the disclosed architecture concerns their particular signal topology, synchronized differential switching, settling schedule and system integration.
 
-## 18. Differential bank mapping
+## 19. Differential bank mapping
 
 For bank `b = 0..7`:
 
@@ -454,7 +454,7 @@ CH(16*b+15)- --+
 
 All paired multiplexers share the same four address bits.
 
-## 19. TDM timing
+## 20. TDM timing
 
 At 250 logical samples/s:
 
@@ -470,7 +470,7 @@ T_conversion = 31.25 us
 N_slot = 8 conversions per 250-us MUX slot
 ```
 
-## 20. SINC3/digital-filter settling discard
+## 21. SINC3/digital-filter settling discard
 
 Concrete implementation:
 
@@ -513,7 +513,7 @@ logical_sample =
 
 The 4-discard/4-retain schedule is a concrete embodiment for the 32-kSPS, 250-us slot configuration. Other component choices may require a different discard count calculated from measured and specified settling.
 
-## 21. Multiplexing crosstalk controls
+## 22. Multiplexing crosstalk controls
 
 The architecture combines:
 
@@ -526,7 +526,7 @@ The architecture combines:
 - averaging only settled late conversions;
 - per-logical-channel offset/gain calibration.
 
-## 22. Common-mode and driven reference
+## 23. Common-mode and driven reference
 
 A representative implementation establishes `VCM` near mid-supply and uses dedicated common-mode sense electrodes plus an active driven-reference/DRL stage.
 
@@ -538,7 +538,7 @@ The DRL reduces common-mode voltage presented to the acquisition path. It does *
 
 A large series resistor limits current into the driven body electrode. Human-connected prototypes additionally require independently reviewed patient isolation and leakage-current controls.
 
-## 23. Calibration
+## 24. Calibration
 
 Each logical channel has:
 
@@ -554,7 +554,7 @@ Startup averaging can estimate baseline offset. Precision voltage calibration sh
 
 # PART IV — PACKET, DMA AND ASYNCHRONOUS fNIRS FORMAT
 
-## 24. Fixed DMA slot
+## 25. Fixed DMA slot
 
 Representative shared-memory slot:
 
@@ -576,7 +576,7 @@ EEG+MEG+fNIRS: 2456 bytes
 DMA slot: 4096 bytes
 ```
 
-## 25. Header fields
+## 26. Header fields
 
 ```text
 uint32 magic
@@ -598,7 +598,7 @@ uint32 header_crc32c
 
 Header size is fixed at 128 bytes. CRC uses CRC32C/Castagnoli. The header CRC excludes only its own field. Payload CRC covers bytes `header_bytes .. packet_bytes-1`.
 
-## 26. Native-rate fNIRS sub-frame
+## 27. Native-rate fNIRS sub-frame
 
 A slow sub-frame is appended only when a new 20-Hz fNIRS sample exists.
 
@@ -620,13 +620,13 @@ This preserves asynchronous sensor timing in the transport itself.
 
 # PART V — LOW-LATENCY EDGE DEPLOYMENT
 
-## 27. Latency definition
+## 28. Latency definition
 
 The project target of `<5 ms` means **compute and local transport latency after the last sample required by the selected neural inference window has become available**.
 
 It does not include the neural observation-window duration and does not imply millisecond fNIRS hemodynamics.
 
-## 28. Deployment pipeline
+## 29. Deployment pipeline
 
 ```text
 sensor or simulator
@@ -652,7 +652,7 @@ fNIRS        [1, 320, 20]
 
 Deployment may use persistent TensorRT contexts, page-locked host memory, persistent device allocations, named tensor addresses, asynchronous copies, `execute_async_v3`, engine/timing caches and CUDA Graph replay where supported.
 
-## 29. Independent latency audit
+## 30. Independent latency audit
 
 A benchmark may inject synthetic packets into the same 4096-byte ring and measure:
 
@@ -667,7 +667,7 @@ Reports include P50, P99, P99.9, maximum, fraction below 5 ms, timestamp jitter 
 
 # PART VI — COMBINED EMBODIMENTS AND EQUIVALENTS
 
-## 30. Combined embodiments
+## 31. Combined embodiments
 
 **Embodiment A:** EEG128-TDM + OPM-MEG geometry + 20-Hz fNIRS + asynchronous NBFM-1 + Gaussian motor head + intent gate + fixed-shape zeroization + encrypted local transport + deterministic action router.
 
@@ -675,7 +675,7 @@ Reports include P50, P99, P99.9, maximum, fraction below 5 ms, timestamp jitter 
 
 **Embodiment C:** synthetic DMA producer using the identical packet format, allowing the complete cryptographic/inference/control path to be tested without a connected subject.
 
-## 31. Equivalent implementations
+## 32. Equivalent implementations
 
 The teachings are not limited to example vendors. Equivalent embodiments include another low-leakage 16:1 MUX, another simultaneous delta-sigma ADC, FPGA or alternative MCU, ChaCha20-Poly1305 instead of AES-GCM, another edge accelerator instead of TensorRT, or another causal neural architecture preserving the described fast-query/slow-context relation.
 
@@ -683,7 +683,7 @@ The teachings are not limited to example vendors. Equivalent embodiments include
 
 # PART VII — PRIOR-ART EVIDENCE CHAIN
 
-## 32. Recommended immutable evidence
+## 33. Recommended immutable evidence
 
 For each defensive-publication release:
 
@@ -698,7 +698,7 @@ For each defensive-publication release:
 
 The SHA-256 manifest proves file identity relative to the released tree. It does not itself establish the legal publication date; public availability evidence does that.
 
-## 33. Legal limitation
+## 34. Legal limitation
 
 This disclosure is designed to be useful as prior art against later claims that are not novel or inventive/non-obvious over the teachings actually made public and enabled here.
 
@@ -737,7 +737,7 @@ This publication expressly discloses, separately and in combination:
 
 ---
 
-## 34. Safety and regulatory status
+## 35. Safety and regulatory status
 
 This publication describes research engineering. It does not assert medical-device certification, diagnostic suitability, clinical validation, patient electrical safety, validated free-form thought reading or certification for safety-critical actuator control.
 
