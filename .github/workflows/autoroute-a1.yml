@@ -27,7 +27,7 @@ jobs:
           sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-            kicad curl jq unzip
+            kicad kicad-footprints curl jq unzip
           kicad-cli version
           /usr/bin/python3 - <<'PY'
           import pcbnew
