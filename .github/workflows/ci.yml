@@ -73,8 +73,8 @@ jobs:
           import re
 
           text = Path("/tmp/eeg128-tdm.generated.kicad_sch").read_text(encoding="utf-8")
-          instances = len(re.findall(r"(?m)^  \\(symbol$", text))
-          wires = len(re.findall(r"(?m)^  \\(wire$", text))
+          instances = len(re.findall(r"(?m)^  \(symbol$", text))
+          wires = len(re.findall(r"(?m)^  \(wire$", text))
           if instances < 640:
               raise SystemExit(f"generated schematic has too few symbol instances: {instances}")
           if wires < 1000:
