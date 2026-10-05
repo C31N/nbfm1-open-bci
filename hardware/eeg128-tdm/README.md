@@ -50,7 +50,7 @@ RP2040 SPI1 + DMA
 
 **Revision A0 is not released for fabrication.**
 
-The board source currently contains the complete component placement and logical net assignment needed for the A0 design review, but the copper routing and generated-footprint land patterns have not been independently verified. `RELEASE_STATUS.json` therefore keeps `fabrication_release=false`.
+The board source currently contains component placement and logical pad-to-net assignment for A0 design review, but the copper routing is not complete, the KiCad schematic is presently a connectivity index rather than a fully instantiated circuit schematic, and generated footprint land patterns have not been independently verified. `RELEASE_STATUS.json` therefore keeps `fabrication_release=false`.
 
 This is intentional. A large human-connected mixed-signal board must not become orderable merely because source files exist.
 
@@ -99,3 +99,20 @@ No human-connected use is authorized by this repository revision. Follow `docs/S
 ## License
 
 Hardware source is covered by `CERN-OHL-S-2.0`.
+
+
+## Package and grounding audit
+
+### ADS131M08IPBSR
+
+Use the TI **PBS** mechanical drawing as the authoritative footprint reference. The package has a nominal 5 mm square body with 0.50 mm lead pitch and approximately 7 mm overall lead span. Distributor summaries can describe these dimensions differently; release review must use the manufacturer drawing.
+
+### Ground plane
+
+The current logical source uses separate `AGND` and `DGND` names while the intended PCB strategy calls for a continuous return plane. This conflict must be resolved before routing release. Do not introduce an arbitrary split-plane slot solely to preserve naming.
+
+### Internal reference
+
+The selected low-noise reference network must be reviewed explicitly before A0 fabrication. The present logical netlist records `ADC_REFIN` as unpopulated; for EEG noise optimization, provision for local REFIN filtering must be evaluated against TI guidance and the chosen converter mode.
+
+See `EDA_AUDIT.md` and `RELEASE_STATUS.json`.
