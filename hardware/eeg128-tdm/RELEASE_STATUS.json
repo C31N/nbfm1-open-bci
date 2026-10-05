@@ -56,5 +56,40 @@
     "pcb_drc_warnings": 606,
     "schematic_parity_items": 0,
     "placement_export_parse": true
+  },
+  "theoretical_electrical_review_passed": false,
+  "theoretical_electrical_review_basis": {
+    "requirement": "May be set true only when there are no unresolved theoretical electrical concerns.",
+    "required_conditions": [
+      "schematic_complete == true",
+      "routing_completed == true",
+      "copper_zones_completed == true",
+      "ground_strategy_resolved == true",
+      "footprints_verified == true",
+      "erc_passed == true with 0 ERC errors",
+      "drc_passed == true with 0 DRC errors and 0 unconnected items",
+      "schematic_parity_passed == true",
+      "power/reference/clock/USB/DRL networks reviewed against manufacturer datasheets",
+      "TDM settling budget analytically closes for the selected ADC clock/OSR/multiplexer/buffer chain",
+      "input common-mode range and headroom close for all specified operating conditions",
+      "no unresolved component-rating, stability, leakage-path or return-current concerns"
+    ],
+    "current_result": "FAIL",
+    "reason": "The physical A1 routing/DRC closure is still in progress, so unresolved theoretical electrical concerns remain."
+  },
+  "physical_electrical_lab_validation_passed": false,
+  "physical_electrical_lab_validation_basis": {
+    "requirement": "Requires measurements on a fabricated board.",
+    "required_evidence": [
+      "power-rail measurements",
+      "TDM settling captures",
+      "0.5-100 Hz input-referred RMS noise measurements",
+      "crosstalk measurements",
+      "CMRR measurements",
+      "50/60 Hz susceptibility measurements",
+      "DRL stability measurements",
+      "isolation/leakage test evidence where applicable"
+    ],
+    "current_result": "NOT_PERFORMED"
   }
 }
