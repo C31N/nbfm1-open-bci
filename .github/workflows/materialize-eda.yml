@@ -9,6 +9,8 @@ on:
       - "hardware/eeg128-tdm/BOM.csv"
       - "hardware/eeg128-tdm/eeg128-tdm.kicad_pcb"
       - "hardware/eeg128-tdm/generate_schematic.py"
+      - "hardware/eeg128-tdm/generate_symbol_library.py"
+      - "hardware/eeg128-tdm/sym-lib-table"
 
 permissions:
   contents: write
@@ -46,6 +48,9 @@ jobs:
           cp hardware/eeg128-tdm/eeg128-tdm.generated.kicad_sch \
             hardware/eeg128-tdm/eeg128-tdm.kicad_sch
 
+      - name: Generate local KiCad symbol library
+        run: python hardware/eeg128-tdm/generate_symbol_library.py
+
       - name: Validate generated object counts
         run: |
           python - <<'PY'
@@ -72,6 +77,7 @@ jobs:
             hardware/eeg128-tdm/eeg128-tdm.kicad_pcb \
             hardware/eeg128-tdm/eeg128-tdm.generated.kicad_sch \
             hardware/eeg128-tdm/eeg128-tdm.kicad_sch \
+            hardware/eeg128-tdm/NBFM1_A0.kicad_sym \
             PUBLICATION_SHA256SUMS
           if git diff --cached --quiet; then
             echo "Generated EDA and manifest are already current."
