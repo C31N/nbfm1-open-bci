@@ -197,3 +197,49 @@ A party intending medical use should establish a formal regulatory and quality p
 - EU MDR or applicable FDA submission/classification work.
 
 The exact set depends on the product, market and intended purpose.
+
+
+## 10. Authoritative regulatory references
+
+This document intentionally avoids asserting a generic regulatory exemption.
+
+### United States
+
+FDA states that most Class I and some Class II devices may be exempt from premarket notification, subject to the applicable classification regulation and other controls. There is no blanket Class II exemption and no generic Class III exemption created by labeling a device as open-source or research hardware.
+
+- FDA — Class I and Class II Device Exemptions:
+  https://www.fda.gov/medical-devices/classify-your-medical-device/class-i-and-class-ii-device-exemptions
+- FDA — Investigational Device Exemption approval process:
+  https://www.fda.gov/medical-devices/investigational-device-exemption-ide/ide-approval-process
+- FDA — IDE responsibilities:
+  https://www.fda.gov/medical-devices/investigational-device-exemption-ide/ide-responsibilities
+
+### European Union
+
+Regulation (EU) 2017/745 applies according to its scope and the actual intended purpose of the product. Repository wording cannot override the manufacturer's or integrator's real intended purpose, labeling or promotional claims.
+
+Official MDR text:
+
+https://eur-lex.europa.eu/eli/reg/2017/745/oj
+
+### USB isolation component limitation
+
+Analog Devices specifies the ADuM3160 as a USB low/full-speed isolator supporting 1.5 Mbit/s and 12 Mbit/s with a 2.5 kV RMS isolation rating under its stated component approvals.
+
+Component datasheet:
+
+https://www.analog.com/media/en/technical-documentation/data-sheets/adum3160.pdf
+
+Those component ratings do **not** establish IEC 60601-1 Means of Patient Protection for the assembled EEG system. Medical electrical equipment requires system-level insulation coordination, leakage-current, dielectric, creepage/clearance, power-isolation and single-fault evaluation.
+
+## 11. Release prohibition
+
+For repository revision A0:
+
+```text
+fabrication_release = false
+human_connected_use_authorized = false
+```
+
+These values are mandatory until the physical release gates in
+`hardware/eeg128-tdm/RELEASE_STATUS.json` have been independently completed.
