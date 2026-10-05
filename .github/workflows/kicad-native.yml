@@ -14,6 +14,9 @@ permissions:
 jobs:
   kicad8:
     runs-on: ubuntu-24.04
+    env:
+      KICAD_ENABLE_WXTRACE: "1"
+      WXTRACE: "KICAD_SCH_PLUGIN,KICAD_SCH_SHEET_PATHS"
 
     steps:
       - uses: actions/checkout@v7
