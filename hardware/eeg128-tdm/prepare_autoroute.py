@@ -104,17 +104,21 @@ def replace_usb_connector(board: pcbnew.BOARD) -> None:
     item.SetOrientationDegrees(90.0)
 
     mapping = {
-        "1": "AGND",
-        "2": "5V_ISO",
-        "4": "USB_CC1",
-        "5": "USB_DM",
-        "6": "USB_DP",
-        "7": "USB_DM",
-        "8": "USB_DP",
-        "10": "USB_CC2",
-        "11": "5V_ISO",
-        "12": "AGND",
-        "13": "SHIELD",
+        "A1": "AGND",
+        "B12": "AGND",
+        "A12": "AGND",
+        "B1": "AGND",
+        "A4": "5V_ISO",
+        "B9": "5V_ISO",
+        "A9": "5V_ISO",
+        "B4": "5V_ISO",
+        "A5": "USB_CC1",
+        "B5": "USB_CC2",
+        "A6": "USB_DP",
+        "B6": "USB_DP",
+        "A7": "USB_DM",
+        "B7": "USB_DM",
+        "S1": "SHIELD",
     }
     for pad_number, net_name in mapping.items():
         set_pad_net(board, "J9", pad_number, net_name)
