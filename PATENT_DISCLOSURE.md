@@ -5,7 +5,7 @@
 
 This document is an enabling defensive publication of technical architectures, timing methods, signal-processing arrangements, machine-learning structures, privacy mechanisms and deployment methods for a non-invasive multimodal brain-computer interface.
 
-**Document preparation date:** 2026-10-04.
+**Initial document preparation date:** 2026-10-04.\n\n**Legal/technical audit revision:** 2026-10-05.
 
 **Repository:** `C31N/nbfm1-open-bci`.
 
@@ -23,7 +23,62 @@ No statement in this repository guarantees that every later patent application c
 
 Public disclosure may also limit or destroy the publishers' own future patent rights in jurisdictions without an applicable grace period. Publication should therefore occur only after any desired patent strategy has been decided.
 
-## 2. Terminology
+## 2. Legal prior-art framework and evidentiary limits
+
+### 2.1 United States — 35 U.S.C. §102
+
+Under 35 U.S.C. §102(a)(1), a claimed invention may lack novelty where, before its effective filing date, it was patented, described in a printed publication, in public use, on sale, or otherwise available to the public.
+
+The statute contains exceptions, including certain disclosures addressed by §102(b). Accordingly, this publication does **not** assert that its existence automatically defeats every later United States patent claim. The relevant questions include the later claim language, effective filing date, derivation/origin, public availability, and whether this disclosure actually teaches every element required by the claim.
+
+Official text:
+
+https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title35-section102
+
+### 2.2 European Patent Convention — Article 54
+
+Article 54(2) EPC defines the state of the art as everything made available to the public before filing by written or oral description, use, or any other way.
+
+EPO examination guidance further states that:
+
+- there is generally no restriction on the geographical location, language or manner of public availability;
+- a written disclosure is publicly available when members of the public could obtain knowledge of its content without a confidentiality duty; and
+- documentary prior art must provide sufficient information for the skilled person to put the disclosed technical teaching into practice.
+
+Official sources:
+
+- https://www.epo.org/en/legal/epc/2020/a54.html
+- https://www.epo.org/en/legal/guidelines-epc/2026/g_iv_1.html
+- https://www.epo.org/en/legal/guidelines-epc/2026/g_iv_2.html
+- https://www.epo.org/en/legal/guidelines-epc/2026/g_iv_7_5.html
+
+### 2.3 Internet-publication evidence
+
+A public repository can be evidence of an internet disclosure, but the legal effect of any particular Git commit, release, archive or timestamp is fact-specific.
+
+For that reason this project preserves multiple independent evidence layers:
+
+1. public Git commit identity;
+2. immutable release tag where available;
+3. SHA-256 manifest of the disclosed files;
+4. public release archive;
+5. independent archival record/DOI where available.
+
+A later technical correction should be published as a new revision and should not rewrite the historical record of the earlier disclosure.
+
+### 2.4 What this publication is intended to establish
+
+The purpose is to provide an enabling, searchable technical disclosure of the specific combinations described below — including asynchronous fast/slow neural fusion, intent-controlled fixed-shape zeroization, and settling-aware differential TDM EEG acquisition.
+
+The publication is **not** a representation that:
+
+- all conceivable variants have been disclosed;
+- all later patent claims are necessarily anticipated or obvious;
+- the authors have freedom to operate under third-party patents;
+- public disclosure creates a patent right for the project;
+- a particular patent office or court is bound to reach a specified result.
+
+## 3. Terminology
 
 The following project terms are used for searchability and do not imply exclusive trademark or patent rights:
 
@@ -38,7 +93,7 @@ The following project terms are used for searchability and do not imply exclusiv
 
 # PART I — ASYNCHRONOUS MULTIMODAL NEURAL FOUNDATION MODEL
 
-## 3. Sensor domains and asynchronous clocks
+## 4. Sensor domains and asynchronous clocks
 
 A representative system contains:
 
@@ -63,7 +118,7 @@ fNIRS 20 Hz --> slow encoder --> persistent context --> XATTN ----+
 
 At fast-path inference timestamp `t`, the model may use only slow-context measurements with acquisition timestamps `<= t`.
 
-## 4. Causal EEG/MEG patch encoding
+## 5. Causal EEG/MEG patch encoding
 
 Representative fast inputs are:
 
@@ -92,7 +147,7 @@ P_left = d * (k - 1)
 
 No future fast sample contributes to the current output token.
 
-## 5. OPM-MEG geometry conditioning
+## 6. OPM-MEG geometry conditioning
 
 For sensor `i` use:
 
@@ -118,7 +173,7 @@ Z_MEG' = Z_MEG + e_geometry
 
 This explicitly separates physical sensor geometry from arbitrary channel numbering.
 
-## 6. Slow fNIRS context
+## 7. Slow fNIRS context
 
 A representative 20-Hz fNIRS context sample contains:
 
@@ -175,7 +230,7 @@ pre-norm
 --> residual
 ```
 
-## 9. Self-supervised pretraining
+## 10. Self-supervised pretraining
 
 Pretraining can combine:
 
