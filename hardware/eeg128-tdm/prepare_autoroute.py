@@ -432,14 +432,21 @@ def mux_channel_pin(local_channel: int) -> str:
 
 
 def add_channel_to_mux_routes(board: pcbnew.BOARD) -> int:
-    """Route the protected channel junctions to the aligned CD74HC4067 inputs."""
+    """Route protected channel junctions to CD74HC4067 inputs on B.Cu.
+
+    F.Cu is intentionally reserved around the high-impedance bias/VCM network.
+    Each route escapes its resistor and mux pad locally, changes layer through
+    standard through-vias, and then remains on B.Cu between the two escapes.
+    """
     routed = 0
     for bank in range(8):
         p_mux = footprint(board, f"U{2 * bank + 1}")
         n_mux = footprint(board, f"U{2 * bank + 2}")
+
         for local_channel in range(16):
             channel = bank * 16 + local_channel
             pin_number = mux_channel_pin(local_channel)
+
             for polarity, mux, series_ref in (
                 ("P", p_mux, 257 + 2 * channel),
                 ("N", n_mux, 258 + 2 * channel),
@@ -452,6 +459,7 @@ def add_channel_to_mux_routes(board: pcbnew.BOARD) -> int:
                         f"missing channel route endpoint "
                         f"CH{channel:03d}_{polarity}"
                     )
+
                 net_name = source.GetNetname()
                 expected = f"CH{channel:03d}_{polarity}_MUX"
                 if net_name != expected or target.GetNetname() != expected:
@@ -459,17 +467,64 @@ def add_channel_to_mux_routes(board: pcbnew.BOARD) -> int:
                         f"net mismatch for {expected}: "
                         f"{net_name!r}/{target.GetNetname()!r}"
                     )
+
+                source_pos = source.GetPosition()
+                source_via = pcbnew.VECTOR2I(
+                    source_pos.x,
+                    source_pos.y + mm(0.80),
+                )
+
+                target_pos = target.GetPosition()
+                mux_center = mux.GetPosition()
+                direction = -1 if target_pos.x < mux_center.x else 1
+                target_via = pcbnew.VECTOR2I(
+                    target_pos.x + direction * mm(1.15),
+                    target_pos.y,
+                )
+
                 add_track(
                     board,
                     net_name,
-                    source.GetPosition(),
-                    target.GetPosition(),
+                    source_pos,
+                    source_via,
+                    pcbnew.F_Cu,
+                    0.15,
+                )
+                add_through_via(
+                    board,
+                    net_name,
+                    source_via,
+                    diameter_mm=0.65,
+                    drill_mm=0.30,
+                )
+
+                add_track(
+                    board,
+                    net_name,
+                    source_via,
+                    target_via,
+                    pcbnew.B_Cu,
+                    0.15,
+                )
+
+                add_through_via(
+                    board,
+                    net_name,
+                    target_via,
+                    diameter_mm=0.65,
+                    drill_mm=0.30,
+                )
+                add_track(
+                    board,
+                    net_name,
+                    target_via,
+                    target_pos,
                     pcbnew.F_Cu,
                     0.15,
                 )
                 routed += 1
-    return routed
 
+    return routed
 
 def add_channel_mux_preroutes(board: pcbnew.BOARD) -> int:
     """Pre-route only the local 100 kOhm / 10 MOhm junction.
