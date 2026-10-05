@@ -1,0 +1,88 @@
+name: Native KiCad 8 Validation
+
+on:
+  push:
+    paths:
+      - ".github/workflows/kicad-native.yml"
+      - "hardware/eeg128-tdm/**"
+  pull_request:
+    paths:
+      - ".github/workflows/kicad-native.yml"
+      - "hardware/eeg128-tdm/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  kicad8:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install KiCad 8
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad
+          kicad-cli version
+          kicad-cli version | grep -E '^8\.'
+
+      - name: Parse generated schematic and export native netlist
+        run: |
+          mkdir -p /tmp/kicad-audit
+          kicad-cli sch export netlist             --format kicadsexpr             --output /tmp/kicad-audit/eeg128-tdm.net             hardware/eeg128-tdm/eeg128-tdm.generated.kicad_sch
+          test -s /tmp/kicad-audit/eeg128-tdm.net
+
+      - name: Run schematic ERC report
+        run: |
+          kicad-cli sch erc             --format json             --severity-all             --output /tmp/kicad-audit/erc.json             hardware/eeg128-tdm/eeg128-tdm.generated.kicad_sch
+          test -s /tmp/kicad-audit/erc.json
+
+      - name: Parse PCB and run DRC report
+        run: |
+          kicad-cli pcb drc             --format json             --severity-all             --all-track-errors             --output /tmp/kicad-audit/drc.json             hardware/eeg128-tdm/eeg128-tdm.kicad_pcb
+          test -s /tmp/kicad-audit/drc.json
+
+      - name: Verify PCB placement export parses
+        run: |
+          kicad-cli pcb export pos             --format csv             --units mm             --side both             --smd-only             --exclude-dnp             --output /tmp/kicad-audit/placement.csv             hardware/eeg128-tdm/eeg128-tdm.kicad_pcb
+          test -s /tmp/kicad-audit/placement.csv
+          grep -q '"U21"' /tmp/kicad-audit/placement.csv || grep -q '^U21,' /tmp/kicad-audit/placement.csv
+
+      - name: Confirm release remains fail closed
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          status = json.loads(
+              Path("hardware/eeg128-tdm/RELEASE_STATUS.json").read_text(encoding="utf-8")
+          )
+          forbidden = (
+              "fabrication_release",
+              "human_connected_use_authorized",
+              "routing_completed",
+              "drc_passed",
+              "schematic_parity_passed",
+          )
+          wrongly_enabled = [key for key in forbidden if bool(status.get(key))]
+          if wrongly_enabled:
+              raise SystemExit(
+                  "A0 release gate unexpectedly enabled: " + ", ".join(wrongly_enabled)
+              )
+          print("A0 remains intentionally blocked for fabrication/human connection")
+          PY
+
+      - name: Upload native KiCad audit reports
+        uses: actions/upload-artifact@v6
+        with:
+          name: kicad8-audit
+          path: |
+            /tmp/kicad-audit/eeg128-tdm.net
+            /tmp/kicad-audit/erc.json
+            /tmp/kicad-audit/drc.json
+            /tmp/kicad-audit/placement.csv
+          if-no-files-found: error
+          retention-days: 30
