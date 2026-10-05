@@ -324,6 +324,8 @@ def place_analog_core(board: pcbnew.BOARD) -> None:
 
 def place_digital_core(board: pcbnew.BOARD) -> None:
     place(board, "U23", 168.0, 77.0, 0.0)
+    for pad in footprint(board, "U23").Pads():
+        pad.SetLocalClearance(mm(0.10))
     place(board, "Y1", 168.0, 67.0, 0.0)
     place(board, "C63", 164.5, 67.0, 0.0)
     place(board, "C64", 171.5, 67.0, 0.0)
