@@ -290,13 +290,13 @@ def place_analog_core(board: pcbnew.BOARD) -> None:
     for index, x_mm in enumerate((62.0, 80.0, 98.0, 116.0), start=17):
         place(board, f"U{index}", x_mm, 61.0, 0.0)
 
-    for index, x_mm in enumerate((62.0, 80.0, 98.0, 116.0), start=37):
-        place(board, f"C{index}", x_mm, 66.0, 0.0)
+    for index, x_mm in enumerate((62.0, 80.0, 98.0, 108.0), start=37):
+        place(board, f"C{index}", x_mm, 64.0 if index == 40 else 66.0, 0.0)
 
     place(board, "U21", 137.0, 61.0, 0.0)
-    place(board, "C41", 133.5, 67.0, 0.0)
-    place(board, "C42", 137.0, 67.0, 0.0)
-    place(board, "C43", 140.5, 67.0, 0.0)
+    place(board, "C41", 142.0, 66.0, 0.0)
+    place(board, "C42", 145.0, 66.0, 0.0)
+    place(board, "C43", 148.0, 66.0, 0.0)
     place(board, "C61", 143.5, 61.0, 90.0)
     place(board, "U27", 137.0, 73.0, 0.0)
 
@@ -333,6 +333,10 @@ def place_digital_core(board: pcbnew.BOARD) -> None:
     place(board, "J9", 185.0, 77.0, 90.0)
     place(board, "J10", 188.0, 99.0, 0.0)
     place(board, "J11", 188.0, 107.0, 0.0)
+    for reference in ("J10", "J11"):
+        item = footprint(board, reference)
+        for pad in item.Pads():
+            pad.SetOrientationDegrees(0.0)
 
     digital_caps = list(range(44, 61))
     for offset, cap in enumerate(digital_caps):
