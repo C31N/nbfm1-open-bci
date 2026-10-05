@@ -324,7 +324,7 @@ def render(components: list[Component]) -> str:
 
     footer = [
         "  (sheet_instances",
-        f'    (path "/{ROOT_UUID}" (page "1"))',
+        '    (path "/" (page "1"))',
         "  )",
         "  (embedded_fonts no)",
         ")",
