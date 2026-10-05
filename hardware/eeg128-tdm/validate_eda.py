@@ -23,6 +23,7 @@ REQUIRED = (
     "eeg128-tdm.kicad_pro",
     "RELEASE_STATUS.json",
     "EDA_AUDIT.md",
+    "COMPONENT_AUDIT.md",
 )
 
 LCSC_RE = re.compile(r"^C[0-9]+$")
