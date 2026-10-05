@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-only -->
-# Dual-Licensing and License-Boundary Audit
+# Path-Scoped Multi-License and License-Boundary Audit
 
 ## 1. Repository license map
 
@@ -48,7 +48,7 @@ AGPL-3.0-only
 
 ## 2. Why the two licenses can coexist
 
-The repository is a multi-license aggregate with an explicit architectural boundary.
+The repository is a path-scoped multi-license aggregate with an explicit architectural boundary. This is not dual licensing of the same work under two alternative licences.
 
 The CERN-OHL-S-covered hardware/firmware domain and AGPL-covered host/inference domain communicate through documented hardware/protocol interfaces such as:
 
@@ -135,3 +135,23 @@ and treats any missing licence/copyright association as a release failure.
 Copyright/open-hardware licensing and prior-art publication are distinct.
 
 The licences grant only the rights actually stated in their terms. The defensive publication is evidence of disclosed technical teaching; it is not a blanket patent licence from unknown third parties and not a freedom-to-operate opinion.
+
+
+## 10. Compatibility conclusion
+
+For the repository as presently structured, no licence conflict is created merely by storing the separately licensed works together or by allowing them to communicate through documented protocol/hardware interfaces.
+
+This conclusion does **not** mean that CERN-OHL-S-2.0 and AGPL-3.0-only are universally interchangeable or that arbitrary source-code mixing is automatically permitted. A combined derivative that incorporates copyrightable source from both scopes must be reviewed against both licences and any third-party terms.
+
+The safe project rule is therefore:
+
+```text
+hardware/** + firmware/**          -> CERN-OHL-S-2.0
+host/model/privacy/deployment code -> AGPL-3.0-only
+cross-boundary interaction         -> documented protocol/interface
+source copying across boundary     -> legal review before merge
+```
+
+CERN identifies CERN-OHL-S as its strongly reciprocal v2 variant:
+
+https://cern-ohl.web.cern.ch/
