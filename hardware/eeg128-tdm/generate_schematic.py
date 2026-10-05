@@ -145,6 +145,7 @@ def library_symbol(numbers: tuple[str, ...]) -> str:
     half_height = max(2.54, (max(count, 1) - 1) * 1.27 / 2.0 + 1.27)
     parts = [
         f'    (symbol {q(sid)}',
+        "      (pin_numbers hide)",
         "      (pin_names (offset 0.508))",
         "      (exclude_from_sim no)",
         "      (in_bom yes)",
@@ -155,7 +156,9 @@ def library_symbol(numbers: tuple[str, ...]) -> str:
         "(effects (font (size 1.0 1.0)) (hide yes)))",
         '      (property "Footprint" "" (at 0 0 0) '
         "(effects (font (size 1.0 1.0)) (hide yes)))",
-        '      (property "Datasheet" "" (at 0 0 0) '
+        '      (property "Datasheet" "~" (at 0 0 0) '
+        "(effects (font (size 1.0 1.0)) (hide yes)))",
+        '      (property "Description" "Generated connectivity symbol" (at 0 0 0) '
         "(effects (font (size 1.0 1.0)) (hide yes)))",
         f'      (symbol {q(bare + "_1_1")}',
         f"        (rectangle (start -1.27 {half_height:.3f}) "
