@@ -202,7 +202,11 @@ def positions(components: list[Component]) -> dict[str, tuple[float, float]]:
     return result
 
 
-def instance(\n    component: Component,\n    x: float,\n    y: float,\n) -> tuple[str, list[str], list[str], list[str]]:
+def instance(
+    component: Component,
+    x: float,
+    y: float,
+) -> tuple[str, list[str], list[str], list[str]]:
     numbers = signature(component)
     sid = symbol_id(numbers)
     count = len(numbers)
