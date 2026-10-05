@@ -163,6 +163,12 @@ def prepare(input_path: Path, output_path: Path) -> None:
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     pcbnew.SaveBoard(str(output_path), board)
+
+    text = output_path.read_text(encoding="utf-8")
+    text = text.replace('(1 "In1.Cu" power)', '(1 "In1.Cu" signal)')
+    text = text.replace('(2 "In2.Cu" power)', '(2 "In2.Cu" signal)')
+    output_path.write_text(text, encoding="utf-8")
+
     print(
         {
             "output": str(output_path),
