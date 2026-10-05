@@ -237,6 +237,234 @@ def assign_missing_functional_nets(board: pcbnew.BOARD) -> None:
     set_two_pad_net(board, "C64", "XOUT_12M", "AGND")
 
 
+
+def add_track(
+    board: pcbnew.BOARD,
+    net_name: str,
+    start: pcbnew.VECTOR2I,
+    end: pcbnew.VECTOR2I,
+    layer: int,
+    width_mm: float,
+) -> None:
+    if start == end:
+        return
+    track = pcbnew.PCB_TRACK(board)
+    track.SetStart(start)
+    track.SetEnd(end)
+    track.SetWidth(mm(width_mm))
+    track.SetLayer(layer)
+    track.SetNet(ensure_net(board, net_name))
+    board.Add(track)
+
+
+def add_through_via(
+    board: pcbnew.BOARD,
+    net_name: str,
+    position: pcbnew.VECTOR2I,
+    diameter_mm: float = 0.65,
+    drill_mm: float = 0.30,
+) -> None:
+    via = pcbnew.PCB_VIA(board)
+    via.SetPosition(position)
+    via.SetWidth(mm(diameter_mm))
+    via.SetDrill(mm(drill_mm))
+    via.SetLayerPair(pcbnew.F_Cu, pcbnew.B_Cu)
+    via.SetNet(ensure_net(board, net_name))
+    board.Add(via)
+
+
+def add_rect_zone(
+    board: pcbnew.BOARD,
+    net_name: str,
+    layer: int,
+    x1_mm: float,
+    y1_mm: float,
+    x2_mm: float,
+    y2_mm: float,
+) -> None:
+    zone = pcbnew.ZONE(board)
+    zone.SetNet(ensure_net(board, net_name))
+    zone.SetLayer(layer)
+    zone.SetMinThickness(mm(0.15))
+    outline = zone.Outline()
+    outline.NewOutline()
+    outline.Append(point(x1_mm, y1_mm))
+    outline.Append(point(x2_mm, y1_mm))
+    outline.Append(point(x2_mm, y2_mm))
+    outline.Append(point(x1_mm, y2_mm))
+    board.Add(zone)
+
+
+def outward_fanout_position(
+    item: pcbnew.FOOTPRINT,
+    pad: pcbnew.PAD,
+    distance_mm: float,
+) -> pcbnew.VECTOR2I:
+    pos = pad.GetPosition()
+    center = item.GetPosition()
+    dx = pos.x - center.x
+    dy = pos.y - center.y
+    distance = mm(distance_mm)
+    if abs(dx) >= abs(dy):
+        step = distance if dx >= 0 else -distance
+        return pcbnew.VECTOR2I(pos.x + step, pos.y)
+    step = distance if dy >= 0 else -distance
+    return pcbnew.VECTOR2I(pos.x, pos.y + step)
+
+
+def fanout_net_to_bus(
+    board: pcbnew.BOARD,
+    net_name: str,
+    references: list[str],
+    bus_y_mm: float,
+    bus_x1_mm: float,
+    bus_x2_mm: float,
+    track_width_mm: float,
+) -> int:
+    add_track(
+        board,
+        net_name,
+        point(bus_x1_mm, bus_y_mm),
+        point(bus_x2_mm, bus_y_mm),
+        pcbnew.In2_Cu,
+        track_width_mm,
+    )
+    count = 0
+    seen: set[tuple[int, int]] = set()
+    for reference in references:
+        item = board.FindFootprintByReference(reference)
+        if item is None:
+            continue
+        for pad in item.Pads():
+            if pad.GetNetname() != net_name:
+                continue
+            via_pos = outward_fanout_position(item, pad, 0.85)
+            key = (via_pos.x, via_pos.y)
+            if key in seen:
+                continue
+            seen.add(key)
+            add_track(
+                board,
+                net_name,
+                pad.GetPosition(),
+                via_pos,
+                pcbnew.F_Cu,
+                max(0.20, track_width_mm),
+            )
+            add_through_via(board, net_name, via_pos)
+            add_track(
+                board,
+                net_name,
+                via_pos,
+                pcbnew.VECTOR2I(via_pos.x, mm(bus_y_mm)),
+                pcbnew.In2_Cu,
+                track_width_mm,
+            )
+            count += 1
+    return count
+
+
+def add_power_and_reference_preroutes(board: pcbnew.BOARD) -> dict[str, int]:
+    # Continuous reference plane. Keep In1.Cu unavailable to the autorouter.
+    add_rect_zone(board, "AGND", pcbnew.In1_Cu, 3.5, 3.5, 199.5, 114.5)
+
+    counts: dict[str, int] = {}
+
+    counts["VCM"] = fanout_net_to_bus(
+        board,
+        "VCM",
+        [f"R{i}" for i in range(1, 257)] + ["U22", "R530", "R531", "R532"],
+        39.0,
+        5.0,
+        194.0,
+        0.50,
+    )
+
+    counts["3V3A"] = fanout_net_to_bus(
+        board,
+        "3V3A",
+        [f"U{i}" for i in range(1, 23)]
+        + ["U24"]
+        + [f"C{i}" for i in range(1, 44)]
+        + ["R529"],
+        57.0,
+        5.0,
+        155.0,
+        0.60,
+    )
+
+    counts["3V3D"] = fanout_net_to_bus(
+        board,
+        "3V3D",
+        ["U21", "U23", "U25", "U26", "U27"]
+        + [f"C{i}" for i in range(42, 61)],
+        92.0,
+        145.0,
+        191.0,
+        0.60,
+    )
+
+    counts["5V_ISO"] = fanout_net_to_bus(
+        board,
+        "5V_ISO",
+        ["J9", "J11", "U24", "U25", "C17", "C19"],
+        108.5,
+        145.0,
+        195.0,
+        0.80,
+    )
+
+    counts["VREG_1V1"] = fanout_net_to_bus(
+        board,
+        "VREG_1V1",
+        ["U23", "C50", "C51", "C52"],
+        87.5,
+        160.0,
+        180.0,
+        0.45,
+    )
+
+    # Ground fanout for the most noise-sensitive/local decoupling components.
+    ground_refs = (
+        [f"C{i}" for i in range(1, 65)]
+        + [f"U{i}" for i in range(17, 28)]
+        + ["J9", "J10", "J11", "Y1", "R538", "R539"]
+    )
+    ground_count = 0
+    seen: set[tuple[int, int]] = set()
+    for reference in ground_refs:
+        item = board.FindFootprintByReference(reference)
+        if item is None:
+            continue
+        for pad in item.Pads():
+            if pad.GetNetname() != "AGND":
+                continue
+            via_pos = outward_fanout_position(item, pad, 0.85)
+            key = (via_pos.x, via_pos.y)
+            if key in seen:
+                continue
+            seen.add(key)
+            add_track(
+                board,
+                "AGND",
+                pad.GetPosition(),
+                via_pos,
+                pcbnew.F_Cu,
+                0.30,
+            )
+            add_through_via(board, "AGND", via_pos, 0.70, 0.30)
+            ground_count += 1
+    counts["AGND"] = ground_count
+
+    try:
+        filler = pcbnew.ZONE_FILLER(board)
+        filler.Fill(board.Zones())
+    except Exception as exc:
+        print(f"zone fill deferred to KiCad CLI: {exc}")
+
+    return counts
+
+
 def merge_digital_ground(board: pcbnew.BOARD) -> int:
     agnd = board.FindNet("AGND")
     if agnd is None:
@@ -373,6 +601,7 @@ def prepare(input_path: Path, output_path: Path) -> None:
         place_input_bank(board, bank)
     place_analog_core(board)
     place_digital_core(board)
+    preroute_counts = add_power_and_reference_preroutes(board)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     pcbnew.SaveBoard(str(output_path), board)
@@ -388,6 +617,7 @@ def prepare(input_path: Path, output_path: Path) -> None:
             "merged_dgnd_pads": merged,
             "footprints": len(list(board.GetFootprints())),
             "usb_cc_resistors": ["R538", "R539"],
+            "preroute_counts": preroute_counts,
         }
     )
 
