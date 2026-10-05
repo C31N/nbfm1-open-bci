@@ -257,24 +257,12 @@ def place_input_bank(board: pcbnew.BOARD, bank: int) -> None:
 
     p_mux = f"U{2 * bank + 1}"
     n_mux = f"U{2 * bank + 2}"
-    replace_footprint_keep_nets(
-        board,
-        p_mux,
-        "Package_SO",
-        "SOIC-24W_7.5x15.4mm_P1.27mm",
-        bank_center_x - 4.0,
-        45.0,
-        0.0,
-    )
-    replace_footprint_keep_nets(
-        board,
-        n_mux,
-        "Package_SO",
-        "SOIC-24W_7.5x15.4mm_P1.27mm",
-        bank_center_x + 4.0,
-        45.0,
-        0.0,
-    )
+    place(board, p_mux, bank_center_x - 4.0, 45.0, 0.0)
+    place(board, n_mux, bank_center_x + 4.0, 45.0, 0.0)
+    for reference in (p_mux, n_mux):
+        item = footprint(board, reference)
+        for pad in item.Pads():
+            pad.SetOrientationDegrees(0.0)
 
     first_channel = bank * 16
     for local_channel in range(16):
