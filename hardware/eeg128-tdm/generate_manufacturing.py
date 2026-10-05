@@ -27,11 +27,18 @@ def require_release() -> dict[str, object]:
     status: dict[str, object] = json.loads(STATUS.read_text(encoding="utf-8"))
     required_true = (
         "fabrication_release",
+        "schematic_complete",
         "routing_completed",
+        "copper_zones_completed",
+        "ground_strategy_resolved",
         "footprints_verified",
         "erc_passed",
         "drc_passed",
+        "schematic_parity_passed",
         "bom_cpl_crosscheck_passed",
+        "gerber_visual_review_passed",
+        "isolated_bench_bringup_passed",
+        "noise_settling_validation_passed",
     )
     false_keys = [key for key in required_true if not bool(status.get(key))]
     if false_keys:
@@ -77,7 +84,14 @@ def main() -> int:
     require_release()
     require_kicad8()
 
-    run(["python3", "validate_eda.py", "--kicad-release-checks"])
+    run(
+        [
+            "python3",
+            "validate_eda.py",
+            "--fabrication-ready",
+            "--kicad-release-checks",
+        ]
+    )
 
     out = Path(args.output).resolve()
     gerbers = out / "gerbers"
@@ -135,12 +149,33 @@ def main() -> int:
     shutil.copy2(ROOT / "NETLIST.csv", out / "NETLIST.csv")
     shutil.copy2(STATUS, out / "RELEASE_STATUS.json")
 
+    manifest = out / "SHA256SUMS"
+    payload_files = [
+        out / "BOM.csv",
+        out / "CPL.csv",
+        out / "NETLIST.csv",
+        out / "RELEASE_STATUS.json",
+        *sorted(path for path in gerbers.rglob("*") if path.is_file()),
+    ]
+    import hashlib
+
+    with manifest.open("w", encoding="utf-8") as handle:
+        for path in payload_files:
+            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            handle.write(f"{digest}  {path.relative_to(out).as_posix()}\n")
+
     archive = out / "JLCPCB-eeg128-tdm-A0.zip"
     with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as zf:
         for path in sorted(gerbers.rglob("*")):
             if path.is_file():
                 zf.write(path, Path("gerbers") / path.relative_to(gerbers))
-        for name in ("BOM.csv", "CPL.csv", "NETLIST.csv", "RELEASE_STATUS.json"):
+        for name in (
+            "BOM.csv",
+            "CPL.csv",
+            "NETLIST.csv",
+            "RELEASE_STATUS.json",
+            "SHA256SUMS",
+        ):
             zf.write(out / name, name)
 
     print(archive)
