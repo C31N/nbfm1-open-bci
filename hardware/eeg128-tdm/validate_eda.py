@@ -22,7 +22,10 @@ REQUIRED = (
     "eeg128-tdm.kicad_pcb",
     "eeg128-tdm.kicad_pro",
     "RELEASE_STATUS.json",
+    "EDA_AUDIT.md",
 )
+
+LCSC_RE = re.compile(r"^C[0-9]+$")
 
 
 def fail(message: str) -> None:
@@ -82,14 +85,39 @@ def validate_bom_cpl() -> None:
             f"got {len(bom_refs)}"
         )
 
-    adc_rows = [row for row in bom if "ADS131M08" in row["Manufacturer Part #"]]
+    seen: set[str] = set()
+    for row in bom:
+        refs = expand_designators(row["Designator"])
+        duplicates = refs & seen
+        if duplicates:
+            fail(f"duplicate BOM designators: {sorted(duplicates)}")
+        seen |= refs
+
+        try:
+            quantity = int(row["Qty"])
+        except ValueError as exc:
+            raise RuntimeError(f"invalid BOM quantity for {row['Designator']}") from exc
+        if quantity != len(refs):
+            fail(
+                f"BOM quantity mismatch for {row['Designator']}: "
+                f"Qty={quantity}, designators={len(refs)}"
+            )
+
+        lcsc = row["LCSC Part #"].strip()
+        if not LCSC_RE.fullmatch(lcsc):
+            fail(f"invalid LCSC part identifier {lcsc!r} for {row['Designator']}")
+
+    adc_rows = [row for row in bom if row["Manufacturer Part #"] == "ADS131M08IPBSR"]
     if len(adc_rows) != 1:
-        fail("BOM must contain exactly one ADS131M08")
+        fail("BOM must contain exactly one ADS131M08IPBSR")
     adc = adc_rows[0]
     if adc["LCSC Part #"] != "C2862610":
         fail("ADS131M08 LCSC part must be C2862610")
     if adc["Footprint"] != "TQFP-32_5x5mm_P0.5mm":
-        fail("ADS131M08IPBSR footprint must be TQFP-32 5x5 mm, 0.5 mm pitch")
+        fail(
+            "ADS131M08IPBSR must use the TI PBS geometry: "
+            "32-pin TQFP, approximately 5x5 mm body, 0.50 mm pitch"
+        )
 
 
 def validate_netlist() -> None:
@@ -117,6 +145,7 @@ def validate_netlist() -> None:
         "ADC_DRDY",
         "ADC_SYNC_RESET",
         "ADC_CLKIN",
+        "ADC_REFIN",
         "VCM",
         "DRL",
         "CMS1",
@@ -132,20 +161,75 @@ def validate_netlist() -> None:
         fail(f"missing required logical nets: {missing}")
 
 
-def validate_kicad_sources() -> None:
+def source_metrics() -> dict[str, int]:
     sch = (ROOT / "eeg128-tdm.kicad_sch").read_text(encoding="utf-8")
     pcb = (ROOT / "eeg128-tdm.kicad_pcb").read_text(encoding="utf-8")
+    return {
+        "schematic_instantiated_symbols": len(
+            re.findall(r"(?m)^  \(symbol\b", sch)
+        ),
+        "schematic_wires": len(re.findall(r"(?m)^  \(wire\b", sch)),
+        "pcb_footprints": len(re.findall(r"(?m)^  \(footprint\b", pcb)),
+        "pcb_segments": len(re.findall(r"(?m)^  \(segment\b", pcb)),
+        "pcb_vias": len(re.findall(r"(?m)^  \(via\b", pcb)),
+        "pcb_zones": len(re.findall(r"(?m)^  \(zone\b", pcb)),
+    }
+
+
+def validate_kicad_sources() -> dict[str, int]:
+    sch = (ROOT / "eeg128-tdm.kicad_sch").read_text(encoding="utf-8")
+    pcb = (ROOT / "eeg128-tdm.kicad_pcb").read_text(encoding="utf-8")
+
     if "(version 20231120)" not in sch:
         fail("schematic is not KiCad 8 schematic format")
     if "(version 20240108)" not in pcb:
         fail("PCB is not KiCad 8 PCB format")
+
     for layer in ('"F.Cu"', '"In1.Cu"', '"In2.Cu"', '"B.Cu"', '"Edge.Cuts"'):
         if layer not in pcb:
             fail(f"PCB missing required layer {layer}")
-    if pcb.count("(footprint ") < 600:
+
+    metrics = source_metrics()
+    if metrics["pcb_footprints"] < 600:
         fail("PCB unexpectedly contains fewer than 600 footprint instances")
-    if 'TQFP-32_5x5mm_P0.5mm' not in (ROOT / "BOM.csv").read_text(encoding="utf-8"):
-        fail("ADC package audit failed")
+
+    return metrics
+
+
+def release_gate_failures(
+    status: dict[str, object],
+    metrics: dict[str, int],
+) -> list[str]:
+    failures: list[str] = []
+
+    bool_gates = (
+        "schematic_complete",
+        "routing_completed",
+        "copper_zones_completed",
+        "ground_strategy_resolved",
+        "footprints_verified",
+        "erc_passed",
+        "drc_passed",
+        "schematic_parity_passed",
+        "bom_cpl_crosscheck_passed",
+        "gerber_visual_review_passed",
+        "isolated_bench_bringup_passed",
+        "noise_settling_validation_passed",
+    )
+    failures.extend(key for key in bool_gates if not bool(status.get(key)))
+
+    if metrics["schematic_instantiated_symbols"] < 30:
+        failures.append("schematic_has_too_few_instantiated_symbols")
+    if metrics["schematic_wires"] < 30:
+        failures.append("schematic_has_too_few_wires")
+    if metrics["pcb_segments"] < 100:
+        failures.append("pcb_has_too_few_routed_segments")
+    if metrics["pcb_vias"] < 1:
+        failures.append("pcb_has_no_vias")
+    if metrics["pcb_zones"] < 1:
+        failures.append("pcb_has_no_copper_zones")
+
+    return failures
 
 
 def run_checked(command: list[str]) -> None:
@@ -192,14 +276,32 @@ def main() -> int:
         action="store_true",
         help="also require KiCad 8 ERC and DRC to pass",
     )
+    parser.add_argument(
+        "--fabrication-ready",
+        action="store_true",
+        help="fail unless all physical release gates and source-completeness checks pass",
+    )
     args = parser.parse_args()
 
     validate_required_files()
     validate_bom_cpl()
     validate_netlist()
-    validate_kicad_sources()
+    metrics = validate_kicad_sources()
 
-    status = json.loads((ROOT / "RELEASE_STATUS.json").read_text(encoding="utf-8"))
+    status: dict[str, object] = json.loads(
+        (ROOT / "RELEASE_STATUS.json").read_text(encoding="utf-8")
+    )
+
+    if bool(status.get("fabrication_release")) or args.fabrication_ready:
+        failures = release_gate_failures(status, metrics)
+        if failures:
+            fail("fabrication release blocked: " + ", ".join(sorted(set(failures))))
+        if not args.kicad_release_checks:
+            fail(
+                "fabrication-ready validation requires --kicad-release-checks "
+                "so ERC/DRC are executed in the current environment"
+            )
+
     if args.kicad_release_checks:
         run_kicad_release_checks()
 
@@ -209,10 +311,11 @@ def main() -> int:
                 "source_validation": "PASS",
                 "revision": status["revision"],
                 "fabrication_release": bool(status["fabrication_release"]),
-                "routing_completed": bool(status["routing_completed"]),
-                "footprints_verified": bool(status["footprints_verified"]),
-                "erc_passed": bool(status["erc_passed"]),
-                "drc_passed": bool(status["drc_passed"]),
+                "human_connected_use_authorized": bool(
+                    status["human_connected_use_authorized"]
+                ),
+                "metrics": metrics,
+                "release_gate_failures": release_gate_failures(status, metrics),
             },
             indent=2,
         )
