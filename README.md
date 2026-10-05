@@ -6,7 +6,7 @@
 ![Hardware License](https://img.shields.io/badge/hardware-CERN--OHL--S--2.0-00599C)
 ![Software License](https://img.shields.io/badge/software-AGPL--3.0--only-A42E2B)
 ![Latency](https://img.shields.io/badge/P99_latency-target_%3C_5_ms-orange)
-![Status](https://img.shields.io/badge/status-research_prototype-yellow)
+![Status](https://img.shields.io/badge/status-research_prototype-yellow)\n![PCB A0](https://img.shields.io/badge/PCB_A0-NOT_FABRICATION_RELEASE-red)
 
 Open-source research platform for a multimodal, non-invasive brain-computer interface built around three independently useful layers:
 
@@ -71,6 +71,26 @@ LOCKED --explicit local arm--> ARMED --P(intent) >= T_gate--> DECODING
 ```
 
 Speech logits remain local. When the gate is closed, the export tensor is replaced with a fixed-shape zero tensor before encryption. Frame dimensions therefore do not reveal whether a private speech hypothesis existed.
+
+## Physical hardware release status
+
+The repository contains the A0 KiCad project, logical netlist, BOM/CPL and fail-closed manufacturing tooling, but **A0 is not released for fabrication or human-connected use**.
+
+The current audited EDA state has placement/net assignments but not completed copper routing, and the current schematic is a connectivity index rather than a complete instantiated circuit schematic. The authoritative release blockers are machine-readable in `hardware/eeg128-tdm/RELEASE_STATUS.json`.
+
+Run:
+
+```bash
+python3 hardware/eeg128-tdm/validate_eda.py
+```
+
+Manufacturing export remains blocked until the independent physical release gates are satisfied.
+
+See:
+
+- `hardware/eeg128-tdm/EDA_AUDIT.md`
+- `docs/SAFETY_COMPLIANCE.md`
+- `docs/AUDIT_2026-10-05.md`
 
 ## Quick start
 
