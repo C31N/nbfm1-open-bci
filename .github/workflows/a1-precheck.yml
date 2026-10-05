@@ -90,11 +90,23 @@ jobs:
                   for key, count in type_counts.most_common()
               ],
               "sample_items": violations[:50],
+              "sample_unconnected": unconnected[:100],
           }
           out = Path("hardware/eeg128-tdm/A1_PRECHECK.json")
           out.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
           print(json.dumps(report, indent=2))
           PY
+
+      - name: Upload A1 precheck artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: eeg128-a1-precheck
+          path: |
+            /tmp/a1/eeg128-tdm-A1-prepared.kicad_pcb
+            /tmp/a1/drc.json
+            /tmp/a1/drc-exit.txt
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Commit precheck report
         run: |
