@@ -138,6 +138,23 @@ def pin_y(index: int, count: int) -> float:
     return ((count - 1) / 2.0 - index) * spacing
 
 
+def snap_grid(value: float, grid: float = 1.27) -> float:
+    return round(value / grid) * grid
+
+
+def snap_symbol_position(
+    x: float,
+    y: float,
+    pin_count: int,
+) -> tuple[float, float]:
+    x = snap_grid(x)
+    # Even-pin symbols use half-grid internal pin offsets. Shift their origin
+    # by half a grid so every electrical pin endpoint lands on the 1.27 mm grid.
+    y_phase = 0.635 if pin_count % 2 == 0 else 0.0
+    y = snap_grid(y - y_phase) + y_phase
+    return x, y
+
+
 def library_symbol(numbers: tuple[str, ...]) -> str:
     sid = symbol_id(numbers)
     bare = sid.split(":", 1)[1]
@@ -191,13 +208,21 @@ def positions(components: list[Component]) -> dict[str, tuple[float, float]]:
     for index, component in enumerate(large):
         column = index % 12
         row = index // 12
-        result[component.ref] = (45.0 + 92.0 * column, 55.0 + 90.0 * row)
+        result[component.ref] = snap_symbol_position(
+            45.0 + 92.0 * column,
+            55.0 + 90.0 * row,
+            len(component.pads),
+        )
 
     small_start_y = 410.0
     for index, component in enumerate(small):
         column = index % 24
         row = index // 24
-        result[component.ref] = (32.0 + 48.0 * column, small_start_y + 15.0 * row)
+        result[component.ref] = snap_symbol_position(
+            32.0 + 48.0 * column,
+            small_start_y + 15.0 * row,
+            len(component.pads),
+        )
 
     return result
 
