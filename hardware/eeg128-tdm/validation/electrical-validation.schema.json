@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/C31N/nbfm1-open-bci/electrical-validation.schema.json",
+  "title": "EEG128-TDM physical electrical validation dataset",
+  "type": "object",
+  "required": [
+    "limits",
+    "equipment",
+    "noise",
+    "settling",
+    "crosstalk",
+    "cmrr",
+    "drl_stability",
+    "external_safety_lab"
+  ],
+  "properties": {
+    "limits": {
+      "type": "object",
+      "required": [
+        "noise_rms_uv_max",
+        "settling_error_uv_max",
+        "cmrr_db_min",
+        "crosstalk_db_max"
+      ],
+      "properties": {
+        "noise_rms_uv_max": {"type": "number", "exclusiveMinimum": 0},
+        "settling_error_uv_max": {"type": "number", "exclusiveMinimum": 0},
+        "cmrr_db_min": {"type": "number"},
+        "crosstalk_db_max": {"type": "number"}
+      },
+      "additionalProperties": false
+    },
+    "equipment": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "model", "calibration_valid"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "model": {"type": "string", "minLength": 1},
+          "calibration_valid": {"type": "boolean"},
+          "calibration_reference": {"type": "string"}
+        },
+        "additionalProperties": true
+      }
+    },
+    "noise": {
+      "type": "array",
+      "minItems": 128,
+      "maxItems": 128,
+      "items": {
+        "type": "object",
+        "required": ["channel", "rms_uv_0p5_100hz"],
+        "properties": {
+          "channel": {"type": "integer", "minimum": 0, "maximum": 127},
+          "rms_uv_0p5_100hz": {"type": "number", "minimum": 0}
+        },
+        "additionalProperties": false
+      }
+    },
+    "settling": {
+      "type": "array",
+      "minItems": 128,
+      "maxItems": 128,
+      "items": {
+        "type": "object",
+        "required": ["channel", "max_retained_error_uv"],
+        "properties": {
+          "channel": {"type": "integer", "minimum": 0, "maximum": 127},
+          "max_retained_error_uv": {"type": "number", "minimum": 0}
+        },
+        "additionalProperties": false
+      }
+    },
+    "crosstalk": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["source_channel", "victim_channel", "coupling_db"],
+        "properties": {
+          "source_channel": {"type": "integer", "minimum": 0, "maximum": 127},
+          "victim_channel": {"type": "integer", "minimum": 0, "maximum": 127},
+          "coupling_db": {"type": "number"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "cmrr": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["channel", "frequency_hz", "cmrr_db"],
+        "properties": {
+          "channel": {"type": "integer", "minimum": 0, "maximum": 127},
+          "frequency_hz": {"enum": [50, 60]},
+          "cmrr_db": {"type": "number"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "drl_stability": {
+      "type": "object",
+      "required": ["pass", "evidence_reference"],
+      "properties": {
+        "pass": {"type": "boolean"},
+        "evidence_reference": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": true
+    },
+    "external_safety_lab": {
+      "type": "object",
+      "required": ["pass", "report_id", "scope"],
+      "properties": {
+        "pass": {"type": "boolean"},
+        "report_id": {"type": "string"},
+        "scope": {"type": "string"}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}
