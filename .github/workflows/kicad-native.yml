@@ -2,9 +2,6 @@ name: Native KiCad 8 Validation
 
 on:
   push:
-    paths:
-      - ".github/workflows/kicad-native.yml"
-      - "hardware/eeg128-tdm/**"
   pull_request:
     paths:
       - ".github/workflows/kicad-native.yml"
