@@ -423,6 +423,54 @@ def fanout_net_to_bus(
     return count
 
 
+def mux_channel_pin(local_channel: int) -> str:
+    if not 0 <= local_channel < 16:
+        raise ValueError(local_channel)
+    if local_channel < 8:
+        return str(9 - local_channel)
+    return str(31 - local_channel)
+
+
+def add_channel_to_mux_routes(board: pcbnew.BOARD) -> int:
+    """Route the protected channel junctions to the aligned CD74HC4067 inputs."""
+    routed = 0
+    for bank in range(8):
+        p_mux = footprint(board, f"U{2 * bank + 1}")
+        n_mux = footprint(board, f"U{2 * bank + 2}")
+        for local_channel in range(16):
+            channel = bank * 16 + local_channel
+            pin_number = mux_channel_pin(local_channel)
+            for polarity, mux, series_ref in (
+                ("P", p_mux, 257 + 2 * channel),
+                ("N", n_mux, 258 + 2 * channel),
+            ):
+                series = footprint(board, f"R{series_ref}")
+                source = series.FindPadByNumber("2")
+                target = mux.FindPadByNumber(pin_number)
+                if source is None or target is None:
+                    raise RuntimeError(
+                        f"missing channel route endpoint "
+                        f"CH{channel:03d}_{polarity}"
+                    )
+                net_name = source.GetNetname()
+                expected = f"CH{channel:03d}_{polarity}_MUX"
+                if net_name != expected or target.GetNetname() != expected:
+                    raise RuntimeError(
+                        f"net mismatch for {expected}: "
+                        f"{net_name!r}/{target.GetNetname()!r}"
+                    )
+                add_track(
+                    board,
+                    net_name,
+                    source.GetPosition(),
+                    target.GetPosition(),
+                    pcbnew.F_Cu,
+                    0.15,
+                )
+                routed += 1
+    return routed
+
+
 def add_channel_mux_preroutes(board: pcbnew.BOARD) -> int:
     """Pre-route only the local 100 kOhm / 10 MOhm junction.
 
@@ -734,6 +782,7 @@ def prepare(input_path: Path, output_path: Path) -> None:
     place_digital_core(board)
     preroute_counts = add_power_and_reference_preroutes(board)
     preroute_counts["channel_bias_junctions"] = add_channel_mux_preroutes(board)
+    preroute_counts["channel_to_mux"] = add_channel_to_mux_routes(board)
     preroute_counts["VCM_bias_returns"] = add_vcm_preroute(board)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
