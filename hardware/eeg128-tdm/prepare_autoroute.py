@@ -424,55 +424,38 @@ def fanout_net_to_bus(
 
 
 def add_channel_mux_preroutes(board: pcbnew.BOARD) -> int:
-    """Pre-route the regular protected-input-to-MUX topology on F.Cu.
+    """Pre-route only the local 100 kOhm / 10 MOhm junction.
 
-    Each logical electrode polarity has a 100 kOhm series resistor followed by a
-    10 MOhm VCM-bias tap.  The A1 placement orders those bias/series pairs in the
-    same vertical order as the CD74HC4067 channel pins, so these traces are
-    non-crossing and deterministic.  The connector-to-series-resistor electrode
-    escape is intentionally left to the multilayer autorouter.
+    The series resistor output and the bias-resistor input are deliberately
+    placed 0.5 mm apart and share the same protected MUX net.  Connecting only
+    this local junction is deterministic and DRC-safe.  The longer path to the
+    CD74HC4067 pin remains an autorouter task because straight-line routing
+    across the full bank can cross neighboring channels.
     """
     routed = 0
 
     for channel in range(128):
-        bank = channel // 16
-        local = channel % 16
-
         for polarity in ("P", "N"):
             if polarity == "P":
                 bias_ref = 1 + 2 * channel
                 series_ref = 257 + 2 * channel
-                mux_ref = 1 + 2 * bank
             else:
                 bias_ref = 2 + 2 * channel
                 series_ref = 258 + 2 * channel
-                mux_ref = 2 + 2 * bank
-
-            if local < 8:
-                mux_pad_number = str(9 - local)
-            else:
-                mux_pad_number = str(31 - local)
 
             series = footprint(board, f"R{series_ref}")
             bias = footprint(board, f"R{bias_ref}")
-            mux = footprint(board, f"U{mux_ref}")
-
             series_out = series.FindPadByNumber("2")
             bias_tap = bias.FindPadByNumber("1")
-            mux_pad = mux.FindPadByNumber(mux_pad_number)
-            if series_out is None or bias_tap is None or mux_pad is None:
+            if series_out is None or bias_tap is None:
                 raise RuntimeError(
-                    f"channel preroute pad missing for CH{channel:03d}_{polarity}"
+                    f"channel junction pad missing for CH{channel:03d}_{polarity}"
                 )
 
             net_name = series_out.GetNetname()
-            if (
-                not net_name
-                or bias_tap.GetNetname() != net_name
-                or mux_pad.GetNetname() != net_name
-            ):
+            if not net_name or bias_tap.GetNetname() != net_name:
                 raise RuntimeError(
-                    f"net mismatch while prerouting CH{channel:03d}_{polarity}"
+                    f"net mismatch at CH{channel:03d}_{polarity} bias junction"
                 )
 
             add_track(
@@ -483,18 +466,9 @@ def add_channel_mux_preroutes(board: pcbnew.BOARD) -> int:
                 pcbnew.F_Cu,
                 0.15,
             )
-            add_track(
-                board,
-                net_name,
-                bias_tap.GetPosition(),
-                mux_pad.GetPosition(),
-                pcbnew.F_Cu,
-                0.15,
-            )
             routed += 1
 
     return routed
-
 
 def add_power_and_reference_preroutes(board: pcbnew.BOARD) -> dict[str, int]:
     """Reserve In1.Cu as a continuous AGND reference plane.
