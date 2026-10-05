@@ -202,7 +202,7 @@ def positions(components: list[Component]) -> dict[str, tuple[float, float]]:
     return result
 
 
-def instance(component: Component, x: float, y: float) -> tuple[str, list[str], list[str]]:
+def instance(\n    component: Component,\n    x: float,\n    y: float,\n) -> tuple[str, list[str], list[str], list[str]]:
     numbers = signature(component)
     sid = symbol_id(numbers)
     count = len(numbers)
@@ -237,6 +237,7 @@ def instance(component: Component, x: float, y: float) -> tuple[str, list[str], 
 
     wires: list[str] = []
     labels: list[str] = []
+    no_connects: list[str] = []
     for index, (number, net) in enumerate(component.pads):
         parts.extend(
             [
@@ -245,10 +246,15 @@ def instance(component: Component, x: float, y: float) -> tuple[str, list[str], 
                 "    )",
             ]
         )
-        if not net:
-            continue
         py = y + pin_y(index, count)
         pin_x = x - 5.08
+        if not net:
+            no_connects.append(
+                "  (no_connect "
+                f"(at {pin_x:.3f} {py:.3f}) "
+                f"(uuid {q(deterministic_uuid(f'no-connect:{component.ref}:{number}'))}))"
+            )
+            continue
         label_x = pin_x - 3.81
         wires.append(
             "\n".join(
@@ -288,7 +294,7 @@ def instance(component: Component, x: float, y: float) -> tuple[str, list[str], 
             "  )",
         ]
     )
-    return "\n".join(parts), wires, labels
+    return "\n".join(parts), wires, labels, no_connects
 
 
 def render(components: list[Component]) -> str:
@@ -298,12 +304,19 @@ def render(components: list[Component]) -> str:
     instances: list[str] = []
     wires: list[str] = []
     labels: list[str] = []
+    no_connects: list[str] = []
     for component in components:
         x, y = positions_by_ref[component.ref]
-        rendered, component_wires, component_labels = instance(component, x, y)
+        (
+            rendered,
+            component_wires,
+            component_labels,
+            component_no_connects,
+        ) = instance(component, x, y)
         instances.append(rendered)
         wires.extend(component_wires)
         labels.extend(component_labels)
+        no_connects.extend(component_no_connects)
 
     header = [
         "(kicad_sch",
@@ -331,7 +344,9 @@ def render(components: list[Component]) -> str:
         "  )",
         ")",
     ]
-    return "\n".join([*header, *wires, *labels, *instances, *footer]) + "\n"
+    return "\n".join(
+        [*header, *wires, *labels, *no_connects, *instances, *footer]
+    ) + "\n"
 
 
 def main() -> int:
