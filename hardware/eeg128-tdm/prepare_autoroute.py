@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import math
 from pathlib import Path
 import sys
 
@@ -434,9 +435,10 @@ def mux_channel_pin(local_channel: int) -> str:
 def add_channel_to_mux_routes(board: pcbnew.BOARD) -> int:
     """Route protected channel junctions to CD74HC4067 inputs on B.Cu.
 
-    F.Cu is intentionally reserved around the high-impedance bias/VCM network.
-    Each route escapes its resistor and mux pad locally, changes layer through
-    standard through-vias, and then remains on B.Cu between the two escapes.
+    Escape vias are placed on the actual source-to-target trajectory so one
+    channel cannot be intersected by the neighboring channel's escape via.
+    In1.Cu remains the uninterrupted AGND reference plane; the plane is
+    refilled only after all foreign-net vias have been created.
     """
     routed = 0
     for bank in range(8):
@@ -469,17 +471,23 @@ def add_channel_to_mux_routes(board: pcbnew.BOARD) -> int:
                     )
 
                 source_pos = source.GetPosition()
-                source_via = pcbnew.VECTOR2I(
-                    source_pos.x,
-                    source_pos.y + mm(0.80),
-                )
-
                 target_pos = target.GetPosition()
                 mux_center = mux.GetPosition()
                 direction = -1 if target_pos.x < mux_center.x else 1
                 target_via = pcbnew.VECTOR2I(
-                    target_pos.x + direction * mm(1.15),
+                    target_pos.x + direction * mm(1.20),
                     target_pos.y,
+                )
+
+                dx = target_via.x - source_pos.x
+                dy = target_via.y - source_pos.y
+                length = math.hypot(dx, dy)
+                if length <= 0:
+                    raise RuntimeError(f"zero-length route for {expected}")
+                escape = mm(0.90) / length
+                source_via = pcbnew.VECTOR2I(
+                    int(round(source_pos.x + dx * escape)),
+                    int(round(source_pos.y + dy * escape)),
                 )
 
                 add_track(
@@ -497,7 +505,6 @@ def add_channel_to_mux_routes(board: pcbnew.BOARD) -> int:
                     diameter_mm=0.65,
                     drill_mm=0.30,
                 )
-
                 add_track(
                     board,
                     net_name,
@@ -506,7 +513,6 @@ def add_channel_to_mux_routes(board: pcbnew.BOARD) -> int:
                     pcbnew.B_Cu,
                     0.15,
                 )
-
                 add_through_via(
                     board,
                     net_name,
@@ -585,7 +591,7 @@ def add_vcm_preroute(board: pcbnew.BOARD) -> int:
     all_spines: list[float] = []
 
     for bank in range(8):
-        bank_center_x = 16.0 + 23.0 * bank
+        bank_center_x = 17.5 + 23.0 * bank
         spine_x = (
             bank_center_x - 5.75,
             bank_center_x - 1.05,
@@ -693,7 +699,7 @@ def place_input_bank(board: pcbnew.BOARD, bank: int) -> None:
     side, while channels 8..15 appear in forward order on the right side. Mirroring
     the resistor row order removes a large class of unavoidable crossing routes.
     """
-    bank_center_x = 16.0 + 23.0 * bank
+    bank_center_x = 17.5 + 23.0 * bank
     connector = f"J{bank + 1}"
     place(board, connector, bank_center_x, 7.6, 0.0)
 
@@ -839,6 +845,12 @@ def prepare(input_path: Path, output_path: Path) -> None:
     preroute_counts["channel_bias_junctions"] = add_channel_mux_preroutes(board)
     preroute_counts["channel_to_mux"] = add_channel_to_mux_routes(board)
     preroute_counts["VCM_bias_returns"] = add_vcm_preroute(board)
+
+    try:
+        filler = pcbnew.ZONE_FILLER(board)
+        filler.Fill(board.Zones())
+    except Exception as exc:
+        print(f"final zone refill deferred to KiCad CLI: {exc}")
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     pcbnew.SaveBoard(str(output_path), board)
