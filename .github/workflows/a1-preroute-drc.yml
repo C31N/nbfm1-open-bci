@@ -1,0 +1,84 @@
+name: A1 Preroute DRC
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/a1-preroute-drc.yml"
+      - "hardware/eeg128-tdm/prepare_autoroute.py"
+
+permissions:
+  contents: read
+
+jobs:
+  preroute-drc:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install KiCad 8
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            kicad kicad-footprints
+          kicad-cli version
+
+      - name: Prepare A1 board
+        run: |
+          mkdir -p /tmp/a1-pre
+          /usr/bin/python3 hardware/eeg128-tdm/prepare_autoroute.py \
+            --input hardware/eeg128-tdm/eeg128-tdm.kicad_pcb \
+            --output /tmp/a1-pre/prepared.kicad_pcb
+
+      - name: Run native DRC
+        run: |
+          set +e
+          kicad-cli pcb drc \
+            --format json \
+            --severity-all \
+            --all-track-errors \
+            --output /tmp/a1-pre/drc.json \
+            /tmp/a1-pre/prepared.kicad_pcb
+          echo "$?" > /tmp/a1-pre/drc.exit
+          set -e
+
+      - name: Summarize DRC
+        run: |
+          python3 - <<'PY'
+          import json
+          from collections import Counter
+          from pathlib import Path
+
+          report = json.loads(Path("/tmp/a1-pre/drc.json").read_text(encoding="utf-8"))
+          violations = report.get("violations", [])
+          unconnected = report.get("unconnected_items", [])
+          all_items = violations + unconnected
+          summary = {
+              "violations": len(violations),
+              "unconnected": len(unconnected),
+              "errors": sum(x.get("severity") == "error" for x in all_items),
+              "warnings": sum(x.get("severity") == "warning" for x in all_items),
+              "types": dict(
+                  Counter(
+                      f"{x.get('type')}:{x.get('severity')}"
+                      for x in all_items
+                  )
+              ),
+          }
+          Path("/tmp/a1-pre/summary.json").write_text(
+              json.dumps(summary, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(summary, indent=2))
+          PY
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: a1-preroute-drc
+          path: |
+            /tmp/a1-pre/prepared.kicad_pcb
+            /tmp/a1-pre/drc.json
+            /tmp/a1-pre/summary.json
+          if-no-files-found: error
+          retention-days: 14
