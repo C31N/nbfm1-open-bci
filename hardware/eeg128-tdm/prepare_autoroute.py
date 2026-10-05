@@ -471,27 +471,25 @@ def add_channel_mux_preroutes(board: pcbnew.BOARD) -> int:
     return routed
 
 def add_vcm_preroute(board: pcbnew.BOARD) -> int:
-    """Collect the 256 high-value bias returns on In2.Cu.
+    """Collect all 10 MOhm bias returns on F.Cu without vias.
 
-    Only the VCM side of each 10 MOhm resistor is touched.  The electrode/MUX
-    signal side therefore does not gain a plane load or extra via capacitance.
-    Four vertical VCM spines per bank are joined by one horizontal bus above
-    the bias matrix.
+    The VCM collection traces stay on the VCM side of the high-value bias
+    resistors.  No copper plane is placed below the high-impedance electrode
+    signal path, and no extra via capacitance is added to the signal side.
     """
     routed = 0
     global_bus_y = 36.4
-    bank_spines: list[float] = []
+    all_spines: list[float] = []
 
     for bank in range(8):
         bank_center_x = 16.0 + 23.0 * bank
-        # Bias-resistor pad-2 x coordinates for P-low, N-low, P-high, N-high.
         spine_x = (
-            bank_center_x - 5.45,
-            bank_center_x - 1.35,
-            bank_center_x + 5.05,
-            bank_center_x + 10.55,
+            bank_center_x - 5.75,
+            bank_center_x - 1.05,
+            bank_center_x + 4.75,
+            bank_center_x + 10.25,
         )
-        bank_spines.extend(spine_x)
+        all_spines.extend(spine_x)
 
         for local_channel in range(16):
             channel = bank * 16 + local_channel
@@ -512,28 +510,14 @@ def add_vcm_preroute(board: pcbnew.BOARD) -> int:
                     raise RuntimeError(f"invalid VCM bias pad R{bias_ref}.2")
 
                 pad_pos = pad.GetPosition()
-                via_pos = point(target_x, pcbnew.ToMM(pad_pos.y))
+                target = point(target_x, pcbnew.ToMM(pad_pos.y))
+                add_track(board, "VCM", pad_pos, target, pcbnew.F_Cu, 0.15)
                 add_track(
                     board,
                     "VCM",
-                    pad_pos,
-                    via_pos,
-                    pcbnew.F_Cu,
-                    0.15,
-                )
-                add_through_via(
-                    board,
-                    "VCM",
-                    via_pos,
-                    diameter_mm=0.55,
-                    drill_mm=0.25,
-                )
-                add_track(
-                    board,
-                    "VCM",
-                    via_pos,
+                    target,
                     point(target_x, global_bus_y),
-                    pcbnew.In2_Cu,
+                    pcbnew.F_Cu,
                     0.20,
                 )
                 routed += 1
@@ -543,22 +527,21 @@ def add_vcm_preroute(board: pcbnew.BOARD) -> int:
             "VCM",
             point(spine_x[0], global_bus_y),
             point(spine_x[3], global_bus_y),
-            pcbnew.In2_Cu,
+            pcbnew.F_Cu,
             0.25,
         )
 
-    if bank_spines:
+    if all_spines:
         add_track(
             board,
             "VCM",
-            point(min(bank_spines), global_bus_y),
-            point(max(bank_spines), global_bus_y),
-            pcbnew.In2_Cu,
+            point(min(all_spines), global_bus_y),
+            point(max(all_spines), global_bus_y),
+            pcbnew.F_Cu,
             0.25,
         )
 
     return routed
-
 
 def add_power_and_reference_preroutes(board: pcbnew.BOARD) -> dict[str, int]:
     """Reserve In1.Cu as a continuous AGND reference plane.
