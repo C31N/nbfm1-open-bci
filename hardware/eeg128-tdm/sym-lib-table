@@ -1,0 +1,10 @@
+(sym_lib_table
+  (version 7)
+  (lib
+    (name "NBFM1_A0")
+    (type "KiCad")
+    (uri "${KIPRJMOD}/NBFM1_A0.kicad_sym")
+    (options "")
+    (descr "Generated EEG128-TDM A0/A1 connectivity symbols")
+  )
+)
