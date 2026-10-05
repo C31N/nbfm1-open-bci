@@ -1,12 +1,19 @@
 {
-  "generated_at": "2026-10-05T22:41:42.919609+00:00",
-  "violations": 598,
+  "generated_at": "2026-10-05T22:49:26.272488+00:00",
+  "violations": 1316,
   "unconnected": 499,
   "severity": {
     "warning": 598,
-    "error": 499
+    "error": 1217
   },
   "types": [
+    {
+      "type": "clearance",
+      "count": 320,
+      "severity": {
+        "error": 320
+      }
+    },
     {
       "type": "silk_overlap",
       "count": 199,
@@ -26,6 +33,20 @@
       "count": 199,
       "severity": {
         "warning": 199
+      }
+    },
+    {
+      "type": "drill_out_of_range",
+      "count": 199,
+      "severity": {
+        "error": 199
+      }
+    },
+    {
+      "type": "hole_clearance",
+      "count": 199,
+      "severity": {
+        "error": 199
       }
     },
     {
