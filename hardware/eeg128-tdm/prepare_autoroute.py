@@ -89,6 +89,41 @@ def load_library_footprint(library: str, name: str) -> pcbnew.FOOTPRINT:
     raise RuntimeError(f"KiCad footprint not found: {library}:{name}")
 
 
+def replace_footprint_keep_nets(
+    board: pcbnew.BOARD,
+    reference: str,
+    library: str,
+    name: str,
+    x_mm: float,
+    y_mm: float,
+    angle_deg: float = 0.0,
+) -> None:
+    old = footprint(board, reference)
+    value = old.GetValue()
+    nets = {
+        pad.GetNumber(): pad.GetNetname()
+        for pad in old.Pads()
+        if pad.GetNumber() and pad.GetNetname()
+    }
+    board.Remove(old)
+
+    item = load_library_footprint(library, name)
+    item.SetReference(reference)
+    item.SetValue(value)
+    board.Add(item)
+    item.SetPosition(point(x_mm, y_mm))
+    item.SetOrientationDegrees(angle_deg)
+
+    for pad_number, net_name in nets.items():
+        pad = item.FindPadByNumber(pad_number)
+        if pad is None:
+            raise RuntimeError(
+                f"replacement footprint {library}:{name} missing "
+                f"{reference}.{pad_number}"
+            )
+        pad.SetNet(ensure_net(board, net_name))
+
+
 def replace_usb_connector(board: pcbnew.BOARD) -> None:
     old = footprint(board, "J9")
     board.Remove(old)
@@ -222,8 +257,24 @@ def place_input_bank(board: pcbnew.BOARD, bank: int) -> None:
 
     p_mux = f"U{2 * bank + 1}"
     n_mux = f"U{2 * bank + 2}"
-    place(board, p_mux, bank_center_x - 5.1, 45.0, 0.0)
-    place(board, n_mux, bank_center_x + 5.1, 45.0, 0.0)
+    replace_footprint_keep_nets(
+        board,
+        p_mux,
+        "Package_SO",
+        "SOIC-24W_7.5x15.4mm_P1.27mm",
+        bank_center_x - 4.0,
+        45.0,
+        0.0,
+    )
+    replace_footprint_keep_nets(
+        board,
+        n_mux,
+        "Package_SO",
+        "SOIC-24W_7.5x15.4mm_P1.27mm",
+        bank_center_x + 4.0,
+        45.0,
+        0.0,
+    )
 
     first_channel = bank * 16
     for local_channel in range(16):
@@ -243,8 +294,8 @@ def place_input_bank(board: pcbnew.BOARD, bank: int) -> None:
         place(board, f"R{series_n}", cx - 1.15, cy + 1.35, 90.0)
         place(board, f"R{bias_n}", cx + 1.15, cy + 1.35, 90.0)
 
-    place(board, f"C{21 + 2 * bank}", bank_center_x - 5.1, 54.5, 0.0)
-    place(board, f"C{22 + 2 * bank}", bank_center_x + 5.1, 54.5, 0.0)
+    place(board, f"C{21 + 2 * bank}", bank_center_x - 4.0, 55.0, 0.0)
+    place(board, f"C{22 + 2 * bank}", bank_center_x + 4.0, 55.0, 0.0)
 
 
 def place_analog_core(board: pcbnew.BOARD) -> None:
