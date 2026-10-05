@@ -461,6 +461,15 @@ def merge_digital_ground(board: pcbnew.BOARD) -> int:
 
 
 def place_input_bank(board: pcbnew.BOARD, bank: int) -> None:
+    """Place one 16-channel differential TDM bank for monotonic routing.
+
+    The four resistor groups are aligned to the four CD74HC4067 input pin columns:
+      P0..P7, N0..N7, P8..P15, N8..N15.
+
+    CD74HC4067 channels 0..7 appear in reverse vertical order on the left package
+    side, while channels 8..15 appear in forward order on the right side. Mirroring
+    the resistor row order removes a large class of unavoidable crossing routes.
+    """
     bank_center_x = 16.0 + 23.0 * bank
     connector = f"J{bank + 1}"
     place(board, connector, bank_center_x, 7.6, 0.0)
@@ -474,27 +483,41 @@ def place_input_bank(board: pcbnew.BOARD, bank: int) -> None:
         for pad in item.Pads():
             pad.SetOrientationDegrees(0.0)
 
-    first_channel = bank * 16
+    group_x = {
+        "P_LOW": bank_center_x - 8.0,
+        "N_LOW": bank_center_x - 2.5,
+        "P_HIGH": bank_center_x + 2.5,
+        "N_HIGH": bank_center_x + 8.0,
+    }
+
     for local_channel in range(16):
-        channel = first_channel + local_channel
-        column = local_channel % 4
-        row = local_channel // 4
-        cx = bank_center_x - 6.9 + 4.6 * column
-        cy = 17.0 + 5.6 * row
+        channel = bank * 16 + local_channel
+        if local_channel < 8:
+            row = 7 - local_channel
+            p_center = group_x["P_LOW"]
+            n_center = group_x["N_LOW"]
+        else:
+            row = local_channel - 8
+            p_center = group_x["P_HIGH"]
+            n_center = group_x["N_HIGH"]
+
+        y = 13.5 + 3.0 * row
 
         bias_p = 2 * channel + 1
         bias_n = 2 * channel + 2
         series_p = 257 + 2 * channel
         series_n = 258 + 2 * channel
 
-        place(board, f"R{series_p}", cx - 1.15, cy - 1.35, 90.0)
-        place(board, f"R{bias_p}", cx + 1.15, cy - 1.35, 90.0)
-        place(board, f"R{series_n}", cx - 1.15, cy + 1.35, 90.0)
-        place(board, f"R{bias_n}", cx + 1.15, cy + 1.35, 90.0)
+        # Horizontal 0603 pair: series resistor toward the connector/mux column,
+        # bias resistor toward the bank interior. A 0.50 mm copper gap remains
+        # between their facing pads for a short same-net connection.
+        place(board, f"R{series_p}", p_center - 1.05, y, 0.0)
+        place(board, f"R{bias_p}", p_center + 1.05, y, 0.0)
+        place(board, f"R{series_n}", n_center - 1.05, y, 0.0)
+        place(board, f"R{bias_n}", n_center + 1.05, y, 0.0)
 
     place(board, f"C{21 + 2 * bank}", bank_center_x - 4.0, 55.0, 0.0)
     place(board, f"C{22 + 2 * bank}", bank_center_x + 4.0, 55.0, 0.0)
-
 
 def place_analog_core(board: pcbnew.BOARD) -> None:
     for index, x_mm in enumerate((62.0, 80.0, 98.0, 116.0), start=17):
