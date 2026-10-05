@@ -567,71 +567,6 @@ def add_power_and_reference_preroutes(board: pcbnew.BOARD) -> dict[str, int]:
         "VREG_1V1": 0,
     }
 
-def stitch_net_to_plane(
-    board: pcbnew.BOARD,
-    net_name: str,
-    plane_layer: int,
-    stub_mm: float = 0.85,
-) -> int:
-    """Connect F.Cu SMD pads to a dedicated internal copper plane.
-
-    Through-hole pads already span the internal layer and need no extra via.
-    SMD pads receive a short outward F.Cu escape and a small through-via.
-    """
-    stitched = 0
-    occupied: set[tuple[int, int]] = set()
-
-    for item in board.GetFootprints():
-        for pad in item.Pads():
-            if pad.GetNetname() != net_name:
-                continue
-
-            layers = pad.GetLayerSet()
-            if layers.Contains(plane_layer):
-                continue
-            if not layers.Contains(pcbnew.F_Cu):
-                continue
-
-            position = None
-            for distance in (stub_mm, stub_mm + 0.40, stub_mm + 0.80):
-                candidate = outward_fanout_position(item, pad, distance)
-                key = (candidate.x, candidate.y)
-                if key not in occupied:
-                    occupied.add(key)
-                    position = candidate
-                    break
-            if position is None:
-                raise RuntimeError(
-                    f"cannot allocate plane stitch via for "
-                    f"{item.GetReference()}.{pad.GetNumber()}"
-                )
-
-            add_track(
-                board,
-                net_name,
-                pad.GetPosition(),
-                position,
-                pcbnew.F_Cu,
-                0.20,
-            )
-            add_through_via(
-                board,
-                net_name,
-                position,
-                diameter_mm=0.55,
-                drill_mm=0.25,
-            )
-            stitched += 1
-
-    try:
-        filler = pcbnew.ZONE_FILLER(board)
-        filler.Fill(board.Zones())
-    except Exception as exc:
-        print(f"zone refill deferred to KiCad CLI: {exc}")
-
-    return stitched
-
-
 def merge_digital_ground(board: pcbnew.BOARD) -> int:
     agnd = board.FindNet("AGND")
     if agnd is None:
@@ -800,11 +735,6 @@ def prepare(input_path: Path, output_path: Path) -> None:
     preroute_counts = add_power_and_reference_preroutes(board)
     preroute_counts["channel_bias_junctions"] = add_channel_mux_preroutes(board)
     preroute_counts["VCM_bias_returns"] = add_vcm_preroute(board)
-    preroute_counts["AGND_stitches"] = stitch_net_to_plane(
-        board,
-        "AGND",
-        pcbnew.In1_Cu,
-    )
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     pcbnew.SaveBoard(str(output_path), board)
