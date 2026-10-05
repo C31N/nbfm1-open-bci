@@ -9,24 +9,38 @@ This document records the engineering state of the physical A0 source. It intent
 
 ## Current machine-observed source state
 
-At the 2026-10-05 audit baseline:
+After deterministic materialization and native KiCad 8.0.9 validation on 2026-10-05:
 
 ```text
 KiCad schematic:
-  instantiated circuit symbols: 0
-  electrical wires:             0
+  instantiated circuit symbols: 640
+  electrical wire stubs:         1875
+  primary schematic parses:      yes
+  native netlist export:         yes
+
+Native ERC report:
+  total findings:                3338
+  errors:                        183
+  warnings:                      3155
 
 KiCad PCB:
-  footprints:                   640
-  copper tracks/segments:       0
-  vias:                         0
-  copper zones:                 0
-  four copper layers declared:  yes
+  footprints:                    640
+  copper tracks/segments:        0
+  vias:                          0
+  copper zones:                  0
+  four copper layers declared:   yes
+
+Native PCB DRC report:
+  unconnected errors:            499
+  DRC violations:                1503
+  DRC errors:                    897
+  DRC warnings:                  606
+  schematic-parity items:        0
 ```
 
-The schematic is currently a KiCad-format connectivity index. Detailed endpoint connectivity exists in `NETLIST.csv`, but a fabrication-grade Eeschema circuit has not yet been instantiated.
+The primary schematic is now a KiCad-loadable, deterministic 640-component connectivity schematic generated from the PCB pad/net assignments. It uses conservative generic passive pin types and therefore still requires manufacturer-symbol/pin-type review before `schematic_complete` can be set true.
 
-The PCB is a placement/net-assignment review artifact. It is not routed.
+The PCB remains a placement/net-assignment review artifact. It is not routed.
 
 ## A0 architecture retained
 
@@ -115,3 +129,19 @@ Do not:
 - infer electrical correctness from the presence of pad net names;
 - treat distributor footprint drawings as authoritative over manufacturer package drawings;
 - connect a human subject while USB, bench supplies, oscilloscopes or other earth-referenced equipment provide an uncontrolled galvanic path.
+
+
+## Native KiCad 8 audit interpretation
+
+The successful GitHub Actions job means KiCad 8.0.9 can parse the EDA sources and produce native reports. It does **not** mean ERC or DRC are clean.
+
+ERC finding classes include:
+
+- endpoint-off-grid warnings;
+- generated-library symbol warnings;
+- unconnected-pin errors;
+- dangling-label errors.
+
+PCB findings are dominated by the intentionally unrouted design and generated-footprint review state, including unconnected items, clearance/shorting, solder-mask, silkscreen and library-footprint findings.
+
+Therefore `erc_passed=false`, `drc_passed=false`, `routing_completed=false` and `fabrication_release=false` remain mandatory.
