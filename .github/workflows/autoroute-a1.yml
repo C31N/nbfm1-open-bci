@@ -85,7 +85,7 @@ jobs:
             -jar /tmp/a1/freerouting-2.4.1.jar \
             -de /tmp/a1/eeg128-tdm-A1.dsn \
             -do /tmp/a1/eeg128-tdm-A1.ses \
-            -mp 25 \
+            -mp 5 \
             -mt 4 \
             -us hybrid \
             -hr 1:1 \
