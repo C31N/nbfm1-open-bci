@@ -158,12 +158,7 @@ def replace_footprint_keep_nets(
 
 
 def ensure_critical_manufacturer_footprints(board: pcbnew.BOARD) -> int:
-    """Replace critical generated land patterns with reviewed KiCad footprints.
-
-    The selected library footprints match the manufacturer package geometry for
-    the high-risk mixed-signal devices. Existing net assignments, positions and
-    orientations are preserved.
-    """
+    """Replace critical generated land patterns in one mutation-safe batch."""
     specifications: dict[str, tuple[str, str]] = {
         **{
             f"U{index}": (
@@ -185,25 +180,71 @@ def ensure_critical_manufacturer_footprints(board: pcbnew.BOARD) -> int:
             "QFN-56-1EP_7x7mm_P0.4mm_EP3.2x3.2mm",
         ),
     }
-    replaced = 0
-    for reference, (library, name) in specifications.items():
-        item = footprint(board, reference)
-        position = item.GetPosition()
-        x_mm = pcbnew.ToMM(position.x)
-        y_mm = pcbnew.ToMM(position.y)
-        angle = item.GetOrientationDegrees()
-        replace_footprint_keep_nets(
-            board,
-            reference,
-            library,
-            name,
-            x_mm,
-            y_mm,
-            angle,
-        )
-        replaced += 1
-    return replaced
 
+    snapshots: list[
+        tuple[
+            pcbnew.FOOTPRINT,
+            str,
+            str,
+            str,
+            float,
+            float,
+            float,
+            dict[str, str],
+        ]
+    ] = []
+    for reference, (library, name) in specifications.items():
+        old = footprint(board, reference)
+        position = old.GetPosition()
+        nets = {
+            str(pad.GetNumber()): str(pad.GetNetname())
+            for pad in old.Pads()
+            if pad.GetNumber() and pad.GetNetname()
+        }
+        snapshots.append(
+            (
+                old,
+                reference,
+                str(old.GetValue()),
+                library,
+                pcbnew.ToMM(position.x),
+                pcbnew.ToMM(position.y),
+                float(old.GetOrientationDegrees()),
+                nets,
+            )
+        )
+
+    for old, *_ in snapshots:
+        board.Remove(old)
+
+    for (
+        _old,
+        reference,
+        value,
+        library,
+        x_mm,
+        y_mm,
+        angle_deg,
+        nets,
+    ) in snapshots:
+        name = specifications[reference][1]
+        item = load_library_footprint(library, name)
+        item.SetReference(reference)
+        item.SetValue(value)
+        item.SetPosition(point(x_mm, y_mm))
+        item.SetOrientationDegrees(angle_deg)
+        board.Add(item)
+
+        for pad_number, net_name in nets.items():
+            pad = item.FindPadByNumber(pad_number)
+            if pad is None:
+                raise RuntimeError(
+                    f"replacement footprint {library}:{name} missing "
+                    f"{reference}.{pad_number}"
+                )
+            pad.SetNet(ensure_net(board, net_name))
+
+    return len(snapshots)
 
 def replace_usb_connector(board: pcbnew.BOARD) -> None:
     old = footprint(board, "J9")
