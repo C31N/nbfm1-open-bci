@@ -63,3 +63,5 @@ Run 37503135045 removed one native dangling segment but native DRC still reporte
 Run 37505590814 again retained the clean 313-open baseline. The pre-rollback cleanup result was not retained, so the exact rollback cause is unresolved. A dedicated native diagnostic reads pinned artifact run 37505590814, saves every cleanup board/report and prints complete violation details; it does not reroute or promote a PCB.
 
 Diagnostic run 37509238110 artifact 11435265071 closed the cleanup investigation. Eight native-report-driven removals on the dead-end MUX_EN branch (six tracks and two vias) yielded 312 opens, zero geometric violations/warnings and no added analog B.Cu length. Step 8 board/report are the accepted engineering checkpoint. No manufacturing/release promotion occurred.
+
+Run 37511237149 saved 310 native opens, zero geometric violations/warnings and no added analog B.Cu routing. The validated engineering checkpoint continues from 310; strict-zero release promotion remains blocked.
