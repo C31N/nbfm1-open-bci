@@ -240,14 +240,14 @@ jobs:
                   check=False,
               )
               raw = json.loads(drc.read_text())
-              if any(v.get("type") == "track_dangling" and v.get("severity") == "warning"
+              if any(v.get("type") in ("track_dangling", "via_dangling") and v.get("severity") == "warning"
                      for v in raw.get("violations", [])):
                   shutil.copy2(drc, root / f"drc-round{round_index}-before-cleanup.json")
                   before_cleanup = root / f"round{round_index}-before-cleanup.kicad_pcb"
                   shutil.copy2(working, before_cleanup)
                   for cleanup_pass in range(8):
                       remaining = json.loads(drc.read_text()).get("violations", [])
-                      if not any(v.get("type") == "track_dangling" and v.get("severity") == "warning"
+                      if not any(v.get("type") in ("track_dangling", "via_dangling") and v.get("severity") == "warning"
                                  for v in remaining):
                           break
                       shutil.copy2(drc, root / f"drc-round{round_index}-cleanup{cleanup_pass}.json")
