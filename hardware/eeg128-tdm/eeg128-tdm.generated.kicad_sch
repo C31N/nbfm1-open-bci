@@ -41785,7 +41785,7 @@
     (property "Value" "ADS131M08IPBSR" (at 596.900 233.585 0) (effects (font (size 0.8 0.8))))
     (property "Footprint" "NBFM1_A0:U21" (at 596.900 235.585 0) (effects (font (size 0.8 0.8)) (hide yes)))
     (property "Datasheet" "" (at 596.900 235.585 0) (effects (font (size 0.8 0.8)) (hide yes)))
-    (property "Description" "Generated connectivity symbol; BOM footprint: TQFP-32_7x7mm_P0.8mm" (at 596.900 235.585 0) (effects (font (size 0.8 0.8)) (hide yes)))
+    (property "Description" "Generated connectivity symbol; BOM footprint: TQFP-32_5x5mm_P0.5mm" (at 596.900 235.585 0) (effects (font (size 0.8 0.8)) (hide yes)))
     (pin "1"
       (uuid "ed331602-8ce3-55ce-acc8-6a6590939a43")
     )
