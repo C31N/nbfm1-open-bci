@@ -990,7 +990,6 @@ def prepare(input_path: Path, output_path: Path) -> None:
 
     clear_routing(board)
     metadata_normalized = normalize_generated_footprint_metadata(board)
-    critical_footprints_replaced = ensure_critical_manufacturer_footprints(board)
     ensure_usb_connector(board)
     ensure_cc_resistor(board, "R538", "USB_CC1", 181.0, 70.5)
     ensure_cc_resistor(board, "R539", "USB_CC2", 184.0, 70.5)
@@ -1023,7 +1022,6 @@ def prepare(input_path: Path, output_path: Path) -> None:
         {
             "output": str(output_path),
             "merged_dgnd_pads": merged,
-            "critical_footprints_replaced": critical_footprints_replaced,
             "metadata_normalized": metadata_normalized,
             "footprints": len(list(board.GetFootprints())),
             "usb_cc_resistors": ["R538", "R539"],
