@@ -22,7 +22,7 @@ Native KiCad 8.0.9 checks after zone refill, using the unchanged project and cus
 
 Remaining groups: 65 ground/power connections, 34 MUX controls, 236 signal connections. These are real release blockers.
 
-`STATUS.json` records provenance and PCB/project/rule hashes. `drc-checkpoint.json` is the full native report. All 642 footprint bodies, geometry and pin assignments match the primary PCB, allowing only generated UUID changes and 10 nm numeric serialization rounding; BOM/CPL and all critical pin/footprint checks pass.
+`STATUS.json` records provenance and PCB/project/rule hashes. A complete primary-board geometry/connectivity signature permits harmless KiCad footprint reordering, UUID regeneration and numeric serialization rounding; actual primary routing, placement, zone or net changes invalidate the checkpoint. `drc-checkpoint.json` is the full native report. All 642 footprint bodies, geometry and pin assignments match the primary PCB, allowing only generated UUID changes and 10 nm numeric serialization rounding; BOM/CPL and all critical pin/footprint checks pass.
 
 The A2 workflow verifies the checkpoint, footprint identity and native baseline before routing. A push starts one bounded routing round (15-minute router limit plus 16-minute subprocess limit), rather than repeating six rounds from scratch. Manual dispatch can select 1–6 rounds. Existing strict-zero primary promotion remains in force. A successful workflow execution is not a completed PCB route.
 

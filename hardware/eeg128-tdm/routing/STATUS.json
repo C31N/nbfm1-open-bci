@@ -18,5 +18,6 @@
   ],
   "added_local_tracks": 21,
   "added_plane_escapes": 97,
-  "native_drc_sha256": "dcaccd9eb34f592eb1c333611a93c605a317c04ec26476f0a24273b67a38761b"
+  "native_drc_sha256": "dcaccd9eb34f592eb1c333611a93c605a317c04ec26476f0a24273b67a38761b",
+  "source_geometry_sha256": "f3494befcf4f1275b55c83bfc897465f0b6c4edb00b4bb5de2a19956d5cb86ce"
 }

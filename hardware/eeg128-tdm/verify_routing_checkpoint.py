@@ -21,6 +21,18 @@ def geometry(block: str) -> tuple[object, ...]:
     return tuple(round(float(t), 5) if re.fullmatch(r'-?\d+\.\d+', t) else t for t in tokens)
 
 
+def board_signature(text: str) -> str:
+    blocks = footprint_blocks(text)
+    # KiCad materialization may reorder footprints and regenerate their UUIDs.
+    for block in blocks.values():
+        text = text.replace(block, "", 1)
+    canonical = {
+        "board": geometry(text),
+        "footprints": {ref: geometry(blocks[ref]) for ref in sorted(blocks)},
+    }
+    return hashlib.sha256(json.dumps(canonical, sort_keys=True).encode()).hexdigest()
+
+
 def verify(source: Path, checkpoint: Path, metadata: Path) -> None:
     status = json.loads(metadata.read_text())
     root = source.parent
@@ -33,6 +45,9 @@ def verify(source: Path, checkpoint: Path, metadata: Path) -> None:
     }
     for key, path in files.items():
         if status.get(key) != digest(path):
+            if key == "source_sha256" and status.get("source_geometry_sha256") == board_signature(source.read_text()):
+                print("Primary PCB was reserialized; complete board geometry/connectivity signature matches")
+                continue
             raise RuntimeError(f"stale routing checkpoint: {key} does not match {path}")
     report = json.loads((metadata.parent / "drc-checkpoint.json").read_text())
     if report.get("violations") != [] or len(report["unconnected_items"]) != status["unconnected"]:
