@@ -40,6 +40,37 @@ def place(
     item.SetOrientationDegrees(angle_deg)
 
 
+def normalize_generated_footprint_metadata(board: pcbnew.BOARD) -> dict[str, int]:
+    """Remove false library/silkscreen DRC sources from board-local footprints."""
+    detached = 0
+    silk_items_moved = 0
+    references_hidden = 0
+
+    for item in board.GetFootprints():
+        fpid = item.GetFPIDAsString()
+        if fpid.startswith("NBFM1_A0:"):
+            # Keep the embedded footprint but remove the nonexistent library
+            # nickname so KiCad does not report a missing external library.
+            item.SetFPIDAsString(item.GetReference())
+            detached += 1
+
+            for graphic in item.GraphicalItems():
+                if graphic.GetLayer() == pcbnew.F_SilkS:
+                    graphic.SetLayer(pcbnew.F_Fab)
+                    silk_items_moved += 1
+
+            reference = item.Reference()
+            if reference.IsVisible():
+                reference.SetVisible(False)
+                references_hidden += 1
+
+    return {
+        "board_local_footprints": detached,
+        "silk_items_moved_to_fab": silk_items_moved,
+        "references_hidden": references_hidden,
+    }
+
+
 def clear_routing(board: pcbnew.BOARD) -> None:
     for track in list(board.GetTracks()):
         board.Remove(track)
@@ -927,6 +958,7 @@ def prepare(input_path: Path, output_path: Path) -> None:
 
     clear_routing(board)
     critical_footprints_replaced = ensure_critical_manufacturer_footprints(board)
+    metadata_normalized = normalize_generated_footprint_metadata(board)
     ensure_usb_connector(board)
     ensure_cc_resistor(board, "R538", "USB_CC1", 181.0, 70.5)
     ensure_cc_resistor(board, "R539", "USB_CC2", 184.0, 70.5)
@@ -960,6 +992,7 @@ def prepare(input_path: Path, output_path: Path) -> None:
             "output": str(output_path),
             "merged_dgnd_pads": merged,
             "critical_footprints_replaced": critical_footprints_replaced,
+            "metadata_normalized": metadata_normalized,
             "footprints": len(list(board.GetFootprints())),
             "usb_cc_resistors": ["R538", "R539"],
             "preroute_counts": preroute_counts,
