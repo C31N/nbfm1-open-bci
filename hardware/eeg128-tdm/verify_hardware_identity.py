@@ -44,7 +44,7 @@ APPROVED_PARTS: dict[str, tuple[str, str]] = {
 CRITICAL_FOOTPRINTS: dict[str, str] = {
     **{f"U{i}": "SOIC-24W_7.5x15.4mm_P1.27mm" for i in range(1, 17)},
     **{f"U{i}": "TSSOP-14_4.4x5mm_P0.65mm" for i in range(17, 21)},
-    "U21": "LQFP-32_5x5mm_P0.5mm",
+    "U21": "TI_PBS_S-PQFP-G32_5x5mm_P0.5mm",
     "U23": "QFN-56-1EP_7x7mm_P0.4mm_EP3.2x3.2mm",
 }
 
@@ -249,6 +249,51 @@ def verify_buffers(blocks: dict[str, str]) -> None:
         require_map(pad_nets(blocks[reference]), expected, reference)
 
 
+def verify_ti_pbs_landpattern(block: str) -> None:
+    """Gate U21 against TI PBS/S-PQFP-G32 land-pattern drawing 4212229/A."""
+    pads = balanced_blocks(block, "pad")
+    if len(pads) != 32:
+        raise RuntimeError(f"U21 TI PBS footprint must have 32 pads, got {len(pads)}")
+
+    rows: dict[str, list[tuple[float, float, float, float]]] = {
+        "left": [],
+        "right": [],
+        "top": [],
+        "bottom": [],
+    }
+    for pad in pads:
+        at = re.search(r"\(at\s+(-?[0-9.]+)\s+(-?[0-9.]+)", pad)
+        size = re.search(r"\(size\s+([0-9.]+)\s+([0-9.]+)\)", pad)
+        if not at or not size:
+            raise RuntimeError("U21 pad missing at/size geometry")
+        x, y = (round(float(value), 3) for value in at.groups())
+        sx, sy = (round(float(value), 3) for value in size.groups())
+        if x == -3.1:
+            rows["left"].append((x, y, sx, sy))
+        elif x == 3.1:
+            rows["right"].append((x, y, sx, sy))
+        elif y == 3.1:
+            rows["top"].append((x, y, sx, sy))
+        elif y == -3.1:
+            rows["bottom"].append((x, y, sx, sy))
+        else:
+            raise RuntimeError(f"U21 pad center is not on the TI 6.20-mm row span: {(x, y)}")
+
+    expected_axis = [-1.75, -1.25, -0.75, -0.25, 0.25, 0.75, 1.25, 1.75]
+    for side in ("left", "right"):
+        row = sorted(rows[side], key=lambda item: item[1])
+        if [item[1] for item in row] != expected_axis:
+            raise RuntimeError(f"U21 {side} pitch is not 0.50 mm")
+        if any((item[2], item[3]) != (1.6, 0.3) for item in row):
+            raise RuntimeError(f"U21 {side} pads must be 1.60 x 0.30 mm")
+    for side in ("top", "bottom"):
+        row = sorted(rows[side], key=lambda item: item[0])
+        if [item[0] for item in row] != expected_axis:
+            raise RuntimeError(f"U21 {side} pitch is not 0.50 mm")
+        if any((item[2], item[3]) != (0.3, 1.6) for item in row):
+            raise RuntimeError(f"U21 {side} pads must be 0.30 x 1.60 mm")
+
+
 def verify_adc(blocks: dict[str, str]) -> None:
     expected = {
         "1": "ADC2_P",
@@ -373,6 +418,7 @@ def verify_pcb() -> dict[str, object]:
     verify_muxes(blocks)
     verify_buffers(blocks)
     verify_adc(blocks)
+    verify_ti_pbs_landpattern(blocks["U21"])
     verify_rp2040(blocks)
     verify_flash(blocks)
 
@@ -382,6 +428,10 @@ def verify_pcb() -> dict[str, object]:
         "mux_pinouts_verified": 16,
         "buffer_pinouts_verified": 4,
         "adc_pinout_verified": True,
+        "ads131m08_pbs_landpattern_verified": True,
+        "ads131m08_pbs_pad_mm": [0.3, 1.6],
+        "ads131m08_pbs_opposite_row_centers_mm": 6.2,
+        "ads131m08_pbs_pitch_mm": 0.5,
         "rp2040_pinout_verified": True,
         "rp2040_ep_mm": [3.2, 3.2],
         "qspi_flash_pinout_verified": True,

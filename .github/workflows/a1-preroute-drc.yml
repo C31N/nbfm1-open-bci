@@ -8,6 +8,7 @@ on:
       - "hardware/eeg128-tdm/prepare_autoroute.py"
       - "hardware/eeg128-tdm/canonicalize_critical_footprints.py"
       - "hardware/eeg128-tdm/eeg128-tdm.kicad_dru"
+      - "hardware/eeg128-tdm/NBFM1_A2.pretty/**"
 
 permissions:
   contents: write
@@ -88,7 +89,6 @@ jobs:
           python3 - <<'PY'
           import json
           from pathlib import Path
-          import re
           import shutil
 
           root = Path("/tmp/a1-pre")
@@ -102,11 +102,12 @@ jobs:
           shutil.copy2(source, target)
 
           text = source.read_text(encoding="utf-8")
+          lines = [line.lstrip() for line in text.splitlines()]
           metrics = {
-              "pcb_footprints": len(re.findall(r"(?m)^[ \\t]*\\(footprint\\b", text)),
-              "pcb_segments": len(re.findall(r"(?m)^[ \\t]*\\(segment\\b", text)),
-              "pcb_vias": len(re.findall(r"(?m)^[ \\t]*\\(via\\b", text)),
-              "pcb_zones": len(re.findall(r"(?m)^[ \\t]*\\(zone\\b", text)),
+              "pcb_footprints": sum(line.startswith("(footprint ") for line in lines),
+              "pcb_segments": sum(line.startswith("(segment ") for line in lines),
+              "pcb_vias": sum(line.startswith("(via ") for line in lines),
+              "pcb_zones": sum(line.startswith("(zone ") for line in lines),
           }
 
           status_path = Path("hardware/eeg128-tdm/RELEASE_STATUS.json")

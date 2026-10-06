@@ -11,6 +11,9 @@ import pcbnew
 from apply_board_constraints import apply_stackup
 
 
+ROOT = Path(__file__).resolve().parent
+
+
 def mm(value: float) -> int:
     return pcbnew.FromMM(value)
 
@@ -109,7 +112,7 @@ def set_two_pad_net(
 
 def load_library_footprint(library: str, name: str) -> pcbnew.FOOTPRINT:
     roots = (
-        Path("/usr/share/kicad/footprints"),
+        ROOT,
         Path("/usr/share/kicad/footprints"),
     )
     for root in roots:
@@ -174,7 +177,7 @@ def ensure_critical_manufacturer_footprints(board: pcbnew.BOARD) -> int:
             )
             for index in range(17, 21)
         },
-        "U21": ("Package_QFP", "LQFP-32_5x5mm_P0.5mm"),
+        "U21": ("NBFM1_A2", "TI_PBS_S-PQFP-G32_5x5mm_P0.5mm"),
         "U23": (
             "Package_DFN_QFN",
             "QFN-56-1EP_7x7mm_P0.4mm_EP3.2x3.2mm",
