@@ -2,25 +2,25 @@
   "engineering_only": true,
   "source_commit": "7d5f64c96c6b6cee5a38df443dbe7e0500b64200",
   "source_sha256": "432ccf535cd844f4d3032694ccabe932bbb0ddf9a03e11d5c6e348b37268c86f",
-  "checkpoint_sha256": "8c89d990175bd5d579d5dca3a8b365ddec7a48850bdd5c539e76ce00c3fea0d1",
+  "checkpoint_sha256": "473a8de0d6d08327dfa6510666db3a35b31e4fa15369449435a3bfd375224c86",
   "project_sha256": "3bb857f19a1de6b23841a13a881e6e3e61a77708e9063fdbbff9d519121795e0",
   "rules_sha256": "41c391b215ea827a0db33c3f0b8b961119211ffd6e2455abffd4c1759b4782e3",
-  "source_workflow_run": 37496972920,
-  "source_artifact": 11429011974,
-  "source_artifact_sha256": "e6cfe8836ca695cd0af0028af9a7dabf405c08b2056a7b3cd054d9716ac67948",
+  "source_workflow_run": 37509238110,
+  "source_artifact": 11435265071,
+  "source_artifact_sha256": "4b205f92fa398fa7cd475f4a919610187ad8d4842d979387c10abdb2c52cd9e2",
   "native_kicad_version": "8.0.9",
   "violation_errors": 0,
   "warnings": 0,
-  "unconnected": 313,
+  "unconnected": 312,
   "removed_dangling_track_uuids": [
     "33d64098-4a2d-4f0a-a572-07a67e542cde",
     "4852cb03-b3aa-41f8-bcd2-dff2179fad70"
   ],
   "added_local_tracks": 21,
   "added_plane_escapes": 97,
-  "native_drc_sha256": "060959e62020d211e685411badf9bacfac928755089d8e9e2d8c0903f65446e8",
+  "native_drc_sha256": "5568e102406d9ec1e19433e310436d4a135853e4379f02fc7f43b9d7932ba791",
   "source_geometry_sha256": "f3494befcf4f1275b55c83bfc897465f0b6c4edb00b4bb5de2a19956d5cb86ce",
-  "previous_checkpoint_sha256": "3685123ceb1de6983c925b196d457ddc71072b2d9f2e9ba3a0e6152b56ea6e0e",
+  "previous_checkpoint_sha256": "8c89d990175bd5d579d5dca3a8b365ddec7a48850bdd5c539e76ce00c3fea0d1",
   "targeted_signal_connections": 2,
   "targeted_mux_connections": 8,
   "approved_local_router_seconds": 120,
@@ -49,11 +49,16 @@
     {
       "stage": "dsn_front_only_analog_round",
       "unconnected": 313
+    },
+    {
+      "stage": "native_track_and_via_cleanup",
+      "unconnected": 312
     }
   ],
   "analog_layer_pass": true,
   "restored_analog_nets": [
     "CH110_N_MUX",
     "CH113_N_MUX"
-  ]
+  ],
+  "cleanup_removed_items": 8
 }
