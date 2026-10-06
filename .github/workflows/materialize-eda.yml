@@ -68,8 +68,14 @@ jobs:
           print({"instances": instances, "wires": wires, "bytes": path.stat().st_size})
           PY
 
-      - name: Refresh release manifest
-        run: bash scripts/generate_release_manifest.sh
+      - name: Restore non-generated project metadata
+        run: |
+          git restore --worktree -- hardware/eeg128-tdm/eeg128-tdm.kicad_pro
+
+      - name: Refresh and verify release manifest
+        run: |
+          bash scripts/generate_release_manifest.sh
+          bash scripts/verify_release_manifest.sh
 
       - name: Commit generated EDA and manifest if changed
         run: |

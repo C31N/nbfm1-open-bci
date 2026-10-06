@@ -39,7 +39,8 @@ RP2040 SPI1 + DMA
 | `NETLIST.csv` | Detailed endpoint-to-endpoint logical connectivity |
 | `BOM.csv` | JLCPCB/LCSC-oriented bill of materials |
 | `CPL.csv` | JLCPCB-oriented component placement |
-| `eeg128-tdm.kicad_sch` | KiCad 8 schematic/connectivity index |\n| `generate_schematic.py` | Deterministically generates a 640-component KiCad connectivity schematic from PCB pad/net assignments |
+| `eeg128-tdm.kicad_sch` | KiCad 8 schematic/connectivity index |
+| `generate_schematic.py` | Deterministically generates a 642-component KiCad connectivity schematic from PCB pad/net assignments |
 | `eeg128-tdm.kicad_pcb` | KiCad 8 four-layer A0 placement/net board |
 | `eeg128-tdm.kicad_pro` | KiCad project |
 | `validate_eda.py` | Source/BOM/CPL/net validation |
@@ -50,7 +51,7 @@ RP2040 SPI1 + DMA
 
 **Revision A0 is not released for fabrication.**
 
-The board source currently contains component placement and logical pad-to-net assignment for A0 design review, but the copper routing is not complete, the KiCad schematic is presently a connectivity index rather than a fully instantiated circuit schematic, and generated footprint land patterns have not been independently verified. `RELEASE_STATUS.json` therefore keeps `fabrication_release=false`.
+The board source currently contains 642 component placements and logical pad-to-net assignments for A0 design review, but the copper routing is not complete, the KiCad schematic remains a generated connectivity representation rather than a manufacturer-symbol/pin-type reviewed circuit schematic, and generated footprint land patterns have not been independently verified. `RELEASE_STATUS.json` therefore keeps `fabrication_release=false`.
 
 This is intentional. A large human-connected mixed-signal board must not become orderable merely because source files exist.
 
@@ -132,7 +133,7 @@ Default output:
 eeg128-tdm.generated.kicad_sch
 ```
 
-It uses real component references and PCB pad numbers and emits local labeled wire stubs for assigned nets. It intentionally uses conservative generic passive-pin symbols. Therefore it is useful for reproducible connectivity review and schematic/PCB parity, but it does **not** replace manufacturer-symbol pin-type review or independently establish ERC/fabrication readiness.
+It uses real component references and PCB pad numbers and emits local labeled wire stubs for assigned nets. It intentionally uses conservative generic passive-pin symbols. Therefore it is useful for reproducible connectivity review and schematic/PCB parity, but it does **not** replace manufacturer-symbol pin-type review, analog/power/reference design review, or independently establish fabrication readiness.
 
 Only after review may it replace the primary schematic:
 

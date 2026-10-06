@@ -1,9 +1,9 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "revision": "A0",
-  "audit_date": "2026-10-05",
+  "audit_date": "2026-10-06",
   "fabrication_release": false,
-  "schematic_complete": true,
+  "schematic_complete": false,
   "routing_completed": false,
   "copper_zones_completed": false,
   "ground_strategy_resolved": false,
@@ -18,20 +18,21 @@
   "patient_safety_validated": false,
   "human_connected_use_authorized": false,
   "observed_source_metrics": {
-    "schematic_instantiated_symbols": 640,
+    "schematic_instantiated_symbols": 642,
     "schematic_wires": 1875,
-    "pcb_footprints": 640,
+    "pcb_footprints": 642,
     "pcb_segments": 0,
     "pcb_vias": 0,
     "pcb_zones": 0
   },
   "blockers": [
+    "Replace/review the generic connectivity-index symbols with manufacturer-verified symbols and pin electrical types before declaring the schematic complete.",
     "Complete and independently review all copper routing, vias, power distribution and return-current paths.",
     "Run KiCad 8 PCB DRC with zero release-blocking violations and zero unconnected items.",
-    "Complete and independently review all copper routing, vias, power distribution and return-current paths.",
     "Resolve the AGND/DGND naming versus continuous-ground-plane strategy explicitly.",
     "Review the ADS131M08 internal-reference REFIN network for the selected low-noise operating mode.",
     "Verify every generated footprint against manufacturer land-pattern data and JLCPCB assembly orientation.",
+    "Cross-check BOM and CPL against the final routed PCB and current JLCPCB/LCSC assembly data.",
     "Perform independent visual review of Gerber and drill outputs.",
     "Perform bring-up on current-limited isolated bench power without a human subject.",
     "Measure input-referred noise, TDM settling, crosstalk and common-mode performance on physical hardware.",
@@ -39,14 +40,14 @@
   ],
   "native_kicad8_audit": {
     "kicad_version": "8.0.9",
-    "audit_date": "2026-10-05",
+    "audit_date": "2026-10-06",
     "primary_schematic_parse": true,
     "generated_schematic_parse": true,
     "native_netlist_export": true,
     "erc_report_generated": true,
-    "erc_total": 0,
+    "erc_total": 1,
     "erc_errors": 0,
-    "erc_warnings": 0,
+    "erc_warnings": 1,
     "pcb_drc_report_generated": true,
     "pcb_unconnected_errors": 499,
     "pcb_drc_violations": 1503,
@@ -54,7 +55,8 @@
     "pcb_drc_warnings": 606,
     "schematic_parity_items": 0,
     "placement_export_parse": true,
-    "erc_info": 0
+    "erc_info": 0,
+    "erc_interpretation": "Run 37423367238 against the project-bound primary schematic reported 0 ERC errors and 1 warning: J9's embedded generated USB-C symbol differs from the current NBFM1_A0 library symbol. This warning remains an EDA consistency item and is not waived."
   },
   "theoretical_electrical_review_passed": false,
   "theoretical_electrical_review_basis": {
@@ -74,7 +76,7 @@
       "no unresolved component-rating, stability, leakage-path or return-current concerns"
     ],
     "current_result": "FAIL",
-    "reason": "The physical A1 routing/DRC closure is still in progress, so unresolved theoretical electrical concerns remain."
+    "reason": "The semantic schematic review, routing, copper zones, footprint verification, ground/reference closure and PCB DRC are not complete; unresolved theoretical electrical concerns remain."
   },
   "physical_electrical_lab_validation_passed": false,
   "physical_electrical_lab_validation_basis": {

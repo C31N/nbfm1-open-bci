@@ -171,10 +171,10 @@ def source_metrics() -> dict[str, int]:
             re.findall(r"(?m)^  \(symbol\b", sch)
         ),
         "schematic_wires": len(re.findall(r"(?m)^  \(wire\b", sch)),
-        "pcb_footprints": len(re.findall(r"(?m)^  \(footprint\b", pcb)),
-        "pcb_segments": len(re.findall(r"(?m)^  \(segment\b", pcb)),
-        "pcb_vias": len(re.findall(r"(?m)^  \(via\b", pcb)),
-        "pcb_zones": len(re.findall(r"(?m)^  \(zone\b", pcb)),
+        "pcb_footprints": len(re.findall(r"(?m)^[ \t]*\(footprint\b", pcb)),
+        "pcb_segments": len(re.findall(r"(?m)^[ \t]*\(segment\b", pcb)),
+        "pcb_vias": len(re.findall(r"(?m)^[ \t]*\(via\b", pcb)),
+        "pcb_zones": len(re.findall(r"(?m)^[ \t]*\(zone\b", pcb)),
     }
 
 
@@ -192,8 +192,11 @@ def validate_kicad_sources() -> dict[str, int]:
             fail(f"PCB missing required layer {layer}")
 
     metrics = source_metrics()
-    if metrics["pcb_footprints"] < 600:
-        fail("PCB unexpectedly contains fewer than 600 footprint instances")
+    if metrics["pcb_footprints"] != 642:
+        fail(
+            "PCB footprint count mismatch: "
+            f"expected 642, got {metrics['pcb_footprints']}"
+        )
 
     return metrics
 
