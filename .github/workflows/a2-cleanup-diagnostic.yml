@@ -1,0 +1,35 @@
+name: A2 Native Cleanup Diagnostic
+on:
+  push:
+    paths:
+      - ".github/workflows/a2-cleanup-diagnostic.yml"
+      - "hardware/eeg128-tdm/diagnose_route_cleanup.py"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install KiCad 8
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad kicad-footprints
+          kicad-cli version | grep -E '^8\.'
+      - uses: actions/download-artifact@v5
+        with:
+          name: eeg128-a2-route
+          run-id: 37505590814
+          github-token: ${{ github.token }}
+          path: /tmp/a2-cleanup-source
+      - name: Diagnose native cleanup with full reports
+        run: /usr/bin/python3 hardware/eeg128-tdm/diagnose_route_cleanup.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eeg128-native-cleanup-diagnostic
+          path: /tmp/a2-cleanup-diagnostic
