@@ -45,6 +45,9 @@ jobs:
           /usr/bin/python3 hardware/eeg128-tdm/prepare_autoroute.py \
             --input hardware/eeg128-tdm/eeg128-tdm.kicad_pcb \
             --output /tmp/a2route/eeg128-tdm.kicad_pcb
+          /usr/bin/python3 hardware/eeg128-tdm/canonicalize_critical_footprints.py \
+            --input /tmp/a2route/eeg128-tdm.kicad_pcb \
+            --output /tmp/a2route/eeg128-tdm.kicad_pcb
           cp hardware/eeg128-tdm/eeg128-tdm.kicad_dru /tmp/a2route/eeg128-tdm.kicad_dru
           cp hardware/eeg128-tdm/eeg128-tdm.kicad_pro /tmp/a2route/eeg128-tdm.kicad_pro
           set +e
