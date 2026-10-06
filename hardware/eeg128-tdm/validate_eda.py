@@ -171,10 +171,10 @@ def source_metrics() -> dict[str, int]:
             re.findall(r"(?m)^  \(symbol\b", sch)
         ),
         "schematic_wires": len(re.findall(r"(?m)^  \(wire\b", sch)),
-        "pcb_footprints": len(re.findall(r"(?m)^  \(footprint\b", pcb)),
-        "pcb_segments": len(re.findall(r"(?m)^  \(segment\b", pcb)),
-        "pcb_vias": len(re.findall(r"(?m)^  \(via\b", pcb)),
-        "pcb_zones": len(re.findall(r"(?m)^  \(zone\b", pcb)),
+        "pcb_footprints": len(re.findall(r"(?m)^[ \t]*\(footprint\b", pcb)),
+        "pcb_segments": len(re.findall(r"(?m)^[ \t]*\(segment\b", pcb)),
+        "pcb_vias": len(re.findall(r"(?m)^[ \t]*\(via\b", pcb)),
+        "pcb_zones": len(re.findall(r"(?m)^[ \t]*\(zone\b", pcb)),
     }
 
 
