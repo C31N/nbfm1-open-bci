@@ -7,8 +7,6 @@ import csv
 import json
 from pathlib import Path
 import re
-from typing import Iterable
-
 
 ROOT = Path(__file__).resolve().parent
 LCSC_RE = re.compile(r"^C[0-9]+$")
