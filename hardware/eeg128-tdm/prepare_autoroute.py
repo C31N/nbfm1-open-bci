@@ -694,7 +694,7 @@ def add_channel_mux_preroutes(board: pcbnew.BOARD) -> int:
                 series_out.GetPosition(),
                 bias_tap.GetPosition(),
                 pcbnew.F_Cu,
-                0.15,
+                0.20,
             )
             routed += 1
 
