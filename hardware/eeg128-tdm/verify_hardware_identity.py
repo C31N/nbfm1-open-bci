@@ -14,7 +14,7 @@ LCSC_RE = re.compile(r"^C[0-9]+$")
 APPROVED_PARTS: dict[str, tuple[str, str]] = {
     "CD74HC4067M96": ("C496123", "SOIC-24_7.5x15.4mm_P1.27mm"),
     "TLV9064IPWR": ("C779410", "TSSOP-14_4.4x5mm_P0.65mm"),
-    "ADS131M08IPBSR": ("C2862610", "TQFP-32_5x5mm_P0.5mm"),
+    "ADS131M08IPBSR": ("C2862610", "TQFP-32_7x7mm_P0.8mm"),
     "OPA4171AIPWR": ("C529553", "TSSOP-14_4.4x5mm_P0.65mm"),
     "RP2040": ("C2040", "QFN-56-1EP_7x7mm_P0.4mm_EP3.2x3.2mm"),
     "TPS7A2033PDBVR": ("C2862740", "SOT-23-5"),
@@ -44,7 +44,7 @@ APPROVED_PARTS: dict[str, tuple[str, str]] = {
 CRITICAL_FOOTPRINTS: dict[str, str] = {
     **{f"U{i}": "SOIC-24W_7.5x15.4mm_P1.27mm" for i in range(1, 17)},
     **{f"U{i}": "TSSOP-14_4.4x5mm_P0.65mm" for i in range(17, 21)},
-    "U21": "LQFP-32_5x5mm_P0.5mm",
+    "U21": "TQFP-32_7x7mm_P0.8mm",
     "U23": "QFN-56-1EP_7x7mm_P0.4mm_EP3.2x3.2mm",
 }
 
