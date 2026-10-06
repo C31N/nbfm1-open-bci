@@ -42,18 +42,20 @@
     "generated_schematic_parse": true,
     "native_netlist_export": true,
     "erc_report_generated": true,
-    "erc_total": 1,
+    "erc_total": 0,
     "erc_errors": 0,
-    "erc_warnings": 1,
+    "erc_warnings": 0,
     "pcb_drc_report_generated": true,
     "pcb_unconnected_errors": 499,
-    "pcb_drc_violations": 1503,
-    "pcb_drc_errors": 897,
-    "pcb_drc_warnings": 606,
+    "pcb_drc_violations": 0,
+    "pcb_drc_errors": 0,
+    "pcb_drc_warnings": 0,
     "schematic_parity_items": 0,
     "placement_export_parse": true,
     "erc_info": 0,
-    "erc_interpretation": "Run 37423367238 against the project-bound primary schematic reported 0 ERC errors and 1 warning: J9's embedded generated USB-C symbol differs from the current NBFM1_A0 library symbol. This warning remains an EDA consistency item and is not waived."
+    "erc_interpretation": "Native primary schematic ERC: 0 errors, 0 warnings. Primary pre-route PCB: 0 geometric violations, 0 warnings; 499 unconnected items remain release blockers.",
+    "workflow_run": 37460325261,
+    "source_commit": "2c2d9168421bbdca44c324540ee0e929eae5e856"
   },
   "theoretical_electrical_review_passed": false,
   "theoretical_electrical_review_basis": {
@@ -109,7 +111,7 @@
       "source_drawing": "Texas Instruments 4212229/A",
       "pcb_footprint": "TI_PBS_S-PQFP-G32_5x5mm_P0.5mm"
     },
-    "primary_pcb_materialized_commit": "363794aa60dbc8db9777dbda5c32b0039dd98e09"
+    "primary_pcb_materialized_commit": "a49639c4f95e55ba5b6e983274a96cc591d7beb8"
   },
   "routing_architecture": {
     "layer1": "F.Cu signals: sensitive analog, QSPI and local digital escapes",
@@ -132,7 +134,8 @@
     "pcb_zones": 4,
     "source_workflow_run": 37453649853,
     "source_artifact_id": 11408331280,
-    "pcb_sha256": "e8c55cf8c0f54cbe271675a1007d3b4b68e0b85583d907cdccd7c5d451e63a72",
-    "interpretation": "Prepared placement baseline; 499 unconnected items remain release blockers. Primary-board DRC must validate this baseline without preparing it again."
+    "interpretation": "Prepared placement baseline; 499 unconnected items remain release blockers. Primary-board DRC must validate this baseline without preparing it again.",
+    "artifact_pcb_sha256": "e8c55cf8c0f54cbe271675a1007d3b4b68e0b85583d907cdccd7c5d451e63a72",
+    "primary_pcb_sha256": "1dceffa5d391297edac3715fb7ae3ac1db5f71c4dee9f62a864d88e1209e4644"
   }
 }
