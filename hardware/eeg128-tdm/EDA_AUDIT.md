@@ -30,8 +30,8 @@ Generated KiCad connectivity schematic:
 
 Native ERC from the latest main run:
   errors:                         0
-  warnings:                       642
-  warning class:                  lib_symbol_issues only
+  warnings:                       1
+  warning class:                  lib_symbol_issues (J9 embedded/library mismatch)
 
 KiCad PCB:
   footprints / placement rows:    642
@@ -50,14 +50,13 @@ Native PCB DRC:
 
 ## ERC warning interpretation
 
-All 642 ERC warnings in run `37419772760` are library-resolution warnings:
-the generated schematic was checked in `/tmp` while its project-local
-`sym-lib-table` and `NBFM1_A0.kicad_sym` stayed under
-`hardware/eeg128-tdm/`.
+The corrected project-bound ERC run `37423367238` reports **0 errors and 1
+warning**. The remaining warning states that J9's embedded generated USB-C symbol
+(`GEN_20_6661cee1473b`) differs from the current `NBFM1_A0` library version.
 
-The validation workflow now copies those files into the temporary KiCad project
-context and reads ERC findings from KiCad 8's `sheets[].violations` structure.
-Zero ERC errors does not imply fabrication readiness.
+This is an EDA generator/library consistency item. It is retained as an open
+review item and is not converted into a waiver. Zero ERC errors does not imply
+fabrication readiness.
 
 ## Schematic completeness
 
