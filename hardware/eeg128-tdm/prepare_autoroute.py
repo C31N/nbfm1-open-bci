@@ -802,7 +802,7 @@ def prepare(input_path: Path, output_path: Path) -> None:
     place_digital_core(board)
     preroute_counts = add_power_and_reference_preroutes(board)
     preroute_counts["channel_bias_junctions"] = add_channel_mux_preroutes(board)
-    preroute_counts["channel_to_mux"] = 0
+    preroute_counts["channel_to_mux"] = add_channel_to_mux_routes(board)
     preroute_counts["VCM_bias_returns"] = add_vcm_preroute(board)
 
     try:
