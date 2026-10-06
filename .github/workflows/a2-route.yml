@@ -7,6 +7,8 @@ on:
       - ".github/workflows/a2-route.yml"
       - "hardware/eeg128-tdm/prepare_autoroute.py"
       - "hardware/eeg128-tdm/apply_board_constraints.py"
+      - "hardware/eeg128-tdm/canonicalize_critical_footprints.py"
+      - "hardware/eeg128-tdm/verify_hardware_identity.py"
       - "hardware/eeg128-tdm/eeg128-tdm.kicad_dru"
 
 permissions:
