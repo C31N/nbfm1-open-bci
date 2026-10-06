@@ -155,21 +155,24 @@ def ensure_critical_manufacturer_footprints(board: pcbnew.BOARD) -> int:
     replaced = 0
     for reference, (library, name) in specifications.items():
         item = footprint(board, reference)
+        position = item.GetPosition()
+        x_mm = pcbnew.ToMM(position.x)
+        y_mm = pcbnew.ToMM(position.y)
+        angle = item.GetOrientationDegrees()
         try:
-            current_name = item.GetFPID().GetLibItemName()
+            fpid = item.GetFPID()
+            current_name = str(fpid.GetLibItemName())
         except Exception:
             current_name = ""
         if current_name == name:
             continue
-        position = item.GetPosition()
-        angle = item.GetOrientationDegrees()
         replace_footprint_keep_nets(
             board,
             reference,
             library,
             name,
-            pcbnew.ToMM(position.x),
-            pcbnew.ToMM(position.y),
+            x_mm,
+            y_mm,
             angle,
         )
         replaced += 1
