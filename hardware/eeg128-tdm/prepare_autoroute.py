@@ -748,7 +748,7 @@ def add_vcm_preroute(board: pcbnew.BOARD) -> int:
                     pad_pos,
                     via_pos,
                     pcbnew.F_Cu,
-                    0.15,
+                    0.20,
                 )
                 add_through_via(
                     board,
