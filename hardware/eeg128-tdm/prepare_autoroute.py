@@ -20,12 +20,10 @@ def point(x_mm: float, y_mm: float) -> pcbnew.VECTOR2I:
 
 
 def footprint(board: pcbnew.BOARD, reference: str) -> pcbnew.FOOTPRINT:
-    # KiCad 8 SWIG can expose FindFootprintByReference() as a raw SwigPyObject
-    # after board mutations. Iteration yields stable FOOTPRINT wrappers.
-    for item in board.GetFootprints():
-        if item.GetReference() == reference:
-            return item
-    raise RuntimeError(f"missing footprint {reference}")
+    item = board.FindFootprintByReference(reference)
+    if item is None:
+        raise RuntimeError(f"missing footprint {reference}")
+    return item
 
 
 def place(
@@ -194,13 +192,6 @@ def ensure_critical_manufacturer_footprints(board: pcbnew.BOARD) -> int:
         x_mm = pcbnew.ToMM(position.x)
         y_mm = pcbnew.ToMM(position.y)
         angle = item.GetOrientationDegrees()
-        try:
-            fpid = item.GetFPID()
-            current_name = str(fpid.GetLibItemName())
-        except Exception:
-            current_name = ""
-        if current_name == name:
-            continue
         replace_footprint_keep_nets(
             board,
             reference,
