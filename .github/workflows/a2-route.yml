@@ -19,6 +19,7 @@ on:
       - "hardware/eeg128-tdm/eeg128-tdm.kicad_pro"
       - "hardware/eeg128-tdm/fill_zones.py"
       - "hardware/eeg128-tdm/verify_routing_checkpoint.py"
+      - "hardware/eeg128-tdm/check_analog_layer_policy.py"
       - "hardware/eeg128-tdm/routing/**"
       - "hardware/eeg128-tdm/NBFM1_A2.pretty/**"
 
@@ -152,6 +153,7 @@ jobs:
           expected = Path("hardware/eeg128-tdm/routing/STATUS.json")
           if expected.is_file() and progress["round0"]["unconnected"] != json.loads(expected.read_text())["unconnected"]:
               raise SystemExit("Native checkpoint connectivity does not match recorded metrics")
+          progress["round0"]["analog_layer_pass"] = True
           best_round = 0
           best_metrics = progress["round0"]
 
@@ -179,10 +181,11 @@ jobs:
                       "--router.max_passes=3",
                       "--router.job_timeout=00:15:00",
                       "--router.strict_drc=true",
+                      "--router.ignore_net_classes=TDM_ANALOG",
                       "--router.automatic_neckdown=false",
                       "--usage_and_diagnostic_data.disable_analytics=true",
                       "--profile.allow_telemetry=false",
-                      "--router.optimizer.enabled=true",
+                      "--router.optimizer.enabled=false",
                       "--router.optimizer.timeout=00:02:00",
                       "--router.optimizer.max_passes=1",
                       "--router.fanout.enabled=false",
@@ -231,18 +234,27 @@ jobs:
                   ],
                   check=False,
               )
+              policy = subprocess.run(
+                  ["/usr/bin/python3", "hardware/eeg128-tdm/check_analog_layer_policy.py",
+                   "--baseline", str(root / "round0.kicad_pcb"), "--candidate", str(working)],
+                  check=False,
+              )
               round_metrics = metrics(drc)
+              round_metrics["analog_layer_pass"] = policy.returncode == 0
               progress[f"round{round_index}"] = round_metrics
               (root / "progress.json").write_text(
                   json.dumps(progress, indent=2, sort_keys=True) + "\n", encoding="utf-8"
               )
               print(f"round {round_index}: {round_metrics}", flush=True)
 
-              if score(round_metrics) < score(best_metrics):
+              if round_metrics["analog_layer_pass"] and score(round_metrics) < score(best_metrics):
                   best_round = round_index
                   best_metrics = round_metrics
 
-              if score(round_metrics) == (0, 0, 0):
+              if not round_metrics["analog_layer_pass"]:
+                  shutil.copy2(root / f"round{best_round}.kicad_pcb", working)
+
+              if round_metrics["analog_layer_pass"] and score(round_metrics) == (0, 0, 0):
                   break
 
           best_board = root / f"round{best_round}.kicad_pcb"
@@ -252,7 +264,7 @@ jobs:
           gate = {
               "best_round": best_round,
               **best_metrics,
-              "strict_pass": score(best_metrics) == (0, 0, 0),
+              "strict_pass": best_metrics["analog_layer_pass"] and score(best_metrics) == (0, 0, 0),
           }
           (root / "progress.json").write_text(
               json.dumps(progress, indent=2, sort_keys=True) + "\n",

@@ -19,8 +19,13 @@ Native KiCad 8.0.9 checks after zone refill, using the unchanged project and cus
 | Stub cleanup | 0 | 0 | 450 |
 | Short local connections | 0 | 0 | 429 |
 | Plane escapes | 0 | 0 | 335 |
+| One CI continuation round | 0 | 0 | 330 |
+| Targeted MUX/signal paths | 0 | 0 | 321 |
+| Additional signal path | 0 | 0 | 320 |
+| Router candidate (rejected by analog-layer review) | 0 | 0 | 314 |
+| Accepted continuation after analog restoration | 0 | 0 | 316 |
 
-Remaining groups: 65 ground/power connections, 34 MUX controls, 236 signal connections. These are real release blockers.
+Remaining groups: 64 ground/power connections, 22 MUX controls, 230 signal connections. These are real release blockers.
 
 `STATUS.json` records provenance and PCB/project/rule hashes. A complete primary-board geometry/connectivity signature permits harmless KiCad footprint reordering, UUID regeneration and numeric serialization rounding; actual primary routing, placement, zone or net changes invalidate the checkpoint. `drc-checkpoint.json` is the full native report. All 642 footprint bodies, geometry and pin assignments match the primary PCB, allowing only generated UUID changes and 10 nm numeric serialization rounding; BOM/CPL and all critical pin/footprint checks pass.
 
@@ -38,3 +43,13 @@ Recheck from the repository root:
 ```
 
 For native DRC, copy the checkpoint and unchanged .kicad_pro/.kicad_dru to one directory under the same filename stem, refill zones with fill_zones.py, then run `kicad-cli pcb drc --format json --severity-all --all-track-errors`.
+
+## Targeted signal continuation
+
+The updated checkpoint starts from artifact 11422017642 of run 37481327819. A local obstacle search produced native-clean routes for eight MUX connections and two CH signal connections (330 to 320 opens). Long CH signal routing stays on F.Cu; proposed B.Cu crossings were limited to 2 mm total per signal route. MUX controls may use B.Cu with two 0.65/0.30 mm transition vias. All paths were rejected as complete groups if native DRC reported any geometric error or warning. Footprints, pin mappings, project rules and primary manufacturing PCB were preserved. Intermediate accepted path vectors are recorded in targeted-signal-paths.json.
+
+A pinned FreeRouting 2.4.1 round from the 320-open intermediate candidate used one pass, a 120-second limit, fanout/automatic neckdown/optimizer disabled, and strict_drc=true. Its imported and refilled SES passed native DRC with 314 opens and zero geometric violations/warnings, but introduced 10.10 mm and 30.56 mm of new B.Cu routing on CH110_N_MUX and CH113_N_MUX. These two nets were restored exactly from the native-clean 320-open input, yielding 316 opens with zero geometric violations/warnings. The 314-open candidate was rejected by the analog-layer review. router-validation.json records the router manifest and native result. The source DSN loaded with 21 router warnings; native verification after import was therefore required rather than trusting its internal score.
+
+FreeRouting still reports hundreds of internal clearance violations on the native-clean board. Their cause remains unproven; the strict_drc=false comparison was not completed and no result from that comparison was accepted. The production workflow retains strict_drc=true and strict-zero native promotion. Dense CH signal routing remains the main blocker; completed workflow executions must not be reported as routing completion.
+
+The continuation workflow now skips TDM_ANALOG in general autorouting and disables the optimizer, preserving sensitive analog routing for targeted review. After every SES import it checks the change in B.Cu length for CH/BANK/ADC differential nets against round 0. More than 2 mm of added B.Cu per analog net rejects that candidate, regardless of its DRC/connectivity score; the previous accepted board is restored. Native geometric and strict-zero promotion gates remain unchanged. check_analog_layer_policy.py was checked against the real rejected 314-open board and the accepted 316-open restoration.
