@@ -84,8 +84,8 @@ def normalize(input_path: Path, output_path: Path) -> None:
         raise RuntimeError(f"cannot load {input_path}")
 
     ensure_usb_connector(board)
-    ensure_cc_resistor(board, "R538", "USB_CC1", 181.0, 70.5)
-    ensure_cc_resistor(board, "R539", "USB_CC2", 184.0, 70.5)
+    ensure_cc_resistor(board, "R538", "USB_CC1", 179.0, 70.5)
+    ensure_cc_resistor(board, "R539", "USB_CC2", 187.0, 70.5)
 
     assign_missing_functional_nets(board)
 
