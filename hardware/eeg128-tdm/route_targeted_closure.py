@@ -29,6 +29,8 @@ from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
 POWER = {'3V3A', '3V3D', '5V_ISO', 'VREG_1V1'}
+ANALOG_REFERENCE = {'VCM','VCM_RAW','ADC_REFIN','ADS_CAP','DRL','DRL_LIMITED_1',
+                    'DRL_OP_OUT','DRL_SUM','CMS1','CMS1_BUF','CMS2','CMS2_BUF'}
 LAYERS = (pcbnew.F_Cu, pcbnew.B_Cu)
 PROJECT_SNAPSHOTS = {}
 Point2 = tuple[float, float]
@@ -169,6 +171,7 @@ def obstacles(board: pcbnew.BOARD, net: int, width: float, clearance: float, win
         for pad in footprint.Pads():
             if pad.GetNetCode() == net:
                 continue
+            neighbor_clearance=max(clearance,.20 if pad.GetNetname() in POWER | ANALOG_REFERENCE else .15)
             bounds = pad.GetBoundingBox()
             shape = box(pcbnew.ToMM(bounds.GetX()), pcbnew.ToMM(bounds.GetY()),
                         pcbnew.ToMM(bounds.GetRight()), pcbnew.ToMM(bounds.GetBottom()))
@@ -176,7 +179,7 @@ def obstacles(board: pcbnew.BOARD, net: int, width: float, clearance: float, win
                 continue
             for index, layer in enumerate(LAYERS):
                 if pad.IsOnLayer(layer):
-                    by_layer[index].append(shape.buffer(clearance + width / 2 + .005))
+                    by_layer[index].append(shape.buffer(neighbor_clearance + width / 2 + .005))
     via_obstacles = []
     for track in board.GetTracks():
         if isinstance(track, pcbnew.PCB_VIA):
@@ -185,6 +188,7 @@ def obstacles(board: pcbnew.BOARD, net: int, width: float, clearance: float, win
                 pcbnew.ToMM(track.GetDrillValue()) / 2 + .15 + .255))
         if track.GetNetCode() == net:
             continue
+        neighbor_clearance=max(clearance,.20 if track.GetNetname() in POWER | ANALOG_REFERENCE else .15)
         radius = pcbnew.ToMM(track.GetWidth()) / 2
         if isinstance(track, pcbnew.PCB_VIA):
             shape = Point(xy(track.GetPosition())).buffer(radius)
@@ -200,17 +204,18 @@ def obstacles(board: pcbnew.BOARD, net: int, width: float, clearance: float, win
         if not shape.intersects(window):
             continue
         for index in indices:
-            by_layer[index].append(shape.buffer(clearance + width / 2 + .005))
+            by_layer[index].append(shape.buffer(neighbor_clearance + width / 2 + .005))
         if indices:
-            via_obstacles.append(shape.buffer(clearance + .325 + .005))
+            via_obstacles.append(shape.buffer(neighbor_clearance + .325 + .005))
     # No via-in-pad: keep every component pad body clear, including same-net pads.
     for footprint in board.GetFootprints():
         for pad in footprint.Pads():
             b = pad.GetBoundingBox()
+            neighbor_clearance=max(clearance,.20 if pad.GetNetname() in POWER | ANALOG_REFERENCE else .15)
             shape = box(pcbnew.ToMM(b.GetX()), pcbnew.ToMM(b.GetY()),
                         pcbnew.ToMM(b.GetRight()), pcbnew.ToMM(b.GetBottom()))
             if shape.intersects(window):
-                via_obstacles.append(shape.buffer(.325 + clearance + .005))
+                via_obstacles.append(shape.buffer(.325 + neighbor_clearance + .005))
     return [unary_union(shapes) for shapes in by_layer], unary_union(via_obstacles)
 
 
@@ -336,6 +341,8 @@ def main() -> None:
     p.add_argument('--mode', choices=['planes', 'signals', 'all'], default='all')
     p.add_argument('--candidate-offset',type=int,default=0,
                    help='Rotate equally prioritized candidates between isolated worker slices')
+    p.add_argument('--only-net',action='append',default=[],
+                   help='Restrict a diagnostic pass to exact net names; repeatable')
     p.add_argument('--allow-bottom-analog', action='store_true',
                    help='Engineering experiment only; final return-path/SI review still required')
     p.add_argument('--qfn-power-neckdown', action='store_true',
@@ -371,6 +378,7 @@ def main() -> None:
         candidates = []
         for airwire in report['unconnected_items']:
             net = net_of(airwire)
+            if a.only_net and net not in a.only_net: continue
             plane = net in POWER | {'AGND'} and net != 'VREG_1V1'
             if a.mode == 'planes' and not plane or a.mode == 'signals' and plane: continue
             endpoints = [indexed.get(i['uuid']) for i in airwire['items']]

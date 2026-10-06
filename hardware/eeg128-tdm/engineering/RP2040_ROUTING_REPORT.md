@@ -1,6 +1,6 @@
 # RP2040 Escape und nativer Routing-Nachweis — 2026-10-06
 
-**Zwischenstand: 0 DRC-Verletzungen, 0 Warnungen, 266 offene Verbindungen. Kein Abschluss und keine Fertigungsfreigabe.**
+**Zwischenstand: 0 DRC-Verletzungen, 0 Warnungen, 265 offene Verbindungen. Kein Abschluss und keine Fertigungsfreigabe.**
 
 Das Exposed Pad von U23 hat jetzt einen direkten AGND-Kontakt zur durchgehenden L2-Fläche. Das beseitigt seinen isolierten Ground-Anschluss, schließt aber die verbliebenen Analognetze nicht automatisch.
 
@@ -41,12 +41,14 @@ EP-Vias im Lötpad benötigen eine abgestimmte Füll-/Cap- und Pastenschablonen-
 |---|---:|
 | POWER | 31 |
 | AGND | 11 |
-| TDM_ANALOG | 219 |
+| TDM_ANALOG | 218 |
 | MUX_CONTROL | 5 |
 
 Der ursprüngliche 308er-Bericht umfasst 225 TDM-Analog-, 38 Power-, 26 AGND-, 16 MUX-, 1 QSPI- und 2 USB-Verbindungen. Überlappende Baugruppen-Endpunkte: U1–U16 159, U23 18, U21 4, Steckverbinder 88, passive/sonstige 135. Diese Endpunktgruppen dürfen nicht addiert werden. U17–U20 haben im 308er-Bericht keine direkten offenen Pad-Endpunkte; die vier offenen U21-Endpunkte sind Versorgung/Masse, nicht ADC-Analogeingänge.
 
-route_targeted_closure.py nutzt L1 vorwiegend horizontal und L4 vorwiegend vertikal. Es kann bestehende Kupfer-Trunks entlang ihrer Länge anzapfen und weitere Punkte einer verbundenen Kupfergruppe als Escape-Anker nutzen. TDM-Traces bleiben mindestens 0,15 mm breit. QSPI bleibt 0,20 mm. Standard-Vias sind 0,65/0,30 mm. Die experimentellen U23-Power-Necks sind 0,15 mm breit und 0,80 mm lang; die passende ausdrücklich lokale Custom-Rule liegt im Paket, die globale Clearance bleibt erhalten.
+route_targeted_closure.py nutzt L1 vorwiegend horizontal und L4 vorwiegend vertikal. Es kann bestehende Kupfer-Trunks entlang ihrer Länge anzapfen und weitere Punkte einer verbundenen Kupfergruppe als Escape-Anker nutzen. Der Suchplaner berücksichtigt auch die Clearance des Nachbarnetzes: Power/VCM/Analog-Referenzen erfordern 0,20 mm, auch wenn das geroutete CH-Netz selbst nur 0,15 mm fordert. Native Via-Abstandsfehler mit 0,175 mm statt 0,20 mm zu VCM wurden damit adressiert; CH118_P_ELECTRODE konnte im anschließenden diagnostischen Pass geschlossen werden. DRC-Regeln wurden dafür nicht abgeschwächt.
+
+TDM-Traces bleiben mindestens 0,15 mm breit. QSPI bleibt 0,20 mm. Standard-Vias sind 0,65/0,30 mm. Die experimentellen U23-Power-Necks sind 0,15 mm breit und 0,80 mm lang; die passende ausdrücklich lokale Custom-Rule liegt im Paket, die globale Clearance bleibt erhalten.
 
 Längere CH/BANK-Routen auf L4 sind ein Engineering-Versuch und bestehen nicht automatisch die bisherige Analog-Layer-Policy. Deshalb wurde dieses Board nicht in den konservativen 308er-Checkpoint oder in die primäre Fertigungs-PCB übernommen. Rückstrompfade, Paarführung und Analogqualität müssen vor einer Übernahme geprüft werden.
 
@@ -89,11 +91,11 @@ Das Paket enthält genau PCB, Projekt und angewendete Custom-Rules unter demselb
 ```json
 {
   "kicad_version": "8.0.9",
-  "date": "2026-10-06T22:00:58+0100",
+  "date": "2026-10-06T22:19:00+0100",
   "source": "eeg128-tdm.kicad_pcb",
   "violations": 0,
   "warnings": 0,
-  "unconnected": 266
+  "unconnected": 265
 }
 ```
 

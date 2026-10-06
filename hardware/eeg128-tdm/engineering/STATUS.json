@@ -6,20 +6,20 @@
   "native_kicad_version": "8.0.9",
   "violations": 0,
   "warnings": 0,
-  "unconnected": 266,
+  "unconnected": 265,
   "exclusive_groups": {
     "POWER": 31,
     "AGND": 11,
-    "TDM_ANALOG": 219,
+    "TDM_ANALOG": 218,
     "MUX_CONTROL": 5
   },
-  "archive_sha256": "630e6bfcfcc6448b9dc2b28bdad4006425dded64c9ae615b6bdec3775152282b",
+  "archive_sha256": "a2369bad1cbfc6180908efa7e20899eccf535b2d9e1245eb2df62bb01add7c18",
   "package_sha256": {
     "eeg128-tdm.kicad_dru": "7138529940332b75d954a67ef721eedc7ec43a39b1dafa5e7589b14f6b57b538",
-    "eeg128-tdm.kicad_pcb": "4dff78c909bf27057941a6a63876220b7f9c792d58b755ec9012f250958353fe",
+    "eeg128-tdm.kicad_pcb": "bd5d60faef7f3106e901a33d6926dd20678d5d29cdfc97fce3340d1131e5e340",
     "eeg128-tdm.kicad_pro": "3bb857f19a1de6b23841a13a881e6e3e61a77708e9063fdbbff9d519121795e0"
   },
-  "native_drc_sha256": "3ef9630a9f969b3147048c7b0e882aed1618bd3cf20ee62d2d38789b26af5acc",
+  "native_drc_sha256": "77043dbab5266d58cf2439a5cb60b59c2f15cad2742ec3bcc4fd2b1bb7ace205",
   "primary_pcb_sha256": "70fd73c68f5f32f5ed8cc49a58997bb015fef66a5bc0d2d342059b40b3d913b8",
   "source_remote_commit": "ceddd96947a89d91e00e96477957805b235c23e6",
   "original_saved_checkpoint_unconnected": 308,
