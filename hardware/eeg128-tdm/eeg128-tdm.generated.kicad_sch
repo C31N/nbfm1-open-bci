@@ -41969,7 +41969,7 @@
     (property "Value" "RP2040" (at 781.050 232.950 0) (effects (font (size 0.8 0.8))))
     (property "Footprint" "NBFM1_A0:U23" (at 781.050 234.950 0) (effects (font (size 0.8 0.8)) (hide yes)))
     (property "Datasheet" "" (at 781.050 234.950 0) (effects (font (size 0.8 0.8)) (hide yes)))
-    (property "Description" "Generated connectivity symbol; BOM footprint: QFN-56_7x7mm_P0.4mm" (at 781.050 234.950 0) (effects (font (size 0.8 0.8)) (hide yes)))
+    (property "Description" "Generated connectivity symbol; BOM footprint: QFN-56-1EP_7x7mm_P0.4mm_EP3.2x3.2mm" (at 781.050 234.950 0) (effects (font (size 0.8 0.8)) (hide yes)))
     (pin "1"
       (uuid "6890d1dc-52e4-56f3-82b7-02ad7e5133df")
     )
