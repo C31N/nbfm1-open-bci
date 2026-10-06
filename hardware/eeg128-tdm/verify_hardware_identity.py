@@ -415,6 +415,26 @@ def verify_pcb() -> dict[str, object]:
                 f"{reference}: expected footprint {expected}, got {actual}"
             )
 
+    # CPL coordinates use board-space millimetres, before assembler origin conversion.
+    for row in read_csv(ROOT / "CPL.csv"):
+        reference = row["Designator"].strip()
+        block = blocks[reference]
+        header = block.split('(property', 1)[0]
+        position = re.search(
+            r"\(at\s+([-0-9.]+)\s+([-0-9.]+)(?:\s+([-0-9.]+))?\)", header
+        )
+        if position is None:
+            raise RuntimeError(f"{reference}: PCB placement is missing")
+        actual = [float(value.removesuffix("mm")) for value in (row["Mid X"], row["Mid Y"])]
+        expected = [float(position.group(1)), float(position.group(2))]
+        if any(abs(a - e) > 0.0051 for a, e in zip(actual, expected)):
+            raise RuntimeError(f"{reference}: CPL coordinates {actual} != PCB {expected}")
+        rotation = float(position.group(3) or 0)
+        delta = (float(row["Rotation"]) - rotation + 180) % 360 - 180
+        layer = "Bottom" if '(layer "B.Cu")' in header else "Top"
+        if abs(delta) > 0.0051 or row["Layer"] != layer:
+            raise RuntimeError(f"{reference}: CPL rotation/layer does not match PCB")
+
     verify_muxes(blocks)
     verify_buffers(blocks)
     verify_adc(blocks)
@@ -424,6 +444,7 @@ def verify_pcb() -> dict[str, object]:
 
     return {
         "pcb_references_verified": len(blocks),
+        "cpl_coordinates_verified": len(blocks),
         "critical_footprints_verified": len(CRITICAL_FOOTPRINTS),
         "mux_pinouts_verified": 16,
         "buffer_pinouts_verified": 4,

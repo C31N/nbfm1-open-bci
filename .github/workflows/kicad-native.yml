@@ -125,6 +125,13 @@ jobs:
               json.dumps(summary, indent=2) + "\n",
               encoding="utf-8",
           )
+          status = json.loads(
+              Path("hardware/eeg128-tdm/RELEASE_STATUS.json").read_text(encoding="utf-8")
+          )
+          if status.get("a2_preroute"):
+              if violations or counts["warning"]:
+                  raise SystemExit("Primary pre-route PCB regressed: " + json.dumps(summary))
+              print("Primary pre-route geometry gate PASS; connectivity remains blocked")
           PY
 
       - name: Verify PCB placement export parses
@@ -158,6 +165,7 @@ jobs:
           PY
 
       - name: Upload native KiCad audit reports
+        if: always()
         uses: actions/upload-artifact@v6
         with:
           name: kicad8-audit

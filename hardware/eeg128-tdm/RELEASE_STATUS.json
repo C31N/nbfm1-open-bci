@@ -19,11 +19,11 @@
   "human_connected_use_authorized": false,
   "observed_source_metrics": {
     "schematic_instantiated_symbols": 642,
-    "schematic_wires": 1875,
+    "schematic_wires": 2026,
     "pcb_footprints": 642,
-    "pcb_segments": 0,
-    "pcb_vias": 0,
-    "pcb_zones": 0
+    "pcb_segments": 785,
+    "pcb_vias": 322,
+    "pcb_zones": 4
   },
   "blockers": [
     "Complete and independently review all copper routing, vias, power distribution and return-current paths.",
@@ -117,5 +117,22 @@
     "layer3": "In2.Cu split power: 3V3A, 3V3D, 5V_ISO; VREG_1V1 is a short local routed core rail",
     "layer4": "B.Cu TDM/control crossings and AGND perimeter stitch ring",
     "ground_policy": "DGND and ISO_GND are merged into one local AGND plane; no split ground plane"
+  },
+  "a2_preroute": {
+    "violations": 0,
+    "unconnected": 499,
+    "errors": 499,
+    "warnings": 0,
+    "types": {
+      "unconnected_items:error": 499
+    },
+    "pcb_footprints": 642,
+    "pcb_segments": 785,
+    "pcb_vias": 322,
+    "pcb_zones": 4,
+    "source_workflow_run": 37453649853,
+    "source_artifact_id": 11408331280,
+    "pcb_sha256": "e8c55cf8c0f54cbe271675a1007d3b4b68e0b85583d907cdccd7c5d451e63a72",
+    "interpretation": "Prepared placement baseline; 499 unconnected items remain release blockers. Primary-board DRC must validate this baseline without preparing it again."
   }
 }
