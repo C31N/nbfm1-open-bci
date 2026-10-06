@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+(version 1)
+
+(rule "A2 fabrication clearance"
+    (constraint clearance (min 0.15mm)))
+
+(rule "A2 fabrication track width"
+    (constraint track_width (min 0.15mm)))
+
+(rule "A2 drilled via geometry"
+    (constraint via_diameter (min 0.60mm))
+    (constraint hole_size (min 0.30mm)))
+
+(rule "A2 copper edge clearance"
+    (constraint edge_clearance (min 0.25mm)))
+
+(rule "A2 thermal relief geometry"
+    (constraint thermal_relief_gap (min 0.20mm))
+    (constraint thermal_spoke_width (opt 0.25mm)))
+
+(rule "A2 patient front-end"
+    (condition "A.NetName =~ '^CH[0-9]{3}_[PN]_(ELECTRODE|MUX)$' || A.NetName =~ '^BANK[0-7]_[PN]_(MUX_OUT|BUFFER)$' || A.NetName =~ '^ADC[0-7]_[PN]$'")
+    (constraint clearance (min 0.20mm))
+    (constraint track_width (min 0.15mm) (opt 0.18mm)))
+
+(rule "A2 analog reference"
+    (condition "A.NetName == 'VCM' || A.NetName == 'DRL' || A.NetName == 'CMS1' || A.NetName == 'CMS2' || A.NetName == 'ADC_REFIN'")
+    (constraint clearance (min 0.20mm))
+    (constraint track_width (min 0.20mm) (opt 0.25mm)))
+
+(rule "A2 power distribution"
+    (condition "A.NetName == '3V3A' || A.NetName == '3V3D' || A.NetName == '5V_ISO' || A.NetName == 'VREG_1V1'")
+    (constraint clearance (min 0.20mm))
+    (constraint track_width (min 0.30mm) (opt 0.40mm)))
+
+(rule "A2 USB full-speed"
+    (condition "A.NetName == 'USB_DP' || A.NetName == 'USB_DM' || A.NetName == 'USB_DP_IC' || A.NetName == 'USB_DM_IC'")
+    (constraint clearance (min 0.15mm))
+    (constraint track_width (min 0.15mm) (opt 0.20mm)))
