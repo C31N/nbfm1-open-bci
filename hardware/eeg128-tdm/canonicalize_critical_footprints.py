@@ -23,6 +23,10 @@ def main() -> int:
         raise RuntimeError(f"cannot load {input_path}")
 
     replaced = ensure_critical_manufacturer_footprints(board)
+    try:
+        pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+    except Exception as exc:
+        print(f"zone refill deferred to KiCad CLI: {exc}")
     output_path.parent.mkdir(parents=True, exist_ok=True)
     pcbnew.SaveBoard(str(output_path), board)
     print({"output": str(output_path), "critical_footprints_replaced": replaced})
