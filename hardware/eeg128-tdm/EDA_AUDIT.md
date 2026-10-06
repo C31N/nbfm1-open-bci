@@ -143,3 +143,19 @@ Do not connect a human subject while any uncontrolled galvanic path exists to
 mains-referenced USB, test equipment or bench power.
 
 See `docs/SAFETY_COMPLIANCE.md`.
+
+
+## A2 closure work — 2026-10-06
+
+The A2 engineering branch adds deterministic hardware identity checks, a
+four-layer JLC3313-compatible stackup, conservative KiCad 8 custom rules,
+isolated canonicalization of the critical U1-U23 footprints, corrected RP2040
+TESTEN/QSPI connectivity, and a fail-closed Top/Bottom autorouting pipeline.
+
+The materialized PCB/schematic sources were regenerated at commit
+`9d37132bfcc2c1a6a41d4760265a7d7fcf4cbb01`.
+
+Release flags remain fail-closed until the post-materialization native ERC/DRC
+and A2 routing evidence satisfy their strict gates. In particular,
+`routing_completed` and `fabrication_release` must not be enabled merely
+because the preparation pipeline succeeds.
