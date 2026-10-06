@@ -21,6 +21,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: materialize-eda-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   generate:
     runs-on: ubuntu-latest
@@ -109,4 +113,16 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Materialize generated KiCad schematic and release manifest"
-          git push
+
+          git fetch origin "${GITHUB_REF_NAME}"
+          remote_head="$(git rev-parse "origin/${GITHUB_REF_NAME}")"
+          source_head="$(git rev-parse HEAD^)"
+          if [ "$remote_head" != "$source_head" ]; then
+            echo "Branch advanced from $source_head to $remote_head; stale generated output is not pushed."
+            exit 0
+          fi
+
+          if ! git push origin "HEAD:${GITHUB_REF_NAME}"; then
+            echo "Branch advanced during push; leave the newer materialization run to publish its output."
+            exit 0
+          fi
