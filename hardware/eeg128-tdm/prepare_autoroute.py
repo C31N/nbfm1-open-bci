@@ -233,6 +233,10 @@ def ensure_critical_manufacturer_footprints(board: pcbnew.BOARD) -> int:
         item.SetValue(value)
         item.SetPosition(point(x_mm, y_mm))
         item.SetOrientationDegrees(angle_deg)
+        try:
+            item.Reference().SetVisible(False)
+        except Exception:
+            pass
         board.Add(item)
 
         for pad_number, net_name in nets.items():
