@@ -445,6 +445,10 @@ def add_rect_zone(
     zone.SetNet(ensure_net(board, net_name))
     zone.SetLayer(layer)
     zone.SetMinThickness(mm(0.15))
+    zone.SetLocalClearance(mm(0.20))
+    zone.SetPadConnection(pcbnew.ZONE_CONNECTION_THERMAL)
+    zone.SetThermalReliefGap(mm(0.20))
+    zone.SetThermalReliefSpokeWidth(mm(0.25))
     outline = zone.Outline()
     outline.NewOutline()
     outline.Append(point(x1_mm, y1_mm))
@@ -685,7 +689,7 @@ def add_vcm_preroute(board: pcbnew.BOARD) -> int:
                     "VCM",
                     via_pos,
                     point(target_x, global_bus_y),
-                    pcbnew.In2_Cu,
+                    pcbnew.B_Cu,
                     0.20,
                 )
                 routed += 1
@@ -695,7 +699,7 @@ def add_vcm_preroute(board: pcbnew.BOARD) -> int:
             "VCM",
             point(spine_x[0], global_bus_y),
             point(spine_x[3], global_bus_y),
-            pcbnew.In2_Cu,
+            pcbnew.B_Cu,
             0.25,
         )
 
@@ -705,7 +709,7 @@ def add_vcm_preroute(board: pcbnew.BOARD) -> int:
             "VCM",
             point(min(all_spines), global_bus_y),
             point(max(all_spines), global_bus_y),
-            pcbnew.In2_Cu,
+            pcbnew.B_Cu,
             0.25,
         )
 
@@ -720,7 +724,16 @@ def add_power_and_reference_preroutes(board: pcbnew.BOARD) -> dict[str, int]:
     to the constrained router; only the continuous low-impedance ground reference is
     created here.
     """
-    add_rect_zone(board, "AGND", pcbnew.In1_Cu, 5.8, 5.8, 198.2, 113.2)
+    # L2 is one uninterrupted local return plane. Do not split analog and
+    # digital ground; control return-current geometry by placement and stitching.
+    add_rect_zone(board, "AGND", pcbnew.In1_Cu, 5.5, 5.5, 194.5, 114.5)
+
+    # L3 is reserved for non-overlapping power islands. These are deliberately
+    # inset from the outline and from each other by >= 1.0 mm.
+    add_rect_zone(board, "3V3A", pcbnew.In2_Cu, 5.5, 37.0, 149.5, 75.5)
+    add_rect_zone(board, "3V3D", pcbnew.In2_Cu, 150.5, 55.0, 194.5, 99.0)
+    add_rect_zone(board, "5V_ISO", pcbnew.In2_Cu, 150.5, 100.0, 194.5, 114.0)
+
     try:
         filler = pcbnew.ZONE_FILLER(board)
         filler.Fill(board.Zones())
@@ -729,11 +742,32 @@ def add_power_and_reference_preroutes(board: pcbnew.BOARD) -> dict[str, int]:
     return {
         "AGND_plane": 1,
         "VCM": 0,
-        "3V3A": 0,
-        "3V3D": 0,
-        "5V_ISO": 0,
+        "3V3A": 1,
+        "3V3D": 1,
+        "5V_ISO": 1,
         "VREG_1V1": 0,
     }
+
+def add_ground_stitching(board: pcbnew.BOARD) -> int:
+    """Add an AGND via fence tied to the uninterrupted L2 reference plane."""
+    positions: set[tuple[float, float]] = set()
+    for x_mm in range(10, 191, 10):
+        positions.add((float(x_mm), 7.0))
+        positions.add((float(x_mm), 113.0))
+    for y_mm in range(17, 108, 10):
+        positions.add((7.0, float(y_mm)))
+        positions.add((193.0, float(y_mm)))
+
+    for x_mm, y_mm in sorted(positions):
+        add_through_via(
+            board,
+            "AGND",
+            point(x_mm, y_mm),
+            diameter_mm=0.60,
+            drill_mm=0.30,
+        )
+    return len(positions)
+
 
 def merge_digital_ground(board: pcbnew.BOARD) -> int:
     agnd = board.FindNet("AGND")
@@ -902,6 +936,7 @@ def prepare(input_path: Path, output_path: Path) -> None:
     place_analog_core(board)
     place_digital_core(board)
     preroute_counts = add_power_and_reference_preroutes(board)
+    preroute_counts["ground_stitch_vias"] = add_ground_stitching(board)
     preroute_counts["channel_bias_junctions"] = add_channel_mux_preroutes(board)
     preroute_counts["channel_to_mux"] = 0
     preroute_counts["VCM_bias_returns"] = add_vcm_preroute(board)
