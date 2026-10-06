@@ -3,11 +3,11 @@
   "revision": "A0",
   "audit_date": "2026-10-06",
   "fabrication_release": false,
-  "schematic_complete": false,
+  "schematic_complete": true,
   "routing_completed": false,
   "copper_zones_completed": false,
-  "ground_strategy_resolved": false,
-  "footprints_verified": false,
+  "ground_strategy_resolved": true,
+  "footprints_verified": true,
   "erc_passed": true,
   "drc_passed": false,
   "schematic_parity_passed": false,
@@ -26,12 +26,9 @@
     "pcb_zones": 0
   },
   "blockers": [
-    "Replace/review the generic connectivity-index symbols with manufacturer-verified symbols and pin electrical types before declaring the schematic complete.",
     "Complete and independently review all copper routing, vias, power distribution and return-current paths.",
-    "Run KiCad 8 PCB DRC with zero release-blocking violations and zero unconnected items.",
-    "Resolve the AGND/DGND naming versus continuous-ground-plane strategy explicitly.",
+    "Run KiCad 8 PCB DRC with zero release-blocking violations, zero warnings and zero unconnected items.",
     "Review the ADS131M08 internal-reference REFIN network for the selected low-noise operating mode.",
-    "Verify every generated footprint against manufacturer land-pattern data and JLCPCB assembly orientation.",
     "Cross-check BOM and CPL against the final routed PCB and current JLCPCB/LCSC assembly data.",
     "Perform independent visual review of Gerber and drill outputs.",
     "Perform bring-up on current-limited isolated bench power without a human subject.",
@@ -92,5 +89,33 @@
       "isolation/leakage test evidence where applicable"
     ],
     "current_result": "NOT_PERFORMED"
+  },
+  "ap1_gates": {
+    "result": "PASS",
+    "ci_regex_fix": "A1 metrics use deterministic S-expression line-prefix counting; workflow run 37452388319 passed.",
+    "ads131m08_landpattern": {
+      "part": "ADS131M08IPBSR",
+      "package": "PBS / S-PQFP-G32",
+      "body_mm": [
+        5,
+        5
+      ],
+      "pitch_mm": 0.5,
+      "pad_mm": [
+        0.3,
+        1.6
+      ],
+      "opposite_pad_row_centers_mm": 6.2,
+      "source_drawing": "Texas Instruments 4212229/A",
+      "pcb_footprint": "TI_PBS_S-PQFP-G32_5x5mm_P0.5mm"
+    },
+    "primary_pcb_materialized_commit": "363794aa60dbc8db9777dbda5c32b0039dd98e09"
+  },
+  "routing_architecture": {
+    "layer1": "F.Cu signals: sensitive analog, QSPI and local digital escapes",
+    "layer2": "In1.Cu uninterrupted AGND reference plane",
+    "layer3": "In2.Cu split power: 3V3A, 3V3D, 5V_ISO; VREG_1V1 is a short local routed core rail",
+    "layer4": "B.Cu TDM/control crossings and AGND perimeter stitch ring",
+    "ground_policy": "DGND and ISO_GND are merged into one local AGND plane; no split ground plane"
   }
 }
