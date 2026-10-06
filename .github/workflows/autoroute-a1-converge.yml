@@ -1,0 +1,283 @@
+name: A1 Converging Three-Signal-Layer Route
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/autoroute-a1-converge.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: eeg128-a1-converge
+  cancel-in-progress: true
+
+jobs:
+  converge:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Install KiCad 8
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            kicad kicad-footprints curl jq unzip
+          kicad-cli version
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Prepare A1 baseline
+        run: |
+          mkdir -p /tmp/a1conv
+          /usr/bin/python3 hardware/eeg128-tdm/prepare_autoroute.py \
+            --input hardware/eeg128-tdm/eeg128-tdm.kicad_pcb \
+            --output /tmp/a1conv/round0.kicad_pcb
+          set +e
+          kicad-cli pcb drc \
+            --format json \
+            --severity-all \
+            --all-track-errors \
+            --output /tmp/a1conv/drc-round0.json \
+            /tmp/a1conv/round0.kicad_pcb
+          set -e
+
+      - name: Download pinned FreeRouting 2.4.1
+        run: |
+          curl -fL \
+            -o /tmp/a1conv/freerouting.jar \
+            https://github.com/freerouting/freerouting/releases/download/v2.4.1/freerouting-2.4.1.jar
+          echo "251101c3eeac22d7e7dfcf6796603279e5d1000283eb82d8f093780f7afc6aa9  /tmp/a1conv/freerouting.jar" \
+            | sha256sum -c -
+
+      - name: Converge routing
+        run: |
+          /usr/bin/python3 - <<'PY'
+          from __future__ import annotations
+
+          import json
+          from pathlib import Path
+          import subprocess
+
+          import pcbnew
+
+          root = Path("/tmp/a1conv")
+          jar = root / "freerouting.jar"
+          max_rounds = 4
+          progress: dict[str, dict[str, int]] = {}
+
+          def drc_metrics(path: Path) -> dict[str, int]:
+              report = json.loads(path.read_text(encoding="utf-8"))
+              violations = report.get("violations", [])
+              unconnected = report.get("unconnected_items", [])
+              all_items = violations + unconnected
+              return {
+                  "violations": len(violations),
+                  "unconnected": len(unconnected),
+                  "errors": sum(
+                      item.get("severity") == "error" for item in all_items
+                  ),
+                  "warnings": sum(
+                      item.get("severity") == "warning" for item in all_items
+                  ),
+                  "violation_errors": sum(
+                      item.get("severity") == "error" for item in violations
+                  ),
+              }
+
+          progress["round0"] = drc_metrics(root / "drc-round0.json")
+          current = root / "round0.kicad_pcb"
+          best = current
+          best_unconnected = progress["round0"]["unconnected"]
+
+          for round_index in range(1, max_rounds + 1):
+              dsn = root / f"round{round_index}.dsn"
+              ses = root / f"round{round_index}.ses"
+              target = root / f"round{round_index}.kicad_pcb"
+              drc = root / f"drc-round{round_index}.json"
+
+              board = pcbnew.LoadBoard(str(current))
+              if board is None:
+                  raise SystemExit(f"failed to load {current}")
+              if not pcbnew.ExportSpecctraDSN(board, str(dsn)):
+                  raise SystemExit(f"DSN export failed in round {round_index}")
+
+              cmd = [
+                  "java",
+                  "-Djava.awt.headless=true",
+                  "-jar",
+                  str(jar),
+                  "-de",
+                  str(dsn),
+                  "-do",
+                  str(ses),
+                  "--router.autorouter.max_passes=1",
+                  "--router.optimizer.enabled=false",
+                  "--router.fanout.enabled=false",
+                  "--gui.enabled=false",
+                  "--router.layers.routable=true,false,true,true",
+                  "--router.layers.preferred_direction_horizontal=true,false,true,false",
+                  "--logging.file.enabled=false",
+              ]
+              subprocess.run(cmd, check=True)
+              if not ses.is_file() or ses.stat().st_size == 0:
+                  raise SystemExit(f"SES missing in round {round_index}")
+
+              board = pcbnew.LoadBoard(str(current))
+              if pcbnew.ImportSpecctraSES(board, str(ses)) is False:
+                  raise SystemExit(f"SES import failed in round {round_index}")
+              pcbnew.SaveBoard(str(target), board)
+
+              subprocess.run(
+                  [
+                      "kicad-cli",
+                      "pcb",
+                      "drc",
+                      "--format",
+                      "json",
+                      "--severity-all",
+                      "--all-track-errors",
+                      "--output",
+                      str(drc),
+                      str(target),
+                  ],
+                  check=False,
+              )
+              metrics = drc_metrics(drc)
+              progress[f"round{round_index}"] = metrics
+              print(f"round {round_index}: {metrics}", flush=True)
+
+              if metrics["unconnected"] < best_unconnected:
+                  best_unconnected = metrics["unconnected"]
+                  best = target
+
+              current = target
+              if (
+                  metrics["unconnected"] == 0
+                  and metrics["errors"] == 0
+                  and metrics["violation_errors"] == 0
+              ):
+                  break
+
+          (root / "progress.json").write_text(
+              json.dumps(progress, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          (root / "best-path.txt").write_text(str(best) + "\n", encoding="utf-8")
+          (root / "best-unconnected.txt").write_text(
+              str(best_unconnected) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Validate best routed board
+        run: |
+          BEST="$(cat /tmp/a1conv/best-path.txt)"
+          cp "$BEST" /tmp/a1conv/eeg128-tdm-A1-best.kicad_pcb
+          set +e
+          kicad-cli pcb drc \
+            --format json \
+            --severity-all \
+            --all-track-errors \
+            --output /tmp/a1conv/drc-best.json \
+            /tmp/a1conv/eeg128-tdm-A1-best.kicad_pcb
+          set -e
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path("/tmp/a1conv/drc-best.json").read_text())
+          violations = report.get("violations", [])
+          unconnected = report.get("unconnected_items", [])
+          result = {
+              "unconnected": len(unconnected),
+              "violation_errors": sum(
+                  x.get("severity") == "error" for x in violations
+              ),
+              "warnings": sum(
+                  x.get("severity") == "warning"
+                  for x in violations + unconnected
+              ),
+          }
+          Path("/tmp/a1conv/final-gate.json").write_text(
+              json.dumps(result, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(result, indent=2))
+          PY
+
+      - name: Export manufacturing review files
+        run: |
+          kicad-cli pcb export pos \
+            --format csv \
+            --units mm \
+            --side both \
+            --smd-only \
+            --exclude-dnp \
+            --output /tmp/a1conv/CPL-A1.csv \
+            /tmp/a1conv/eeg128-tdm-A1-best.kicad_pcb
+          mkdir -p /tmp/a1conv/gerbers
+          kicad-cli pcb gerbers \
+            -l F.Cu,In1.Cu,In2.Cu,B.Cu,F.Mask,B.Mask,F.Silkscreen,B.Silkscreen,Edge.Cuts \
+            -o /tmp/a1conv/gerbers/ \
+            /tmp/a1conv/eeg128-tdm-A1-best.kicad_pcb
+          kicad-cli pcb drill \
+            --format excellon \
+            --generate-map \
+            --map-format gerberx2 \
+            -o /tmp/a1conv/gerbers/ \
+            /tmp/a1conv/eeg128-tdm-A1-best.kicad_pcb
+
+      - name: Publish board only on zero-error gate
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          gate = json.loads(Path("/tmp/a1conv/final-gate.json").read_text())
+          if gate["unconnected"] != 0 or gate["violation_errors"] != 0:
+              print("A1 remains engineering-only:", gate)
+              raise SystemExit(0)
+
+          src = Path("/tmp/a1conv/eeg128-tdm-A1-best.kicad_pcb")
+          dst = Path("hardware/eeg128-tdm/eeg128-tdm.kicad_pcb")
+          dst.write_bytes(src.read_bytes())
+          print("Zero-error board promoted to primary PCB source.")
+          PY
+
+          if git diff --quiet -- hardware/eeg128-tdm/eeg128-tdm.kicad_pcb; then
+            echo "No zero-error promotion occurred."
+            exit 0
+          fi
+
+          bash scripts/generate_release_manifest.sh
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add hardware/eeg128-tdm/eeg128-tdm.kicad_pcb PUBLICATION_SHA256SUMS
+          git commit -m "Promote zero-error A1 routed PCB"
+          git push
+
+      - name: Upload convergence evidence
+        uses: actions/upload-artifact@v6
+        with:
+          name: eeg128-a1-converged-route
+          path: |
+            /tmp/a1conv/round*.kicad_pcb
+            /tmp/a1conv/drc-round*.json
+            /tmp/a1conv/progress.json
+            /tmp/a1conv/eeg128-tdm-A1-best.kicad_pcb
+            /tmp/a1conv/drc-best.json
+            /tmp/a1conv/final-gate.json
+            /tmp/a1conv/CPL-A1.csv
+            /tmp/a1conv/gerbers/
+          if-no-files-found: error
+          retention-days: 14
