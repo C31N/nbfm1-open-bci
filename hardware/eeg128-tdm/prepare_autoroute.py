@@ -174,7 +174,7 @@ def ensure_critical_manufacturer_footprints(board: pcbnew.BOARD) -> int:
             )
             for index in range(17, 21)
         },
-        "U21": ("Package_QFP", "TQFP-32_7x7mm_P0.8mm"),
+        "U21": ("Package_QFP", "LQFP-32_5x5mm_P0.5mm"),
         "U23": (
             "Package_DFN_QFN",
             "QFN-56-1EP_7x7mm_P0.4mm_EP3.2x3.2mm",
