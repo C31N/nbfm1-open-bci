@@ -1,0 +1,395 @@
+name: A2 Fail-Closed PCB Route
+
+on:
+  workflow_dispatch:
+    inputs:
+      rounds:
+        description: "Routing rounds from validated checkpoint (1-6)"
+        default: "1"
+        type: choice
+        options: ["1", "2", "3", "4", "5", "6"]
+  push:
+    paths:
+      - ".github/workflows/a2-route.yml"
+      - "hardware/eeg128-tdm/prepare_autoroute.py"
+      - "hardware/eeg128-tdm/apply_board_constraints.py"
+      - "hardware/eeg128-tdm/canonicalize_critical_footprints.py"
+      - "hardware/eeg128-tdm/verify_hardware_identity.py"
+      - "hardware/eeg128-tdm/eeg128-tdm.kicad_dru"
+      - "hardware/eeg128-tdm/eeg128-tdm.kicad_pro"
+      - "hardware/eeg128-tdm/fill_zones.py"
+      - "hardware/eeg128-tdm/verify_routing_checkpoint.py"
+      - "hardware/eeg128-tdm/check_analog_layer_policy.py"
+      - "hardware/eeg128-tdm/constrain_analog_dsn.py"
+      - "hardware/eeg128-tdm/remove_drc_dangling.py"
+      - "hardware/eeg128-tdm/routing/**"
+      - "hardware/eeg128-tdm/NBFM1_A2.pretty/**"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: eeg128-a2-route
+  cancel-in-progress: true
+
+jobs:
+  route:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Install KiCad 8
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            kicad kicad-footprints curl jq
+          kicad-cli version | grep -E '^8\.'
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Prepare or resume validated A2 baseline
+        run: |
+          mkdir -p /tmp/a2route
+          checkpoint=hardware/eeg128-tdm/routing/checkpoint.kicad_pcb
+          if [ -f "$checkpoint" ]; then
+            /usr/bin/python3 hardware/eeg128-tdm/verify_routing_checkpoint.py \
+              --source hardware/eeg128-tdm/eeg128-tdm.kicad_pcb \
+              --checkpoint "$checkpoint" \
+              --metadata hardware/eeg128-tdm/routing/STATUS.json
+            cp "$checkpoint" /tmp/a2route/eeg128-tdm.kicad_pcb
+          else
+            /usr/bin/python3 hardware/eeg128-tdm/prepare_autoroute.py \
+              --input hardware/eeg128-tdm/eeg128-tdm.kicad_pcb \
+              --output /tmp/a2route/eeg128-tdm.kicad_pcb
+            /usr/bin/python3 hardware/eeg128-tdm/canonicalize_critical_footprints.py \
+              --input /tmp/a2route/eeg128-tdm.kicad_pcb \
+              --output /tmp/a2route/eeg128-tdm.kicad_pcb
+          fi
+          /usr/bin/python3 hardware/eeg128-tdm/verify_hardware_identity.py \
+            --pcb /tmp/a2route/eeg128-tdm.kicad_pcb
+          cp hardware/eeg128-tdm/eeg128-tdm.kicad_dru /tmp/a2route/eeg128-tdm.kicad_dru
+          cp hardware/eeg128-tdm/eeg128-tdm.kicad_pro /tmp/a2route/eeg128-tdm.kicad_pro
+          set +e
+          kicad-cli pcb drc \
+            --format json \
+            --severity-all \
+            --all-track-errors \
+            --output /tmp/a2route/drc-round0.json \
+            /tmp/a2route/eeg128-tdm.kicad_pcb
+          set -e
+          cp /tmp/a2route/eeg128-tdm.kicad_pcb /tmp/a2route/round0.kicad_pcb
+
+      - name: Download pinned FreeRouting 2.4.1
+        run: |
+          curl -fL \
+            -o /tmp/a2route/freerouting.jar \
+            https://github.com/freerouting/freerouting/releases/download/v2.4.1/freerouting-2.4.1.jar
+          echo "251101c3eeac22d7e7dfcf6796603279e5d1000283eb82d8f093780f7afc6aa9  /tmp/a2route/freerouting.jar" \
+            | sha256sum -c -
+
+      - name: Route on Top and Bottom only
+        env:
+          A2_ROUNDS: ${{ inputs.rounds || '1' }}
+        run: |
+          /usr/bin/python3 - <<'PY'
+          from __future__ import annotations
+
+          from collections import Counter
+          import json
+          import os
+          from pathlib import Path
+          import shutil
+          import subprocess
+
+          import pcbnew
+
+          root = Path("/tmp/a2route")
+          working = root / "eeg128-tdm.kicad_pcb"
+          jar = root / "freerouting.jar"
+          max_rounds = int(os.environ["A2_ROUNDS"])
+          if not 1 <= max_rounds <= 6:
+              raise SystemExit("A2_ROUNDS must be between 1 and 6")
+
+          def metrics(path: Path) -> dict[str, object]:
+              raw = json.loads(path.read_text(encoding="utf-8"))
+              violations = raw.get("violations", [])
+              unconnected = raw.get("unconnected_items", [])
+              return {
+                  "violations": len(violations),
+                  "violation_errors": sum(
+                      item.get("severity") == "error" for item in violations
+                  ),
+                  "warnings": sum(
+                      item.get("severity") == "warning"
+                      for item in violations + unconnected
+                  ),
+                  "unconnected": len(unconnected),
+                  "types": dict(
+                      Counter(
+                          f"{item.get('type', 'unknown')}:{item.get('severity', 'unknown')}"
+                          for item in violations + unconnected
+                      )
+                  ),
+              }
+
+          def score(item: dict[str, object]) -> tuple[int, int, int]:
+              return (
+                  int(item["violation_errors"]),
+                  int(item["unconnected"]),
+                  int(item["warnings"]),
+              )
+
+          progress: dict[str, dict[str, object]] = {
+              "round0": metrics(root / "drc-round0.json")
+          }
+          if progress["round0"]["violations"] or progress["round0"]["warnings"]:
+              raise SystemExit("A2 baseline has geometric violations or warnings")
+          expected = Path("hardware/eeg128-tdm/routing/STATUS.json")
+          if expected.is_file() and progress["round0"]["unconnected"] != json.loads(expected.read_text())["unconnected"]:
+              raise SystemExit("Native checkpoint connectivity does not match recorded metrics")
+          progress["round0"]["analog_layer_pass"] = True
+          best_round = 0
+          best_metrics = progress["round0"]
+
+          for round_index in range(1, max_rounds + 1):
+              dsn = root / f"round{round_index}.dsn"
+              ses = root / f"round{round_index}.ses"
+              drc = root / f"drc-round{round_index}.json"
+
+              board = pcbnew.LoadBoard(str(working))
+              if board is None or not pcbnew.ExportSpecctraDSN(board, str(dsn)):
+                  raise SystemExit(f"DSN export failed in round {round_index}")
+              subprocess.run(
+                  ["/usr/bin/python3", "hardware/eeg128-tdm/constrain_analog_dsn.py", str(dsn)],
+                  check=True,
+              )
+
+              router_log = (root / f"round{round_index}-router.log").open("w", encoding="utf-8")
+              subprocess.run(
+                  [
+                      "java",
+                      "-Djava.awt.headless=true",
+                      "-jar",
+                      str(jar),
+                      "-de",
+                      str(dsn),
+                      "-do",
+                      str(ses),
+                      f"--router.result_json={root / f'round{round_index}-router.json'}",
+                      "--router.max_passes=3",
+                      "--router.job_timeout=00:15:00",
+                      "--router.strict_drc=true",
+                      "--router.automatic_neckdown=false",
+                      "--usage_and_diagnostic_data.disable_analytics=true",
+                      "--profile.allow_telemetry=false",
+                      "--router.optimizer.enabled=false",
+                      "--router.optimizer.timeout=00:02:00",
+                      "--router.optimizer.max_passes=1",
+                      "--router.fanout.enabled=false",
+                      "--gui.enabled=false",
+                      "--router.layers.routable=true,false,false,true",
+                      "--router.layers.preferred_direction_horizontal=false,false,false,true",
+                      "--logging.file.enabled=false",
+                  ],
+                  check=True,
+                  timeout=960,
+                  stdout=router_log,
+                  stderr=subprocess.STDOUT,
+              )
+              router_log.close()
+              if "Unknown settings property" in (root / f"round{round_index}-router.log").read_text():
+                  raise SystemExit("FreeRouting rejected a routing setting")
+              if not ses.is_file() or ses.stat().st_size == 0:
+                  raise SystemExit(f"FreeRouting produced no SES in round {round_index}")
+
+              board = pcbnew.LoadBoard(str(working))
+              if board is None or pcbnew.ImportSpecctraSES(board, str(ses)) is False:
+                  raise SystemExit(f"SES import failed in round {round_index}")
+              pcbnew.SaveBoard(str(working), board)
+              subprocess.run(
+                  [
+                      "/usr/bin/python3",
+                      "hardware/eeg128-tdm/fill_zones.py",
+                      str(working),
+                  ],
+                  check=True,
+              )
+              shutil.copy2(working, root / f"round{round_index}.kicad_pcb")
+
+              subprocess.run(
+                  [
+                      "kicad-cli",
+                      "pcb",
+                      "drc",
+                      "--format",
+                      "json",
+                      "--severity-all",
+                      "--all-track-errors",
+                      "--output",
+                      str(drc),
+                      str(working),
+                  ],
+                  check=False,
+              )
+              raw = json.loads(drc.read_text())
+              if any(v.get("type") in ("track_dangling", "via_dangling") and v.get("severity") == "warning"
+                     for v in raw.get("violations", [])):
+                  shutil.copy2(drc, root / f"drc-round{round_index}-before-cleanup.json")
+                  before_cleanup = root / f"round{round_index}-before-cleanup.kicad_pcb"
+                  shutil.copy2(working, before_cleanup)
+                  for cleanup_pass in range(8):
+                      remaining = json.loads(drc.read_text()).get("violations", [])
+                      if not any(v.get("type") in ("track_dangling", "via_dangling") and v.get("severity") == "warning"
+                                 for v in remaining):
+                          break
+                      shutil.copy2(drc, root / f"drc-round{round_index}-cleanup{cleanup_pass}.json")
+                      subprocess.run(
+                          ["/usr/bin/python3", "hardware/eeg128-tdm/remove_drc_dangling.py",
+                           str(working), str(drc)], check=True,
+                      )
+                      subprocess.run(
+                          ["/usr/bin/python3", "hardware/eeg128-tdm/fill_zones.py", str(working)],
+                          check=True,
+                      )
+                      subprocess.run(
+                          ["kicad-cli", "pcb", "drc", "--format", "json", "--severity-all",
+                           "--all-track-errors", "--output", str(drc), str(working)], check=False,
+                      )
+                  cleaned = metrics(drc)
+                  original = metrics(root / f"drc-round{round_index}-before-cleanup.json")
+                  if (cleaned["unconnected"] > original["unconnected"]
+                      or cleaned["violation_errors"] > original["violation_errors"]
+                      or cleaned["warnings"] >= original["warnings"]):
+                      shutil.copy2(before_cleanup, working)
+                      shutil.copy2(root / f"drc-round{round_index}-before-cleanup.json", drc)
+                  shutil.copy2(working, root / f"round{round_index}.kicad_pcb")
+              policy = subprocess.run(
+                  ["/usr/bin/python3", "hardware/eeg128-tdm/check_analog_layer_policy.py",
+                   "--baseline", str(root / "round0.kicad_pcb"), "--candidate", str(working)],
+                  check=False,
+              )
+              round_metrics = metrics(drc)
+              round_metrics["analog_layer_pass"] = policy.returncode == 0
+              progress[f"round{round_index}"] = round_metrics
+              (root / "progress.json").write_text(
+                  json.dumps(progress, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+              )
+              print(f"round {round_index}: {round_metrics}", flush=True)
+
+              if round_metrics["analog_layer_pass"] and score(round_metrics) < score(best_metrics):
+                  best_round = round_index
+                  best_metrics = round_metrics
+
+              if not round_metrics["analog_layer_pass"]:
+                  shutil.copy2(root / f"round{best_round}.kicad_pcb", working)
+
+              if round_metrics["analog_layer_pass"] and score(round_metrics) == (0, 0, 0):
+                  break
+
+          best_board = root / f"round{best_round}.kicad_pcb"
+          best_drc = root / f"drc-round{best_round}.json"
+          shutil.copy2(best_board, root / "eeg128-tdm-A2-best.kicad_pcb")
+          shutil.copy2(best_drc, root / "drc-best.json")
+          gate = {
+              "best_round": best_round,
+              **best_metrics,
+              "strict_pass": best_metrics["analog_layer_pass"] and score(best_metrics) == (0, 0, 0),
+          }
+          (root / "progress.json").write_text(
+              json.dumps(progress, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          (root / "final-gate.json").write_text(
+              json.dumps(gate, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(gate, indent=2, sort_keys=True))
+          PY
+
+      - name: Promote only a strict zero-result
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import shutil
+
+          root = Path("/tmp/a2route")
+          gate = json.loads((root / "final-gate.json").read_text(encoding="utf-8"))
+          if not gate["strict_pass"]:
+              print("A2 remains engineering-only; no PCB promotion:", gate)
+              raise SystemExit(0)
+
+          shutil.copy2(
+              root / "eeg128-tdm-A2-best.kicad_pcb",
+              Path("hardware/eeg128-tdm/eeg128-tdm.kicad_pcb"),
+          )
+
+          status_path = Path("hardware/eeg128-tdm/RELEASE_STATUS.json")
+          status = json.loads(status_path.read_text(encoding="utf-8"))
+          status["routing_completed"] = True
+          status["copper_zones_completed"] = True
+          status["drc_passed"] = True
+
+          prerequisite_keys = (
+              "schematic_complete",
+              "footprints_verified",
+              "erc_passed",
+              "schematic_parity_passed",
+              "bom_cpl_crosscheck_passed",
+              "gerber_visual_review_passed",
+              "isolated_bench_bringup_passed",
+              "noise_settling_validation_passed",
+          )
+          status["fabrication_release"] = all(
+              bool(status.get(key)) for key in prerequisite_keys
+          )
+          status_path.write_text(
+              json.dumps(status, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+          if git diff --quiet -- \
+            hardware/eeg128-tdm/eeg128-tdm.kicad_pcb \
+            hardware/eeg128-tdm/RELEASE_STATUS.json; then
+            echo "No strict-zero promotion occurred."
+            exit 0
+          fi
+
+          bash scripts/generate_release_manifest.sh
+          bash scripts/verify_release_manifest.sh
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            hardware/eeg128-tdm/eeg128-tdm.kicad_pcb \
+            hardware/eeg128-tdm/RELEASE_STATUS.json \
+            PUBLICATION_SHA256SUMS
+          git commit -m "Promote strict-zero A2 PCB route"
+          git push
+
+      - name: Upload A2 routing evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: eeg128-a2-route
+          path: |
+            /tmp/a2route/round*-router.log
+            /tmp/a2route/round*-router.json
+            /tmp/a2route/round*.dsn
+            /tmp/a2route/round*.ses
+            /tmp/a2route/round*.kicad_pcb
+            /tmp/a2route/drc-round*.json
+            /tmp/a2route/progress.json
+            /tmp/a2route/eeg128-tdm-A2-best.kicad_pcb
+            /tmp/a2route/drc-best.json
+            /tmp/a2route/final-gate.json
+          if-no-files-found: warn
+          retention-days: 14

@@ -124,8 +124,35 @@ def parse_components() -> list[Component]:
     return components
 
 
+def normalized_pads(component: Component) -> tuple[tuple[str, str], ...]:
+    """Collapse duplicate physical pad numbers to one schematic pin.
+
+    Some footprints (notably USB-C shield tabs) legitimately contain several
+    physical pads with the same pad number. KiCad schematic symbols represent
+    that electrical node once. Duplicate pad numbers are accepted only when all
+    occurrences resolve to the same net.
+    """
+    ordered: list[tuple[str, str]] = []
+    index_by_number: dict[str, int] = {}
+    for number, net in component.pads:
+        if number not in index_by_number:
+            index_by_number[number] = len(ordered)
+            ordered.append((number, net))
+            continue
+        index = index_by_number[number]
+        previous = ordered[index][1]
+        if previous and net and previous != net:
+            raise RuntimeError(
+                f"duplicate pad {component.ref}.{number} spans nets "
+                f"{previous!r} and {net!r}"
+            )
+        if not previous and net:
+            ordered[index] = (number, net)
+    return tuple(ordered)
+
+
 def signature(component: Component) -> tuple[str, ...]:
-    return tuple(number for number, _ in component.pads)
+    return tuple(number for number, _ in normalized_pads(component))
 
 
 def symbol_id(numbers: tuple[str, ...]) -> str:
@@ -211,7 +238,7 @@ def positions(components: list[Component]) -> dict[str, tuple[float, float]]:
         result[component.ref] = snap_symbol_position(
             45.0 + 92.0 * column,
             55.0 + 90.0 * row,
-            len(component.pads),
+            len(signature(component)),
         )
 
     small_start_y = 410.0
@@ -221,7 +248,7 @@ def positions(components: list[Component]) -> dict[str, tuple[float, float]]:
         result[component.ref] = snap_symbol_position(
             32.0 + 48.0 * column,
             small_start_y + 15.0 * row,
-            len(component.pads),
+            len(signature(component)),
         )
 
     return result
@@ -267,7 +294,7 @@ def instance(
     wires: list[str] = []
     labels: list[str] = []
     no_connects: list[str] = []
-    for index, (number, net) in enumerate(component.pads):
+    for index, (number, net) in enumerate(normalized_pads(component)):
         parts.extend(
             [
                 f'    (pin {q(number)}',

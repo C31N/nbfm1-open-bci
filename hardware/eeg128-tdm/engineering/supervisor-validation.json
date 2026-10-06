@@ -1,0 +1,18 @@
+{
+  "native_kicad_version": "8.0.9",
+  "violations": 0,
+  "warnings": 0,
+  "unconnected": 266,
+  "worker_history": [
+    {
+      "worker": 0,
+      "returncode": 0,
+      "checkpoint_verified": true,
+      "unconnected": 266,
+      "reason": "Fresh native verification passed"
+    }
+  ],
+  "engineering_only": true,
+  "routing_completed": false,
+  "fabrication_release": false
+}

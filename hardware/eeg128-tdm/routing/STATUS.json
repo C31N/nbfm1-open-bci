@@ -1,0 +1,72 @@
+{
+  "engineering_only": true,
+  "source_commit": "7d5f64c96c6b6cee5a38df443dbe7e0500b64200",
+  "source_sha256": "432ccf535cd844f4d3032694ccabe932bbb0ddf9a03e11d5c6e348b37268c86f",
+  "checkpoint_sha256": "69531f02a289945c535b4a094f872442dc029fdb5334553d4b378941f7c6a7c2",
+  "project_sha256": "3bb857f19a1de6b23841a13a881e6e3e61a77708e9063fdbbff9d519121795e0",
+  "rules_sha256": "41c391b215ea827a0db33c3f0b8b961119211ffd6e2455abffd4c1759b4782e3",
+  "source_workflow_run": 37513734597,
+  "source_artifact": 11436384031,
+  "source_artifact_sha256": "5e04433ab08464a1f8fb9c03687d08e9002822c72e9839130ebb78de442a294a",
+  "native_kicad_version": "8.0.9",
+  "violation_errors": 0,
+  "warnings": 0,
+  "unconnected": 308,
+  "removed_dangling_track_uuids": [
+    "33d64098-4a2d-4f0a-a572-07a67e542cde",
+    "4852cb03-b3aa-41f8-bcd2-dff2179fad70"
+  ],
+  "added_local_tracks": 21,
+  "added_plane_escapes": 97,
+  "native_drc_sha256": "1d9f468d77175a461ff659b0a576ba4b7f3b6ede3c0f7afdc26b7ae9d56016fb",
+  "source_geometry_sha256": "f3494befcf4f1275b55c83bfc897465f0b6c4edb00b4bb5de2a19956d5cb86ce",
+  "previous_checkpoint_sha256": "9f4dba5c1534d49c7243dfdbd0757f8f8de2eb51eb9571c9733d8d9432834ccd",
+  "targeted_signal_connections": 2,
+  "targeted_mux_connections": 8,
+  "approved_local_router_seconds": 120,
+  "approved_local_router_strict_drc": true,
+  "progress": [
+    {
+      "stage": "previous_saved_checkpoint",
+      "unconnected": 335
+    },
+    {
+      "stage": "workflow_artifact",
+      "unconnected": 330
+    },
+    {
+      "stage": "targeted_mux_and_signal_routes",
+      "unconnected": 321
+    },
+    {
+      "stage": "additional_signal_route",
+      "unconnected": 320
+    },
+    {
+      "stage": "router_and_analog_layer_review",
+      "unconnected": 316
+    },
+    {
+      "stage": "dsn_front_only_analog_round",
+      "unconnected": 313
+    },
+    {
+      "stage": "native_track_and_via_cleanup",
+      "unconnected": 312
+    },
+    {
+      "stage": "validated_continuation_round",
+      "unconnected": 310
+    },
+    {
+      "stage": "validated_continuation_run_37513734597",
+      "unconnected": 308
+    }
+  ],
+  "analog_layer_pass": true,
+  "restored_analog_nets": [
+    "CH110_N_MUX",
+    "CH113_N_MUX"
+  ],
+  "cleanup_removed_items": 8
+}

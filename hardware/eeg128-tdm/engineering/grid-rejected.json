@@ -1,0 +1,156 @@
+{
+  "native_kicad_version": "8.0.9",
+  "grid_diameter_mm": 0.6,
+  "grid_drill_mm": 0.3,
+  "grid_pitch_mm": 0.9,
+  "grid_layer_span": [
+    "F.Cu",
+    "B.Cu"
+  ],
+  "ground_plane": "In1.Cu",
+  "grid_coordinates_mm": [
+    [
+      167.1,
+      76.1
+    ],
+    [
+      167.1,
+      77.0
+    ],
+    [
+      167.1,
+      77.9
+    ],
+    [
+      168.0,
+      76.1
+    ],
+    [
+      168.0,
+      77.0
+    ],
+    [
+      168.0,
+      77.9
+    ],
+    [
+      168.9,
+      76.1
+    ],
+    [
+      168.9,
+      77.0
+    ],
+    [
+      168.9,
+      77.9
+    ]
+  ],
+  "removed_qspi_segments": [
+    {
+      "uuid": "1fd485f8-f64d-4ce3-ab55-2edc790cd5c6",
+      "net": "QSPI_CLK",
+      "start": [
+        176.72,
+        84.0015
+      ],
+      "end": [
+        167.175,
+        74.457
+      ]
+    },
+    {
+      "uuid": "4c9fda17-6c5f-4299-aaff-4b5061962ec4",
+      "net": "QSPI_SD0",
+      "start": [
+        171.024,
+        80.4897
+      ],
+      "end": [
+        166.248,
+        75.7142
+      ]
+    },
+    {
+      "uuid": "52db3ef8-9294-4306-89bc-87755ce56f4e",
+      "net": "QSPI_SD0",
+      "start": [
+        166.248,
+        75.7142
+      ],
+      "end": [
+        166.248,
+        72.9783
+      ]
+    },
+    {
+      "uuid": "636ccb1c-0efb-445a-891f-316ef8ed8ce8",
+      "net": "QSPI_SD1",
+      "start": [
+        166.6,
+        74.1695
+      ],
+      "end": [
+        166.6,
+        75.3938
+      ]
+    },
+    {
+      "uuid": "72c81453-f682-423d-a3a3-a6b058814900",
+      "net": "QSPI_SD1",
+      "start": [
+        166.6,
+        75.3938
+      ],
+      "end": [
+        171.585,
+        80.3791
+      ]
+    },
+    {
+      "uuid": "e17e4fd8-20c7-4566-8847-e821560277c4",
+      "net": "QSPI_SS",
+      "start": [
+        169.607,
+        79.6832
+      ],
+      "end": [
+        165.56,
+        75.6364
+      ]
+    }
+  ],
+  "grid_promoted": false,
+  "candidate_metrics": {
+    "violations": 4,
+    "warnings": 4,
+    "unconnected": 276
+  },
+  "qspi_closed": false,
+  "ep_closed": true,
+  "routing_completed": false,
+  "fabrication_release": false,
+  "violations": 0,
+  "warnings": 0,
+  "unconnected": 275,
+  "history": [
+    {
+      "net": "QSPI_SD0",
+      "both_layers": true,
+      "accepted_partial": true,
+      "qspi_open": 3,
+      "violations": 6,
+      "warnings": 6,
+      "unconnected": 277
+    },
+    {
+      "net": "QSPI_SD1",
+      "both_layers": true,
+      "accepted_partial": true,
+      "qspi_open": 2,
+      "violations": 4,
+      "warnings": 4,
+      "unconnected": 276
+    }
+  ]
+}

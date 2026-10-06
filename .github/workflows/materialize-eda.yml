@@ -10,10 +10,22 @@ on:
       - "hardware/eeg128-tdm/eeg128-tdm.kicad_pcb"
       - "hardware/eeg128-tdm/generate_schematic.py"
       - "hardware/eeg128-tdm/generate_symbol_library.py"
+      - "hardware/eeg128-tdm/normalize_connectivity.py"
+      - "hardware/eeg128-tdm/prepare_autoroute.py"
+      - "hardware/eeg128-tdm/apply_board_constraints.py"
+      - "hardware/eeg128-tdm/verify_hardware_identity.py"
+      - "hardware/eeg128-tdm/canonicalize_critical_footprints.py"
+      - "hardware/eeg128-tdm/eeg128-tdm.kicad_dru"
+      - "hardware/eeg128-tdm/eeg128-tdm.kicad_pro"
+      - "hardware/eeg128-tdm/NBFM1_A2.pretty/**"
       - "hardware/eeg128-tdm/sym-lib-table"
 
 permissions:
   contents: write
+
+concurrency:
+  group: materialize-eda-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   generate:
@@ -41,6 +53,17 @@ jobs:
             --input hardware/eeg128-tdm/eeg128-tdm.kicad_pcb \
             --output hardware/eeg128-tdm/eeg128-tdm.kicad_pcb
 
+      - name: Canonicalize critical mixed-signal footprints
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/canonicalize_critical_footprints.py \
+            --input hardware/eeg128-tdm/eeg128-tdm.kicad_pcb \
+            --output hardware/eeg128-tdm/eeg128-tdm.kicad_pcb
+
+      - name: Apply controlled four-layer stackup
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/apply_board_constraints.py \
+            hardware/eeg128-tdm/eeg128-tdm.kicad_pcb
+
       - name: Generate deterministic KiCad connectivity schematic
         run: |
           python hardware/eeg128-tdm/generate_schematic.py \
@@ -50,6 +73,11 @@ jobs:
 
       - name: Generate local KiCad symbol library
         run: python hardware/eeg128-tdm/generate_symbol_library.py
+
+      - name: Verify BOM, CPL, footprints and critical pinouts
+        run: |
+          python hardware/eeg128-tdm/verify_hardware_identity.py \
+            --json-out /tmp/hardware-identity.json
 
       - name: Validate generated object counts
         run: |
@@ -68,8 +96,14 @@ jobs:
           print({"instances": instances, "wires": wires, "bytes": path.stat().st_size})
           PY
 
-      - name: Refresh release manifest
-        run: bash scripts/generate_release_manifest.sh
+      - name: Restore non-generated project metadata
+        run: |
+          git restore --worktree -- hardware/eeg128-tdm/eeg128-tdm.kicad_pro
+
+      - name: Refresh and verify release manifest
+        run: |
+          bash scripts/generate_release_manifest.sh
+          bash scripts/verify_release_manifest.sh
 
       - name: Commit generated EDA and manifest if changed
         run: |
@@ -86,4 +120,16 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Materialize generated KiCad schematic and release manifest"
-          git push
+
+          git fetch origin "${GITHUB_REF_NAME}"
+          remote_head="$(git rev-parse "origin/${GITHUB_REF_NAME}")"
+          source_head="$(git rev-parse HEAD^)"
+          if [ "$remote_head" != "$source_head" ]; then
+            echo "Branch advanced from $source_head to $remote_head; stale generated output is not pushed."
+            exit 0
+          fi
+
+          if ! git push origin "HEAD:${GITHUB_REF_NAME}"; then
+            echo "Branch advanced during push; leave the newer materialization run to publish its output."
+            exit 0
+          fi

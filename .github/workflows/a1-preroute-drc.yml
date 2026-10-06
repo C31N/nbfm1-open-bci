@@ -6,9 +6,16 @@ on:
     paths:
       - ".github/workflows/a1-preroute-drc.yml"
       - "hardware/eeg128-tdm/prepare_autoroute.py"
+      - "hardware/eeg128-tdm/canonicalize_critical_footprints.py"
+      - "hardware/eeg128-tdm/eeg128-tdm.kicad_dru"
+      - "hardware/eeg128-tdm/NBFM1_A2.pretty/**"
 
 permissions:
   contents: read
+
+concurrency:
+  group: eeg128-a1-preroute-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   preroute-drc:
@@ -30,6 +37,10 @@ jobs:
           /usr/bin/python3 hardware/eeg128-tdm/prepare_autoroute.py \
             --input hardware/eeg128-tdm/eeg128-tdm.kicad_pcb \
             --output /tmp/a1-pre/prepared.kicad_pcb
+          /usr/bin/python3 hardware/eeg128-tdm/canonicalize_critical_footprints.py \
+            --input /tmp/a1-pre/prepared.kicad_pcb \
+            --output /tmp/a1-pre/prepared.kicad_pcb
+          cp hardware/eeg128-tdm/eeg128-tdm.kicad_dru /tmp/a1-pre/prepared.kicad_dru
 
       - name: Run native DRC
         run: |
@@ -71,6 +82,26 @@ jobs:
               encoding="utf-8",
           )
           print(json.dumps(summary, indent=2))
+          PY
+
+      - name: Gate non-connectivity DRC findings
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          summary = json.loads(
+              Path("/tmp/a1-pre/summary.json").read_text(encoding="utf-8")
+          )
+          if summary["violations"] != 0 or summary["warnings"] != 0:
+              raise SystemExit(
+                  "A1 pre-route baseline has non-connectivity DRC findings: "
+                  + json.dumps(summary, sort_keys=True)
+              )
+          print(
+              "A1 placement gate PASS: 0 violations / 0 warnings; "
+              f"{summary['unconnected']} connections remain for A2 routing."
+          )
           PY
 
       - uses: actions/upload-artifact@v6

@@ -1,0 +1,39 @@
+{
+  "prior_rejected_native_violations": [
+    {
+      "description": "Clearance violation (rule 'A2 analog reference' clearance 0.2000 mm; actual 0.1750 mm)",
+      "items": [
+        {
+          "description": "Track [VCM] on B.Cu, length 23.4000 mm",
+          "pos": {
+            "x": 172.75,
+            "y": 13.0
+          },
+          "uuid": "a38ed67e-44bb-48d0-868b-3a12e6d2584f"
+        },
+        {
+          "description": "Via [CH117_P_ELECTRODE] on F.Cu - B.Cu",
+          "pos": {
+            "x": 173.349999,
+            "y": 14.179999
+          },
+          "uuid": "155779db-28c7-4a9a-a7fc-01e99af1c8d9"
+        }
+      ],
+      "severity": "error",
+      "type": "clearance"
+    }
+  ],
+  "diagnostic_nets": [
+    "CH117_P_ELECTRODE",
+    "CH118_P_ELECTRODE"
+  ],
+  "before_unconnected": 266,
+  "after_unconnected": 265,
+  "after_violations": 0,
+  "accepted_net": "CH118_P_ELECTRODE",
+  "neighbor_clearance_mm": 0.2,
+  "rules_weakened": false,
+  "routing_completed": false,
+  "fabrication_release": false
+}

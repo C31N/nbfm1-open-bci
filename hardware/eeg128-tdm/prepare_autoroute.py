@@ -4,9 +4,16 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import re
 import sys
+from tempfile import TemporaryDirectory
 
 import pcbnew
+
+from apply_board_constraints import apply_stackup, balanced_end
+
+
+ROOT = Path(__file__).resolve().parent
 
 
 def mm(value: float) -> int:
@@ -36,11 +43,59 @@ def place(
     item.SetOrientationDegrees(angle_deg)
 
 
-def clear_routing(board: pcbnew.BOARD) -> None:
-    for track in list(board.GetTracks()):
-        board.Remove(track)
-    for zone in list(board.Zones()):
-        board.Remove(zone)
+def normalize_generated_footprint_metadata(board: pcbnew.BOARD) -> dict[str, int]:
+    """Remove false library/silkscreen DRC sources from board-local footprints."""
+    detached = 0
+    silk_items_moved = 0
+    references_hidden = 0
+
+    for item in board.GetFootprints():
+        fpid = item.GetFPIDAsString()
+        if fpid.startswith("NBFM1_A0:"):
+            # Keep the embedded footprint but remove the nonexistent library
+            # nickname so KiCad does not report a missing external library.
+            item.SetFPIDAsString(item.GetReference())
+            detached += 1
+
+            for graphic in item.GraphicalItems():
+                if graphic.GetLayer() == pcbnew.F_SilkS:
+                    graphic.SetLayer(pcbnew.F_Fab)
+                    silk_items_moved += 1
+
+            reference = item.Reference()
+            if reference.IsVisible():
+                reference.SetVisible(False)
+                references_hidden += 1
+
+    return {
+        "board_local_footprints": detached,
+        "silk_items_moved_to_fab": silk_items_moved,
+        "references_hidden": references_hidden,
+    }
+
+
+def clear_routing_source(text: str) -> str:
+    """Remove only board-level copper blocks, avoiding KiCad 8 zone SWIG pointers."""
+    root = re.match(r"\s*\(kicad_pcb\b", text)
+    if root is None:
+        raise RuntimeError("input is not a KiCad PCB")
+    cursor = root.end()
+    retained = [text[:cursor]]
+    while cursor < len(text):
+        child = cursor
+        while child < len(text) and text[child].isspace():
+            child += 1
+        retained.append(text[cursor:child])
+        if child == len(text) or text[child] == ")":
+            retained.append(text[child:])
+            break
+        if text[child] != "(":
+            raise RuntimeError("unexpected token in PCB root")
+        end = balanced_end(text, child)
+        if not re.match(r"\((?:segment|via|zone)(?=[\s)])", text[child:end]):
+            retained.append(text[child:end])
+        cursor = end
+    return "".join(retained)
 
 
 def ensure_net(board: pcbnew.BOARD, name: str) -> pcbnew.NETINFO_ITEM:
@@ -76,7 +131,7 @@ def set_two_pad_net(
 
 def load_library_footprint(library: str, name: str) -> pcbnew.FOOTPRINT:
     roots = (
-        Path("/usr/share/kicad/footprints"),
+        ROOT,
         Path("/usr/share/kicad/footprints"),
     )
     for root in roots:
@@ -123,6 +178,99 @@ def replace_footprint_keep_nets(
             )
         pad.SetNet(ensure_net(board, net_name))
 
+
+def ensure_critical_manufacturer_footprints(board: pcbnew.BOARD) -> int:
+    """Replace critical generated land patterns in one mutation-safe batch."""
+    specifications: dict[str, tuple[str, str]] = {
+        **{
+            f"U{index}": (
+                "Package_SO",
+                "SOIC-24W_7.5x15.4mm_P1.27mm",
+            )
+            for index in range(1, 17)
+        },
+        **{
+            f"U{index}": (
+                "Package_SO",
+                "TSSOP-14_4.4x5mm_P0.65mm",
+            )
+            for index in range(17, 21)
+        },
+        "U21": ("NBFM1_A2", "TI_PBS_S-PQFP-G32_5x5mm_P0.5mm"),
+        "U23": (
+            "Package_DFN_QFN",
+            "QFN-56-1EP_7x7mm_P0.4mm_EP3.2x3.2mm",
+        ),
+    }
+
+    snapshots: list[
+        tuple[
+            pcbnew.FOOTPRINT,
+            str,
+            str,
+            str,
+            float,
+            float,
+            float,
+            dict[str, str],
+        ]
+    ] = []
+    for reference, (library, name) in specifications.items():
+        old = footprint(board, reference)
+        position = old.GetPosition()
+        nets = {
+            str(pad.GetNumber()): str(pad.GetNetname())
+            for pad in old.Pads()
+            if pad.GetNumber() and pad.GetNetname()
+        }
+        snapshots.append(
+            (
+                old,
+                reference,
+                str(old.GetValue()),
+                library,
+                pcbnew.ToMM(position.x),
+                pcbnew.ToMM(position.y),
+                float(old.GetOrientationDegrees()),
+                nets,
+            )
+        )
+
+    for old, *_ in snapshots:
+        board.Remove(old)
+
+    for (
+        _old,
+        reference,
+        value,
+        library,
+        x_mm,
+        y_mm,
+        angle_deg,
+        nets,
+    ) in snapshots:
+        name = specifications[reference][1]
+        item = load_library_footprint(library, name)
+        item.SetReference(reference)
+        item.SetValue(value)
+        item.SetPosition(point(x_mm, y_mm))
+        item.SetOrientationDegrees(angle_deg)
+        try:
+            item.Reference().SetVisible(False)
+        except Exception:
+            pass
+        board.Add(item)
+
+        for pad_number, net_name in nets.items():
+            pad = item.FindPadByNumber(pad_number)
+            if pad is None:
+                raise RuntimeError(
+                    f"replacement footprint {library}:{name} missing "
+                    f"{reference}.{pad_number}"
+                )
+            pad.SetNet(ensure_net(board, net_name))
+
+    return len(snapshots)
 
 def replace_usb_connector(board: pcbnew.BOARD) -> None:
     old = footprint(board, "J9")
@@ -172,6 +320,10 @@ def add_cc_resistor(
     board.Add(item)
     item.SetPosition(point(x_mm, y_mm))
     item.SetOrientationDegrees(0.0)
+    try:
+        item.Reference().SetLayer(pcbnew.F_Fab)
+    except Exception:
+        pass
     set_pad_net(board, reference, "1", cc_net)
     set_pad_net(board, reference, "2", "AGND")
 
@@ -254,6 +406,49 @@ def assign_missing_functional_nets(board: pcbnew.BOARD) -> None:
     set_pad_net(board, "U27", "2", "AGND")
     set_pad_net(board, "U27", "3", "ADC_CLKIN")
     set_pad_net(board, "U27", "4", "3V3D")
+
+    # RP2040 fixed-function pins and boot-flash bus.
+    # Raspberry Pi RP2040 QFN-56: TESTEN=19 must be tied low; QSPI data
+    # lanes are package-specific and must not be inferred from sequential order.
+    rp2040_fixed = {
+        "1": "3V3D",
+        "4": "MUX_S0",
+        "5": "MUX_S1",
+        "6": "MUX_S2",
+        "7": "MUX_S3",
+        "8": "MUX_EN",
+        "10": "3V3D",
+        "11": "ADC_DOUT",
+        "12": "ADC_CS",
+        "13": "ADC_SCLK",
+        "14": "ADC_DIN",
+        "15": "ADC_DRDY",
+        "16": "ADC_SYNC_RESET",
+        "19": "AGND",
+        "20": "XIN_12M",
+        "21": "XOUT_12M",
+        "22": "3V3D",
+        "23": "VREG_1V1",
+        "33": "3V3D",
+        "42": "3V3D",
+        "43": "3V3D",
+        "44": "3V3D",
+        "45": "VREG_1V1",
+        "46": "USB_DM_IC",
+        "47": "USB_DP_IC",
+        "48": "3V3D",
+        "49": "3V3D",
+        "50": "VREG_1V1",
+        "51": "QSPI_SD3",
+        "52": "QSPI_CLK",
+        "53": "QSPI_SD0",
+        "54": "QSPI_SD2",
+        "55": "QSPI_SD1",
+        "56": "QSPI_SS",
+        "57": "AGND",
+    }
+    for pad_number, net_name in rp2040_fixed.items():
+        set_pad_net(board, "U23", pad_number, net_name)
 
     # RP2040 crystal case/ground pads.
     set_pad_net(board, "Y1", "2", "AGND")
@@ -345,6 +540,10 @@ def add_rect_zone(
     zone.SetNet(ensure_net(board, net_name))
     zone.SetLayer(layer)
     zone.SetMinThickness(mm(0.15))
+    zone.SetLocalClearance(mm(0.20))
+    zone.SetPadConnection(pcbnew.ZONE_CONNECTION_THERMAL)
+    zone.SetThermalReliefGap(mm(0.20))
+    zone.SetThermalReliefSpokeWidth(mm(0.25))
     outline = zone.Outline()
     outline.NewOutline()
     outline.Append(point(x1_mm, y1_mm))
@@ -471,7 +670,7 @@ def add_channel_to_mux_routes(board: pcbnew.BOARD) -> int:
                     source.GetPosition(),
                     target.GetPosition(),
                     pcbnew.F_Cu,
-                    0.15,
+                    0.20,
                 )
                 routed += 1
     return routed
@@ -517,7 +716,7 @@ def add_channel_mux_preroutes(board: pcbnew.BOARD) -> int:
                 series_out.GetPosition(),
                 bias_tap.GetPosition(),
                 pcbnew.F_Cu,
-                0.15,
+                0.20,
             )
             routed += 1
 
@@ -571,7 +770,7 @@ def add_vcm_preroute(board: pcbnew.BOARD) -> int:
                     pad_pos,
                     via_pos,
                     pcbnew.F_Cu,
-                    0.15,
+                    0.20,
                 )
                 add_through_via(
                     board,
@@ -585,7 +784,7 @@ def add_vcm_preroute(board: pcbnew.BOARD) -> int:
                     "VCM",
                     via_pos,
                     point(target_x, global_bus_y),
-                    pcbnew.In2_Cu,
+                    pcbnew.B_Cu,
                     0.20,
                 )
                 routed += 1
@@ -595,7 +794,7 @@ def add_vcm_preroute(board: pcbnew.BOARD) -> int:
             "VCM",
             point(spine_x[0], global_bus_y),
             point(spine_x[3], global_bus_y),
-            pcbnew.In2_Cu,
+            pcbnew.B_Cu,
             0.25,
         )
 
@@ -605,7 +804,7 @@ def add_vcm_preroute(board: pcbnew.BOARD) -> int:
             "VCM",
             point(min(all_spines), global_bus_y),
             point(max(all_spines), global_bus_y),
-            pcbnew.In2_Cu,
+            pcbnew.B_Cu,
             0.25,
         )
 
@@ -620,7 +819,16 @@ def add_power_and_reference_preroutes(board: pcbnew.BOARD) -> dict[str, int]:
     to the constrained router; only the continuous low-impedance ground reference is
     created here.
     """
-    add_rect_zone(board, "AGND", pcbnew.In1_Cu, 5.8, 5.8, 198.2, 113.2)
+    # L2 is one uninterrupted local return plane. Do not split analog and
+    # digital ground; control return-current geometry by placement and stitching.
+    add_rect_zone(board, "AGND", pcbnew.In1_Cu, 5.5, 5.5, 194.5, 114.5)
+
+    # L3 is reserved for non-overlapping power islands. These are deliberately
+    # inset from the outline and from each other by >= 1.0 mm.
+    add_rect_zone(board, "3V3A", pcbnew.In2_Cu, 5.5, 37.0, 149.5, 75.5)
+    add_rect_zone(board, "3V3D", pcbnew.In2_Cu, 150.5, 55.0, 194.5, 99.0)
+    add_rect_zone(board, "5V_ISO", pcbnew.In2_Cu, 150.5, 100.0, 194.5, 114.0)
+
     try:
         filler = pcbnew.ZONE_FILLER(board)
         filler.Fill(board.Zones())
@@ -629,11 +837,102 @@ def add_power_and_reference_preroutes(board: pcbnew.BOARD) -> dict[str, int]:
     return {
         "AGND_plane": 1,
         "VCM": 0,
-        "3V3A": 0,
-        "3V3D": 0,
-        "5V_ISO": 0,
+        "3V3A": 1,
+        "3V3D": 1,
+        "5V_ISO": 1,
         "VREG_1V1": 0,
     }
+
+def add_ground_stitching(board: pcbnew.BOARD) -> int:
+    """Add an AGND via fence bonded by a B.Cu perimeter guard ring.
+
+    A stitching via that touches only the L2 plane is correctly reported by
+    KiCad as one-layer/dangling. Bonding the fence on B.Cu makes every via an
+    actual two-layer stitch while preserving F.Cu for dense signal escape.
+    """
+    positions: set[tuple[float, float]] = {
+        (5.8, 11.0),
+        (194.2, 11.0),
+        (5.8, 114.2),
+        (194.2, 114.2),
+    }
+    for x_mm in range(10, 191, 10):
+        positions.add((float(x_mm), 11.0))
+        positions.add((float(x_mm), 114.2))
+    for y_mm in range(17, 108, 10):
+        positions.add((5.8, float(y_mm)))
+        positions.add((194.2, float(y_mm)))
+
+    for x_mm, y_mm in sorted(positions):
+        add_through_via(
+            board,
+            "AGND",
+            point(x_mm, y_mm),
+            diameter_mm=0.60,
+            drill_mm=0.30,
+        )
+
+    ring_width = 0.25
+    corners = (
+        point(5.8, 11.0),
+        point(194.2, 11.0),
+        point(194.2, 114.2),
+        point(5.8, 114.2),
+    )
+    for start, end in zip(corners, corners[1:] + corners[:1]):
+        add_track(
+            board,
+            "AGND",
+            start,
+            end,
+            pcbnew.B_Cu,
+            ring_width,
+        )
+    return len(positions)
+
+
+def add_power_zone_anchor(
+    board: pcbnew.BOARD,
+    reference: str,
+    pad_number: str,
+    net_name: str,
+) -> int:
+    """Connect one SMD supply pad to its L3 power island through a safe via."""
+    item = footprint(board, reference)
+    pad = item.FindPadByNumber(pad_number)
+    if pad is None or pad.GetNetname() != net_name:
+        raise RuntimeError(
+            f"power-zone anchor mismatch {reference}.{pad_number}: "
+            f"expected {net_name}"
+        )
+    via_pos = outward_fanout_position(item, pad, 1.20)
+    add_track(
+        board,
+        net_name,
+        pad.GetPosition(),
+        via_pos,
+        pcbnew.F_Cu,
+        0.35,
+    )
+    add_through_via(
+        board,
+        net_name,
+        via_pos,
+        diameter_mm=0.65,
+        drill_mm=0.30,
+    )
+    return 1
+
+
+def add_power_zone_anchors(board: pcbnew.BOARD) -> int:
+    return sum(
+        (
+            add_power_zone_anchor(board, "U17", "4", "3V3A"),
+            add_power_zone_anchor(board, "U26", "8", "3V3D"),
+            add_power_zone_anchor(board, "U24", "1", "5V_ISO"),
+            add_power_zone_anchor(board, "U17", "11", "AGND"),
+        )
+    )
 
 def merge_digital_ground(board: pcbnew.BOARD) -> int:
     agnd = board.FindNet("AGND")
@@ -664,12 +963,11 @@ def place_input_bank(board: pcbnew.BOARD, bank: int) -> None:
 
     p_mux = f"U{2 * bank + 1}"
     n_mux = f"U{2 * bank + 2}"
-    place(board, p_mux, bank_center_x - 4.0, 45.0, 0.0)
-    place(board, n_mux, bank_center_x + 4.0, 45.0, 0.0)
-    for reference in (p_mux, n_mux):
-        item = footprint(board, reference)
-        for pad in item.Pads():
-            pad.SetOrientationDegrees(0.0)
+    # Canonical SOIC-24W courtyards are 11.86 x 15.90 mm. Stack P/N
+    # vertically and rotate 90 degrees so eight banks fit without courtyard
+    # overlap while keeping the channel-pin columns monotonic in X.
+    place(board, p_mux, bank_center_x, 40.5, 90.0)
+    place(board, n_mux, bank_center_x, 53.5, 90.0)
 
     group_x = {
         "P_LOW": bank_center_x - 8.0,
@@ -689,7 +987,7 @@ def place_input_bank(board: pcbnew.BOARD, bank: int) -> None:
             p_center = group_x["P_HIGH"]
             n_center = group_x["N_HIGH"]
 
-        y = 13.5 + 3.0 * row
+        y = 13.0 + 2.6 * row
 
         bias_p = 2 * channel + 1
         bias_n = 2 * channel + 2
@@ -704,25 +1002,27 @@ def place_input_bank(board: pcbnew.BOARD, bank: int) -> None:
         place(board, f"R{series_n}", n_center - 1.05, y, 0.0)
         place(board, f"R{bias_n}", n_center + 1.05, y, 0.0)
 
-    # One bulk (1 uF) and one HF (100 nF) capacitor per MUX, placed locally.
-    place(board, f"C{1 + 2 * bank}", bank_center_x - 4.0, 52.0, 0.0)
-    place(board, f"C{2 + 2 * bank}", bank_center_x + 4.0, 52.0, 0.0)
-    place(board, f"C{21 + 2 * bank}", bank_center_x - 4.0, 54.2, 0.0)
-    place(board, f"C{22 + 2 * bank}", bank_center_x + 4.0, 54.2, 0.0)
+    # One bulk (1 uF) and one HF (100 nF) capacitor per MUX, placed
+    # outside the canonical SOIC courtyards next to the VCC-side fanout.
+    decap_x = bank_center_x + 9.6
+    place(board, f"C{1 + 2 * bank}", decap_x, 44.8, 0.0)
+    place(board, f"C{21 + 2 * bank}", decap_x, 47.0, 0.0)
+    place(board, f"C{2 + 2 * bank}", decap_x, 57.8, 0.0)
+    place(board, f"C{22 + 2 * bank}", decap_x, 60.0, 0.0)
 
 def place_analog_core(board: pcbnew.BOARD) -> None:
     for index, x_mm in enumerate((62.0, 80.0, 98.0, 116.0), start=17):
-        place(board, f"U{index}", x_mm, 61.0, 0.0)
+        place(board, f"U{index}", x_mm, 64.5, 0.0)
 
     for index, x_mm in enumerate((62.0, 80.0, 98.0, 108.0), start=37):
-        place(board, f"C{index}", x_mm, 64.0 if index == 40 else 66.0, 0.0)
+        place(board, f"C{index}", x_mm, 68.0 if index == 40 else 69.5, 0.0)
 
-    place(board, "U21", 137.0, 61.0, 0.0)
-    place(board, "C41", 142.0, 66.0, 0.0)
-    place(board, "C42", 145.0, 66.0, 0.0)
-    place(board, "C43", 148.0, 66.0, 0.0)
-    place(board, "C61", 143.5, 61.0, 90.0)
-    place(board, "U27", 137.0, 73.0, 0.0)
+    place(board, "U21", 137.0, 64.5, 0.0)
+    place(board, "C41", 142.0, 69.5, 0.0)
+    place(board, "C42", 145.0, 69.5, 0.0)
+    place(board, "C43", 148.0, 69.5, 0.0)
+    place(board, "C61", 143.5, 64.5, 90.0)
+    place(board, "U27", 137.0, 76.5, 0.0)
 
     for index in range(16):
         row = index // 8
@@ -731,7 +1031,7 @@ def place_analog_core(board: pcbnew.BOARD) -> None:
             board,
             f"R{513 + index}",
             112.0 + 3.2 * column,
-            67.0 + 3.2 * row,
+            72.0 + 3.2 * row,
             90.0,
         )
 
@@ -785,14 +1085,19 @@ def place_digital_core(board: pcbnew.BOARD) -> None:
 
 
 def prepare(input_path: Path, output_path: Path) -> None:
-    board = pcbnew.LoadBoard(str(input_path))
+    with TemporaryDirectory(prefix="nbfm-preroute-") as temporary:
+        clean_input = Path(temporary) / "unrouted.kicad_pcb"
+        clean_input.write_text(
+            clear_routing_source(input_path.read_text(encoding="utf-8")),
+            encoding="utf-8",
+        )
+        board = pcbnew.LoadBoard(str(clean_input))
     if board is None:
         raise RuntimeError(f"cannot load {input_path}")
-
-    clear_routing(board)
+    metadata_normalized = normalize_generated_footprint_metadata(board)
     ensure_usb_connector(board)
-    ensure_cc_resistor(board, "R538", "USB_CC1", 181.0, 70.5)
-    ensure_cc_resistor(board, "R539", "USB_CC2", 184.0, 70.5)
+    ensure_cc_resistor(board, "R538", "USB_CC1", 179.0, 70.5)
+    ensure_cc_resistor(board, "R539", "USB_CC2", 187.0, 70.5)
     assign_missing_functional_nets(board)
     merged = merge_digital_ground(board)
 
@@ -801,6 +1106,8 @@ def prepare(input_path: Path, output_path: Path) -> None:
     place_analog_core(board)
     place_digital_core(board)
     preroute_counts = add_power_and_reference_preroutes(board)
+    preroute_counts["power_zone_anchors"] = add_power_zone_anchors(board)
+    preroute_counts["ground_stitch_vias"] = add_ground_stitching(board)
     preroute_counts["channel_bias_junctions"] = add_channel_mux_preroutes(board)
     preroute_counts["channel_to_mux"] = 0
     preroute_counts["VCM_bias_returns"] = add_vcm_preroute(board)
@@ -815,14 +1122,13 @@ def prepare(input_path: Path, output_path: Path) -> None:
     pcbnew.SaveBoard(str(output_path), board)
 
     text = output_path.read_text(encoding="utf-8")
-    text = text.replace('(1 "In1.Cu" power)', '(1 "In1.Cu" signal)')
-    text = text.replace('(2 "In2.Cu" power)', '(2 "In2.Cu" signal)')
-    output_path.write_text(text, encoding="utf-8")
+    output_path.write_text(apply_stackup(text), encoding="utf-8")
 
     print(
         {
             "output": str(output_path),
             "merged_dgnd_pads": merged,
+            "metadata_normalized": metadata_normalized,
             "footprints": len(list(board.GetFootprints())),
             "usb_cc_resistors": ["R538", "R539"],
             "preroute_counts": preroute_counts,
