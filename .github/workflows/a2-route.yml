@@ -21,6 +21,7 @@ on:
       - "hardware/eeg128-tdm/verify_routing_checkpoint.py"
       - "hardware/eeg128-tdm/check_analog_layer_policy.py"
       - "hardware/eeg128-tdm/constrain_analog_dsn.py"
+      - "hardware/eeg128-tdm/remove_drc_dangling.py"
       - "hardware/eeg128-tdm/routing/**"
       - "hardware/eeg128-tdm/NBFM1_A2.pretty/**"
 
@@ -238,6 +239,32 @@ jobs:
                   ],
                   check=False,
               )
+              raw = json.loads(drc.read_text())
+              if any(v.get("type") == "track_dangling" and v.get("severity") == "warning"
+                     for v in raw.get("violations", [])):
+                  shutil.copy2(drc, root / f"drc-round{round_index}-before-cleanup.json")
+                  before_cleanup = root / f"round{round_index}-before-cleanup.kicad_pcb"
+                  shutil.copy2(working, before_cleanup)
+                  subprocess.run(
+                      ["/usr/bin/python3", "hardware/eeg128-tdm/remove_drc_dangling.py",
+                       str(working), str(drc)], check=True,
+                  )
+                  subprocess.run(
+                      ["/usr/bin/python3", "hardware/eeg128-tdm/fill_zones.py", str(working)],
+                      check=True,
+                  )
+                  subprocess.run(
+                      ["kicad-cli", "pcb", "drc", "--format", "json", "--severity-all",
+                       "--all-track-errors", "--output", str(drc), str(working)], check=False,
+                  )
+                  cleaned = metrics(drc)
+                  original = metrics(root / f"drc-round{round_index}-before-cleanup.json")
+                  if (cleaned["unconnected"] > original["unconnected"]
+                      or cleaned["violation_errors"] > original["violation_errors"]
+                      or cleaned["warnings"] >= original["warnings"]):
+                      shutil.copy2(before_cleanup, working)
+                      shutil.copy2(root / f"drc-round{round_index}-before-cleanup.json", drc)
+                  shutil.copy2(working, root / f"round{round_index}.kicad_pcb")
               policy = subprocess.run(
                   ["/usr/bin/python3", "hardware/eeg128-tdm/check_analog_layer_policy.py",
                    "--baseline", str(root / "round0.kicad_pcb"), "--candidate", str(working)],
