@@ -3,7 +3,7 @@ Comment,Designator,Footprint,LCSC Part #,Manufacturer,Manufacturer Part #,Qty
 "Quad RRIO buffer","U17,U18,U19,U20","TSSOP-14_4.4x5mm_P0.65mm","C779410","Texas Instruments","TLV9064IPWR","4"
 "8ch 24-bit delta-sigma ADC","U21","TQFP-32_5x5mm_P0.5mm","C2862610","Texas Instruments","ADS131M08IPBSR","1"
 "Quad DRL/VCM op amp","U22","TSSOP-14_4.4x5mm_P0.65mm","C529553","Texas Instruments","OPA4171AIPWR","1"
-"Microcontroller","U23","QFN-56_7x7mm_P0.4mm","C2040","Raspberry Pi","RP2040","1"
+"Microcontroller","U23","QFN-56-1EP_7x7mm_P0.4mm_EP3.2x3.2mm","C2040","Raspberry Pi","RP2040","1"
 "Analog 3V3 LDO","U24","SOT-23-5","C2862740","Texas Instruments","TPS7A2033PDBVR","1"
 "Digital 3V3 LDO","U25","SOT-23-5","C51118","Diodes Incorporated","AP2112K-3.3TRG1","1"
 "16Mbit QSPI flash","U26","SOIC-8_5.3x5.3mm_P1.27mm","C82317","Winbond","W25Q16JVSSIQ","1"
