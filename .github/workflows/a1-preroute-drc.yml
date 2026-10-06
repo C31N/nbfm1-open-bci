@@ -35,7 +35,7 @@ jobs:
           /usr/bin/python3 hardware/eeg128-tdm/canonicalize_critical_footprints.py \
             --input /tmp/a1-pre/prepared.kicad_pcb \
             --output /tmp/a1-pre/prepared.kicad_pcb
-          cp hardware/eeg128-tdm/eeg128-tdm.kicad_dru /tmp/a1-pre/eeg128-tdm.kicad_dru
+          cp hardware/eeg128-tdm/eeg128-tdm.kicad_dru /tmp/a1-pre/prepared.kicad_dru
 
       - name: Run native DRC
         run: |
