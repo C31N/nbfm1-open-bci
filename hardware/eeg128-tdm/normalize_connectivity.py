@@ -13,7 +13,6 @@ from apply_board_constraints import apply_stackup
 from prepare_autoroute import (
     add_cc_resistor,
     assign_missing_functional_nets,
-    ensure_critical_manufacturer_footprints,
     ensure_net,
     footprint,
     point,
@@ -84,7 +83,6 @@ def normalize(input_path: Path, output_path: Path) -> None:
     if board is None:
         raise RuntimeError(f"cannot load {input_path}")
 
-    critical_footprints_replaced = ensure_critical_manufacturer_footprints(board)
     ensure_usb_connector(board)
     ensure_cc_resistor(board, "R538", "USB_CC1", 181.0, 70.5)
     ensure_cc_resistor(board, "R539", "USB_CC2", 184.0, 70.5)
@@ -117,7 +115,6 @@ def normalize(input_path: Path, output_path: Path) -> None:
         {
             "output": str(output_path),
             "footprints": len(list(board.GetFootprints())),
-            "critical_footprints_replaced": critical_footprints_replaced,
             "R538": footprint(board, "R538").GetValue(),
             "R539": footprint(board, "R539").GetValue(),
         }
