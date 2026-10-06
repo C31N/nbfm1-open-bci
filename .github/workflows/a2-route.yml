@@ -196,7 +196,7 @@ jobs:
                       "--router.fanout.enabled=false",
                       "--gui.enabled=false",
                       "--router.layers.routable=true,false,false,true",
-                      "--router.layers.preferred_direction_horizontal=true,false,false,false",
+                      "--router.layers.preferred_direction_horizontal=false,false,false,true",
                       "--logging.file.enabled=false",
                   ],
                   check=True,
