@@ -60,7 +60,7 @@ jobs:
             --format json \
             --severity-all \
             --output /tmp/kicad-audit/erc.json \
-            /tmp/kicad-audit/eeg128-tdm.generated.kicad_sch
+            hardware/eeg128-tdm/eeg128-tdm.kicad_sch
           test -s /tmp/kicad-audit/erc.json
 
       - name: Summarize ERC
