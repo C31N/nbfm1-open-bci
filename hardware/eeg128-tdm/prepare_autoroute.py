@@ -299,7 +299,7 @@ def add_cc_resistor(
     item.SetPosition(point(x_mm, y_mm))
     item.SetOrientationDegrees(0.0)
     try:
-        item.Reference().SetVisible(False)
+        item.Reference().SetLayer(pcbnew.F_Fab)
     except Exception:
         pass
     set_pad_net(board, reference, "1", cc_net)
@@ -908,6 +908,7 @@ def add_power_zone_anchors(board: pcbnew.BOARD) -> int:
             add_power_zone_anchor(board, "U17", "4", "3V3A"),
             add_power_zone_anchor(board, "U26", "8", "3V3D"),
             add_power_zone_anchor(board, "U24", "1", "5V_ISO"),
+            add_power_zone_anchor(board, "U17", "11", "AGND"),
         )
     )
 
