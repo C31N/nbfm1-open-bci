@@ -1,0 +1,125 @@
+name: A2 Targeted Native Routing Closure
+
+on:
+  workflow_dispatch:
+    inputs:
+      bottom_analog:
+        description: "Allow experimental L4 analog routing; return-path review remains mandatory"
+        type: boolean
+        default: true
+  push:
+    paths:
+      - ".github/workflows/a2-targeted-closure.yml"
+      - "hardware/eeg128-tdm/route_targeted_closure.py"
+      - "hardware/eeg128-tdm/run_native_closure.py"
+      - "hardware/eeg128-tdm/analyze_routing_bottlenecks.py"
+      - "hardware/eeg128-tdm/route_rp2040_escape.py"
+      - "hardware/eeg128-tdm/audit_rp2040_escape.py"
+      - "hardware/eeg128-tdm/audit_zone_islands.py"
+      - "hardware/eeg128-tdm/engineering/latest-pcb.zip"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eeg128-a2-targeted
+  cancel-in-progress: false
+
+jobs:
+  close:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install KiCad 8 and geometric planner
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends kicad python3-shapely python3-numpy
+          kicad-cli version | grep -E '^8\.'
+      - name: Validate and unpack native engineering checkpoint
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, zipfile
+          from pathlib import Path
+          root=Path('hardware/eeg128-tdm/engineering')
+          status=json.loads((root/'STATUS.json').read_text())
+          assert hashlib.sha256((root/'latest-pcb.zip').read_bytes()).hexdigest()==status['archive_sha256']
+          dest=Path('/tmp/closure/input');dest.mkdir(parents=True)
+          with zipfile.ZipFile(root/'latest-pcb.zip') as archive:
+              assert sorted(archive.namelist())==['eeg128-tdm.kicad_dru','eeg128-tdm.kicad_pcb','eeg128-tdm.kicad_pro']
+              archive.extractall(dest)
+          for filename,expected in status['package_sha256'].items():
+              assert hashlib.sha256((dest/filename).read_bytes()).hexdigest()==expected
+          PY
+          /usr/bin/python3 hardware/eeg128-tdm/verify_hardware_identity.py --pcb /tmp/closure/input/eeg128-tdm.kicad_pcb
+      - name: AP1 - atomic 3x3 EP grid and QSPI corridor experiment
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/route_rp2040_escape.py \
+            --board /tmp/closure/input/eeg128-tdm.kicad_pcb \
+            --output-dir /tmp/closure/epgrid --seconds 600
+      - name: AP1 and AP3 - guarded ground/power plane escapes
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/run_native_closure.py \
+            --board /tmp/closure/epgrid/eeg128-tdm.kicad_pcb \
+            --output-dir /tmp/closure/planes --mode planes --seconds 900 --qfn-power-neckdown
+      - name: AP2 - L1 analog and L1/L4 digital obstacle routing
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/run_native_closure.py \
+            --board /tmp/closure/planes/eeg128-tdm.kicad_pcb \
+            --output-dir /tmp/closure/signals --mode signals --seconds 2400 --qfn-power-neckdown
+      - name: Optional AP2 - experimental L4 analog crossings
+        if: ${{ inputs.bottom_analog == true || github.event_name == 'push' }}
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/run_native_closure.py \
+            --board /tmp/closure/signals/eeg128-tdm.kicad_pcb \
+            --output-dir /tmp/closure/bottom --mode signals --seconds 1800 --allow-bottom-analog --qfn-power-neckdown
+      - name: AP4 - final native metrics, identities and release blockers
+        run: |
+          final=/tmp/closure/signals
+          if [ -f /tmp/closure/bottom/drc-final.json ]; then final=/tmp/closure/bottom; fi
+          /usr/bin/python3 hardware/eeg128-tdm/verify_hardware_identity.py --pcb "$final/eeg128-tdm.kicad_pcb"
+          /usr/bin/python3 hardware/eeg128-tdm/audit_rp2040_escape.py \
+            --board "$final/eeg128-tdm.kicad_pcb" --drc "$final/drc-final.json" \
+            --output /tmp/closure/rp2040-escape.json
+          /usr/bin/python3 hardware/eeg128-tdm/audit_zone_islands.py \
+            --board "$final/eeg128-tdm.kicad_pcb" --output /tmp/closure/zone-islands.json
+          /usr/bin/python3 hardware/eeg128-tdm/analyze_routing_bottlenecks.py \
+            --drc "$final/drc-final.json" --project "$final/eeg128-tdm.kicad_pro" \
+            --output /tmp/closure/bottlenecks-final.json
+          python3 - "$final" <<'PY'
+          import json, sys
+          from pathlib import Path
+          root = Path(sys.argv[1])
+          r = json.loads((root / 'drc-final.json').read_text())
+          header = {k: r[k] for k in ('kicad_version', 'date', 'source')}
+          header.update(violations=len(r['violations']), unconnected=len(r['unconnected_items']),
+                        warnings=sum(i['severity'] == 'warning' for i in r['violations'] + r['unconnected_items']))
+          Path('/tmp/closure/drc-head.json').write_text(json.dumps(header, indent=2)+'\n')
+          status = json.loads(Path('hardware/eeg128-tdm/RELEASE_STATUS.json').read_text())
+          status['engineering_routing_audit'] = {**header, 'engineering_only': True}
+          # Primary PCB is unchanged. Geometric closure alone cannot satisfy
+          # pending schematic parity, return-path, Gerber and lab review gates.
+          status['fabrication_release'] = False
+          status['routing_completed'] = False
+          Path('/tmp/closure/RELEASE_STATUS.json').write_text(json.dumps(status, indent=2)+'\n')
+          print(json.dumps(header, indent=2))
+          PY
+      - name: Save every native closure result
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: eeg128-a2-targeted-closure
+          path: /tmp/closure
+          if-no-files-found: error
+          retention-days: 14
+      - name: Require the requested strict native closure
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r = json.loads(Path('/tmp/closure/drc-head.json').read_text())
+          if any(r[key] != 0 for key in ('violations', 'warnings', 'unconnected')):
+              raise SystemExit(f"Requested 0/0/0 closure not achieved; saved engineering artifacts: {r}")
+          print('Native routing geometry/connectivity closure: PASS; separate release gates still apply.')
+          PY
