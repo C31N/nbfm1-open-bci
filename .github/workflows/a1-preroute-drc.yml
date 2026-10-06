@@ -11,7 +11,7 @@ on:
       - "hardware/eeg128-tdm/NBFM1_A2.pretty/**"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: eeg128-a1-preroute-${{ github.ref }}
@@ -84,80 +84,25 @@ jobs:
           print(json.dumps(summary, indent=2))
           PY
 
-      - name: Promote DRC-clean engineering baseline
+      - name: Gate non-connectivity DRC findings
         run: |
           python3 - <<'PY'
           import json
           from pathlib import Path
-          import shutil
 
-          root = Path("/tmp/a1-pre")
-          summary = json.loads((root / "summary.json").read_text(encoding="utf-8"))
-          if summary["violations"] != 0 or summary["warnings"] != 0:
-              print("Pre-route baseline still has non-connectivity DRC findings; not promoted.")
-              raise SystemExit(0)
-
-          source = root / "prepared.kicad_pcb"
-          target = Path("hardware/eeg128-tdm/eeg128-tdm.kicad_pcb")
-          shutil.copy2(source, target)
-
-          text = source.read_text(encoding="utf-8")
-          lines = [line.lstrip() for line in text.splitlines()]
-          metrics = {
-              "pcb_footprints": sum(line.startswith("(footprint ") for line in lines),
-              "pcb_segments": sum(line.startswith("(segment ") for line in lines),
-              "pcb_vias": sum(line.startswith("(via ") for line in lines),
-              "pcb_zones": sum(line.startswith("(zone ") for line in lines),
-          }
-
-          status_path = Path("hardware/eeg128-tdm/RELEASE_STATUS.json")
-          status = json.loads(status_path.read_text(encoding="utf-8"))
-          status["copper_zones_completed"] = metrics["pcb_zones"] > 0
-          status["routing_completed"] = False
-          status["drc_passed"] = False
-          status["fabrication_release"] = False
-          status.setdefault("observed_source_metrics", {}).update(metrics)
-          status["a2_preroute"] = {
-              "violations": summary["violations"],
-              "warnings": summary["warnings"],
-              "unconnected_items": summary["unconnected"],
-              **metrics,
-          }
-          status_path.write_text(
-              json.dumps(status, indent=2) + "\n",
-              encoding="utf-8",
+          summary = json.loads(
+              Path("/tmp/a1-pre/summary.json").read_text(encoding="utf-8")
           )
-          print({"promoted": True, **summary, **metrics})
+          if summary["violations"] != 0 or summary["warnings"] != 0:
+              raise SystemExit(
+                  "A1 pre-route baseline has non-connectivity DRC findings: "
+                  + json.dumps(summary, sort_keys=True)
+              )
+          print(
+              "A1 placement gate PASS: 0 violations / 0 warnings; "
+              f"{summary['unconnected']} connections remain for A2 routing."
+          )
           PY
-
-          if git diff --quiet -- \
-            hardware/eeg128-tdm/eeg128-tdm.kicad_pcb \
-            hardware/eeg128-tdm/RELEASE_STATUS.json; then
-            echo "Primary board already matches the DRC-clean engineering baseline."
-            exit 0
-          fi
-
-          bash scripts/generate_release_manifest.sh
-          bash scripts/verify_release_manifest.sh
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            hardware/eeg128-tdm/eeg128-tdm.kicad_pcb \
-            hardware/eeg128-tdm/RELEASE_STATUS.json \
-            PUBLICATION_SHA256SUMS
-          git commit -m "Promote DRC-clean A2 pre-route baseline"
-
-          git fetch origin "${GITHUB_REF_NAME}"
-          remote_head="$(git rev-parse "origin/${GITHUB_REF_NAME}")"
-          source_head="$(git rev-parse HEAD^)"
-          if [ "$remote_head" != "$source_head" ]; then
-            echo "Branch advanced from $source_head to $remote_head; stale baseline is not pushed."
-            exit 0
-          fi
-          if ! git push origin "HEAD:${GITHUB_REF_NAME}"; then
-            echo "Branch advanced during push; newer run will publish its baseline."
-            exit 0
-          fi
 
       - uses: actions/upload-artifact@v6
         with:

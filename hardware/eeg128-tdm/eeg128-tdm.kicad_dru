@@ -32,3 +32,8 @@
     (condition "A.NetName == 'USB_DP' || A.NetName == 'USB_DM' || A.NetName == 'USB_DP_IC' || A.NetName == 'USB_DM_IC'")
     (constraint clearance (min 0.15mm))
     (constraint track_width (min 0.15mm) (opt 0.20mm)))
+
+(rule "A2 RP2040 QSPI"
+    (condition "A.NetName == 'QSPI_CLK' || A.NetName == 'QSPI_SD0' || A.NetName == 'QSPI_SD1' || A.NetName == 'QSPI_SD2' || A.NetName == 'QSPI_SD3' || A.NetName == 'QSPI_SS'")
+    (constraint clearance (min 0.15mm))
+    (constraint track_width (min 0.18mm) (opt 0.20mm)))

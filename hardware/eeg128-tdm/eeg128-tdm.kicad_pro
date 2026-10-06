@@ -9,8 +9,207 @@
     "version": 1
   },
   "net_settings": {
-    "classes": [],
-    "meta": {"version": 3}
+    "classes": [
+      {
+        "clearance": 0.15,
+        "diff_pair_gap": 0.15,
+        "diff_pair_via_gap": 0.15,
+        "diff_pair_width": 0.15,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "name": "Default",
+        "track_width": 0.15,
+        "via_diameter": 0.6,
+        "via_drill": 0.3
+      },
+      {
+        "clearance": 0.15,
+        "diff_pair_gap": 0.15,
+        "diff_pair_via_gap": 0.15,
+        "diff_pair_width": 0.15,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "name": "TDM_ANALOG",
+        "track_width": 0.15,
+        "via_diameter": 0.6,
+        "via_drill": 0.3
+      },
+      {
+        "clearance": 0.2,
+        "diff_pair_gap": 0.2,
+        "diff_pair_via_gap": 0.2,
+        "diff_pair_width": 0.2,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "name": "ANALOG_REF",
+        "track_width": 0.25,
+        "via_diameter": 0.6,
+        "via_drill": 0.3
+      },
+      {
+        "clearance": 0.15,
+        "diff_pair_gap": 0.15,
+        "diff_pair_via_gap": 0.15,
+        "diff_pair_width": 0.2,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "name": "QSPI_FAST",
+        "track_width": 0.2,
+        "via_diameter": 0.6,
+        "via_drill": 0.3
+      },
+      {
+        "clearance": 0.2,
+        "diff_pair_gap": 0.2,
+        "diff_pair_via_gap": 0.2,
+        "diff_pair_width": 0.3,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "name": "POWER",
+        "track_width": 0.4,
+        "via_diameter": 0.65,
+        "via_drill": 0.3
+      },
+      {
+        "clearance": 0.15,
+        "diff_pair_gap": 0.15,
+        "diff_pair_via_gap": 0.15,
+        "diff_pair_width": 0.2,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "name": "USB_FS",
+        "track_width": 0.2,
+        "via_diameter": 0.6,
+        "via_drill": 0.3
+      }
+    ],
+    "meta": {
+      "version": 3
+    },
+    "net_colors": null,
+    "netclass_assignments": null,
+    "netclass_patterns": [
+      {
+        "netclass": "TDM_ANALOG",
+        "pattern": "CH*"
+      },
+      {
+        "netclass": "TDM_ANALOG",
+        "pattern": "BANK*"
+      },
+      {
+        "netclass": "TDM_ANALOG",
+        "pattern": "ADC*_P"
+      },
+      {
+        "netclass": "TDM_ANALOG",
+        "pattern": "ADC*_N"
+      },
+      {
+        "netclass": "ANALOG_REF",
+        "pattern": "VCM"
+      },
+      {
+        "netclass": "ANALOG_REF",
+        "pattern": "VCM_RAW"
+      },
+      {
+        "netclass": "ANALOG_REF",
+        "pattern": "ADC_REFIN"
+      },
+      {
+        "netclass": "ANALOG_REF",
+        "pattern": "ADS_CAP"
+      },
+      {
+        "netclass": "ANALOG_REF",
+        "pattern": "DRL"
+      },
+      {
+        "netclass": "ANALOG_REF",
+        "pattern": "DRL_LIMITED_1"
+      },
+      {
+        "netclass": "ANALOG_REF",
+        "pattern": "DRL_OP_OUT"
+      },
+      {
+        "netclass": "ANALOG_REF",
+        "pattern": "DRL_SUM"
+      },
+      {
+        "netclass": "ANALOG_REF",
+        "pattern": "CMS1"
+      },
+      {
+        "netclass": "ANALOG_REF",
+        "pattern": "CMS1_BUF"
+      },
+      {
+        "netclass": "ANALOG_REF",
+        "pattern": "CMS2"
+      },
+      {
+        "netclass": "ANALOG_REF",
+        "pattern": "CMS2_BUF"
+      },
+      {
+        "netclass": "QSPI_FAST",
+        "pattern": "QSPI_CLK"
+      },
+      {
+        "netclass": "QSPI_FAST",
+        "pattern": "QSPI_SD0"
+      },
+      {
+        "netclass": "QSPI_FAST",
+        "pattern": "QSPI_SD1"
+      },
+      {
+        "netclass": "QSPI_FAST",
+        "pattern": "QSPI_SD2"
+      },
+      {
+        "netclass": "QSPI_FAST",
+        "pattern": "QSPI_SD3"
+      },
+      {
+        "netclass": "QSPI_FAST",
+        "pattern": "QSPI_SS"
+      },
+      {
+        "netclass": "POWER",
+        "pattern": "3V3A"
+      },
+      {
+        "netclass": "POWER",
+        "pattern": "3V3D"
+      },
+      {
+        "netclass": "POWER",
+        "pattern": "5V_ISO"
+      },
+      {
+        "netclass": "POWER",
+        "pattern": "VREG_1V1"
+      },
+      {
+        "netclass": "USB_FS",
+        "pattern": "USB_DP"
+      },
+      {
+        "netclass": "USB_FS",
+        "pattern": "USB_DM"
+      },
+      {
+        "netclass": "USB_FS",
+        "pattern": "USB_DP_IC"
+      },
+      {
+        "netclass": "USB_FS",
+        "pattern": "USB_DM_IC"
+      }
+    ]
   },
   "pcbnew": {},
   "schematic": {},

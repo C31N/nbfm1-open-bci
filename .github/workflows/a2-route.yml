@@ -10,6 +10,8 @@ on:
       - "hardware/eeg128-tdm/canonicalize_critical_footprints.py"
       - "hardware/eeg128-tdm/verify_hardware_identity.py"
       - "hardware/eeg128-tdm/eeg128-tdm.kicad_dru"
+      - "hardware/eeg128-tdm/eeg128-tdm.kicad_pro"
+      - "hardware/eeg128-tdm/fill_zones.py"
       - "hardware/eeg128-tdm/NBFM1_A2.pretty/**"
 
 permissions:
@@ -160,11 +162,15 @@ jobs:
               board = pcbnew.LoadBoard(str(working))
               if board is None or pcbnew.ImportSpecctraSES(board, str(ses)) is False:
                   raise SystemExit(f"SES import failed in round {round_index}")
-              try:
-                  pcbnew.ZONE_FILLER(board).Fill(board.Zones())
-              except Exception as exc:
-                  print(f"zone refill deferred: {exc}")
               pcbnew.SaveBoard(str(working), board)
+              subprocess.run(
+                  [
+                      "/usr/bin/python3",
+                      "hardware/eeg128-tdm/fill_zones.py",
+                      str(working),
+                  ],
+                  check=True,
+              )
               shutil.copy2(working, root / f"round{round_index}.kicad_pcb")
 
               subprocess.run(
