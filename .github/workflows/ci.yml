@@ -62,6 +62,9 @@ jobs:
           }
           bash scripts/verify_release_manifest.sh
 
+      - name: Hardware identity and pinout audit
+        run: python hardware/eeg128-tdm/verify_hardware_identity.py
+
       - name: KiCad source integrity
         run: python hardware/eeg128-tdm/validate_eda.py
 
