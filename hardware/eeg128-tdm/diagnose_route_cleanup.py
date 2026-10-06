@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: CERN-OHL-S-2.0
-"""Diagnose a pinned routing artifact offline with native KiCad; no promotion."""
+"""Diagnose a pinned routing artifact offline with native KiCad; no promotion; includes native dangling vias."""
 import json
 from pathlib import Path
 import shutil
