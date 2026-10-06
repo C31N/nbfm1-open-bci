@@ -255,6 +255,49 @@ def assign_missing_functional_nets(board: pcbnew.BOARD) -> None:
     set_pad_net(board, "U27", "3", "ADC_CLKIN")
     set_pad_net(board, "U27", "4", "3V3D")
 
+    # RP2040 fixed-function pins and boot-flash bus.
+    # Raspberry Pi RP2040 QFN-56: TESTEN=19 must be tied low; QSPI data
+    # lanes are package-specific and must not be inferred from sequential order.
+    rp2040_fixed = {
+        "1": "3V3D",
+        "4": "MUX_S0",
+        "5": "MUX_S1",
+        "6": "MUX_S2",
+        "7": "MUX_S3",
+        "8": "MUX_EN",
+        "10": "3V3D",
+        "11": "ADC_DOUT",
+        "12": "ADC_CS",
+        "13": "ADC_SCLK",
+        "14": "ADC_DIN",
+        "15": "ADC_DRDY",
+        "16": "ADC_SYNC_RESET",
+        "19": "AGND",
+        "20": "XIN_12M",
+        "21": "XOUT_12M",
+        "22": "3V3D",
+        "23": "VREG_1V1",
+        "33": "3V3D",
+        "42": "3V3D",
+        "43": "3V3D",
+        "44": "3V3D",
+        "45": "VREG_1V1",
+        "46": "USB_DM_IC",
+        "47": "USB_DP_IC",
+        "48": "3V3D",
+        "49": "3V3D",
+        "50": "VREG_1V1",
+        "51": "QSPI_SD3",
+        "52": "QSPI_CLK",
+        "53": "QSPI_SD0",
+        "54": "QSPI_SD2",
+        "55": "QSPI_SD1",
+        "56": "QSPI_SS",
+        "57": "AGND",
+    }
+    for pad_number, net_name in rp2040_fixed.items():
+        set_pad_net(board, "U23", pad_number, net_name)
+
     # RP2040 crystal case/ground pads.
     set_pad_net(board, "Y1", "2", "AGND")
     set_pad_net(board, "Y1", "4", "AGND")
