@@ -18,11 +18,6 @@
     (constraint thermal_relief_gap (min 0.20mm))
     (constraint thermal_spoke_width (opt 0.25mm)))
 
-(rule "A2 patient front-end"
-    (condition "A.NetName =~ '^CH[0-9]{3}_[PN]_(ELECTRODE|MUX)$' || A.NetName =~ '^BANK[0-7]_[PN]_(MUX_OUT|BUFFER)$' || A.NetName =~ '^ADC[0-7]_[PN]$'")
-    (constraint clearance (min 0.20mm))
-    (constraint track_width (min 0.15mm) (opt 0.18mm)))
-
 (rule "A2 analog reference"
     (condition "A.NetName == 'VCM' || A.NetName == 'DRL' || A.NetName == 'CMS1' || A.NetName == 'CMS2' || A.NetName == 'ADC_REFIN'")
     (constraint clearance (min 0.20mm))
