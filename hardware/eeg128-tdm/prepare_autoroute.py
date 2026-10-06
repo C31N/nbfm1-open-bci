@@ -817,11 +817,11 @@ def add_ground_stitching(board: pcbnew.BOARD) -> int:
     """Add an AGND via fence tied to the uninterrupted L2 reference plane."""
     positions: set[tuple[float, float]] = set()
     for x_mm in range(10, 191, 10):
-        positions.add((float(x_mm), 7.0))
-        positions.add((float(x_mm), 113.0))
+        positions.add((float(x_mm), 11.0))
+        positions.add((float(x_mm), 114.2))
     for y_mm in range(17, 108, 10):
-        positions.add((7.0, float(y_mm)))
-        positions.add((193.0, float(y_mm)))
+        positions.add((5.8, float(y_mm)))
+        positions.add((194.2, float(y_mm)))
 
     for x_mm, y_mm in sorted(positions):
         add_through_via(
@@ -863,12 +863,11 @@ def place_input_bank(board: pcbnew.BOARD, bank: int) -> None:
 
     p_mux = f"U{2 * bank + 1}"
     n_mux = f"U{2 * bank + 2}"
-    place(board, p_mux, bank_center_x - 4.0, 45.0, 0.0)
-    place(board, n_mux, bank_center_x + 4.0, 45.0, 0.0)
-    for reference in (p_mux, n_mux):
-        item = footprint(board, reference)
-        for pad in item.Pads():
-            pad.SetOrientationDegrees(0.0)
+    # Canonical SOIC-24W courtyards are 11.86 x 15.90 mm. Stack P/N
+    # vertically and rotate 90 degrees so eight banks fit without courtyard
+    # overlap while keeping the channel-pin columns monotonic in X.
+    place(board, p_mux, bank_center_x, 40.5, 90.0)
+    place(board, n_mux, bank_center_x, 53.5, 90.0)
 
     group_x = {
         "P_LOW": bank_center_x - 8.0,
@@ -888,7 +887,7 @@ def place_input_bank(board: pcbnew.BOARD, bank: int) -> None:
             p_center = group_x["P_HIGH"]
             n_center = group_x["N_HIGH"]
 
-        y = 13.5 + 3.0 * row
+        y = 13.0 + 2.6 * row
 
         bias_p = 2 * channel + 1
         bias_n = 2 * channel + 2
@@ -903,25 +902,27 @@ def place_input_bank(board: pcbnew.BOARD, bank: int) -> None:
         place(board, f"R{series_n}", n_center - 1.05, y, 0.0)
         place(board, f"R{bias_n}", n_center + 1.05, y, 0.0)
 
-    # One bulk (1 uF) and one HF (100 nF) capacitor per MUX, placed locally.
-    place(board, f"C{1 + 2 * bank}", bank_center_x - 4.0, 52.0, 0.0)
-    place(board, f"C{2 + 2 * bank}", bank_center_x + 4.0, 52.0, 0.0)
-    place(board, f"C{21 + 2 * bank}", bank_center_x - 4.0, 54.2, 0.0)
-    place(board, f"C{22 + 2 * bank}", bank_center_x + 4.0, 54.2, 0.0)
+    # One bulk (1 uF) and one HF (100 nF) capacitor per MUX, placed
+    # outside the canonical SOIC courtyards next to the VCC-side fanout.
+    decap_x = bank_center_x + 9.6
+    place(board, f"C{1 + 2 * bank}", decap_x, 44.8, 0.0)
+    place(board, f"C{21 + 2 * bank}", decap_x, 47.0, 0.0)
+    place(board, f"C{2 + 2 * bank}", decap_x, 57.8, 0.0)
+    place(board, f"C{22 + 2 * bank}", decap_x, 60.0, 0.0)
 
 def place_analog_core(board: pcbnew.BOARD) -> None:
     for index, x_mm in enumerate((62.0, 80.0, 98.0, 116.0), start=17):
-        place(board, f"U{index}", x_mm, 61.0, 0.0)
+        place(board, f"U{index}", x_mm, 64.5, 0.0)
 
     for index, x_mm in enumerate((62.0, 80.0, 98.0, 108.0), start=37):
-        place(board, f"C{index}", x_mm, 64.0 if index == 40 else 66.0, 0.0)
+        place(board, f"C{index}", x_mm, 68.0 if index == 40 else 69.5, 0.0)
 
-    place(board, "U21", 137.0, 61.0, 0.0)
-    place(board, "C41", 142.0, 66.0, 0.0)
-    place(board, "C42", 145.0, 66.0, 0.0)
-    place(board, "C43", 148.0, 66.0, 0.0)
-    place(board, "C61", 143.5, 61.0, 90.0)
-    place(board, "U27", 137.0, 73.0, 0.0)
+    place(board, "U21", 137.0, 64.5, 0.0)
+    place(board, "C41", 142.0, 69.5, 0.0)
+    place(board, "C42", 145.0, 69.5, 0.0)
+    place(board, "C43", 148.0, 69.5, 0.0)
+    place(board, "C61", 143.5, 64.5, 90.0)
+    place(board, "U27", 137.0, 76.5, 0.0)
 
     for index in range(16):
         row = index // 8
@@ -930,7 +931,7 @@ def place_analog_core(board: pcbnew.BOARD) -> None:
             board,
             f"R{513 + index}",
             112.0 + 3.2 * column,
-            67.0 + 3.2 * row,
+            72.0 + 3.2 * row,
             90.0,
         )
 
