@@ -75,8 +75,8 @@ def normalize_generated_footprint_metadata(board: pcbnew.BOARD) -> dict[str, int
 def clear_routing(board: pcbnew.BOARD) -> None:
     for track in list(board.GetTracks()):
         board.Remove(track)
-    for zone in list(board.Zones()):
-        board.Remove(zone)
+    for index in range(board.GetAreaCount() - 1, -1, -1):
+        board.Remove(board.GetArea(index))
 
 
 def ensure_net(board: pcbnew.BOARD, name: str) -> pcbnew.NETINFO_ITEM:
