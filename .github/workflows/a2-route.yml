@@ -2,6 +2,12 @@ name: A2 Fail-Closed PCB Route
 
 on:
   workflow_dispatch:
+    inputs:
+      rounds:
+        description: "Routing rounds from validated checkpoint (1-6)"
+        default: "1"
+        type: choice
+        options: ["1", "2", "3", "4", "5", "6"]
   push:
     paths:
       - ".github/workflows/a2-route.yml"
@@ -12,6 +18,8 @@ on:
       - "hardware/eeg128-tdm/eeg128-tdm.kicad_dru"
       - "hardware/eeg128-tdm/eeg128-tdm.kicad_pro"
       - "hardware/eeg128-tdm/fill_zones.py"
+      - "hardware/eeg128-tdm/verify_routing_checkpoint.py"
+      - "hardware/eeg128-tdm/routing/**"
       - "hardware/eeg128-tdm/NBFM1_A2.pretty/**"
 
 permissions:
@@ -44,15 +52,26 @@ jobs:
           distribution: temurin
           java-version: "25"
 
-      - name: Prepare deterministic A2 baseline
+      - name: Prepare or resume validated A2 baseline
         run: |
           mkdir -p /tmp/a2route
-          /usr/bin/python3 hardware/eeg128-tdm/prepare_autoroute.py \
-            --input hardware/eeg128-tdm/eeg128-tdm.kicad_pcb \
-            --output /tmp/a2route/eeg128-tdm.kicad_pcb
-          /usr/bin/python3 hardware/eeg128-tdm/canonicalize_critical_footprints.py \
-            --input /tmp/a2route/eeg128-tdm.kicad_pcb \
-            --output /tmp/a2route/eeg128-tdm.kicad_pcb
+          checkpoint=hardware/eeg128-tdm/routing/checkpoint.kicad_pcb
+          if [ -f "$checkpoint" ]; then
+            /usr/bin/python3 hardware/eeg128-tdm/verify_routing_checkpoint.py \
+              --source hardware/eeg128-tdm/eeg128-tdm.kicad_pcb \
+              --checkpoint "$checkpoint" \
+              --metadata hardware/eeg128-tdm/routing/STATUS.json
+            cp "$checkpoint" /tmp/a2route/eeg128-tdm.kicad_pcb
+          else
+            /usr/bin/python3 hardware/eeg128-tdm/prepare_autoroute.py \
+              --input hardware/eeg128-tdm/eeg128-tdm.kicad_pcb \
+              --output /tmp/a2route/eeg128-tdm.kicad_pcb
+            /usr/bin/python3 hardware/eeg128-tdm/canonicalize_critical_footprints.py \
+              --input /tmp/a2route/eeg128-tdm.kicad_pcb \
+              --output /tmp/a2route/eeg128-tdm.kicad_pcb
+          fi
+          /usr/bin/python3 hardware/eeg128-tdm/verify_hardware_identity.py \
+            --pcb /tmp/a2route/eeg128-tdm.kicad_pcb
           cp hardware/eeg128-tdm/eeg128-tdm.kicad_dru /tmp/a2route/eeg128-tdm.kicad_dru
           cp hardware/eeg128-tdm/eeg128-tdm.kicad_pro /tmp/a2route/eeg128-tdm.kicad_pro
           set +e
@@ -74,12 +93,15 @@ jobs:
             | sha256sum -c -
 
       - name: Route on Top and Bottom only
+        env:
+          A2_ROUNDS: ${{ inputs.rounds || '1' }}
         run: |
           /usr/bin/python3 - <<'PY'
           from __future__ import annotations
 
           from collections import Counter
           import json
+          import os
           from pathlib import Path
           import shutil
           import subprocess
@@ -89,7 +111,9 @@ jobs:
           root = Path("/tmp/a2route")
           working = root / "eeg128-tdm.kicad_pcb"
           jar = root / "freerouting.jar"
-          max_rounds = 6
+          max_rounds = int(os.environ["A2_ROUNDS"])
+          if not 1 <= max_rounds <= 6:
+              raise SystemExit("A2_ROUNDS must be between 1 and 6")
 
           def metrics(path: Path) -> dict[str, object]:
               raw = json.loads(path.read_text(encoding="utf-8"))
@@ -123,6 +147,11 @@ jobs:
           progress: dict[str, dict[str, object]] = {
               "round0": metrics(root / "drc-round0.json")
           }
+          if progress["round0"]["violations"] or progress["round0"]["warnings"]:
+              raise SystemExit("A2 baseline has geometric violations or warnings")
+          expected = Path("hardware/eeg128-tdm/routing/STATUS.json")
+          if expected.is_file() and progress["round0"]["unconnected"] != json.loads(expected.read_text())["unconnected"]:
+              raise SystemExit("Native checkpoint connectivity does not match recorded metrics")
           best_round = 0
           best_metrics = progress["round0"]
 

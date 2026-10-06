@@ -1,0 +1,22 @@
+{
+  "engineering_only": true,
+  "source_commit": "7d5f64c96c6b6cee5a38df443dbe7e0500b64200",
+  "source_sha256": "432ccf535cd844f4d3032694ccabe932bbb0ddf9a03e11d5c6e348b37268c86f",
+  "checkpoint_sha256": "d2212bf1a379b1600740de203b07e2f06eb7c2ae52912106f7a5bcfb39a6ec05",
+  "project_sha256": "3bb857f19a1de6b23841a13a881e6e3e61a77708e9063fdbbff9d519121795e0",
+  "rules_sha256": "41c391b215ea827a0db33c3f0b8b961119211ffd6e2455abffd4c1759b4782e3",
+  "source_workflow_run": 37465707022,
+  "source_artifact": 11419324691,
+  "source_artifact_sha256": "17a0c4ac239c7450ccf3ae873d7dae83e6a92c2723350d945be19789dbde00fe",
+  "native_kicad_version": "8.0.9",
+  "violation_errors": 0,
+  "warnings": 0,
+  "unconnected": 335,
+  "removed_dangling_track_uuids": [
+    "33d64098-4a2d-4f0a-a572-07a67e542cde",
+    "4852cb03-b3aa-41f8-bcd2-dff2179fad70"
+  ],
+  "added_local_tracks": 21,
+  "added_plane_escapes": 97,
+  "native_drc_sha256": "dcaccd9eb34f592eb1c333611a93c605a317c04ec26476f0a24273b67a38761b"
+}

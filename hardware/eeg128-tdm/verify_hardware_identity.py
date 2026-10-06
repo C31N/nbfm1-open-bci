@@ -402,8 +402,8 @@ def verify_flash(blocks: dict[str, str]) -> None:
     require_map(pad_nets(blocks["U26"]), expected, "U26")
 
 
-def verify_pcb() -> dict[str, object]:
-    pcb = (ROOT / "eeg128-tdm.kicad_pcb").read_text(encoding="utf-8")
+def verify_pcb(pcb_path: Path | None = None) -> dict[str, object]:
+    pcb = (pcb_path or ROOT / "eeg128-tdm.kicad_pcb").read_text(encoding="utf-8")
     blocks = footprint_blocks(pcb)
     if len(blocks) != 642:
         raise RuntimeError(f"expected 642 PCB references, got {len(blocks)}")
@@ -462,11 +462,12 @@ def verify_pcb() -> dict[str, object]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--json-out")
+    parser.add_argument("--pcb", type=Path)
     args = parser.parse_args()
 
     report = {
         "bom_cpl": verify_bom_cpl(),
-        "pcb": verify_pcb(),
+        "pcb": verify_pcb(args.pcb),
         "result": "PASS",
     }
     output = json.dumps(report, indent=2, sort_keys=True) + "\n"
