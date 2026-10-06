@@ -124,6 +124,58 @@ def replace_footprint_keep_nets(
         pad.SetNet(ensure_net(board, net_name))
 
 
+def ensure_critical_manufacturer_footprints(board: pcbnew.BOARD) -> int:
+    """Replace critical generated land patterns with reviewed KiCad footprints.
+
+    The selected library footprints match the manufacturer package geometry for
+    the high-risk mixed-signal devices. Existing net assignments, positions and
+    orientations are preserved.
+    """
+    specifications: dict[str, tuple[str, str]] = {
+        **{
+            f"U{index}": (
+                "Package_SO",
+                "SOIC-24W_7.5x15.4mm_P1.27mm",
+            )
+            for index in range(1, 17)
+        },
+        **{
+            f"U{index}": (
+                "Package_SO",
+                "TSSOP-14_4.4x5mm_P0.65mm",
+            )
+            for index in range(17, 21)
+        },
+        "U21": ("Package_QFP", "TQFP-32_5x5mm_P0.5mm"),
+        "U23": (
+            "Package_DFN_QFN",
+            "QFN-56-1EP_7x7mm_P0.4mm_EP3.2x3.2mm",
+        ),
+    }
+    replaced = 0
+    for reference, (library, name) in specifications.items():
+        item = footprint(board, reference)
+        try:
+            current_name = item.GetFPID().GetLibItemName()
+        except Exception:
+            current_name = ""
+        if current_name == name:
+            continue
+        position = item.GetPosition()
+        angle = item.GetOrientationDegrees()
+        replace_footprint_keep_nets(
+            board,
+            reference,
+            library,
+            name,
+            pcbnew.ToMM(position.x),
+            pcbnew.ToMM(position.y),
+            angle,
+        )
+        replaced += 1
+    return replaced
+
+
 def replace_usb_connector(board: pcbnew.BOARD) -> None:
     old = footprint(board, "J9")
     board.Remove(old)
@@ -833,6 +885,7 @@ def prepare(input_path: Path, output_path: Path) -> None:
         raise RuntimeError(f"cannot load {input_path}")
 
     clear_routing(board)
+    critical_footprints_replaced = ensure_critical_manufacturer_footprints(board)
     ensure_usb_connector(board)
     ensure_cc_resistor(board, "R538", "USB_CC1", 181.0, 70.5)
     ensure_cc_resistor(board, "R539", "USB_CC2", 184.0, 70.5)
@@ -866,6 +919,7 @@ def prepare(input_path: Path, output_path: Path) -> None:
         {
             "output": str(output_path),
             "merged_dgnd_pads": merged,
+            "critical_footprints_replaced": critical_footprints_replaced,
             "footprints": len(list(board.GetFootprints())),
             "usb_cc_resistors": ["R538", "R539"],
             "preroute_counts": preroute_counts,
