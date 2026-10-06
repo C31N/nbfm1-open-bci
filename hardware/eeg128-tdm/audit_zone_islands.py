@@ -5,11 +5,13 @@
 A via contact proves a layer transition, not whole-board connectivity. Native
 DRC remains authoritative. No zone is connected to a differently named plane.
 """
+from __future__ import annotations
+
 import argparse,json
 from pathlib import Path
 import pcbnew
 
-def main():
+def main() -> None:
  p=argparse.ArgumentParser(description=__doc__)
  p.add_argument('--board',type=Path,required=True);p.add_argument('--output',type=Path,required=True)
  a=p.parse_args();b=pcbnew.LoadBoard(str(a.board));rows=[]

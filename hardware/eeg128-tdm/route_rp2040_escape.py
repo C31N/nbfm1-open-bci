@@ -7,6 +7,8 @@ fabrication rules. All other-net copper touching the reserved L4 corridor
 must be QSPI; otherwise refuse the operation. Partial reroutes are retained
 as diagnostics only and never promoted to accepted.kicad_pcb.
 """
+from __future__ import annotations
+
 import argparse, itertools, json, math, shutil, time
 from pathlib import Path
 import route_targeted_closure as r
@@ -15,14 +17,14 @@ import re
 
 QSPI = {'QSPI_CLK','QSPI_SS',*(f'QSPI_SD{i}' for i in range(4))}
 
-def remove_uuid(text, uuid):
+def remove_uuid(text: str, uuid: str) -> str:
     text=re.sub(r'\((segment|via|arc)(?=\s)',r'(\1 ',text)
     for token in ('segment','via','arc'):
         for block in balanced_blocks(text,token):
             if uuid in block: return text.replace(block,'',1)
     raise RuntimeError('Missing native item UUID: '+uuid)
 
-def cleanup_qspi_stubs(working, report, directory):
+def cleanup_qspi_stubs(working: Path, report: r.Report, directory: Path) -> r.Report:
     """Remove obsolete reroute stubs only with a fresh native regression gate."""
     for _ in range(12):
         changed=False
@@ -42,7 +44,7 @@ def cleanup_qspi_stubs(working, report, directory):
         if not changed: break
     return report
 
-def main():
+def main() -> None:
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--board',type=Path,required=True)
     ap.add_argument('--output-dir',type=Path,required=True)

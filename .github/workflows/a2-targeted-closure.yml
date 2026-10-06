@@ -23,7 +23,7 @@ permissions:
 
 concurrency:
   group: eeg128-a2-targeted
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   close:

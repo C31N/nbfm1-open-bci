@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: CERN-OHL-S-2.0
 """Extract actual EP vias, QSPI layer paths and native closure evidence."""
+from __future__ import annotations
+
 import argparse,json
 from pathlib import Path
 import route_targeted_closure as r
 from route_rp2040_escape import QSPI
 
-def main():
+def main() -> None:
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--board',type=Path,required=True)
  p.add_argument('--drc',type=Path,required=True);p.add_argument('--output',type=Path,required=True);a=p.parse_args()
  b=r.pcbnew.LoadBoard(str(a.board));f=next(f for f in b.GetFootprints() if f.GetReference()=='U23')

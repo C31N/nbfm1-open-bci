@@ -10,7 +10,6 @@ router, not a signal-integrity or manufacturing-release certification.
 """
 from __future__ import annotations
 import argparse
-from collections import Counter
 import heapq
 import itertools
 import json
@@ -20,33 +19,39 @@ import re
 import shutil
 import subprocess
 import time
+from typing import Any
 
 import numpy as np
 import pcbnew
 from shapely import contains_xy, prepare
 from shapely.geometry import Point, LineString, box
+from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
 POWER = {'3V3A', '3V3D', '5V_ISO', 'VREG_1V1'}
 LAYERS = (pcbnew.F_Cu, pcbnew.B_Cu)
 PROJECT_SNAPSHOTS = {}
+Point2 = tuple[float, float]
+GridNode = tuple[int, int, int]
+RoutingPath = list[tuple[int, float, float]]
+Report = dict[str, Any]
 
 
-def xy(point):
+def xy(point: pcbnew.VECTOR2I) -> Point2:
     return (pcbnew.ToMM(point.x), pcbnew.ToMM(point.y))
 
 
-def vector(point):
+def vector(point: Point2) -> pcbnew.VECTOR2I:
     return pcbnew.VECTOR2I(*(pcbnew.FromMM(float(n)) for n in point))
 
 
-def metrics(report):
+def metrics(report: Report) -> dict[str, int]:
     return {'violations': len(report['violations']),
             'warnings': sum(i['severity'] == 'warning' for i in report['violations'] + report['unconnected_items']),
             'unconnected': len(report['unconnected_items'])}
 
 
-def native(board_path, report_path, refill=True):
+def native(board_path: Path, report_path: Path, refill: bool = True) -> Report:
     # LoadBoard of an accepted/trial basename can create a default project in
     # KiCad's process-global project manager. Keep the real netclass settings
     # immutable across SaveBoard and before every authoritative CLI DRC.
@@ -72,7 +77,7 @@ def native(board_path, report_path, refill=True):
     return report
 
 
-def net_of(airwire):
+def net_of(airwire: Report) -> str:
     names = {re.search(r'\[([^]]+)\]', i['description']).group(1)
              for i in airwire['items'] if '[' in i['description']}
     if len(names) != 1:
@@ -80,12 +85,12 @@ def net_of(airwire):
     return next(iter(names))
 
 
-def objects(board):
+def objects(board: pcbnew.BOARD) -> dict[str, pcbnew.BOARD_CONNECTED_ITEM]:
     return {i.m_Uuid.AsString(): i for i in itertools.chain(
         board.GetTracks(), (p for f in board.GetFootprints() for p in f.Pads()))}
 
 
-def points(item):
+def points(item: pcbnew.BOARD_CONNECTED_ITEM) -> list[Point2]:
     if isinstance(item, pcbnew.PCB_TRACK) and not isinstance(item, pcbnew.PCB_VIA):
         start, end = xy(item.GetStart()), xy(item.GetEnd())
         # Existing trunks can be branched along their length, not only at ends.
@@ -96,7 +101,7 @@ def points(item):
     return [xy(item.GetPosition())]
 
 
-def connected_anchors(board, item):
+def connected_anchors(board: pcbnew.BOARD, item: pcbnew.BOARD_CONNECTED_ITEM) -> RoutingPath:
     """Copper-component anchors without transient SWIG connectivity vectors.
 
     KiCad's nearest displayed airwire endpoint can hide an existing escape via
@@ -136,7 +141,7 @@ def connected_anchors(board, item):
     return sorted(result)
 
 
-def make_track(board, start, end, net, width, layer):
+def make_track(board: pcbnew.BOARD, start: Point2, end: Point2, net: int, width: float, layer: int) -> None:
     if math.dist(start, end) < .001:
         return
     track = pcbnew.PCB_TRACK(board)
@@ -145,7 +150,7 @@ def make_track(board, start, end, net, width, layer):
     board.Add(track)
 
 
-def make_via(board, point, net, diameter=.65):
+def make_via(board: pcbnew.BOARD, point: Point2, net: int, diameter: float = .65) -> None:
     via = pcbnew.PCB_VIA(board)
     via.SetPosition(vector(point)); via.SetWidth(pcbnew.FromMM(diameter))
     via.SetDrill(pcbnew.FromMM(.30)); via.SetViaType(pcbnew.VIATYPE_THROUGH)
@@ -153,7 +158,7 @@ def make_via(board, point, net, diameter=.65):
     board.Add(via)
 
 
-def obstacles(board, net, width, clearance, window):
+def obstacles(board: pcbnew.BOARD, net: int, width: float, clearance: float, window: BaseGeometry) -> tuple[list[BaseGeometry], BaseGeometry]:
     """Conservative pad boxes; exact buffered track/via obstacles.
 
     Native DRC is authoritative for rotated/custom pads, holes, arcs and zones.
@@ -209,8 +214,10 @@ def obstacles(board, net, width, clearance, window):
     return [unary_union(shapes) for shapes in by_layer], unary_union(via_obstacles)
 
 
-def search(board, start, goal, net, width, clearance, both_layers, margin, step=.1, max_nodes=180000,
-           deadline=float('inf'), start_layer=0, goal_layer=0, reserved_bottom=None):
+def search(board: pcbnew.BOARD, start: Point2, goal: Point2, net: int, width: float,
+           clearance: float, both_layers: bool, margin: float, step: float = .1,
+           max_nodes: int = 180000, deadline: float = float('inf'), start_layer: int = 0,
+           goal_layer: int = 0, reserved_bottom: BaseGeometry | None = None) -> RoutingPath | None:
     bounds = board.GetBoardEdgesBoundingBox()
     # Edge bounding box includes the Edge.Cuts stroke; allow another 0.15 mm.
     edge = width / 2 + .405
@@ -236,8 +243,8 @@ def search(board, start, goal, net, width, clearance, both_layers, margin, step=
                     | (gx > pcbnew.ToMM(bounds.GetRight()) - via_edge)
                     | (gy < pcbnew.ToMM(bounds.GetY()) + via_edge)
                     | (gy > pcbnew.ToMM(bounds.GetBottom()) - via_edge))
-    def pos(n): return (float(xx[n[1]]), float(yy[n[2]]))
-    def anchors(point, layer):
+    def pos(n: GridNode) -> Point2: return (float(xx[n[1]]), float(yy[n[2]]))
+    def anchors(point: Point2, layer: int) -> list[GridNode]:
         ix = int(round((point[0] - x0) / step)); iy = int(round((point[1] - y0) / step))
         result = []
         for dx, dy in itertools.product(range(-2, 3), repeat=2):
@@ -250,7 +257,7 @@ def search(board, start, goal, net, width, clearance, both_layers, margin, step=
     starts, goals = anchors(start, start_layer), set(anchors(goal, goal_layer))
     if not starts or not goals:
         return None
-    def heuristic(n):
+    def heuristic(n: GridNode) -> float:
         p = pos(n)
         return math.dist(p, goal) + (2.0 if n[0] != goal_layer else 0)
     queue, costs, previous = [], {}, {}
@@ -301,7 +308,7 @@ def search(board, start, goal, net, width, clearance, both_layers, margin, step=
     return None
 
 
-def add_path(board, path, net, width):
+def add_path(board: pcbnew.BOARD, path: RoutingPath, net: int, width: float) -> int:
     # Compress collinear grid steps, retaining every layer transition exactly.
     clean = []
     for p in path:
@@ -321,7 +328,7 @@ def add_path(board, path, net, width):
     return len(vias)
 
 
-def main():
+def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--board', type=Path, required=True)
     p.add_argument('--output-dir', type=Path, required=True)

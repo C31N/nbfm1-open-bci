@@ -6,12 +6,15 @@ The supervisor itself never imports pcbnew. A worker crash cannot promote its
 last rejected candidate. Original project netclasses are restored before a
 fresh verification process; accepted board/rules are copied as one checkpoint.
 """
+from __future__ import annotations
+
 import argparse,json,shutil,subprocess,sys,time
 from pathlib import Path
+from typing import Any
 
 HERE=Path(__file__).resolve().parent
 
-def verify(board,report):
+def verify(board: Path, report: Path) -> dict[str, Any]:
  code=('import sys; from pathlib import Path; '
        f'sys.path.insert(0,{str(HERE)!r}); '
        'from route_targeted_closure import native; '
@@ -24,7 +27,7 @@ def verify(board,report):
  if data['violations']:raise RuntimeError(f'Candidate has native violations/warnings; see {report}')
  return data
 
-def main():
+def main() -> None:
  p=argparse.ArgumentParser(description=__doc__)
  p.add_argument('--board',type=Path,required=True);p.add_argument('--output-dir',type=Path,required=True)
  p.add_argument('--seconds',type=int,default=900);p.add_argument('--mode',choices=['all','planes','signals'],default='all')

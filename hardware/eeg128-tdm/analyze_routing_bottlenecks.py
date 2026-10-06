@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: CERN-OHL-S-2.0
 """Classify real native airwires, preserving endpoint/pin evidence."""
+from __future__ import annotations
+
 import argparse
+from typing import Any
 from collections import Counter, defaultdict
 from fnmatch import fnmatchcase
 import json
@@ -9,7 +12,7 @@ from pathlib import Path
 import re
 
 
-def analyze(report, project):
+def analyze(report: dict[str, Any], project: dict[str, Any]) -> dict[str, Any]:
     patterns = project['net_settings']['netclass_patterns']
     classes, groups, clusters = Counter(), Counter(), Counter()
     pins = defaultdict(Counter)
@@ -47,7 +50,7 @@ def analyze(report, project):
             'airwires': rows}
 
 
-def main():
+def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--drc', type=Path, required=True)
     p.add_argument('--project', type=Path, required=True)
