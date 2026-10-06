@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import re
 import sys
+from tempfile import TemporaryDirectory
 
 import pcbnew
 
-from apply_board_constraints import apply_stackup
+from apply_board_constraints import apply_stackup, balanced_end
 
 
 ROOT = Path(__file__).resolve().parent
@@ -72,11 +74,28 @@ def normalize_generated_footprint_metadata(board: pcbnew.BOARD) -> dict[str, int
     }
 
 
-def clear_routing(board: pcbnew.BOARD) -> None:
-    for track in list(board.GetTracks()):
-        board.Remove(track)
-    for index in range(board.GetAreaCount() - 1, -1, -1):
-        board.Remove(board.GetArea(index))
+def clear_routing_source(text: str) -> str:
+    """Remove only board-level copper blocks, avoiding KiCad 8 zone SWIG pointers."""
+    root = re.match(r"\s*\(kicad_pcb\b", text)
+    if root is None:
+        raise RuntimeError("input is not a KiCad PCB")
+    cursor = root.end()
+    retained = [text[:cursor]]
+    while cursor < len(text):
+        child = cursor
+        while child < len(text) and text[child].isspace():
+            child += 1
+        retained.append(text[cursor:child])
+        if child == len(text) or text[child] == ")":
+            retained.append(text[child:])
+            break
+        if text[child] != "(":
+            raise RuntimeError("unexpected token in PCB root")
+        end = balanced_end(text, child)
+        if not re.match(r"\((?:segment|via|zone)(?=[\s)])", text[child:end]):
+            retained.append(text[child:end])
+        cursor = end
+    return "".join(retained)
 
 
 def ensure_net(board: pcbnew.BOARD, name: str) -> pcbnew.NETINFO_ITEM:
@@ -1066,11 +1085,15 @@ def place_digital_core(board: pcbnew.BOARD) -> None:
 
 
 def prepare(input_path: Path, output_path: Path) -> None:
-    board = pcbnew.LoadBoard(str(input_path))
+    with TemporaryDirectory(prefix="nbfm-preroute-") as temporary:
+        clean_input = Path(temporary) / "unrouted.kicad_pcb"
+        clean_input.write_text(
+            clear_routing_source(input_path.read_text(encoding="utf-8")),
+            encoding="utf-8",
+        )
+        board = pcbnew.LoadBoard(str(clean_input))
     if board is None:
         raise RuntimeError(f"cannot load {input_path}")
-
-    clear_routing(board)
     metadata_normalized = normalize_generated_footprint_metadata(board)
     ensure_usb_connector(board)
     ensure_cc_resistor(board, "R538", "USB_CC1", 179.0, 70.5)
