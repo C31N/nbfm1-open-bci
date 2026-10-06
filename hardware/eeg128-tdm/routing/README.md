@@ -65,3 +65,5 @@ Run 37505590814 again retained the clean 313-open baseline. The pre-rollback cle
 Diagnostic run 37509238110 artifact 11435265071 closed the cleanup investigation. Eight native-report-driven removals on the dead-end MUX_EN branch (six tracks and two vias) yielded 312 opens, zero geometric violations/warnings and no added analog B.Cu length. Step 8 board/report are the accepted engineering checkpoint. No manufacturing/release promotion occurred.
 
 Run 37511237149 saved 310 native opens, zero geometric violations/warnings and no added analog B.Cu routing. The validated engineering checkpoint continues from 310; strict-zero release promotion remains blocked.
+
+Run 37513734597 (commit 7fc21f1), artifact 11436384031, reduced native opens from 310 to 308 after guarded dangling cleanup. The accepted board has zero geometric violations/warnings and no added analog B.Cu length. Artifact SHA-256 and checkpoint/report hashes are recorded in STATUS.json. All 642 footprints and BOM/CPL identity checks pass. The validated engineering checkpoint continues from 308; strict-zero release promotion remains blocked.
