@@ -42,6 +42,8 @@ jobs:
         run: |
           python3 hardware/eeg128-tdm/generate_schematic.py \
             --output /tmp/kicad-audit/eeg128-tdm.generated.kicad_sch
+          cp hardware/eeg128-tdm/sym-lib-table /tmp/kicad-audit/sym-lib-table
+          cp hardware/eeg128-tdm/NBFM1_A0.kicad_sym /tmp/kicad-audit/NBFM1_A0.kicad_sym
           test -s /tmp/kicad-audit/eeg128-tdm.generated.kicad_sch
 
       - name: Parse generated schematic and export native netlist
@@ -70,6 +72,41 @@ jobs:
           report = json.loads(
               Path("/tmp/kicad-audit/erc.json").read_text(encoding="utf-8")
           )
+          violations = [
+              item
+              for sheet in report.get("sheets", [])
+              for item in sheet.get("violations", [])
+          ]
+          counts = {
+              severity: sum(
+                  1 for item in violations if item.get("severity") == severity
+              )
+              for severity in ("error", "warning", "info")
+          }
+          summary = {"total": len(violations), **counts}
+          print(summary)
+          Path("/tmp/kicad-audit/erc-summary.json").write_text(
+              json.dumps(summary, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          if counts["error"]:
+              raise SystemExit(f"schematic ERC contains {counts['error']} error(s)")
+          PY
+
+      - name: Parse PCB and run DRC report
+        run: |
+          kicad-cli pcb drc             --format json             --severity-all             --all-track-errors             --output /tmp/kicad-audit/drc.json             hardware/eeg128-tdm/eeg128-tdm.kicad_pcb
+          test -s /tmp/kicad-audit/drc.json
+
+      - name: Summarize PCB DRC
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(
+              Path("/tmp/kicad-audit/drc.json").read_text(encoding="utf-8")
+          )
           violations = report.get("violations", [])
           counts = {
               severity: sum(
@@ -77,17 +114,18 @@ jobs:
               )
               for severity in ("error", "warning", "info")
           }
-          print({"total": len(violations), **counts})
-          Path("/tmp/kicad-audit/erc-summary.json").write_text(
-              json.dumps({"total": len(violations), **counts}, indent=2) + "\n",
+          summary = {
+              "violations_total": len(violations),
+              **counts,
+              "unconnected_items": len(report.get("unconnected_items", [])),
+              "schematic_parity_items": len(report.get("schematic_parity", [])),
+          }
+          print(summary)
+          Path("/tmp/kicad-audit/drc-summary.json").write_text(
+              json.dumps(summary, indent=2) + "\n",
               encoding="utf-8",
           )
           PY
-
-      - name: Parse PCB and run DRC report
-        run: |
-          kicad-cli pcb drc             --format json             --severity-all             --all-track-errors             --output /tmp/kicad-audit/drc.json             hardware/eeg128-tdm/eeg128-tdm.kicad_pcb
-          test -s /tmp/kicad-audit/drc.json
 
       - name: Verify PCB placement export parses
         run: |
@@ -129,6 +167,7 @@ jobs:
             /tmp/kicad-audit/erc.json
             /tmp/kicad-audit/erc-summary.json
             /tmp/kicad-audit/drc.json
+            /tmp/kicad-audit/drc-summary.json
             /tmp/kicad-audit/placement.csv
           if-no-files-found: error
           retention-days: 30

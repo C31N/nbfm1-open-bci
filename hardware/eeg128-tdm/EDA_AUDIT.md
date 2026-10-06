@@ -3,46 +3,84 @@
 
 ## Status
 
-**NOT RELEASED FOR FABRICATION**
+**NOT RELEASED FOR FABRICATION OR HUMAN-CONNECTED USE**
 
-This document records the engineering state of the physical A0 source. It intentionally prevents “source exists” from being mistaken for “board is production-ready”.
+This audit records the machine-observed state and deliberately separates source
+availability from fabrication readiness.
+
+## Audit evidence
+
+Latest audited `main` commit before this correction:
+
+```text
+6be871c282195cb0d06d140834e3b46dde6e4b56
+```
+
+Native KiCad 8 Validation run `37419772760` used KiCad 8.0.9 on 2026-10-06.
+Its placement export contains 642 component rows.
 
 ## Current machine-observed source state
 
-After deterministic materialization and native KiCad 8.0.9 validation on 2026-10-05:
-
 ```text
-KiCad schematic:
-  instantiated circuit symbols: 640
-  electrical wire stubs:         1875
-  primary schematic parses:      yes
-  native netlist export:         yes
+Generated KiCad connectivity schematic:
+  instantiated component symbols: 642
+  electrical wire stubs:          1875
+  primary schematic parses:       yes
+  native netlist export:          yes
 
-Native ERC report:
-  total findings:                3338
-  errors:                        183
-  warnings:                      3155
+Native ERC from the latest main run:
+  errors:                         0
+  warnings:                       642
+  warning class:                  lib_symbol_issues only
 
 KiCad PCB:
-  footprints:                    640
-  copper tracks/segments:        0
-  vias:                          0
-  copper zones:                  0
-  four copper layers declared:   yes
+  footprints / placement rows:    642
+  copper tracks/segments:         0
+  vias:                           0
+  copper zones:                   0
+  four copper layers declared:    yes
 
-Native PCB DRC report:
-  unconnected errors:            499
-  DRC violations:                1503
-  DRC errors:                    897
-  DRC warnings:                  606
-  schematic-parity items:        0
+Native PCB DRC:
+  unconnected items:              499
+  DRC violations:                 1503
+  DRC errors:                     897
+  DRC warnings:                   606
+  schematic-parity items:         0
 ```
 
-The primary schematic is now a KiCad-loadable, deterministic 640-component connectivity schematic generated from the PCB pad/net assignments. It uses conservative generic passive pin types and therefore still requires manufacturer-symbol/pin-type review before `schematic_complete` can be set true.
+## ERC warning interpretation
 
-The PCB remains a placement/net-assignment review artifact. It is not routed.
+All 642 ERC warnings in run `37419772760` are library-resolution warnings:
+the generated schematic was checked in `/tmp` while its project-local
+`sym-lib-table` and `NBFM1_A0.kicad_sym` stayed under
+`hardware/eeg128-tdm/`.
 
-## A0 architecture retained
+The validation workflow now copies those files into the temporary KiCad project
+context and reads ERC findings from KiCad 8's `sheets[].violations` structure.
+Zero ERC errors does not imply fabrication readiness.
+
+## Schematic completeness
+
+The current schematic is a deterministic connectivity representation derived
+from PCB pad/net assignments. It uses generated symbols and is not yet a
+manufacturer-symbol/pin-electrical-type reviewed circuit schematic.
+
+Therefore:
+
+```text
+schematic_complete = false
+```
+
+until component pin semantics, power/reference networks and schematic intent have
+been independently verified.
+
+## PCB release blockers
+
+The PCB is still a placement/net-assignment artifact. With no completed copper
+routing, vias or zones, 499 unconnected items and 897 DRC errors remain
+release-blocking. No Gerber package from this state is suitable for ordering.
+
+## Architecture retained
 
 ```text
 256 electrode conductors
@@ -72,76 +110,37 @@ settling discard + averaging
 128 logical channels x 250 SPS
 ```
 
-## ADS131M08 package
+## Package, grounding and reference review
 
-Part:
+The ADS131M08IPBSR footprint must be checked against the current TI PBS package
+drawing before `footprints_verified=true`.
 
-```text
-ADS131M08IPBSR
-TI package drawing: PBS
-pins: 32
-body: approximately 5 x 5 mm
-lead pitch: 0.50 mm
-outer lead span: approximately 7 x 7 mm
-```
+The logical source uses `AGND` and `DGND` names while the intended layout
+uses a continuous low-impedance return plane. Resolve that explicitly without
+creating an arbitrary split-plane slot merely to preserve names.
 
-The project shall verify the footprint against the TI PBS mechanical drawing before setting `footprints_verified=true`.
+The ADS131M08 REFIN/reference network must be reviewed against the selected
+low-noise operating mode and current manufacturer guidance.
 
-## Grounding release decision
+## Mandatory fabrication-release evidence
 
-Current logical sources use `AGND` and `DGND` names while the layout strategy calls for a continuous return plane.
-
-Before copper generation, the designer must resolve this explicitly. Preferred A0 direction:
-
-- continuous low-impedance ground plane;
-- analog and digital current control by placement and routing;
-- no arbitrary split-plane slot under the ADC;
-- decoupling return loops kept local;
-- digital clocks kept out of the electrode/MUX region.
-
-## REFIN decision
-
-The internal-reference network shall be explicitly reviewed before A0 fabrication. For low-noise operation, provision for a local 100 nF REFIN capacitor to the converter ground reference should be evaluated against the selected ADS131M08 operating mode and TI guidance.
-
-## Mandatory release evidence
-
-The following evidence must exist before manufacturing export is enabled:
-
-- schematic ERC report;
-- PCB DRC report;
-- schematic/PCB parity report;
-- footprint verification record;
-- placement/orientation review;
-- Gerber visual review;
-- BOM/CPL cross-check;
-- routing-complete evidence;
-- ground strategy review;
-- isolated bench bring-up procedure;
-- noise and settling test plan;
-- signed `RELEASE_STATUS.json` change.
+- manufacturer-verified schematic symbols and pin mappings;
+- zero release-blocking schematic ERC errors;
+- completed routing, vias, power distribution and copper zones;
+- zero PCB DRC errors and zero unconnected items;
+- schematic/PCB parity review;
+- manufacturer land-pattern verification for every footprint;
+- final JLCPCB BOM/CPL and assembly-orientation cross-check;
+- visual review of Gerber and drill outputs;
+- isolated, current-limited bench bring-up;
+- measured input-referred noise, TDM settling and crosstalk;
+- common-mode/DRL stability and safety measurements;
+- explicit release-gate update in `RELEASE_STATUS.json`.
 
 ## Prohibited shortcuts
 
-Do not:
+Do not set release flags merely to make CI pass. Do not order the current board.
+Do not connect a human subject while any uncontrolled galvanic path exists to
+mains-referenced USB, test equipment or bench power.
 
-- set release flags true merely to make CI green;
-- export/order the current unrouted PCB;
-- infer electrical correctness from the presence of pad net names;
-- treat distributor footprint drawings as authoritative over manufacturer package drawings;
-- connect a human subject while USB, bench supplies, oscilloscopes or other earth-referenced equipment provide an uncontrolled galvanic path.
-
-
-## Native KiCad 8 audit interpretation
-
-The successful GitHub Actions job means KiCad 8.0.9 can parse the EDA sources and produce native reports. It does **not** mean ERC or DRC are clean.
-
-ERC finding classes include:
-
-- endpoint-off-grid warnings;
-- generated-library symbol warnings;
-- unconnected-pin errors;
-- dangling-label errors.
-
-PCB findings are dominated by the intentionally unrouted design and generated-footprint review state, including unconnected items, clearance/shorting, solder-mask, silkscreen and library-footprint findings.
-
-Therefore `erc_passed=false`, `drc_passed=false`, `routing_completed=false` and `fabrication_release=false` remain mandatory.
+See `docs/SAFETY_COMPLIANCE.md`.

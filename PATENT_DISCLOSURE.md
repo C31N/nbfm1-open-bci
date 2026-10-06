@@ -5,7 +5,9 @@
 
 This document is an enabling defensive publication of technical architectures, timing methods, signal-processing arrangements, machine-learning structures, privacy mechanisms and deployment methods for a non-invasive multimodal brain-computer interface.
 
-**Initial document preparation date:** 2026-10-04.\n\n**Legal/technical audit revision:** 2026-10-05.
+**Initial document preparation date:** 2026-10-04.
+
+**Legal/technical audit revision:** 2026-10-06.
 
 **Repository:** `C31N/nbfm1-open-bci`.
 
@@ -53,6 +55,14 @@ Official sources:
 - https://www.epo.org/en/legal/guidelines-epc/2026/g_iv_7_5.html
 
 ### 2.3 Internet-publication evidence
+
+As of the 2026-10-06 audit, the public repository's audited `main` history
+included commit `6be871c282195cb0d06d140834e3b46dde6e4b56`. The hosting record is
+supporting evidence of public availability, but that commit is unsigned and a
+Git commit alone is not represented as conclusive proof of every legally
+relevant publication fact. Stronger evidentiary preservation uses an immutable
+release/tag plus an independent archive or DOI where practical.
+
 
 A public repository can be evidence of an internet disclosure, but the legal effect of any particular Git commit, release, archive or timestamp is fact-specific.
 
