@@ -192,8 +192,11 @@ def validate_kicad_sources() -> dict[str, int]:
             fail(f"PCB missing required layer {layer}")
 
     metrics = source_metrics()
-    if metrics["pcb_footprints"] < 600:
-        fail("PCB unexpectedly contains fewer than 600 footprint instances")
+    if metrics["pcb_footprints"] != 642:
+        fail(
+            "PCB footprint count mismatch: "
+            f"expected 642, got {metrics['pcb_footprints']}"
+        )
 
     return metrics
 
