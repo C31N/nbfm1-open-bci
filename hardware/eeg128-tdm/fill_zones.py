@@ -20,10 +20,10 @@ def main() -> int:
     if board is None:
         raise RuntimeError(f"cannot load {path}")
 
-    zones = list(board.Zones())
+    zone_count = board.GetAreaCount()
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())
     pcbnew.SaveBoard(str(path), board)
-    print({"board": str(path), "zones_filled": len(zones)})
+    print({"board": str(path), "zones_filled": zone_count})
     return 0
 
 

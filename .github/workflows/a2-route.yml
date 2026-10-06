@@ -135,6 +135,7 @@ jobs:
               if board is None or not pcbnew.ExportSpecctraDSN(board, str(dsn)):
                   raise SystemExit(f"DSN export failed in round {round_index}")
 
+              router_log = (root / f"round{round_index}-router.log").open("w", encoding="utf-8")
               subprocess.run(
                   [
                       "java",
@@ -145,8 +146,14 @@ jobs:
                       str(dsn),
                       "-do",
                       str(ses),
-                      "--router.autorouter.max_passes=3",
+                      f"--router.result_json={root / f'round{round_index}-router.json'}",
+                      "--router.max_passes=3",
+                      "--router.job_timeout=00:15:00",
+                      "--router.strict_drc=true",
+                      "--usage_and_diagnostic_data.disable_analytics=true",
+                      "--profile.allow_telemetry=false",
                       "--router.optimizer.enabled=true",
+                      "--router.optimizer.timeout=00:02:00",
                       "--router.optimizer.max_passes=1",
                       "--router.fanout.enabled=true",
                       "--gui.enabled=false",
@@ -155,7 +162,13 @@ jobs:
                       "--logging.file.enabled=false",
                   ],
                   check=True,
+                  timeout=960,
+                  stdout=router_log,
+                  stderr=subprocess.STDOUT,
               )
+              router_log.close()
+              if "Unknown settings property" in (root / f"round{round_index}-router.log").read_text():
+                  raise SystemExit("FreeRouting rejected a routing setting")
               if not ses.is_file() or ses.stat().st_size == 0:
                   raise SystemExit(f"FreeRouting produced no SES in round {round_index}")
 
@@ -190,6 +203,9 @@ jobs:
               )
               round_metrics = metrics(drc)
               progress[f"round{round_index}"] = round_metrics
+              (root / "progress.json").write_text(
+                  json.dumps(progress, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+              )
               print(f"round {round_index}: {round_metrics}", flush=True)
 
               if score(round_metrics) < score(best_metrics):
@@ -286,6 +302,10 @@ jobs:
         with:
           name: eeg128-a2-route
           path: |
+            /tmp/a2route/round*-router.log
+            /tmp/a2route/round*-router.json
+            /tmp/a2route/round*.dsn
+            /tmp/a2route/round*.ses
             /tmp/a2route/round*.kicad_pcb
             /tmp/a2route/drc-round*.json
             /tmp/a2route/progress.json
