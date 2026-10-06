@@ -20,6 +20,7 @@ on:
       - "hardware/eeg128-tdm/fill_zones.py"
       - "hardware/eeg128-tdm/verify_routing_checkpoint.py"
       - "hardware/eeg128-tdm/check_analog_layer_policy.py"
+      - "hardware/eeg128-tdm/constrain_analog_dsn.py"
       - "hardware/eeg128-tdm/routing/**"
       - "hardware/eeg128-tdm/NBFM1_A2.pretty/**"
 
@@ -165,6 +166,10 @@ jobs:
               board = pcbnew.LoadBoard(str(working))
               if board is None or not pcbnew.ExportSpecctraDSN(board, str(dsn)):
                   raise SystemExit(f"DSN export failed in round {round_index}")
+              subprocess.run(
+                  ["/usr/bin/python3", "hardware/eeg128-tdm/constrain_analog_dsn.py", str(dsn)],
+                  check=True,
+              )
 
               router_log = (root / f"round{round_index}-router.log").open("w", encoding="utf-8")
               subprocess.run(
@@ -181,7 +186,6 @@ jobs:
                       "--router.max_passes=3",
                       "--router.job_timeout=00:15:00",
                       "--router.strict_drc=true",
-                      "--router.ignore_net_classes=TDM_ANALOG",
                       "--router.automatic_neckdown=false",
                       "--usage_and_diagnostic_data.disable_analytics=true",
                       "--profile.allow_telemetry=false",
