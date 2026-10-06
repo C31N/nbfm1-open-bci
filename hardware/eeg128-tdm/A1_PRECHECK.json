@@ -1,26 +1,12 @@
 {
-  "generated_at": "2026-10-06T06:53:47.283170+00:00",
-  "violations": 1550,
+  "generated_at": "2026-10-06T06:58:42.239624+00:00",
+  "violations": 598,
   "unconnected": 499,
   "severity": {
     "warning": 598,
-    "error": 1451
+    "error": 499
   },
   "types": [
-    {
-      "type": "clearance",
-      "count": 500,
-      "severity": {
-        "error": 500
-      }
-    },
-    {
-      "type": "solder_mask_bridge",
-      "count": 203,
-      "severity": {
-        "error": 203
-      }
-    },
     {
       "type": "silk_overlap",
       "count": 199,
@@ -40,27 +26,6 @@
       "count": 199,
       "severity": {
         "warning": 199
-      }
-    },
-    {
-      "type": "shorting_items",
-      "count": 199,
-      "severity": {
-        "error": 199
-      }
-    },
-    {
-      "type": "tracks_crossing",
-      "count": 42,
-      "severity": {
-        "error": 42
-      }
-    },
-    {
-      "type": "hole_clearance",
-      "count": 8,
-      "severity": {
-        "error": 8
       }
     },
     {
@@ -3421,12 +3386,12 @@
           "uuid": "508ddf56-6d06-40e3-af91-621a7c5bae78"
         },
         {
-          "description": "Pad B4 [5V_ISO] of J9 on F.Cu",
+          "description": "Pad A9 [5V_ISO] of J9 on F.Cu",
           "pos": {
             "x": 180.955,
             "y": 74.55
           },
-          "uuid": "775ce06a-62f1-4891-bfa0-80695801ef8b"
+          "uuid": "591d1b68-5f2c-4f33-a7f2-a1cf34caaaeb"
         }
       ],
       "severity": "error",
