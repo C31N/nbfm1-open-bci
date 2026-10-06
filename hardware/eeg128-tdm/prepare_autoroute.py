@@ -294,6 +294,10 @@ def add_cc_resistor(
     board.Add(item)
     item.SetPosition(point(x_mm, y_mm))
     item.SetOrientationDegrees(0.0)
+    try:
+        item.Reference().SetVisible(False)
+    except Exception:
+        pass
     set_pad_net(board, reference, "1", cc_net)
     set_pad_net(board, reference, "2", "AGND")
 
@@ -640,7 +644,7 @@ def add_channel_to_mux_routes(board: pcbnew.BOARD) -> int:
                     source.GetPosition(),
                     target.GetPosition(),
                     pcbnew.F_Cu,
-                    0.15,
+                    0.20,
                 )
                 routed += 1
     return routed
@@ -814,8 +818,18 @@ def add_power_and_reference_preroutes(board: pcbnew.BOARD) -> dict[str, int]:
     }
 
 def add_ground_stitching(board: pcbnew.BOARD) -> int:
-    """Add an AGND via fence tied to the uninterrupted L2 reference plane."""
-    positions: set[tuple[float, float]] = set()
+    """Add an AGND via fence bonded by a B.Cu perimeter guard ring.
+
+    A stitching via that touches only the L2 plane is correctly reported by
+    KiCad as one-layer/dangling. Bonding the fence on B.Cu makes every via an
+    actual two-layer stitch while preserving F.Cu for dense signal escape.
+    """
+    positions: set[tuple[float, float]] = {
+        (5.8, 11.0),
+        (194.2, 11.0),
+        (5.8, 114.2),
+        (194.2, 114.2),
+    }
     for x_mm in range(10, 191, 10):
         positions.add((float(x_mm), 11.0))
         positions.add((float(x_mm), 114.2))
@@ -831,8 +845,67 @@ def add_ground_stitching(board: pcbnew.BOARD) -> int:
             diameter_mm=0.60,
             drill_mm=0.30,
         )
+
+    ring_width = 0.25
+    corners = (
+        point(5.8, 11.0),
+        point(194.2, 11.0),
+        point(194.2, 114.2),
+        point(5.8, 114.2),
+    )
+    for start, end in zip(corners, corners[1:] + corners[:1]):
+        add_track(
+            board,
+            "AGND",
+            start,
+            end,
+            pcbnew.B_Cu,
+            ring_width,
+        )
     return len(positions)
 
+
+def add_power_zone_anchor(
+    board: pcbnew.BOARD,
+    reference: str,
+    pad_number: str,
+    net_name: str,
+) -> int:
+    """Connect one SMD supply pad to its L3 power island through a safe via."""
+    item = footprint(board, reference)
+    pad = item.FindPadByNumber(pad_number)
+    if pad is None or pad.GetNetname() != net_name:
+        raise RuntimeError(
+            f"power-zone anchor mismatch {reference}.{pad_number}: "
+            f"expected {net_name}"
+        )
+    via_pos = outward_fanout_position(item, pad, 1.20)
+    add_track(
+        board,
+        net_name,
+        pad.GetPosition(),
+        via_pos,
+        pcbnew.F_Cu,
+        0.35,
+    )
+    add_through_via(
+        board,
+        net_name,
+        via_pos,
+        diameter_mm=0.65,
+        drill_mm=0.30,
+    )
+    return 1
+
+
+def add_power_zone_anchors(board: pcbnew.BOARD) -> int:
+    return sum(
+        (
+            add_power_zone_anchor(board, "U17", "4", "3V3A"),
+            add_power_zone_anchor(board, "U26", "8", "3V3D"),
+            add_power_zone_anchor(board, "U24", "1", "5V_ISO"),
+        )
+    )
 
 def merge_digital_ground(board: pcbnew.BOARD) -> int:
     agnd = board.FindNet("AGND")
@@ -1002,6 +1075,7 @@ def prepare(input_path: Path, output_path: Path) -> None:
     place_analog_core(board)
     place_digital_core(board)
     preroute_counts = add_power_and_reference_preroutes(board)
+    preroute_counts["power_zone_anchors"] = add_power_zone_anchors(board)
     preroute_counts["ground_stitch_vias"] = add_ground_stitching(board)
     preroute_counts["channel_bias_junctions"] = add_channel_mux_preroutes(board)
     preroute_counts["channel_to_mux"] = 0
