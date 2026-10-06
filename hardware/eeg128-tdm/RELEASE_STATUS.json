@@ -45,9 +45,9 @@
     "generated_schematic_parse": true,
     "native_netlist_export": true,
     "erc_report_generated": true,
-    "erc_total": 642,
+    "erc_total": 1,
     "erc_errors": 0,
-    "erc_warnings": 642,
+    "erc_warnings": 1,
     "pcb_drc_report_generated": true,
     "pcb_unconnected_errors": 499,
     "pcb_drc_violations": 1503,
@@ -56,7 +56,7 @@
     "schematic_parity_items": 0,
     "placement_export_parse": true,
     "erc_info": 0,
-    "erc_interpretation": "Run 37419772760 produced 642 lib_symbol_issues warnings because the generated schematic was validated in /tmp without its project-local symbol table. There were 0 ERC errors. The corrected workflow copies the library context and must rerun before the warning count is superseded."
+    "erc_interpretation": "Run 37423367238 against the project-bound primary schematic reported 0 ERC errors and 1 warning: J9's embedded generated USB-C symbol differs from the current NBFM1_A0 library symbol. This warning remains an EDA consistency item and is not waived."
   },
   "theoretical_electrical_review_passed": false,
   "theoretical_electrical_review_basis": {
