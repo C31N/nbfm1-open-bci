@@ -148,7 +148,7 @@ jobs:
           PY
 
       - name: Upload A1 preflight
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: eeg128-a1-preflight
           path: |

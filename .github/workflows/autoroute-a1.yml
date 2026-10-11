@@ -175,7 +175,7 @@ jobs:
             /tmp/a1/eeg128-tdm-A1-routed.kicad_pcb
 
       - name: Upload A1 routing experiment
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: eeg128-a1-autoroute
           path: |

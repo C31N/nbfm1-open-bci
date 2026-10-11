@@ -120,7 +120,7 @@ jobs:
           PY
 
       - name: Upload native KiCad audit reports
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: kicad8-audit
           path: |
