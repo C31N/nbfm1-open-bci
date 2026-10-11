@@ -267,7 +267,7 @@ jobs:
           git push
 
       - name: Upload convergence evidence
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: eeg128-a1-converged-route
           path: |
