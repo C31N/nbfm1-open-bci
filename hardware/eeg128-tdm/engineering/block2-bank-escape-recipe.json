@@ -1,0 +1,85 @@
+{
+  "scope": "BLOCK2_BANK_ESCAPE",
+  "baseline_sha256": {
+    ".kicad_pcb": "bb2b1bc7b3baeb3586a7d9c65246fcc80c666e38ebe3cc9cee89decebf8ffa0c",
+    ".kicad_pro": "3bb857f19a1de6b23841a13a881e6e3e61a77708e9063fdbbff9d519121795e0",
+    ".kicad_dru": "5b82bbcbf12c3c84da2be6bf13b4ab347a3de57e3226cab3c71c8523d4df3b10"
+  },
+  "before_unconnected": 149,
+  "after_unconnected": 149,
+  "expected_pcb_sha256": "c8fefc8f70b4ae8adeb107a7389422b7f28737f20cbfa9aac6516a12d1446acb",
+  "changes": [
+    {
+      "uuid": "a92d53a0-f55f-4787-972e-d8fdead4ecb3",
+      "net": "BANK1_P_MUX_OUT",
+      "before": "(segment\n\t\t(start 34.4881 46.4358)\n\t\t(end 41.7285 46.4358)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 37)\n\t\t(uuid \"a92d53a0-f55f-4787-972e-d8fdead4ecb3\")\n\t)",
+      "after": null
+    },
+    {
+      "uuid": "29457e21-aa3b-4197-bee2-93000e66bf1b",
+      "net": "BANK1_P_MUX_OUT",
+      "before": "(via\n\t\t(at 41.7285 46.4358)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 37)\n\t\t(uuid \"29457e21-aa3b-4197-bee2-93000e66bf1b\")\n\t)",
+      "after": null
+    },
+    {
+      "uuid": "60d00f46-f625-4c29-b701-38c7e5e04191",
+      "net": "BANK1_P_MUX_OUT",
+      "before": "(segment\n\t\t(start 43.8699 48.5772)\n\t\t(end 41.7285 46.4358)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 37)\n\t\t(uuid \"60d00f46-f625-4c29-b701-38c7e5e04191\")\n\t)",
+      "after": null
+    },
+    {
+      "uuid": "324b0c3e-871b-4371-83c3-122d4a540d8a",
+      "net": "BANK1_P_MUX_OUT",
+      "before": null,
+      "after": "(segment\n\t\t(start 34.4881 46.4358)\n\t\t(end 34.5881 46.5358)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 37)\n\t\t(uuid \"324b0c3e-871b-4371-83c3-122d4a540d8a\")\n\t)"
+    },
+    {
+      "uuid": "436bc7fb-b9a1-47f2-8cf9-32f2e3fd83d2",
+      "net": "BANK1_P_MUX_OUT",
+      "before": null,
+      "after": "(segment\n\t\t(start 34.5881 46.5358)\n\t\t(end 34.6881 46.6358)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 37)\n\t\t(uuid \"436bc7fb-b9a1-47f2-8cf9-32f2e3fd83d2\")\n\t)"
+    },
+    {
+      "uuid": "a86d6363-fc56-46ee-a85b-bab23a8ddb9e",
+      "net": "BANK1_P_MUX_OUT",
+      "before": null,
+      "after": "(segment\n\t\t(start 34.6881 46.6358)\n\t\t(end 34.7881 46.6358)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 37)\n\t\t(uuid \"a86d6363-fc56-46ee-a85b-bab23a8ddb9e\")\n\t)"
+    },
+    {
+      "uuid": "8237346d-9715-46f5-a7f2-4cba425069c2",
+      "net": "BANK1_P_MUX_OUT",
+      "before": null,
+      "after": "(via\n\t\t(at 34.7881 46.6358)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 37)\n\t\t(uuid \"8237346d-9715-46f5-a7f2-4cba425069c2\")\n\t)"
+    },
+    {
+      "uuid": "36a45185-2dec-4c58-abb7-01c54d5bfb3b",
+      "net": "BANK1_P_MUX_OUT",
+      "before": null,
+      "after": "(segment\n\t\t(start 43.6881 48.4358)\n\t\t(end 43.8699 48.5772)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 37)\n\t\t(uuid \"36a45185-2dec-4c58-abb7-01c54d5bfb3b\")\n\t)"
+    },
+    {
+      "uuid": "75ee64ac-d20c-4571-981f-e847bee6dff9",
+      "net": "BANK1_P_MUX_OUT",
+      "before": null,
+      "after": "(segment\n\t\t(start 34.9881 46.7358)\n\t\t(end 39.0881 46.7358)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 37)\n\t\t(uuid \"75ee64ac-d20c-4571-981f-e847bee6dff9\")\n\t)"
+    },
+    {
+      "uuid": "7d5653c6-8ba9-40b9-afd5-266ed0ef4353",
+      "net": "BANK1_P_MUX_OUT",
+      "before": null,
+      "after": "(segment\n\t\t(start 39.0881 46.7358)\n\t\t(end 40.7881 48.4358)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 37)\n\t\t(uuid \"7d5653c6-8ba9-40b9-afd5-266ed0ef4353\")\n\t)"
+    },
+    {
+      "uuid": "c1951802-6c59-473c-aead-d28f4e5a0f76",
+      "net": "BANK1_P_MUX_OUT",
+      "before": null,
+      "after": "(segment\n\t\t(start 34.7881 46.6358)\n\t\t(end 34.9881 46.7358)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 37)\n\t\t(uuid \"c1951802-6c59-473c-aead-d28f4e5a0f76\")\n\t)"
+    },
+    {
+      "uuid": "d1be395e-13c7-4aaa-b6e2-65dd1c008a31",
+      "net": "BANK1_P_MUX_OUT",
+      "before": null,
+      "after": "(segment\n\t\t(start 40.7881 48.4358)\n\t\t(end 43.6881 48.4358)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 37)\n\t\t(uuid \"d1be395e-13c7-4aaa-b6e2-65dd1c008a31\")\n\t)"
+    }
+  ]
+}
