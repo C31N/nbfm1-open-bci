@@ -1,0 +1,154 @@
+{
+  "native_kicad_version": "8.0.9-8.0.9-0~ubuntu24.04.1",
+  "engineering_only": true,
+  "baseline_sha256": "79b30a218cf4913f67c5515e707e362799c5ef3cef080a310c24c15f8f357f68",
+  "pcb_sha256": "bb2b1bc7b3baeb3586a7d9c65246fcc80c666e38ebe3cc9cee89decebf8ffa0c",
+  "ADC6_ADC7_copper_unchanged": true,
+  "footprints_unchanged": true,
+  "zone_outlines_unchanged": true,
+  "project_rules_unchanged": true,
+  "new_L3_signal_geometry": {
+    "CH002_N_MUX": {
+      "length_mm": 18.989661740011407,
+      "minimum_baseline_power_clearance_mm": 0.0,
+      "minimum_refilled_power_clearance_mm": 0.20049999999999812,
+      "new_L3_segments": 26
+    },
+    "CH004_N_ELECTRODE": {
+      "length_mm": 14.830534073762154,
+      "minimum_baseline_power_clearance_mm": 16.128296429113256,
+      "minimum_refilled_power_clearance_mm": 16.128296429113256,
+      "new_L3_segments": 17
+    },
+    "CH004_N_MUX": {
+      "length_mm": 20.31488900755607,
+      "minimum_baseline_power_clearance_mm": 0.0,
+      "minimum_refilled_power_clearance_mm": 0.20049799433843118,
+      "new_L3_segments": 22
+    },
+    "CH005_N_MUX": {
+      "length_mm": 22.872532324372386,
+      "minimum_baseline_power_clearance_mm": 0.0,
+      "minimum_refilled_power_clearance_mm": 0.20049999999999812,
+      "new_L3_segments": 22
+    },
+    "CH011_P_ELECTRODE": {
+      "length_mm": 21.127265327283848,
+      "minimum_baseline_power_clearance_mm": 10.146801230061866,
+      "minimum_refilled_power_clearance_mm": 10.146801230061866,
+      "new_L3_segments": 44
+    },
+    "CH016_N_MUX": {
+      "length_mm": 23.351219330881975,
+      "minimum_baseline_power_clearance_mm": 0.0,
+      "minimum_refilled_power_clearance_mm": 0.20049940855199738,
+      "new_L3_segments": 3
+    },
+    "CH016_P_MUX": {
+      "length_mm": 12.342388155425118,
+      "minimum_baseline_power_clearance_mm": 0.0,
+      "minimum_refilled_power_clearance_mm": 0.20049940855199735,
+      "new_L3_segments": 6
+    },
+    "CH017_N_MUX": {
+      "length_mm": 29.273149339882607,
+      "minimum_baseline_power_clearance_mm": 0.0,
+      "minimum_refilled_power_clearance_mm": 0.2004979943384337,
+      "new_L3_segments": 25
+    },
+    "CH017_P_MUX": {
+      "length_mm": 16.088834764831844,
+      "minimum_baseline_power_clearance_mm": 0.0,
+      "minimum_refilled_power_clearance_mm": 0.2004994085519974,
+      "new_L3_segments": 10
+    },
+    "CH019_N_MUX": {
+      "length_mm": 27.55893577750951,
+      "minimum_baseline_power_clearance_mm": 0.0,
+      "minimum_refilled_power_clearance_mm": 0.27315799999999507,
+      "new_L3_segments": 13
+    },
+    "CH019_P_MUX": {
+      "length_mm": 25.154520189781078,
+      "minimum_baseline_power_clearance_mm": 0.0,
+      "minimum_refilled_power_clearance_mm": 0.9555000000000007,
+      "new_L3_segments": 16
+    },
+    "CH021_N_MUX": {
+      "length_mm": 45.265715663561444,
+      "minimum_baseline_power_clearance_mm": 0.0,
+      "minimum_refilled_power_clearance_mm": 0.2004999999999981,
+      "new_L3_segments": 25
+    },
+    "CH021_P_MUX": {
+      "length_mm": 30.478255670851475,
+      "minimum_baseline_power_clearance_mm": 0.0,
+      "minimum_refilled_power_clearance_mm": 0.2004979943384387,
+      "new_L3_segments": 19
+    },
+    "CH022_N_MUX": {
+      "length_mm": 49.951217821262375,
+      "minimum_baseline_power_clearance_mm": 0.0,
+      "minimum_refilled_power_clearance_mm": 0.2004994085519975,
+      "new_L3_segments": 41
+    },
+    "CH022_P_MUX": {
+      "length_mm": 30.02426803663978,
+      "minimum_baseline_power_clearance_mm": 0.0,
+      "minimum_refilled_power_clearance_mm": 0.20049940855199863,
+      "new_L3_segments": 15
+    },
+    "CH023_N_MUX": {
+      "length_mm": 53.994927187416366,
+      "minimum_baseline_power_clearance_mm": 0.0,
+      "minimum_refilled_power_clearance_mm": 0.20049929941640365,
+      "new_L3_segments": 54
+    },
+    "CH023_P_MUX": {
+      "length_mm": 31.365422934317035,
+      "minimum_baseline_power_clearance_mm": 0.0,
+      "minimum_refilled_power_clearance_mm": 0.20049940158196142,
+      "new_L3_segments": 39
+    },
+    "CH025_N_MUX": {
+      "length_mm": 38.28883476483185,
+      "minimum_baseline_power_clearance_mm": 0.0,
+      "minimum_refilled_power_clearance_mm": 0.200499408551996,
+      "new_L3_segments": 18
+    },
+    "CH026_N_MUX": {
+      "length_mm": 35.04177848998413,
+      "minimum_baseline_power_clearance_mm": 0.0,
+      "minimum_refilled_power_clearance_mm": 0.20049799433844162,
+      "new_L3_segments": 14
+    },
+    "CH040_P_MUX": {
+      "length_mm": 26.992997820866112,
+      "minimum_baseline_power_clearance_mm": 0.0,
+      "minimum_refilled_power_clearance_mm": 0.20049999999999102,
+      "new_L3_segments": 27
+    }
+  },
+  "required_baseline_power_clearance_mm": 0.2,
+  "L3_power_cut_for_signal_routing": true,
+  "filled_power_before_area_mm2": 7720.556477309193,
+  "filled_power_after_area_mm2": 7514.499079635109,
+  "local_power_loss_area_mm2": 207.65927978116034,
+  "local_power_recovered_area_mm2": 1.6018821070724865,
+  "outside_scope_rounding_loss_mm2": 7.019085359310575e-07,
+  "outside_scope_rounding_tolerance_mm2": 1e-05,
+  "power_loss_budget_mm2": 250.0,
+  "audit_scope_bounds_mm": [
+    5.0,
+    5.0,
+    86.0,
+    65.0
+  ],
+  "note": "Signal geometry against prior filled copper; through-via antipads still require local return-path review.",
+  "pair_coupling_qualified": false,
+  "return_current_qualified": false,
+  "guard_ring_qualified": false,
+  "independent_lvs_signoff": false,
+  "routing_completed": false,
+  "fabrication_release": false
+}

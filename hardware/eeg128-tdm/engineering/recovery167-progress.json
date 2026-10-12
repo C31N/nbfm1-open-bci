@@ -1,0 +1,108 @@
+{
+  "baseline_unconnected": 167,
+  "unconnected": 149,
+  "closed_total": 18,
+  "MUX_closed": 17,
+  "ELECTRODE_closed": 1,
+  "closed_nets": [
+    "CH004_N_MUX",
+    "CH005_N_MUX",
+    "CH011_P_ELECTRODE",
+    "CH016_N_MUX",
+    "CH016_P_MUX",
+    "CH017_N_MUX",
+    "CH017_P_MUX",
+    "CH019_N_MUX",
+    "CH019_P_MUX",
+    "CH021_N_MUX",
+    "CH021_P_MUX",
+    "CH022_N_MUX",
+    "CH022_P_MUX",
+    "CH023_N_MUX",
+    "CH023_P_MUX",
+    "CH025_N_MUX",
+    "CH026_N_MUX",
+    "CH040_P_MUX"
+  ],
+  "blocks": [
+    {
+      "channels": "CH000\u2013CH015",
+      "MUX_open": 0,
+      "ELECTRODE_open": 8,
+      "remaining_nets": [
+        "CH000_N_ELECTRODE",
+        "CH004_P_ELECTRODE",
+        "CH005_N_ELECTRODE",
+        "CH010_P_ELECTRODE",
+        "CH012_P_ELECTRODE",
+        "CH014_P_ELECTRODE",
+        "CH015_N_ELECTRODE",
+        "CH015_P_ELECTRODE"
+      ]
+    },
+    {
+      "channels": "CH016\u2013CH031",
+      "MUX_open": 9,
+      "ELECTRODE_open": 8,
+      "remaining_nets": [
+        "CH016_P_ELECTRODE",
+        "CH018_N_MUX",
+        "CH018_P_MUX",
+        "CH019_N_ELECTRODE",
+        "CH020_N_ELECTRODE",
+        "CH020_N_MUX",
+        "CH020_P_MUX",
+        "CH021_N_ELECTRODE",
+        "CH023_N_ELECTRODE",
+        "CH024_N_MUX",
+        "CH024_P_MUX",
+        "CH025_P_ELECTRODE",
+        "CH027_N_ELECTRODE",
+        "CH028_N_MUX",
+        "CH029_N_MUX",
+        "CH029_P_ELECTRODE",
+        "CH030_N_MUX"
+      ]
+    },
+    {
+      "channels": "CH032\u2013CH047",
+      "MUX_open": 9,
+      "ELECTRODE_open": 11,
+      "remaining_nets": [
+        "CH033_N_ELECTRODE",
+        "CH033_N_MUX",
+        "CH033_P_MUX",
+        "CH036_N_ELECTRODE",
+        "CH036_P_MUX",
+        "CH037_N_MUX",
+        "CH037_P_ELECTRODE",
+        "CH038_N_ELECTRODE",
+        "CH040_N_ELECTRODE",
+        "CH041_P_MUX",
+        "CH042_N_MUX",
+        "CH042_P_ELECTRODE",
+        "CH042_P_MUX",
+        "CH043_N_ELECTRODE",
+        "CH043_N_MUX",
+        "CH043_P_ELECTRODE",
+        "CH044_N_MUX",
+        "CH045_P_ELECTRODE",
+        "CH046_N_ELECTRODE",
+        "CH046_P_ELECTRODE"
+      ]
+    }
+  ],
+  "lost_138_137_checkpoint_recovered": false,
+  "previous_138_137_metrics_currently_verified": false,
+  "original_manifest_verification": {
+    "passed": 117,
+    "failed": 1,
+    "mismatch": "../route_targeted_closure.py",
+    "archive_intact": true,
+    "preserved_manifest": "engineering/recovery167-original-manifest.txt"
+  },
+  "L3_power_loss_mm2": 207.65927978116034,
+  "geometry_budget_mm2": 250,
+  "budget_is_engineering_constraint_not_PI_signoff": true,
+  "remote_backup_pushed": false
+}

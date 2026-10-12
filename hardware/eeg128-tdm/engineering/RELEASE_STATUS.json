@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "revision": "A0",
-  "audit_date": "2026-10-06",
+  "audit_date": "2026-10-08",
   "fabrication_release": false,
   "schematic_complete": true,
   "routing_completed": false,
@@ -140,28 +140,177 @@
   },
   "engineering_routing_audit": {
     "kicad_version": "8.0.9",
-    "date": "2026-10-06T22:19:00+0100",
+    "date": "2026-10-08T14:00:42+0200",
     "source": "eeg128-tdm.kicad_pcb",
     "violations": 0,
     "warnings": 0,
-    "unconnected": 265,
+    "unconnected": 149,
+    "schematic_parity_items": 0,
+    "schematic_parity_warnings": 0,
+    "independent_lvs_signoff": false,
     "engineering_only": true,
     "package": "engineering/latest-pcb.zip",
-    "package_sha256": "a2369bad1cbfc6180908efa7e20899eccf535b2d9e1245eb2df62bb01add7c18",
+    "package_sha256": "71ffc3d06dd38d3c2c9434549f711e8356cba4ee8acaa54fb52f92140443c2b0",
     "primary_pcb_promoted": false,
     "exclusive_groups": {
-      "POWER": 31,
-      "AGND": 11,
-      "TDM_ANALOG": 218,
-      "MUX_CONTROL": 5
+      "POWER": 0,
+      "AGND": 0,
+      "TDM_ANALOG": 149,
+      "MUX_CONTROL": 0
+    },
+    "analog_groups": {
+      "MUX": 78,
+      "ELECTRODE_RC": 71
     },
     "ep_direct_L2_AGND_contact": true,
+    "native_schematic_parity_check": {
+      "kicad_version": "8.0.9",
+      "date": "2026-10-08T14:01:03+0200",
+      "pcb_violations": 0,
+      "pcb_warnings": 0,
+      "unconnected": 149,
+      "schematic_parity_items": 0,
+      "schematic_parity_errors": 0,
+      "schematic_parity_warnings": 0,
+      "passed": true,
+      "generated_connectivity_parity_pass": true,
+      "source": "PCB-derived diagnostic connectivity schematic; not an independent circuit authority",
+      "report": "engineering/drc-schematic-parity-corrected-149.json",
+      "schematic": "engineering/eeg128-tdm.kicad_sch",
+      "schematic_sha256": "ebc9f8b1ec875edd9e7f0dd139b703a271d70099e1dbd25c53739d8adb808632",
+      "pin_net_assignments_verified": 2054,
+      "independent_lvs_signoff": false,
+      "primary_schematic_promoted": false
+    },
     "remaining_review_items": [
-      "remaining native airwires",
-      "L4 analog return paths and differential coupling",
-      "local 0.15 mm / 0.8 mm RP2040 power necks",
-      "EP through-via filling/capping and stencil process",
-      "QSPI timing/skew review"
-    ]
-  }
+      "149 remaining analog airwires (78 MUX, 71 electrode/RC).",
+      "P/N compact coupling, per-layer lengths, via symmetry and skew remain unqualified; total network copper is not a path-delay measurement.",
+      "L3 power copper displacement 207.659 mm\u00b2 relative to verified 167 baseline; power integrity, voltage drop and decoupling review pending.",
+      "ADC6/ADC7 copper unchanged and length delta below 0.001 mm; return paths and coupling remain unqualified.",
+      "Shielding, connected guard rings, via-in-pad assembly and VCM settling/crosstalk qualification pending.",
+      "Independent primary-schematic LVS and circuit semantic review pending; diagnostic parity is not independent LVS."
+    ],
+    "reproduction": {
+      "copper_recipe": "engineering/recovery167-recipes.json",
+      "baseline_archive": "engineering/recovery-baseline167.zip",
+      "diagnostic_schematic": "engineering/eeg128-tdm.kicad_sch",
+      "independent_replay_identical": true,
+      "negative_guard_cases": 14,
+      "identical_member_sha256": {
+        "eeg128-tdm.kicad_pcb": "bb2b1bc7b3baeb3586a7d9c65246fcc80c666e38ebe3cc9cee89decebf8ffa0c",
+        "eeg128-tdm.kicad_pro": "3bb857f19a1de6b23841a13a881e6e3e61a77708e9063fdbbff9d519121795e0",
+        "eeg128-tdm.kicad_dru": "5b82bbcbf12c3c84da2be6bf13b4ab347a3de57e3226cab3c71c8523d4df3b10"
+      },
+      "report": "engineering/RECOVERY_ROUTING_2026-10-08.md"
+    },
+    "recovery_checkpoint": {
+      "baseline_unconnected": 167,
+      "unconnected": 149,
+      "closed_total": 18,
+      "MUX_closed": 17,
+      "ELECTRODE_closed": 1,
+      "closed_nets": [
+        "CH004_N_MUX",
+        "CH005_N_MUX",
+        "CH011_P_ELECTRODE",
+        "CH016_N_MUX",
+        "CH016_P_MUX",
+        "CH017_N_MUX",
+        "CH017_P_MUX",
+        "CH019_N_MUX",
+        "CH019_P_MUX",
+        "CH021_N_MUX",
+        "CH021_P_MUX",
+        "CH022_N_MUX",
+        "CH022_P_MUX",
+        "CH023_N_MUX",
+        "CH023_P_MUX",
+        "CH025_N_MUX",
+        "CH026_N_MUX",
+        "CH040_P_MUX"
+      ],
+      "blocks": [
+        {
+          "channels": "CH000\u2013CH015",
+          "MUX_open": 0,
+          "ELECTRODE_open": 8,
+          "remaining_nets": [
+            "CH000_N_ELECTRODE",
+            "CH004_P_ELECTRODE",
+            "CH005_N_ELECTRODE",
+            "CH010_P_ELECTRODE",
+            "CH012_P_ELECTRODE",
+            "CH014_P_ELECTRODE",
+            "CH015_N_ELECTRODE",
+            "CH015_P_ELECTRODE"
+          ]
+        },
+        {
+          "channels": "CH016\u2013CH031",
+          "MUX_open": 9,
+          "ELECTRODE_open": 8,
+          "remaining_nets": [
+            "CH016_P_ELECTRODE",
+            "CH018_N_MUX",
+            "CH018_P_MUX",
+            "CH019_N_ELECTRODE",
+            "CH020_N_ELECTRODE",
+            "CH020_N_MUX",
+            "CH020_P_MUX",
+            "CH021_N_ELECTRODE",
+            "CH023_N_ELECTRODE",
+            "CH024_N_MUX",
+            "CH024_P_MUX",
+            "CH025_P_ELECTRODE",
+            "CH027_N_ELECTRODE",
+            "CH028_N_MUX",
+            "CH029_N_MUX",
+            "CH029_P_ELECTRODE",
+            "CH030_N_MUX"
+          ]
+        },
+        {
+          "channels": "CH032\u2013CH047",
+          "MUX_open": 9,
+          "ELECTRODE_open": 11,
+          "remaining_nets": [
+            "CH033_N_ELECTRODE",
+            "CH033_N_MUX",
+            "CH033_P_MUX",
+            "CH036_N_ELECTRODE",
+            "CH036_P_MUX",
+            "CH037_N_MUX",
+            "CH037_P_ELECTRODE",
+            "CH038_N_ELECTRODE",
+            "CH040_N_ELECTRODE",
+            "CH041_P_MUX",
+            "CH042_N_MUX",
+            "CH042_P_ELECTRODE",
+            "CH042_P_MUX",
+            "CH043_N_ELECTRODE",
+            "CH043_N_MUX",
+            "CH043_P_ELECTRODE",
+            "CH044_N_MUX",
+            "CH045_P_ELECTRODE",
+            "CH046_N_ELECTRODE",
+            "CH046_P_ELECTRODE"
+          ]
+        }
+      ],
+      "lost_138_137_checkpoint_recovered": false,
+      "previous_138_137_metrics_currently_verified": false,
+      "original_manifest_verification": {
+        "passed": 117,
+        "failed": 1,
+        "mismatch": "../route_targeted_closure.py",
+        "archive_intact": true,
+        "preserved_manifest": "engineering/recovery167-original-manifest.txt"
+      },
+      "L3_power_loss_mm2": 207.65927978116034,
+      "geometry_budget_mm2": 250,
+      "budget_is_engineering_constraint_not_PI_signoff": true,
+      "remote_backup_pushed": false
+    }
+  },
+  "checkpoint_manifest_entries": 138
 }

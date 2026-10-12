@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "engineering_only": true,
+  "before_unconnected": 180,
+  "after_unconnected": 179,
+  "baseline_sha256": {
+    ".kicad_pcb": "fa0f052528ece41e90e8fdfbd8236ec5682dd8888a372df7feaad99e63444819",
+    ".kicad_pro": "3bb857f19a1de6b23841a13a881e6e3e61a77708e9063fdbbff9d519121795e0",
+    ".kicad_dru": "5b82bbcbf12c3c84da2be6bf13b4ab347a3de57e3226cab3c71c8523d4df3b10"
+  },
+  "native_stage_counts": [
+    180,
+    179
+  ],
+  "changes": [
+    {
+      "uuid": "11adc2ed-037b-4484-a071-a8293a9073b2",
+      "net": "BANK0_N_BUFFER",
+      "before": null,
+      "after": "(segment\n\t\t(start 110.4 74.15)\n\t\t(end 111.1 73.8)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 30)\n\t\t(uuid \"11adc2ed-037b-4484-a071-a8293a9073b2\")\n\t)"
+    },
+    {
+      "uuid": "133de441-6159-4d7c-a9e4-106f24b5e772",
+      "net": "BANK0_N_BUFFER",
+      "before": null,
+      "after": "(segment\n\t\t(start 107.6 73.6)\n\t\t(end 108.7 74.15)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 30)\n\t\t(uuid \"133de441-6159-4d7c-a9e4-106f24b5e772\")\n\t)"
+    },
+    {
+      "uuid": "23ad0c76-663f-49b8-a681-cf8cc3d9ae61",
+      "net": "BANK0_N_BUFFER",
+      "before": null,
+      "after": "(segment\n\t\t(start 111.1 73.8)\n\t\t(end 114.2 73.8)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 30)\n\t\t(uuid \"23ad0c76-663f-49b8-a681-cf8cc3d9ae61\")\n\t)"
+    },
+    {
+      "uuid": "26268e62-26e4-420b-aa3e-9f9622b5a489",
+      "net": "ADC7_P",
+      "before": null,
+      "after": "(via\n\t\t(at 134.42 69.9948)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 19)\n\t\t(uuid \"26268e62-26e4-420b-aa3e-9f9622b5a489\")\n\t)"
+    },
+    {
+      "uuid": "2cbac722-a346-4bb3-a2ac-9397ec4a0c31",
+      "net": "BANK0_N_BUFFER",
+      "before": null,
+      "after": "(via\n\t\t(at 107.6 73.6)\n\t\t(size 0.65)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 30)\n\t\t(uuid \"2cbac722-a346-4bb3-a2ac-9397ec4a0c31\")\n\t)"
+    },
+    {
+      "uuid": "2cf96854-c76b-4605-a104-285904dcf23a",
+      "net": "BANK0_N_BUFFER",
+      "before": null,
+      "after": "(segment\n\t\t(start 108.7 74.15)\n\t\t(end 110.4 74.15)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 30)\n\t\t(uuid \"2cf96854-c76b-4605-a104-285904dcf23a\")\n\t)"
+    },
+    {
+      "uuid": "458042b3-fb53-437f-bd61-a17d0e7eb6e1",
+      "net": "BANK0_N_BUFFER",
+      "before": null,
+      "after": "(segment\n\t\t(start 107.6 73.25)\n\t\t(end 107.6 73.6)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 30)\n\t\t(uuid \"458042b3-fb53-437f-bd61-a17d0e7eb6e1\")\n\t)"
+    },
+    {
+      "uuid": "60f91f0c-55a5-4fb6-9d7d-16d6f3ca1f00",
+      "net": "BANK0_N_BUFFER",
+      "before": null,
+      "after": "(segment\n\t\t(start 114.2 73.8)\n\t\t(end 115.2 72.8)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 30)\n\t\t(uuid \"60f91f0c-55a5-4fb6-9d7d-16d6f3ca1f00\")\n\t)"
+    },
+    {
+      "uuid": "78180428-8804-4413-ac45-3e81ebcc07a9",
+      "net": "BANK0_N_BUFFER",
+      "before": null,
+      "after": "(segment\n\t\t(start 64.5 67.85)\n\t\t(end 69.9 73.25)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 30)\n\t\t(uuid \"78180428-8804-4413-ac45-3e81ebcc07a9\")\n\t)"
+    },
+    {
+      "uuid": "9906b557-ee6f-49eb-94eb-c56d3e5e32c7",
+      "net": "BANK0_N_BUFFER",
+      "before": null,
+      "after": "(via\n\t\t(at 115.2 72.8)\n\t\t(size 0.65)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 30)\n\t\t(uuid \"9906b557-ee6f-49eb-94eb-c56d3e5e32c7\")\n\t)"
+    },
+    {
+      "uuid": "9b7a97a0-15b0-4d72-b11c-c50f9c685df9",
+      "net": "BANK0_N_BUFFER",
+      "before": null,
+      "after": "(segment\n\t\t(start 59.1375 66.45)\n\t\t(end 59.6 66.45)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 30)\n\t\t(uuid \"9b7a97a0-15b0-4d72-b11c-c50f9c685df9\")\n\t)"
+    },
+    {
+      "uuid": "9ce3ab15-e31e-4660-955d-8ed9098ee245",
+      "net": "BANK0_N_BUFFER",
+      "before": null,
+      "after": "(segment\n\t\t(start 61 67.85)\n\t\t(end 64.5 67.85)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 30)\n\t\t(uuid \"9ce3ab15-e31e-4660-955d-8ed9098ee245\")\n\t)"
+    },
+    {
+      "uuid": "a40bbf33-deaa-4a66-8556-5d636fa7ebe6",
+      "net": "BANK0_N_BUFFER",
+      "before": null,
+      "after": "(segment\n\t\t(start 59.6 66.45)\n\t\t(end 61 67.85)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 30)\n\t\t(uuid \"a40bbf33-deaa-4a66-8556-5d636fa7ebe6\")\n\t)"
+    },
+    {
+      "uuid": "a5592eab-3840-4e2c-bf1b-d64324f6226d",
+      "net": "ADC7_P",
+      "before": null,
+      "after": "(segment\n\t\t(start 132.211 72.2045)\n\t\t(end 131.911 72.5045)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 19)\n\t\t(uuid \"a5592eab-3840-4e2c-bf1b-d64324f6226d\")\n\t)"
+    },
+    {
+      "uuid": "aeed1c27-2333-409e-9aa3-b9109071a6c9",
+      "net": "ADC7_P",
+      "before": null,
+      "after": "(via\n\t\t(at 132.211 72.2045)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 19)\n\t\t(uuid \"aeed1c27-2333-409e-9aa3-b9109071a6c9\")\n\t)"
+    },
+    {
+      "uuid": "c41d9475-5645-4f7d-bccb-eb571e60ec42",
+      "net": "ADC7_P",
+      "before": "(segment\n\t\t(start 134.67 69.7447)\n\t\t(end 131.911 72.5045)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 19)\n\t\t(uuid \"c41d9475-5645-4f7d-bccb-eb571e60ec42\")\n\t)",
+      "after": "(segment\n\t\t(start 134.67 69.7447)\n\t\t(end 134.42 69.9948)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 19)\n\t\t(uuid \"c41d9475-5645-4f7d-bccb-eb571e60ec42\")\n\t)"
+    },
+    {
+      "uuid": "c9215f38-8f82-40d2-8439-0fb4c89fcb72",
+      "net": "BANK0_N_BUFFER",
+      "before": null,
+      "after": "(segment\n\t\t(start 69.9 73.25)\n\t\t(end 107.6 73.25)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 30)\n\t\t(uuid \"c9215f38-8f82-40d2-8439-0fb4c89fcb72\")\n\t)"
+    },
+    {
+      "uuid": "e82d61da-c0ea-4d04-95bf-af66e4574842",
+      "net": "ADC7_P",
+      "before": null,
+      "after": "(segment\n\t\t(start 134.42 69.9948)\n\t\t(end 132.211 72.2045)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 19)\n\t\t(uuid \"e82d61da-c0ea-4d04-95bf-af66e4574842\")\n\t)"
+    }
+  ],
+  "notes": [
+    "BANK0_N_BUFFER closed by F.Cu escape and short In2.Cu tail; two 0.65/0.30 mm through vias.",
+    "ADC7_P gains a real B.Cu transition with two 0.60/0.30 mm vias; counts now P=2/N=2.",
+    "ADC6 symmetry, BANK0 layer symmetry, analog length/coupling and shielding remain unqualified.",
+    "Separate mutation and native refill/DRC processes; no fabrication promotion."
+  ]
+}

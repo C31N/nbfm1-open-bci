@@ -1,0 +1,263 @@
+{
+  "schema_version": 1,
+  "engineering_only": true,
+  "pcb_sha256": "bb2b1bc7b3baeb3586a7d9c65246fcc80c666e38ebe3cc9cee89decebf8ffa0c",
+  "native_kicad_version": "8.0.9-8.0.9-0~ubuntu24.04.1",
+  "pairs": [
+    {
+      "pair": "ADC6",
+      "P": {
+        "net": "ADC6_P",
+        "copper_length_by_layer_mm": {
+          "F.Cu": 14.993782947236678,
+          "B.Cu": 3.538477631092684
+        },
+        "total_copper_length_mm": 18.532260578329364,
+        "widths_mm": [
+          0.15
+        ],
+        "vias": [
+          {
+            "position_mm": [
+              125.1,
+              69.0
+            ],
+            "diameter_mm": 0.6,
+            "drill_mm": 0.3,
+            "layer_pair": [
+              "F.Cu",
+              "B.Cu"
+            ]
+          },
+          {
+            "position_mm": [
+              123.8,
+              72.0
+            ],
+            "diameter_mm": 0.6,
+            "drill_mm": 0.3,
+            "layer_pair": [
+              "F.Cu",
+              "B.Cu"
+            ]
+          }
+        ],
+        "track_endpoint_degrees": {
+          "2": 23,
+          "1": 2
+        },
+        "endpoint_graph_cycle_rank_if_connected": 0,
+        "endpoint_graph_snap_mm": 0.001,
+        "endpoint_graph_components": 1,
+        "branchless_endpoint_graph": true
+      },
+      "N": {
+        "net": "ADC6_N",
+        "copper_length_by_layer_mm": {
+          "F.Cu": 9.644039123765948,
+          "B.Cu": 8.888225561099818
+        },
+        "total_copper_length_mm": 18.532264684865766,
+        "widths_mm": [
+          0.15
+        ],
+        "vias": [
+          {
+            "position_mm": [
+              133.3,
+              69.0
+            ],
+            "diameter_mm": 0.6,
+            "drill_mm": 0.3,
+            "layer_pair": [
+              "F.Cu",
+              "B.Cu"
+            ]
+          },
+          {
+            "position_mm": [
+              132.0,
+              72.0
+            ],
+            "diameter_mm": 0.6,
+            "drill_mm": 0.3,
+            "layer_pair": [
+              "F.Cu",
+              "B.Cu"
+            ]
+          }
+        ],
+        "track_endpoint_degrees": {
+          "1": 2,
+          "2": 45
+        },
+        "endpoint_graph_cycle_rank_if_connected": 0,
+        "endpoint_graph_snap_mm": 0.001,
+        "endpoint_graph_components": 1,
+        "branchless_endpoint_graph": true
+      },
+      "total_copper_length_difference_mm": 4.10653640159353e-06,
+      "via_transition_comparison": [
+        {
+          "P_mm": [
+            125.1,
+            69.0
+          ],
+          "N_mm": [
+            133.3,
+            69.0
+          ],
+          "delta_x_mm": 8.2,
+          "delta_y_mm": 0.0,
+          "same_drill_and_diameter": true
+        },
+        {
+          "P_mm": [
+            123.8,
+            72.0
+          ],
+          "N_mm": [
+            132.0,
+            72.0
+          ],
+          "delta_x_mm": 8.2,
+          "delta_y_mm": 0.0,
+          "same_drill_and_diameter": true
+        }
+      ],
+      "pair_geometry_qualified": false,
+      "length_tolerance_mm": null,
+      "coupling_spacing_tolerance_mm": null,
+      "note": "Copper centerline geometry only; no delay/impedance/bench measurement or SI signoff."
+    },
+    {
+      "pair": "ADC7",
+      "P": {
+        "net": "ADC7_P",
+        "copper_length_by_layer_mm": {
+          "F.Cu": 5.0230579234861015,
+          "B.Cu": 6.167405407020492
+        },
+        "total_copper_length_mm": 11.190463330506592,
+        "widths_mm": [
+          0.15
+        ],
+        "vias": [
+          {
+            "position_mm": [
+              134.201,
+              69.1857
+            ],
+            "diameter_mm": 0.6,
+            "drill_mm": 0.3,
+            "layer_pair": [
+              "F.Cu",
+              "B.Cu"
+            ]
+          },
+          {
+            "position_mm": [
+              131.9,
+              74.4
+            ],
+            "diameter_mm": 0.6,
+            "drill_mm": 0.3,
+            "layer_pair": [
+              "F.Cu",
+              "B.Cu"
+            ]
+          }
+        ],
+        "track_endpoint_degrees": {
+          "2": 7,
+          "1": 2
+        },
+        "endpoint_graph_cycle_rank_if_connected": 0,
+        "endpoint_graph_snap_mm": 0.001,
+        "endpoint_graph_components": 1,
+        "branchless_endpoint_graph": true
+      },
+      "N": {
+        "net": "ADC7_N",
+        "copper_length_by_layer_mm": {
+          "F.Cu": 3.2072463813665597,
+          "B.Cu": 7.983216086782055
+        },
+        "total_copper_length_mm": 11.190462468148615,
+        "widths_mm": [
+          0.15
+        ],
+        "vias": [
+          {
+            "position_mm": [
+              135.001,
+              69.1857
+            ],
+            "diameter_mm": 0.6,
+            "drill_mm": 0.3,
+            "layer_pair": [
+              "F.Cu",
+              "B.Cu"
+            ]
+          },
+          {
+            "position_mm": [
+              133.699999,
+              74.4
+            ],
+            "diameter_mm": 0.6,
+            "drill_mm": 0.3,
+            "layer_pair": [
+              "F.Cu",
+              "B.Cu"
+            ]
+          }
+        ],
+        "track_endpoint_degrees": {
+          "1": 2,
+          "2": 6
+        },
+        "endpoint_graph_cycle_rank_if_connected": 0,
+        "endpoint_graph_snap_mm": 0.001,
+        "endpoint_graph_components": 1,
+        "branchless_endpoint_graph": true
+      },
+      "total_copper_length_difference_mm": 8.623579770272727e-07,
+      "via_transition_comparison": [
+        {
+          "P_mm": [
+            134.201,
+            69.1857
+          ],
+          "N_mm": [
+            135.001,
+            69.1857
+          ],
+          "delta_x_mm": 0.8,
+          "delta_y_mm": 0.0,
+          "same_drill_and_diameter": true
+        },
+        {
+          "P_mm": [
+            131.9,
+            74.4
+          ],
+          "N_mm": [
+            133.699999,
+            74.4
+          ],
+          "delta_x_mm": 1.799999,
+          "delta_y_mm": 0.0,
+          "same_drill_and_diameter": true
+        }
+      ],
+      "pair_geometry_qualified": false,
+      "length_tolerance_mm": null,
+      "coupling_spacing_tolerance_mm": null,
+      "note": "Copper centerline geometry only; no delay/impedance/bench measurement or SI signoff."
+    }
+  ],
+  "symmetry_limits_specified": false,
+  "routing_completed": false,
+  "fabrication_release": false
+}

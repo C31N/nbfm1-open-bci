@@ -1,0 +1,362 @@
+{
+  "baseline_unconnected": 265,
+  "native_verified": {
+    "kicad_version": "8.0.9",
+    "date": "2026-10-08T14:00:42+0200",
+    "source": "eeg128-tdm.kicad_pcb",
+    "violations": 0,
+    "warnings": 0,
+    "unconnected": 149,
+    "schematic_parity_items": 0,
+    "schematic_parity_warnings": 0,
+    "independent_lvs_signoff": false
+  },
+  "airwire_groups": {
+    "POWER": {
+      "before": 31,
+      "after": 0,
+      "closed": 31
+    },
+    "AGND": {
+      "before": 11,
+      "after": 0,
+      "closed": 11
+    },
+    "TDM_ANALOG": {
+      "before": 218,
+      "after": 149,
+      "closed": 69
+    },
+    "MUX_CONTROL": {
+      "before": 5,
+      "after": 0,
+      "closed": 5
+    }
+  },
+  "closed_total": 116,
+  "cloud_run_id": 37533371878,
+  "cloud_stage_unconnected": {
+    "planes": 244,
+    "signals": 241,
+    "bottom": 211
+  },
+  "completion_target_reached": false,
+  "publication_manifest_updated": false,
+  "manufacturing_generated": false,
+  "plane_followup_unconnected": 209,
+  "plane_followup_newly_closed": 0,
+  "signal_followup_initial": 209,
+  "signal_followup_final": 208,
+  "continuation_from_208": {
+    "POWER": {
+      "before": 18,
+      "after": 6,
+      "closed": 12
+    },
+    "AGND": {
+      "before": 2,
+      "after": 0,
+      "closed": 2
+    },
+    "TDM_ANALOG": {
+      "before": 185,
+      "after": 182,
+      "closed": 3
+    },
+    "MUX_CONTROL": {
+      "before": 3,
+      "after": 0,
+      "closed": 3
+    }
+  },
+  "continuation_closed_total": 20,
+  "priority_pass_from_199": {
+    "POWER": {
+      "before": 12,
+      "after": 6,
+      "closed": 6
+    },
+    "AGND": {
+      "before": 1,
+      "after": 0,
+      "closed": 1
+    },
+    "TDM_ANALOG": {
+      "before": 183,
+      "after": 182,
+      "closed": 1
+    },
+    "MUX_CONTROL": {
+      "before": 3,
+      "after": 0,
+      "closed": 3
+    }
+  },
+  "priority_pass_closed_total": 11,
+  "U23_power_pass_from_188": {
+    "POWER": {
+      "before": 6,
+      "after": 0,
+      "closed": 6
+    },
+    "AGND": {
+      "before": 0,
+      "after": 0,
+      "closed": 0
+    },
+    "TDM_ANALOG": {
+      "before": 182,
+      "after": 180,
+      "closed": 2
+    },
+    "MUX_CONTROL": {
+      "before": 0,
+      "after": 0,
+      "closed": 0
+    }
+  },
+  "U23_power_pass_closed_total": 8,
+  "latest_native_head": {
+    "kicad_version": "8.0.9",
+    "date": "2026-10-08T14:00:42+0200",
+    "source": "eeg128-tdm.kicad_pcb",
+    "violations": 0,
+    "warnings": 0,
+    "unconnected": 149,
+    "schematic_parity_items": 0,
+    "schematic_parity_warnings": 0,
+    "independent_lvs_signoff": false
+  },
+  "historical_native_verified_188": {
+    "kicad_version": "8.0.9",
+    "date": "2026-10-06T23:55:27-0500",
+    "source": "eeg128-tdm.kicad_pcb",
+    "violations": 0,
+    "warnings": 0,
+    "unconnected": 188
+  },
+  "MUX_block1_left_VCM_pass": {
+    "entry_unconnected": 174,
+    "unconnected": 167,
+    "closed_nets": [
+      "CH004_N_ELECTRODE",
+      "CH006_N_ELECTRODE",
+      "CH006_P_ELECTRODE",
+      "CH008_N_MUX",
+      "CH008_P_MUX",
+      "CH010_N_ELECTRODE",
+      "CH012_N_ELECTRODE"
+    ],
+    "global_MUX": 95,
+    "global_ELECTRODE": 72,
+    "block_MUX": 2,
+    "block_ELECTRODE": 9,
+    "new_complete_channels": [
+      "CH006",
+      "CH008"
+    ],
+    "channels": [
+      {
+        "channel": "CH000",
+        "before_open": 1,
+        "after_open": 1
+      },
+      {
+        "channel": "CH001",
+        "before_open": 0,
+        "after_open": 0
+      },
+      {
+        "channel": "CH002",
+        "before_open": 0,
+        "after_open": 0
+      },
+      {
+        "channel": "CH003",
+        "before_open": 0,
+        "after_open": 0
+      },
+      {
+        "channel": "CH004",
+        "before_open": 3,
+        "after_open": 2
+      },
+      {
+        "channel": "CH005",
+        "before_open": 2,
+        "after_open": 2
+      },
+      {
+        "channel": "CH006",
+        "before_open": 2,
+        "after_open": 0
+      },
+      {
+        "channel": "CH007",
+        "before_open": 0,
+        "after_open": 0
+      },
+      {
+        "channel": "CH008",
+        "before_open": 2,
+        "after_open": 0
+      },
+      {
+        "channel": "CH009",
+        "before_open": 0,
+        "after_open": 0
+      },
+      {
+        "channel": "CH010",
+        "before_open": 2,
+        "after_open": 1
+      },
+      {
+        "channel": "CH011",
+        "before_open": 1,
+        "after_open": 1
+      },
+      {
+        "channel": "CH012",
+        "before_open": 2,
+        "after_open": 1
+      },
+      {
+        "channel": "CH013",
+        "before_open": 0,
+        "after_open": 0
+      },
+      {
+        "channel": "CH014",
+        "before_open": 1,
+        "after_open": 1
+      },
+      {
+        "channel": "CH015",
+        "before_open": 2,
+        "after_open": 2
+      }
+    ],
+    "remaining_block_nets": [
+      "CH000_N_ELECTRODE",
+      "CH004_N_MUX",
+      "CH004_P_ELECTRODE",
+      "CH005_N_ELECTRODE",
+      "CH005_N_MUX",
+      "CH010_P_ELECTRODE",
+      "CH011_P_ELECTRODE",
+      "CH012_P_ELECTRODE",
+      "CH014_P_ELECTRODE",
+      "CH015_N_ELECTRODE",
+      "CH015_P_ELECTRODE"
+    ]
+  },
+  "recovery167_pass": {
+    "baseline_unconnected": 167,
+    "unconnected": 149,
+    "closed_total": 18,
+    "MUX_closed": 17,
+    "ELECTRODE_closed": 1,
+    "closed_nets": [
+      "CH004_N_MUX",
+      "CH005_N_MUX",
+      "CH011_P_ELECTRODE",
+      "CH016_N_MUX",
+      "CH016_P_MUX",
+      "CH017_N_MUX",
+      "CH017_P_MUX",
+      "CH019_N_MUX",
+      "CH019_P_MUX",
+      "CH021_N_MUX",
+      "CH021_P_MUX",
+      "CH022_N_MUX",
+      "CH022_P_MUX",
+      "CH023_N_MUX",
+      "CH023_P_MUX",
+      "CH025_N_MUX",
+      "CH026_N_MUX",
+      "CH040_P_MUX"
+    ],
+    "blocks": [
+      {
+        "channels": "CH000\u2013CH015",
+        "MUX_open": 0,
+        "ELECTRODE_open": 8,
+        "remaining_nets": [
+          "CH000_N_ELECTRODE",
+          "CH004_P_ELECTRODE",
+          "CH005_N_ELECTRODE",
+          "CH010_P_ELECTRODE",
+          "CH012_P_ELECTRODE",
+          "CH014_P_ELECTRODE",
+          "CH015_N_ELECTRODE",
+          "CH015_P_ELECTRODE"
+        ]
+      },
+      {
+        "channels": "CH016\u2013CH031",
+        "MUX_open": 9,
+        "ELECTRODE_open": 8,
+        "remaining_nets": [
+          "CH016_P_ELECTRODE",
+          "CH018_N_MUX",
+          "CH018_P_MUX",
+          "CH019_N_ELECTRODE",
+          "CH020_N_ELECTRODE",
+          "CH020_N_MUX",
+          "CH020_P_MUX",
+          "CH021_N_ELECTRODE",
+          "CH023_N_ELECTRODE",
+          "CH024_N_MUX",
+          "CH024_P_MUX",
+          "CH025_P_ELECTRODE",
+          "CH027_N_ELECTRODE",
+          "CH028_N_MUX",
+          "CH029_N_MUX",
+          "CH029_P_ELECTRODE",
+          "CH030_N_MUX"
+        ]
+      },
+      {
+        "channels": "CH032\u2013CH047",
+        "MUX_open": 9,
+        "ELECTRODE_open": 11,
+        "remaining_nets": [
+          "CH033_N_ELECTRODE",
+          "CH033_N_MUX",
+          "CH033_P_MUX",
+          "CH036_N_ELECTRODE",
+          "CH036_P_MUX",
+          "CH037_N_MUX",
+          "CH037_P_ELECTRODE",
+          "CH038_N_ELECTRODE",
+          "CH040_N_ELECTRODE",
+          "CH041_P_MUX",
+          "CH042_N_MUX",
+          "CH042_P_ELECTRODE",
+          "CH042_P_MUX",
+          "CH043_N_ELECTRODE",
+          "CH043_N_MUX",
+          "CH043_P_ELECTRODE",
+          "CH044_N_MUX",
+          "CH045_P_ELECTRODE",
+          "CH046_N_ELECTRODE",
+          "CH046_P_ELECTRODE"
+        ]
+      }
+    ],
+    "lost_138_137_checkpoint_recovered": false,
+    "previous_138_137_metrics_currently_verified": false,
+    "original_manifest_verification": {
+      "passed": 117,
+      "failed": 1,
+      "mismatch": "../route_targeted_closure.py",
+      "archive_intact": true,
+      "preserved_manifest": "engineering/recovery167-original-manifest.txt"
+    },
+    "L3_power_loss_mm2": 207.65927978116034,
+    "geometry_budget_mm2": 250,
+    "budget_is_engineering_constraint_not_PI_signoff": true,
+    "remote_backup_pushed": false
+  }
+}

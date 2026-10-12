@@ -1,0 +1,49 @@
+{
+  "entry_unconnected": 180,
+  "exit_unconnected": 180,
+  "accepted_closures": 0,
+  "critical_bank0_worker": {
+    "native_kicad_version": "8.0.9",
+    "violations": 0,
+    "warnings": 0,
+    "unconnected": 180,
+    "allow_bottom_analog": true,
+    "qfn_power_neckdown": true,
+    "cluster_power_neckdown": true,
+    "grid_step_mm": 0.1,
+    "engineering_only": true,
+    "release_authorized": false,
+    "history": []
+  },
+  "pair_escape_worker": {
+    "native_kicad_version": "8.0.9",
+    "violations": 0,
+    "warnings": 0,
+    "unconnected": 180,
+    "allow_bottom_analog": true,
+    "qfn_power_neckdown": true,
+    "cluster_power_neckdown": true,
+    "grid_step_mm": 0.05,
+    "engineering_only": true,
+    "release_authorized": false,
+    "history": []
+  },
+  "manual_BANK0_neighbor_route": {
+    "path_found": false,
+    "promoted": false,
+    "local_tail_margin_mm": 5,
+    "grid_step_mm": 0.05,
+    "search_seconds": 75
+  },
+  "schematic_parity": {
+    "kicad_version": "8.0.9",
+    "date": "2026-10-07T08:46:28+0200",
+    "violations": 0,
+    "warnings": 0,
+    "unconnected": 180,
+    "source": "existing generated schematic, unchanged",
+    "independent_lvs_signoff": false
+  },
+  "routing_completed": false,
+  "fabrication_release": false
+}

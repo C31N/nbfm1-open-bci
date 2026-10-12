@@ -1,0 +1,2014 @@
+{
+  "new_MUX_closures": {
+    "accepted_board": "/workspace/scratch/c3e1942d61e8/candidate-free-l3-CH008_N_MUX/eeg128-tdm.kicad_pcb",
+    "unconnected": 172,
+    "history": [
+      {
+        "net": "CH008_P_MUX",
+        "unconnected": 173,
+        "board": "/workspace/scratch/c3e1942d61e8/candidate-free-l3-CH008_P_MUX/eeg128-tdm.kicad_pcb",
+        "L3_length_mm": 22.15231904720978
+      },
+      {
+        "net": "CH008_N_MUX",
+        "unconnected": 172,
+        "board": "/workspace/scratch/c3e1942d61e8/candidate-free-l3-CH008_N_MUX/eeg128-tdm.kicad_pcb",
+        "L3_length_mm": 32.0683381900889
+      }
+    ],
+    "attempts": [
+      {
+        "net": "CH008_P_MUX",
+        "source_via": [
+          20.15,
+          13
+        ],
+        "MUX_via": [
+          11.7,
+          35.85
+        ],
+        "outer_tail_found": true,
+        "bridge_found": true,
+        "exit_via": [
+          23.279999999999937,
+          33.7299999999999
+        ],
+        "accepted": true
+      },
+      {
+        "net": "CH008_N_MUX",
+        "source_via": [
+          24.55,
+          11.9
+        ],
+        "MUX_via": [
+          11.4,
+          48.85
+        ],
+        "outer_tail_found": true,
+        "bridge_found": true,
+        "exit_via": [
+          8.02999999999999,
+          34.6799999999999
+        ],
+        "accepted": true
+      },
+      {
+        "net": "CH004_N_MUX",
+        "source_via": [
+          15.25,
+          20.75
+        ],
+        "MUX_via": [
+          15.595,
+          58.15
+        ],
+        "outer_tail_found": false
+      },
+      {
+        "net": "CH005_N_MUX",
+        "source_via": [
+          15.25,
+          18.15
+        ],
+        "MUX_via": [
+          14.325,
+          58.15
+        ],
+        "outer_tail_found": false
+      }
+    ]
+  },
+  "new_RC_closures": {
+    "accepted_board": "/workspace/scratch/c3e1942d61e8/candidate-input-l3-CH012_N_ELECTRODE-0/eeg128-tdm.kicad_pcb",
+    "unconnected": 167,
+    "history": [
+      {
+        "net": "CH004_N_ELECTRODE",
+        "unconnected": 171,
+        "board": "/workspace/scratch/c3e1942d61e8/candidate-input-l3-CH004_N_ELECTRODE-0/eeg128-tdm.kicad_pcb",
+        "L3_length_mm": 14.832051765216526
+      },
+      {
+        "net": "CH006_N_ELECTRODE",
+        "unconnected": 170,
+        "board": "/workspace/scratch/c3e1942d61e8/candidate-input-l3-CH006_N_ELECTRODE-0/eeg128-tdm.kicad_pcb",
+        "L3_length_mm": 12.866366340267286
+      },
+      {
+        "net": "CH006_P_ELECTRODE",
+        "unconnected": 169,
+        "board": "/workspace/scratch/c3e1942d61e8/candidate-input-l3-CH006_P_ELECTRODE-0/eeg128-tdm.kicad_pcb",
+        "L3_length_mm": 9.200071249877057
+      },
+      {
+        "net": "CH010_N_ELECTRODE",
+        "unconnected": 168,
+        "board": "/workspace/scratch/c3e1942d61e8/candidate-input-l3-CH010_N_ELECTRODE-0/eeg128-tdm.kicad_pcb",
+        "L3_length_mm": 11.91294225847332
+      },
+      {
+        "net": "CH012_N_ELECTRODE",
+        "unconnected": 167,
+        "board": "/workspace/scratch/c3e1942d61e8/candidate-input-l3-CH012_N_ELECTRODE-0/eeg128-tdm.kicad_pcb",
+        "L3_length_mm": 17.226546155405412
+      }
+    ],
+    "attempts": [
+      {
+        "net": "CH011_P_ELECTRODE",
+        "source_windows": 1,
+        "goal_windows": 7,
+        "trials": [
+          {
+            "source_drop": [
+              15.5,
+              6.46
+            ],
+            "goal_drop": [
+              18.15,
+              20.8
+            ],
+            "found": false
+          },
+          {
+            "source_drop": [
+              15.5,
+              6.46
+            ],
+            "goal_drop": [
+              18.1,
+              20.75
+            ],
+            "found": false
+          },
+          {
+            "source_drop": [
+              15.5,
+              6.46
+            ],
+            "goal_drop": [
+              18.1,
+              20.25
+            ],
+            "found": false
+          }
+        ]
+      },
+      {
+        "net": "CH000_N_ELECTRODE",
+        "source_windows": 0,
+        "goal_windows": 8,
+        "trials": []
+      },
+      {
+        "net": "CH004_N_ELECTRODE",
+        "source_windows": 4,
+        "goal_windows": 7,
+        "trials": [
+          {
+            "source_drop": [
+              19.75,
+              8.61
+            ],
+            "goal_drop": [
+              13.35,
+              20.8
+            ],
+            "found": true,
+            "accepted": true
+          }
+        ]
+      },
+      {
+        "net": "CH004_P_ELECTRODE",
+        "source_windows": 0,
+        "goal_windows": 8,
+        "trials": []
+      },
+      {
+        "net": "CH005_N_ELECTRODE",
+        "source_windows": 0,
+        "goal_windows": 3,
+        "trials": []
+      },
+      {
+        "net": "CH006_N_ELECTRODE",
+        "source_windows": 5,
+        "goal_windows": 7,
+        "trials": [
+          {
+            "source_drop": [
+              20.75,
+              6.61
+            ],
+            "goal_drop": [
+              13.35,
+              15.6
+            ],
+            "found": true,
+            "accepted": true
+          }
+        ]
+      },
+      {
+        "net": "CH006_P_ELECTRODE",
+        "source_windows": 8,
+        "goal_windows": 8,
+        "trials": [
+          {
+            "source_drop": [
+              12.75,
+              6.61
+            ],
+            "goal_drop": [
+              8.6,
+              14.1
+            ],
+            "found": true,
+            "accepted": true
+          }
+        ]
+      },
+      {
+        "net": "CH010_N_ELECTRODE",
+        "source_windows": 8,
+        "goal_windows": 8,
+        "trials": [
+          {
+            "source_drop": [
+              22.75,
+              8.61
+            ],
+            "goal_drop": [
+              23.85,
+              18.2
+            ],
+            "found": true,
+            "accepted": true
+          }
+        ]
+      },
+      {
+        "net": "CH010_P_ELECTRODE",
+        "source_windows": 0,
+        "goal_windows": 0,
+        "trials": []
+      },
+      {
+        "net": "CH012_N_ELECTRODE",
+        "source_windows": 2,
+        "goal_windows": 8,
+        "trials": [
+          {
+            "source_drop": [
+              23.7,
+              8.66
+            ],
+            "goal_drop": [
+              24.4,
+              24.1
+            ],
+            "found": true,
+            "accepted": true
+          }
+        ]
+      },
+      {
+        "net": "CH012_P_ELECTRODE",
+        "source_windows": 3,
+        "goal_windows": 8,
+        "trials": [
+          {
+            "source_drop": [
+              15.75,
+              6.61
+            ],
+            "goal_drop": [
+              18.15,
+              23.4
+            ],
+            "found": false
+          },
+          {
+            "source_drop": [
+              15.7,
+              6.56
+            ],
+            "goal_drop": [
+              18.1,
+              23.35
+            ],
+            "found": false
+          },
+          {
+            "source_drop": [
+              15.7,
+              6.56
+            ],
+            "goal_drop": [
+              18.1,
+              23.9
+            ],
+            "found": false
+          }
+        ]
+      },
+      {
+        "net": "CH014_P_ELECTRODE",
+        "source_windows": 0,
+        "goal_windows": 8,
+        "trials": []
+      },
+      {
+        "net": "CH015_N_ELECTRODE",
+        "source_windows": 0,
+        "goal_windows": 7,
+        "trials": []
+      },
+      {
+        "net": "CH015_P_ELECTRODE",
+        "source_windows": 0,
+        "goal_windows": 8,
+        "trials": []
+      }
+    ]
+  },
+  "remaining_RC_retry": {
+    "accepted_board": "/workspace/scratch/c3e1942d61e8/candidate-input-l3-CH012_N_ELECTRODE-0/eeg128-tdm.kicad_pcb",
+    "unconnected": 167,
+    "history": [],
+    "attempts": [
+      {
+        "net": "CH011_P_ELECTRODE",
+        "source_windows": 1,
+        "goal_windows": 7,
+        "trials": [
+          {
+            "source_drop": [
+              15.5,
+              6.46
+            ],
+            "goal_drop": [
+              18.15,
+              20.8
+            ],
+            "found": false
+          },
+          {
+            "source_drop": [
+              15.5,
+              6.46
+            ],
+            "goal_drop": [
+              18.1,
+              20.75
+            ],
+            "found": false
+          },
+          {
+            "source_drop": [
+              15.5,
+              6.46
+            ],
+            "goal_drop": [
+              18.1,
+              20.25
+            ],
+            "found": false
+          }
+        ]
+      },
+      {
+        "net": "CH000_N_ELECTRODE",
+        "source_windows": 0,
+        "goal_windows": 8,
+        "trials": []
+      },
+      {
+        "net": "CH004_P_ELECTRODE",
+        "source_windows": 0,
+        "goal_windows": 8,
+        "trials": []
+      },
+      {
+        "net": "CH005_N_ELECTRODE",
+        "source_windows": 0,
+        "goal_windows": 3,
+        "trials": []
+      },
+      {
+        "net": "CH010_P_ELECTRODE",
+        "source_windows": 0,
+        "goal_windows": 0,
+        "trials": []
+      },
+      {
+        "net": "CH012_P_ELECTRODE",
+        "source_windows": 3,
+        "goal_windows": 8,
+        "trials": [
+          {
+            "source_drop": [
+              15.75,
+              6.61
+            ],
+            "goal_drop": [
+              18.15,
+              23.4
+            ],
+            "found": false
+          },
+          {
+            "source_drop": [
+              15.75,
+              6.61
+            ],
+            "goal_drop": [
+              18.1,
+              23.35
+            ],
+            "found": false
+          },
+          {
+            "source_drop": [
+              15.75,
+              6.61
+            ],
+            "goal_drop": [
+              18.1,
+              23.9
+            ],
+            "found": false
+          },
+          {
+            "source_drop": [
+              15.7,
+              6.56
+            ],
+            "goal_drop": [
+              18.15,
+              23.4
+            ],
+            "found": false
+          },
+          {
+            "source_drop": [
+              15.7,
+              6.56
+            ],
+            "goal_drop": [
+              18.1,
+              23.9
+            ],
+            "found": false
+          }
+        ]
+      },
+      {
+        "net": "CH014_P_ELECTRODE",
+        "source_windows": 0,
+        "goal_windows": 8,
+        "trials": []
+      },
+      {
+        "net": "CH015_N_ELECTRODE",
+        "source_windows": 0,
+        "goal_windows": 7,
+        "trials": []
+      },
+      {
+        "net": "CH015_P_ELECTRODE",
+        "source_windows": 0,
+        "goal_windows": 8,
+        "trials": []
+      }
+    ]
+  },
+  "MUX_goal_drop_windows": {
+    "accepted_board": "/workspace/scratch/c3e1942d61e8/candidate-input-l3-CH012_N_ELECTRODE-0/eeg128-tdm.kicad_pcb",
+    "history": [],
+    "unconnected": 167,
+    "attempts": [
+      {
+        "net": "CH004_N_MUX",
+        "via_windows": [
+          {
+            "via": [
+              15.595,
+              58.2
+            ],
+            "F_escape": [
+              [
+                15.595,
+                58.15
+              ],
+              [
+                15.595,
+                58.2
+              ]
+            ]
+          },
+          {
+            "via": [
+              15.545,
+              58.15
+            ],
+            "F_escape": [
+              [
+                15.595,
+                58.15
+              ],
+              [
+                15.545,
+                58.15
+              ]
+            ]
+          },
+          {
+            "via": [
+              15.595,
+              58.1
+            ],
+            "F_escape": [
+              [
+                15.595,
+                58.15
+              ],
+              [
+                15.595,
+                58.1
+              ]
+            ]
+          },
+          {
+            "via": [
+              15.545,
+              58.1
+            ],
+            "F_escape": [
+              [
+                15.595,
+                58.15
+              ],
+              [
+                15.545,
+                58.1
+              ]
+            ]
+          },
+          {
+            "via": [
+              15.595,
+              58.65
+            ],
+            "F_escape": [
+              [
+                15.595,
+                58.15
+              ],
+              [
+                15.595,
+                58.65
+              ]
+            ]
+          },
+          {
+            "via": [
+              15.545,
+              58.65
+            ],
+            "F_escape": [
+              [
+                15.595,
+                58.15
+              ],
+              [
+                15.545,
+                58.65
+              ]
+            ]
+          },
+          {
+            "via": [
+              15.595,
+              57.6
+            ],
+            "F_escape": [
+              [
+                15.595,
+                58.15
+              ],
+              [
+                15.595,
+                57.6
+              ]
+            ]
+          },
+          {
+            "via": [
+              15.545,
+              57.6
+            ],
+            "F_escape": [
+              [
+                15.595,
+                58.15
+              ],
+              [
+                15.545,
+                57.6
+              ]
+            ]
+          },
+          {
+            "via": [
+              15.595,
+              59.15
+            ],
+            "F_escape": [
+              [
+                15.595,
+                58.15
+              ],
+              [
+                15.595,
+                59.15
+              ]
+            ]
+          },
+          {
+            "via": [
+              15.545,
+              59.15
+            ],
+            "F_escape": [
+              [
+                15.595,
+                58.15
+              ],
+              [
+                15.545,
+                59.15
+              ]
+            ]
+          },
+          {
+            "via": [
+              15.595,
+              57.1
+            ],
+            "F_escape": [
+              [
+                15.595,
+                58.15
+              ],
+              [
+                15.595,
+                57.1
+              ]
+            ]
+          },
+          {
+            "via": [
+              15.545,
+              57.1
+            ],
+            "F_escape": [
+              [
+                15.595,
+                58.15
+              ],
+              [
+                15.545,
+                57.1
+              ]
+            ]
+          }
+        ],
+        "trials": [
+          {
+            "goal_drop": {
+              "via": [
+                15.595,
+                58.2
+              ],
+              "F_escape": [
+                [
+                  15.595,
+                  58.15
+                ],
+                [
+                  15.595,
+                  58.2
+                ]
+              ]
+            },
+            "outer_found": false
+          },
+          {
+            "goal_drop": {
+              "via": [
+                15.595,
+                57.6
+              ],
+              "F_escape": [
+                [
+                  15.595,
+                  58.15
+                ],
+                [
+                  15.595,
+                  57.6
+                ]
+              ]
+            },
+            "outer_found": false
+          },
+          {
+            "goal_drop": {
+              "via": [
+                15.545,
+                57.1
+              ],
+              "F_escape": [
+                [
+                  15.595,
+                  58.15
+                ],
+                [
+                  15.545,
+                  57.1
+                ]
+              ]
+            },
+            "outer_found": false
+          }
+        ]
+      },
+      {
+        "net": "CH005_N_MUX",
+        "via_windows": [
+          {
+            "via": [
+              14.325,
+              58.2
+            ],
+            "F_escape": [
+              [
+                14.325,
+                58.15
+              ],
+              [
+                14.325,
+                58.2
+              ]
+            ]
+          },
+          {
+            "via": [
+              14.275,
+              58.15
+            ],
+            "F_escape": [
+              [
+                14.325,
+                58.15
+              ],
+              [
+                14.275,
+                58.15
+              ]
+            ]
+          },
+          {
+            "via": [
+              14.325,
+              58.1
+            ],
+            "F_escape": [
+              [
+                14.325,
+                58.15
+              ],
+              [
+                14.325,
+                58.1
+              ]
+            ]
+          },
+          {
+            "via": [
+              14.275,
+              58.1
+            ],
+            "F_escape": [
+              [
+                14.325,
+                58.15
+              ],
+              [
+                14.275,
+                58.1
+              ]
+            ]
+          },
+          {
+            "via": [
+              14.325,
+              58.65
+            ],
+            "F_escape": [
+              [
+                14.325,
+                58.15
+              ],
+              [
+                14.325,
+                58.65
+              ]
+            ]
+          },
+          {
+            "via": [
+              14.825,
+              58.15
+            ],
+            "F_escape": [
+              [
+                14.325,
+                58.15
+              ],
+              [
+                14.825,
+                58.15
+              ]
+            ]
+          },
+          {
+            "via": [
+              14.275,
+              58.65
+            ],
+            "F_escape": [
+              [
+                14.325,
+                58.15
+              ],
+              [
+                14.275,
+                58.65
+              ]
+            ]
+          },
+          {
+            "via": [
+              14.825,
+              58.1
+            ],
+            "F_escape": [
+              [
+                14.325,
+                58.15
+              ],
+              [
+                14.825,
+                58.1
+              ]
+            ]
+          },
+          {
+            "via": [
+              14.325,
+              57.6
+            ],
+            "F_escape": [
+              [
+                14.325,
+                58.15
+              ],
+              [
+                14.325,
+                57.6
+              ]
+            ]
+          },
+          {
+            "via": [
+              14.275,
+              57.6
+            ],
+            "F_escape": [
+              [
+                14.325,
+                58.15
+              ],
+              [
+                14.275,
+                57.6
+              ]
+            ]
+          },
+          {
+            "via": [
+              14.825,
+              58.65
+            ],
+            "F_escape": [
+              [
+                14.325,
+                58.15
+              ],
+              [
+                14.825,
+                58.65
+              ]
+            ]
+          },
+          {
+            "via": [
+              14.825,
+              57.6
+            ],
+            "F_escape": [
+              [
+                14.325,
+                58.15
+              ],
+              [
+                14.825,
+                57.6
+              ]
+            ]
+          }
+        ],
+        "trials": [
+          {
+            "goal_drop": {
+              "via": [
+                14.325,
+                58.2
+              ],
+              "F_escape": [
+                [
+                  14.325,
+                  58.15
+                ],
+                [
+                  14.325,
+                  58.2
+                ]
+              ]
+            },
+            "outer_found": false
+          },
+          {
+            "goal_drop": {
+              "via": [
+                14.275,
+                58.65
+              ],
+              "F_escape": [
+                [
+                  14.325,
+                  58.15
+                ],
+                [
+                  14.275,
+                  58.65
+                ]
+              ]
+            },
+            "outer_found": false
+          },
+          {
+            "goal_drop": {
+              "via": [
+                14.825,
+                57.6
+              ],
+              "F_escape": [
+                [
+                  14.325,
+                  58.15
+                ],
+                [
+                  14.825,
+                  57.6
+                ]
+              ]
+            },
+            "outer_found": false
+          }
+        ]
+      }
+    ]
+  },
+  "joint_P_N_corridor_search": [
+    {
+      "pair": "CH002_MUX",
+      "removed_pair_copper_items": 62,
+      "source_pads": [
+        [
+          9.75,
+          26.0
+        ],
+        [
+          15.25,
+          26.0
+        ]
+      ],
+      "goal_pads": [
+        [
+          18.135,
+          45.15
+        ],
+        [
+          18.135,
+          58.15
+        ]
+      ],
+      "bundle_width_mm": 0.5,
+      "signal_width_mm": 0.15,
+      "pair_gap_mm": 0.2,
+      "neighbor_clearance_mm": 0.15,
+      "reference_clearance_mm": 0.2,
+      "trials": [
+        {
+          "layer": "B.Cu",
+          "start": [
+            12.5,
+            24.5
+          ],
+          "goal": [
+            18.135,
+            51.65
+          ],
+          "common_spine_found": false
+        },
+        {
+          "layer": "B.Cu",
+          "start": [
+            12.5,
+            27.5
+          ],
+          "goal": [
+            18.135,
+            51.65
+          ],
+          "common_spine_found": false
+        },
+        {
+          "layer": "F.Cu",
+          "start": [
+            12.5,
+            24.5
+          ],
+          "goal": [
+            18.135,
+            51.65
+          ],
+          "common_spine_found": false
+        },
+        {
+          "layer": "F.Cu",
+          "start": [
+            12.5,
+            27.5
+          ],
+          "goal": [
+            18.135,
+            51.65
+          ],
+          "common_spine_found": false
+        }
+      ],
+      "adopted": false,
+      "note": "Bounded common-corridor search after isolated joint P/N rip-up; no production mutation or geometric pair signoff."
+    },
+    {
+      "pair": "CH010_MUX",
+      "removed_pair_copper_items": 97,
+      "source_pads": [
+        [
+          20.25,
+          18.2
+        ],
+        [
+          25.75,
+          18.2
+        ]
+      ],
+      "goal_pads": [
+        [
+          14.325,
+          35.85
+        ],
+        [
+          14.325,
+          48.85
+        ]
+      ],
+      "bundle_width_mm": 0.5,
+      "signal_width_mm": 0.15,
+      "pair_gap_mm": 0.2,
+      "neighbor_clearance_mm": 0.15,
+      "reference_clearance_mm": 0.2,
+      "trials": [
+        {
+          "layer": "B.Cu",
+          "start": [
+            23.0,
+            16.7
+          ],
+          "goal": [
+            14.325,
+            42.35
+          ],
+          "common_spine_found": false
+        },
+        {
+          "layer": "B.Cu",
+          "start": [
+            23.0,
+            19.7
+          ],
+          "goal": [
+            14.325,
+            42.35
+          ],
+          "common_spine_found": false
+        },
+        {
+          "layer": "F.Cu",
+          "start": [
+            23.0,
+            16.7
+          ],
+          "goal": [
+            14.325,
+            42.35
+          ],
+          "common_spine_found": false
+        },
+        {
+          "layer": "F.Cu",
+          "start": [
+            23.0,
+            19.7
+          ],
+          "goal": [
+            14.325,
+            42.35
+          ],
+          "common_spine_found": false
+        }
+      ],
+      "adopted": false,
+      "note": "Bounded common-corridor search after isolated joint P/N rip-up; no production mutation or geometric pair signoff."
+    },
+    {
+      "pair": "CH011_MUX",
+      "removed_pair_copper_items": 65,
+      "source_pads": [
+        [
+          20.25,
+          20.8
+        ],
+        [
+          25.75,
+          20.8
+        ]
+      ],
+      "goal_pads": [
+        [
+          15.595,
+          35.85
+        ],
+        [
+          15.595,
+          48.85
+        ]
+      ],
+      "bundle_width_mm": 0.5,
+      "signal_width_mm": 0.15,
+      "pair_gap_mm": 0.2,
+      "neighbor_clearance_mm": 0.15,
+      "reference_clearance_mm": 0.2,
+      "trials": [
+        {
+          "layer": "B.Cu",
+          "start": [
+            23.0,
+            19.3
+          ],
+          "goal": [
+            15.595,
+            42.35
+          ],
+          "common_spine_found": false
+        },
+        {
+          "layer": "B.Cu",
+          "start": [
+            23.0,
+            22.3
+          ],
+          "goal": [
+            15.595,
+            42.35
+          ],
+          "common_spine_found": false
+        },
+        {
+          "layer": "F.Cu",
+          "start": [
+            23.0,
+            19.3
+          ],
+          "goal": [
+            15.595,
+            42.35
+          ],
+          "common_spine_found": false
+        },
+        {
+          "layer": "F.Cu",
+          "start": [
+            23.0,
+            22.3
+          ],
+          "goal": [
+            15.595,
+            42.35
+          ],
+          "common_spine_found": false
+        }
+      ],
+      "adopted": false,
+      "note": "Bounded common-corridor search after isolated joint P/N rip-up; no production mutation or geometric pair signoff."
+    },
+    {
+      "pair": "CH014_MUX",
+      "removed_pair_copper_items": 89,
+      "source_pads": [
+        [
+          20.25,
+          28.6
+        ],
+        [
+          25.75,
+          28.6
+        ]
+      ],
+      "goal_pads": [
+        [
+          19.405,
+          35.85
+        ],
+        [
+          19.405,
+          48.85
+        ]
+      ],
+      "bundle_width_mm": 0.5,
+      "signal_width_mm": 0.15,
+      "pair_gap_mm": 0.2,
+      "neighbor_clearance_mm": 0.15,
+      "reference_clearance_mm": 0.2,
+      "trials": [
+        {
+          "layer": "B.Cu",
+          "start": [
+            23.0,
+            27.1
+          ],
+          "goal": [
+            19.405,
+            42.35
+          ],
+          "common_spine_found": false
+        },
+        {
+          "layer": "B.Cu",
+          "start": [
+            23.0,
+            30.1
+          ],
+          "goal": [
+            19.405,
+            42.35
+          ],
+          "common_spine_found": false
+        },
+        {
+          "layer": "F.Cu",
+          "start": [
+            23.0,
+            27.1
+          ],
+          "goal": [
+            19.405,
+            42.35
+          ],
+          "common_spine_found": false
+        },
+        {
+          "layer": "F.Cu",
+          "start": [
+            23.0,
+            30.1
+          ],
+          "goal": [
+            19.405,
+            42.35
+          ],
+          "common_spine_found": false
+        }
+      ],
+      "adopted": false,
+      "note": "Bounded common-corridor search after isolated joint P/N rip-up; no production mutation or geometric pair signoff."
+    }
+  ],
+  "fine_edge_search": {
+    "accepted_board": "/workspace/scratch/c3e1942d61e8/candidate-free-l3-CH008_N_MUX/eeg128-tdm.kicad_pcb",
+    "unconnected": 172,
+    "history": [],
+    "attempts": [
+      {
+        "net": "CH004_N_MUX",
+        "start_layer": 0,
+        "goal_layer": 0,
+        "drop": [
+          15.595,
+          58.15
+        ],
+        "found": false,
+        "seconds": 5.486
+      },
+      {
+        "net": "CH004_N_MUX",
+        "start_layer": 1,
+        "goal_layer": 0,
+        "drop": [
+          15.595,
+          58.15
+        ],
+        "found": false,
+        "seconds": 5.152
+      },
+      {
+        "net": "CH004_N_MUX",
+        "start_layer": 1,
+        "goal_layer": 1,
+        "drop": [
+          15.595,
+          56.949999999999996
+        ],
+        "found": false,
+        "seconds": 5.44
+      },
+      {
+        "net": "CH005_N_MUX",
+        "start_layer": 0,
+        "goal_layer": 0,
+        "drop": [
+          14.325,
+          58.15
+        ],
+        "found": false,
+        "seconds": 5.889
+      },
+      {
+        "net": "CH005_N_MUX",
+        "start_layer": 1,
+        "goal_layer": 0,
+        "drop": [
+          14.325,
+          58.15
+        ],
+        "found": false,
+        "seconds": 4.824
+      },
+      {
+        "net": "CH005_N_MUX",
+        "start_layer": 1,
+        "goal_layer": 1,
+        "drop": [
+          14.325,
+          56.949999999999996
+        ],
+        "found": false,
+        "seconds": 5.055
+      }
+    ]
+  },
+  "rejected_rip_up_regression": {
+    "accepted_board": "/workspace/scratch/c3e1942d61e8/candidate-window-CH011_N_MUX-3/eeg128-tdm.kicad_pcb",
+    "unconnected": 175,
+    "history": [
+      {
+        "net": "CH010_N_MUX",
+        "unconnected": 176,
+        "board": "/workspace/scratch/c3e1942d61e8/candidate-window-CH010_N_MUX-0/eeg128-tdm.kicad_pcb"
+      },
+      {
+        "net": "CH011_N_MUX",
+        "unconnected": 175,
+        "board": "/workspace/scratch/c3e1942d61e8/candidate-window-CH011_N_MUX-3/eeg128-tdm.kicad_pcb"
+      }
+    ],
+    "attempts": [
+      {
+        "net": "CH008_N_MUX",
+        "source_drop": [
+          24.55,
+          11.9
+        ],
+        "goal_drop": [
+          11.4,
+          48.85
+        ],
+        "margin_mm": 14,
+        "found": false,
+        "seconds": 2.318
+      },
+      {
+        "net": "CH008_N_MUX",
+        "source_drop": [
+          24.55,
+          11.9
+        ],
+        "goal_drop": [
+          11.4,
+          48.85
+        ],
+        "margin_mm": 22,
+        "found": false,
+        "seconds": 2.737
+      },
+      {
+        "net": "CH008_N_MUX",
+        "source_drop": [
+          24.55,
+          11.9
+        ],
+        "goal_drop": [
+          11.4,
+          48.85
+        ],
+        "margin_mm": 22,
+        "found": false,
+        "seconds": 2.76
+      },
+      {
+        "net": "CH008_N_MUX",
+        "source_drop": [
+          24.55,
+          11.9
+        ],
+        "goal_drop": [
+          11.4,
+          48.85
+        ],
+        "margin_mm": 22,
+        "found": false,
+        "seconds": 2.619
+      },
+      {
+        "net": "CH011_P_ELECTRODE",
+        "source_drop": [
+          15.5,
+          6.46
+        ],
+        "goal_drop": [
+          18.15,
+          20.8
+        ],
+        "margin_mm": 14,
+        "found": false,
+        "seconds": 2.215
+      },
+      {
+        "net": "CH011_P_ELECTRODE",
+        "source_drop": [
+          15.5,
+          6.46
+        ],
+        "goal_drop": [
+          18.15,
+          20.8
+        ],
+        "margin_mm": 22,
+        "found": false,
+        "seconds": 3.017
+      },
+      {
+        "net": "CH011_P_ELECTRODE",
+        "source_drop": [
+          15.5,
+          6.46
+        ],
+        "goal_drop": [
+          18.15,
+          20.8
+        ],
+        "margin_mm": 22,
+        "found": false,
+        "seconds": 2.99
+      },
+      {
+        "net": "CH011_P_ELECTRODE",
+        "source_drop": [
+          15.5,
+          6.46
+        ],
+        "goal_drop": [
+          18.15,
+          20.8
+        ],
+        "margin_mm": 22,
+        "found": false,
+        "seconds": 2.837
+      },
+      {
+        "net": "CH004_N_MUX",
+        "source_drop": [
+          15.25,
+          20.75
+        ],
+        "goal_drop": [
+          15.595,
+          56.949999999999996
+        ],
+        "margin_mm": 14,
+        "found": false,
+        "seconds": 2.166
+      },
+      {
+        "net": "CH004_N_MUX",
+        "source_drop": [
+          15.25,
+          20.75
+        ],
+        "goal_drop": [
+          15.595,
+          59.35
+        ],
+        "margin_mm": 14,
+        "found": false,
+        "seconds": 1.819
+      },
+      {
+        "net": "CH004_N_MUX",
+        "source_drop": [
+          15.25,
+          20.75
+        ],
+        "goal_drop": [
+          15.595,
+          58.15
+        ],
+        "margin_mm": 14,
+        "found": false,
+        "seconds": 2.06
+      },
+      {
+        "net": "CH004_N_MUX",
+        "source_drop": [
+          15.2,
+          21.3
+        ],
+        "goal_drop": [
+          15.595,
+          56.949999999999996
+        ],
+        "margin_mm": 22,
+        "found": false,
+        "seconds": 2.411
+      },
+      {
+        "net": "CH004_N_MUX",
+        "source_drop": [
+          15.2,
+          20.25
+        ],
+        "goal_drop": [
+          15.595,
+          56.949999999999996
+        ],
+        "margin_mm": 22,
+        "found": false,
+        "seconds": 2.427
+      },
+      {
+        "net": "CH004_N_MUX",
+        "source_drop": [
+          15.2,
+          20.25
+        ],
+        "goal_drop": [
+          15.595,
+          56.949999999999996
+        ],
+        "margin_mm": 22,
+        "found": false,
+        "seconds": 2.294
+      },
+      {
+        "net": "CH005_N_MUX",
+        "source_drop": [
+          15.25,
+          18.15
+        ],
+        "goal_drop": [
+          14.325,
+          56.949999999999996
+        ],
+        "margin_mm": 14,
+        "found": false,
+        "seconds": 1.813
+      },
+      {
+        "net": "CH005_N_MUX",
+        "source_drop": [
+          15.25,
+          18.15
+        ],
+        "goal_drop": [
+          14.325,
+          59.35
+        ],
+        "margin_mm": 14,
+        "found": false,
+        "seconds": 1.903
+      },
+      {
+        "net": "CH005_N_MUX",
+        "source_drop": [
+          15.25,
+          18.15
+        ],
+        "goal_drop": [
+          14.325,
+          58.15
+        ],
+        "margin_mm": 14,
+        "found": false,
+        "seconds": 1.981
+      },
+      {
+        "net": "CH005_N_MUX",
+        "source_drop": [
+          15.2,
+          18.7
+        ],
+        "goal_drop": [
+          14.325,
+          56.949999999999996
+        ],
+        "margin_mm": 22,
+        "found": false,
+        "seconds": 2.337
+      },
+      {
+        "net": "CH005_N_MUX",
+        "source_drop": [
+          13.7,
+          19.7
+        ],
+        "goal_drop": [
+          14.325,
+          56.949999999999996
+        ],
+        "margin_mm": 22,
+        "found": false,
+        "seconds": 2.448
+      },
+      {
+        "net": "CH005_N_MUX",
+        "source_drop": [
+          13.7,
+          19.7
+        ],
+        "goal_drop": [
+          14.325,
+          56.949999999999996
+        ],
+        "margin_mm": 22,
+        "found": false,
+        "seconds": 2.36
+      },
+      {
+        "net": "CH002_N_MUX",
+        "source_drop": [
+          15.25,
+          25.95
+        ],
+        "goal_drop": [
+          18.135,
+          58.15
+        ],
+        "margin_mm": 14,
+        "found": false,
+        "seconds": 1.956
+      },
+      {
+        "net": "CH002_N_MUX",
+        "source_drop": [
+          15.2,
+          26.5
+        ],
+        "goal_drop": [
+          18.135,
+          58.15
+        ],
+        "margin_mm": 22,
+        "found": false,
+        "seconds": 2.471
+      },
+      {
+        "net": "CH002_N_MUX",
+        "source_drop": [
+          15.75,
+          26.5
+        ],
+        "goal_drop": [
+          18.135,
+          58.15
+        ],
+        "margin_mm": 22,
+        "found": false,
+        "seconds": 2.598
+      },
+      {
+        "net": "CH002_N_MUX",
+        "source_drop": [
+          13.7,
+          27.0
+        ],
+        "goal_drop": [
+          18.135,
+          58.15
+        ],
+        "margin_mm": 22,
+        "found": false,
+        "seconds": 2.592
+      },
+      {
+        "net": "CH010_N_MUX",
+        "source_drop": [
+          25.75,
+          18.15
+        ],
+        "goal_drop": [
+          14.325,
+          48.85
+        ],
+        "margin_mm": 14,
+        "found": true,
+        "seconds": 6.347,
+        "accepted": true
+      },
+      {
+        "net": "CH011_N_MUX",
+        "source_drop": [
+          25.75,
+          20.75
+        ],
+        "goal_drop": [
+          15.595,
+          48.85
+        ],
+        "margin_mm": 14,
+        "found": false,
+        "seconds": 2.331
+      },
+      {
+        "net": "CH011_N_MUX",
+        "source_drop": [
+          25.75,
+          21.3
+        ],
+        "goal_drop": [
+          15.595,
+          48.85
+        ],
+        "margin_mm": 22,
+        "found": false,
+        "seconds": 2.804
+      },
+      {
+        "net": "CH011_N_MUX",
+        "source_drop": [
+          26.25,
+          21.3
+        ],
+        "goal_drop": [
+          15.595,
+          48.85
+        ],
+        "margin_mm": 22,
+        "found": true,
+        "seconds": 7.623,
+        "accepted": false,
+        "reason": "Candidate has native violations/warnings; see /workspace/scratch/c3e1942d61e8/candidate-window-CH011_N_MUX-2/drc-final.json",
+        "violations": 2
+      },
+      {
+        "net": "CH011_N_MUX",
+        "source_drop": [
+          26.75,
+          21.8
+        ],
+        "goal_drop": [
+          15.595,
+          48.85
+        ],
+        "margin_mm": 22,
+        "found": true,
+        "seconds": 8.105,
+        "accepted": true
+      },
+      {
+        "net": "CH014_N_MUX",
+        "source_drop": [
+          25.75,
+          28.55
+        ],
+        "goal_drop": [
+          19.405,
+          48.85
+        ],
+        "margin_mm": 14,
+        "found": false,
+        "seconds": 2.119
+      },
+      {
+        "net": "CH014_N_MUX",
+        "source_drop": [
+          25.75,
+          29.1
+        ],
+        "goal_drop": [
+          19.405,
+          48.85
+        ],
+        "margin_mm": 22,
+        "found": false,
+        "seconds": 2.819
+      },
+      {
+        "net": "CH014_N_MUX",
+        "source_drop": [
+          25.7,
+          28.05
+        ],
+        "goal_drop": [
+          19.405,
+          48.85
+        ],
+        "margin_mm": 22,
+        "found": false,
+        "seconds": 2.822
+      },
+      {
+        "net": "CH014_N_MUX",
+        "source_drop": [
+          24.7,
+          28.6
+        ],
+        "goal_drop": [
+          19.405,
+          48.85
+        ],
+        "margin_mm": 22,
+        "found": false,
+        "seconds": 4.321
+      }
+    ]
+  },
+  "rejected_restore_after_rip_up": {
+    "violations": 217,
+    "unconnected": 173,
+    "adopted": false,
+    "first_violations": [
+      {
+        "description": "Drilled hole too close to other hole (board setup constraints min 0.2495 mm; actual 0.0007 mm)",
+        "items": [
+          {
+            "description": "Via [CH002_N_MUX] on F.Cu - B.Cu",
+            "pos": {
+              "x": 27.079999,
+              "y": 32.35
+            },
+            "uuid": "6ae05575-8a48-4512-83bd-adb8a75c593c"
+          },
+          {
+            "description": "Via [CH011_N_MUX] on F.Cu - B.Cu",
+            "pos": {
+              "x": 26.779999,
+              "y": 32.329999
+            },
+            "uuid": "d676e5ac-4fc8-4314-a78c-44642806769f"
+          }
+        ],
+        "severity": "error",
+        "type": "hole_near_hole"
+      },
+      {
+        "description": "Drilled hole too close to other hole (board setup constraints min 0.2495 mm; actual 0.0000 mm)",
+        "items": [
+          {
+            "description": "Via [CH002_N_MUX] on F.Cu - B.Cu",
+            "pos": {
+              "x": 19.079999,
+              "y": 21.85
+            },
+            "uuid": "867f6eba-f86b-4c16-bb60-96d9db22d011"
+          },
+          {
+            "description": "Via [CH008_P_MUX] on F.Cu - B.Cu",
+            "pos": {
+              "x": 19.079999,
+              "y": 21.879999
+            },
+            "uuid": "3b496f15-6b28-4135-8760-25105a9839b6"
+          }
+        ],
+        "severity": "error",
+        "type": "hole_near_hole"
+      },
+      {
+        "description": "Drilled hole too close to other hole (board setup constraints min 0.2495 mm; actual 0.0000 mm)",
+        "items": [
+          {
+            "description": "Via [CH002_N_MUX] on F.Cu - B.Cu",
+            "pos": {
+              "x": 23.829999,
+              "y": 22.05
+            },
+            "uuid": "c93d71b7-fb25-46e1-a011-ec142b2cee28"
+          },
+          {
+            "description": "Via [CH008_P_MUX] on F.Cu - B.Cu",
+            "pos": {
+              "x": 23.829999,
+              "y": 22.029999
+            },
+            "uuid": "5fb76d5f-7a9b-4b8e-bdd7-26e694b51473"
+          }
+        ],
+        "severity": "error",
+        "type": "hole_near_hole"
+      },
+      {
+        "description": "Drilled hole too close to other hole (board setup constraints min 0.2495 mm; actual 0.0000 mm)",
+        "items": [
+          {
+            "description": "Via [CH002_N_MUX] on F.Cu - B.Cu",
+            "pos": {
+              "x": 27.129999,
+              "y": 33.65
+            },
+            "uuid": "d040e345-101e-4981-9d7e-69bd1600b4cb"
+          },
+          {
+            "description": "Via [CH010_N_MUX] on F.Cu - B.Cu",
+            "pos": {
+              "x": 27.029999,
+              "y": 33.629999
+            },
+            "uuid": "8aa4987d-81c1-422f-ad2d-ae71c08c9b60"
+          }
+        ],
+        "severity": "error",
+        "type": "hole_near_hole"
+      },
+      {
+        "description": "Drilled hole too close to other hole (board setup constraints min 0.2495 mm; actual 0.0000 mm)",
+        "items": [
+          {
+            "description": "Via [CH008_P_MUX] on F.Cu - B.Cu",
+            "pos": {
+              "x": 24.629999,
+              "y": 32.379999
+            },
+            "uuid": "0d3bfdd6-8ae8-470c-9008-ee74c921815f"
+          },
+          {
+            "description": "Via [CH014_N_MUX] on F.Cu - B.Cu",
+            "pos": {
+              "x": 24.605,
+              "y": 32.4
+            },
+            "uuid": "11c5a54c-778d-4094-bfe7-34ee0f69d94d"
+          }
+        ],
+        "severity": "error",
+        "type": "hole_near_hole"
+      }
+    ]
+  },
+  "bounded_search_not_unroutability_proof": true
+}

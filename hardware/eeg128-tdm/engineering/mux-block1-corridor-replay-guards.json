@@ -1,0 +1,37 @@
+[
+  {
+    "case": "unscoped",
+    "rejected": true,
+    "reason": "Removal requires a scoped core/ADC/VCM copper replacement"
+  },
+  {
+    "case": "wrong_trunk",
+    "rejected": true,
+    "reason": "VCM corridor may remove only its two original trunks"
+  },
+  {
+    "case": "out_of_block",
+    "rejected": true,
+    "reason": "VCM corridor recipe contains an out-of-block net"
+  },
+  {
+    "case": "wrong_layer",
+    "rejected": true,
+    "reason": "VCM replacement must preserve B.Cu and 0.25 mm width"
+  },
+  {
+    "case": "wrong_width",
+    "rejected": true,
+    "reason": "VCM replacement must preserve B.Cu and 0.25 mm width"
+  },
+  {
+    "case": "duplicate_uuid",
+    "rejected": true,
+    "reason": "VCM corridor recipe contains a duplicate UUID"
+  },
+  {
+    "case": "wrong_declared_net",
+    "rejected": true,
+    "reason": "VCM corridor copper net differs from its declared net"
+  }
+]

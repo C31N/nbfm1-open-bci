@@ -24,6 +24,7 @@ class Component:
     value: str
     footprint: str
     pads: tuple[tuple[str, str], ...]
+    library_id: str = ""
 
 
 def q(text: str) -> str:
@@ -80,8 +81,8 @@ def parse_bom() -> dict[str, tuple[str, str]]:
     return result
 
 
-def parse_components() -> list[Component]:
-    pcb = PCB.read_text(encoding="utf-8")
+def parse_components(pcb_path: Path = PCB) -> list[Component]:
+    pcb = pcb_path.read_text(encoding="utf-8")
     bom = parse_bom()
     components: list[Component] = []
 
@@ -101,6 +102,9 @@ def parse_components() -> list[Component]:
             if pad_match is None:
                 continue
             number = pad_match.group(1)
+            if not number:
+                # Unnumbered mounting holes/paste features have no symbol pin.
+                continue
             net_match = re.search(r'\(net\s+\d+\s+"([^"]+)"\)', pad_block)
             net = net_match.group(1) if net_match is not None else ""
             pads.append((number, net))
@@ -112,7 +116,10 @@ def parse_components() -> list[Component]:
 
         pads.sort(key=natural_pin)
         value, footprint = bom[ref]
-        components.append(Component(ref, value, footprint, tuple(pads)))
+        library_match = re.match(r'\(footprint "([^"]+)"', block)
+        if library_match is None:
+            raise ValueError(f"Missing PCB footprint identifier: {ref}")
+        components.append(Component(ref, value, footprint, tuple(pads), library_match.group(1)))
 
     def ref_key(component: Component) -> tuple[str, int]:
         match = re.fullmatch(r"([A-Za-z#]+)([0-9]+)", component.ref)
@@ -279,7 +286,7 @@ def instance(
         f'    (property "Value" {q(component.value)} '
         f"(at {x:.3f} {y - 2.0:.3f} 0) "
         "(effects (font (size 0.8 0.8))))",
-        f'    (property "Footprint" {q("NBFM1_A0:" + component.ref)} '
+        f'    (property "Footprint" {q(component.library_id)} '
         f"(at {x:.3f} {y:.3f} 0) "
         "(effects (font (size 0.8 0.8)) (hide yes)))",
         '    (property "Datasheet" "" '
@@ -302,9 +309,11 @@ def instance(
                 "    )",
             ]
         )
-        py = y + pin_y(index, count)
+        # Library symbols use an upward-positive Y axis; sheet coordinates
+        # increase downward. Labels must land on the actual numbered pin.
+        py = y - pin_y(index, count)
         pin_x = x - 5.08
-        if not net:
+        if not net or net == f"unconnected-({component.ref}-Pin_{number}-Pad{number})":
             no_connects.append(
                 "  (no_connect "
                 f"(at {pin_x:.3f} {py:.3f}) "
@@ -327,7 +336,8 @@ def instance(
         labels.append(
             "\n".join(
                 [
-                    f"  (label {q(net)}",
+                    f"  (global_label {q(net)}",
+                    "    (shape bidirectional)",
                     f"    (at {label_x:.3f} {py:.3f} 0)",
                     "    (effects (font (size 0.7 0.7)) "
                     "(justify left bottom))",
@@ -407,6 +417,8 @@ def render(components: list[Component]) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--pcb", type=Path, default=PCB,
+                        help="PCB input for this generated connectivity diagnostic")
     parser.add_argument(
         "--output",
         default=str(ROOT / "eeg128-tdm.generated.kicad_sch"),
@@ -418,7 +430,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    components = parse_components()
+    components = parse_components(args.pcb)
     if len(components) != 642:
         raise RuntimeError(f"expected 642 BOM/PCB components, got {len(components)}")
 

@@ -1,0 +1,43 @@
+{
+  "engineering_only": true,
+  "net": "CH032_N_MUX",
+  "original_via_center_mm": [
+    71.964,
+    59.0109
+  ],
+  "new_via_center_mm": [
+    71.934,
+    59.0109
+  ],
+  "shift_mm": 0.03,
+  "diameter_mm": 0.6,
+  "drill_mm": 0.3,
+  "attached_layers": [
+    "F.Cu",
+    "B.Cu"
+  ],
+  "payload": {
+    "proposal": [
+      "relocate-via",
+      "2735b002-adda-4d4f-b55b-83e8884851ea",
+      [
+        71.934,
+        59.0109
+      ]
+    ],
+    "necks": [],
+    "net_code": 0,
+    "width": 0.15
+  },
+  "relocation_drc": {
+    "violations": 0,
+    "warnings": 0,
+    "unconnected": 202
+  },
+  "after_C6_closure": {
+    "violations": 0,
+    "warnings": 0,
+    "unconnected": 201
+  },
+  "combined_checkpoint_unconnected": 199
+}

@@ -34,6 +34,14 @@
       "uuid": "1fd485f8-f64d-4ce3-ab55-2edc790cd5c6"
     },
     {
+      "net": "QSPI_CLK",
+      "uuid": "bcade663-53ad-4e6b-b2f0-b3427da3474b"
+    },
+    {
+      "net": "QSPI_CLK",
+      "uuid": "c9fbdd8c-e8bf-4ad6-bdcb-8d522a0e1c1f"
+    },
+    {
       "net": "QSPI_SD0",
       "uuid": "4c9fda17-6c5f-4299-aaff-4b5061962ec4"
     },
@@ -55,7 +63,7 @@
     "QSPI_CLK": {
       "length_mm": {
         "F.Cu": 5.483018396391463,
-        "B.Cu": 17.561914904090806
+        "B.Cu": 17.657777192892215
       },
       "vias": [
         {
@@ -127,6 +135,19 @@
           "width_mm": 0.2
         },
         {
+          "uuid": "1cd08a71-46cc-4824-a73d-db7a650037e4",
+          "layer": "B.Cu",
+          "start_mm": [
+            167.175,
+            74.65
+          ],
+          "end_mm": [
+            167.175,
+            74.457
+          ],
+          "width_mm": 0.2
+        },
+        {
           "uuid": "1fd485f8-f64d-4ce3-ab55-2edc790cd5c6",
           "layer": "B.Cu",
           "start_mm": [
@@ -134,8 +155,8 @@
             84.0015
           ],
           "end_mm": [
-            167.175,
-            74.457
+            169.2,
+            76.482
           ],
           "width_mm": 0.2
         },
@@ -149,6 +170,45 @@
           "end_mm": [
             176.72,
             84.0015
+          ],
+          "width_mm": 0.2
+        },
+        {
+          "uuid": "68a2929a-fca7-4b22-aca7-55736e3b342a",
+          "layer": "B.Cu",
+          "start_mm": [
+            167.55,
+            75.025
+          ],
+          "end_mm": [
+            167.175,
+            74.65
+          ],
+          "width_mm": 0.2
+        },
+        {
+          "uuid": "bcade663-53ad-4e6b-b2f0-b3427da3474b",
+          "layer": "B.Cu",
+          "start_mm": [
+            169.2,
+            76.482
+          ],
+          "end_mm": [
+            168.95,
+            76.425
+          ],
+          "width_mm": 0.2
+        },
+        {
+          "uuid": "c9fbdd8c-e8bf-4ad6-bdcb-8d522a0e1c1f",
+          "layer": "B.Cu",
+          "start_mm": [
+            168.95,
+            76.425
+          ],
+          "end_mm": [
+            167.55,
+            75.025
           ],
           "width_mm": 0.2
         }
@@ -464,7 +524,7 @@
     },
     "QSPI_SD2": {
       "length_mm": {
-        "F.Cu": 13.603650140874665,
+        "F.Cu": 13.707783430455247,
         "B.Cu": 10.273256271593846
       },
       "vias": [
@@ -485,6 +545,19 @@
       ],
       "segments": [
         {
+          "uuid": "26eb8f89-9c28-4f08-a9a4-1b90ac596420",
+          "layer": "F.Cu",
+          "start_mm": [
+            167.3,
+            75.149
+          ],
+          "end_mm": [
+            167.1743,
+            75.0233
+          ],
+          "width_mm": 0.2
+        },
+        {
           "uuid": "467e85cb-b263-4e80-8084-3351d18615cc",
           "layer": "F.Cu",
           "start_mm": [
@@ -494,6 +567,19 @@
           "end_mm": [
             169.853,
             75.274
+          ],
+          "width_mm": 0.2
+        },
+        {
+          "uuid": "545bdf6a-2a74-4e28-9d7e-25fa5abf5810",
+          "layer": "F.Cu",
+          "start_mm": [
+            167.1743,
+            75.0233
+          ],
+          "end_mm": [
+            166.888,
+            75.0233
           ],
           "width_mm": 0.2
         },
@@ -531,8 +617,21 @@
             75.0233
           ],
           "end_mm": [
-            166.888,
+            169.327,
             75.0233
+          ],
+          "width_mm": 0.2
+        },
+        {
+          "uuid": "bc74b3ce-9d4c-476d-8ab5-da7cfe23a9f4",
+          "layer": "F.Cu",
+          "start_mm": [
+            169.2013,
+            75.149
+          ],
+          "end_mm": [
+            167.3,
+            75.149
           ],
           "width_mm": 0.2
         },
@@ -572,6 +671,19 @@
           "end_mm": [
             166.2,
             73.5625
+          ],
+          "width_mm": 0.2
+        },
+        {
+          "uuid": "ea1ee41f-4af8-485c-92e2-a2dfb0f6858d",
+          "layer": "F.Cu",
+          "start_mm": [
+            169.327,
+            75.0233
+          ],
+          "end_mm": [
+            169.2013,
+            75.149
           ],
           "width_mm": 0.2
         },
@@ -1008,5 +1120,5 @@
   "fabrication_release": false,
   "violations": 0,
   "warnings": 0,
-  "unconnected": 265
+  "unconnected": 149
 }

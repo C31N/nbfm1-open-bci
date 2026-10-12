@@ -135,6 +135,10 @@ def require_map(
     reference: str,
 ) -> None:
     for pin, net in expected.items():
+        if not net and actual.get(pin, "") == f"unconnected-({reference}-Pin_{pin}-Pad{pin})":
+            # KiCad exports explicit no-connect pins as unique isolated nets.
+            # Only this exact pin-specific name is equivalent to no assignment.
+            continue
         if actual.get(pin, "") != net:
             raise RuntimeError(
                 f"{reference}.{pin}: expected {net!r}, got {actual.get(pin, '')!r}"

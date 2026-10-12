@@ -1,0 +1,173 @@
+{
+  "baseline": "/workspace/scratch/c3e1942d61e8/recovery-candidate-CH023_N_MUX-1/eeg128-tdm.kicad_pcb",
+  "accepted_board": "/workspace/scratch/c3e1942d61e8/recovery-block3-candidate-CH040_P_MUX-0/eeg128-tdm.kicad_pcb",
+  "unconnected": 149,
+  "history": [
+    {
+      "nets": [
+        "CH040_P_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH040_P_MUX": [
+          10,
+          7
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH040_P_MUX",
+          "found": true,
+          "layer": 0
+        }
+      ],
+      "accepted": true,
+      "board": "/workspace/scratch/c3e1942d61e8/recovery-block3-candidate-CH040_P_MUX-0/eeg128-tdm.kicad_pcb",
+      "unconnected": 149
+    }
+  ],
+  "attempts": [
+    {
+      "nets": [
+        "CH037_N_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH037_N_MUX": [
+          12,
+          12
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH037_N_MUX",
+          "found": false,
+          "layer": 0
+        }
+      ],
+      "reason": "no path"
+    },
+    {
+      "nets": [
+        "CH037_N_MUX"
+      ],
+      "trial": 1,
+      "windows": {
+        "CH037_N_MUX": [
+          12,
+          12
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH037_N_MUX",
+          "found": false,
+          "layer": 1
+        }
+      ],
+      "reason": "no path"
+    },
+    {
+      "nets": [
+        "CH040_P_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH040_P_MUX": [
+          10,
+          7
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH040_P_MUX",
+          "found": true,
+          "layer": 0
+        }
+      ],
+      "accepted": true,
+      "board": "/workspace/scratch/c3e1942d61e8/recovery-block3-candidate-CH040_P_MUX-0/eeg128-tdm.kicad_pcb",
+      "unconnected": 149
+    },
+    {
+      "nets": [
+        "CH043_N_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH043_N_MUX": [
+          12,
+          11
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH043_N_MUX",
+          "found": false,
+          "layer": 0
+        }
+      ],
+      "reason": "no path"
+    },
+    {
+      "nets": [
+        "CH043_N_MUX"
+      ],
+      "trial": 1,
+      "windows": {
+        "CH043_N_MUX": [
+          12,
+          11
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH043_N_MUX",
+          "found": false,
+          "layer": 1
+        }
+      ],
+      "reason": "no path"
+    },
+    {
+      "nets": [
+        "CH044_N_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH044_N_MUX": [
+          12,
+          12
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH044_N_MUX",
+          "found": false,
+          "layer": 0
+        }
+      ],
+      "reason": "no path"
+    },
+    {
+      "nets": [
+        "CH044_N_MUX"
+      ],
+      "trial": 1,
+      "windows": {
+        "CH044_N_MUX": [
+          12,
+          12
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH044_N_MUX",
+          "found": false,
+          "layer": 1
+        }
+      ],
+      "reason": "no path"
+    }
+  ]
+}

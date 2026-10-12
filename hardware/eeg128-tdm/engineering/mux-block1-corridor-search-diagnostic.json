@@ -1,0 +1,1592 @@
+{
+  "entry_unconnected": 178,
+  "final_unconnected": 174,
+  "progress": [
+    "CH011_N_MUX",
+    "CH002_N_MUX",
+    "CH010_N_MUX",
+    "CH014_N_MUX"
+  ],
+  "F_to_B_before_local_escape": {
+    "accepted_board": "/workspace/scratch/c3e1942d61e8/verified-mux-block1-178/eeg128-tdm.kicad_pcb",
+    "unconnected": 178,
+    "history": [],
+    "attempts": [
+      {
+        "net": "CH011_N_MUX",
+        "trial": 0,
+        "source_via": [
+          25.25,
+          20.8
+        ],
+        "mux_via": [
+          15.595,
+          48.85
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 3.878
+      },
+      {
+        "net": "CH011_N_MUX",
+        "trial": 1,
+        "source_via": [
+          25.25,
+          20.8
+        ],
+        "mux_via": [
+          15.695,
+          48.95
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 4.842
+      },
+      {
+        "net": "CH002_N_MUX",
+        "trial": 0,
+        "source_via": [
+          15.25,
+          26.0
+        ],
+        "mux_via": [
+          18.135,
+          58.15
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.274
+      },
+      {
+        "net": "CH002_N_MUX",
+        "trial": 1,
+        "source_via": [
+          15.25,
+          26.0
+        ],
+        "mux_via": [
+          18.035,
+          58.05
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 4.393
+      },
+      {
+        "net": "CH004_N_MUX",
+        "trial": 0,
+        "source_via": [
+          14.75,
+          20.8
+        ],
+        "mux_via": [
+          15.595,
+          58.15
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.277
+      },
+      {
+        "net": "CH004_N_MUX",
+        "trial": 1,
+        "source_via": [
+          14.75,
+          20.8
+        ],
+        "mux_via": [
+          15.495000000000001,
+          58.05
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 1.933
+      },
+      {
+        "net": "CH005_N_MUX",
+        "trial": 0,
+        "source_via": [
+          14.75,
+          18.2
+        ],
+        "mux_via": [
+          14.325,
+          58.15
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.669
+      },
+      {
+        "net": "CH005_N_MUX",
+        "trial": 1,
+        "source_via": [
+          14.75,
+          18.2
+        ],
+        "mux_via": [
+          14.225,
+          58.05
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 3.782
+      },
+      {
+        "net": "CH008_N_MUX",
+        "status": "no_legal_drop"
+      },
+      {
+        "net": "CH008_P_MUX",
+        "status": "no_legal_drop"
+      },
+      {
+        "net": "CH010_N_MUX",
+        "trial": 0,
+        "source_via": [
+          25.25,
+          18.2
+        ],
+        "mux_via": [
+          14.325,
+          48.85
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 3.658
+      },
+      {
+        "net": "CH010_N_MUX",
+        "trial": 1,
+        "source_via": [
+          25.25,
+          18.2
+        ],
+        "mux_via": [
+          14.225,
+          48.75
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 4.908
+      },
+      {
+        "net": "CH014_N_MUX",
+        "trial": 0,
+        "source_via": [
+          25.25,
+          28.6
+        ],
+        "mux_via": [
+          19.405,
+          48.85
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 2.602
+      },
+      {
+        "net": "CH014_N_MUX",
+        "trial": 1,
+        "source_via": [
+          25.25,
+          28.6
+        ],
+        "mux_via": [
+          19.405,
+          49.35
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 4.872
+      }
+    ]
+  },
+  "input_drop_trials": {
+    "accepted_board": "/workspace/scratch/c3e1942d61e8/verified-mux-block1-178/eeg128-tdm.kicad_pcb",
+    "unconnected": 178,
+    "history": [],
+    "attempts": [
+      {
+        "net": "CH011_P_ELECTRODE",
+        "trial": 0,
+        "source_via": [
+          15.25,
+          7.6
+        ],
+        "mux_via": [
+          18.15,
+          20.8
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.051
+      },
+      {
+        "net": "CH011_P_ELECTRODE",
+        "trial": 1,
+        "source_via": [
+          15.25,
+          7.6
+        ],
+        "mux_via": [
+          18.049999999999997,
+          20.7
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 1.754
+      },
+      {
+        "net": "CH000_N_ELECTRODE",
+        "trial": 0,
+        "source_via": [
+          17.75,
+          7.6
+        ],
+        "mux_via": [
+          13.15,
+          31.2
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.233
+      },
+      {
+        "net": "CH000_N_ELECTRODE",
+        "trial": 1,
+        "source_via": [
+          17.75,
+          7.6
+        ],
+        "mux_via": [
+          13.05,
+          31.099999999999998
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 1.89
+      },
+      {
+        "net": "CH004_N_ELECTRODE",
+        "trial": 0,
+        "source_via": [
+          19.75,
+          7.6
+        ],
+        "mux_via": [
+          13.35,
+          20.8
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.648
+      },
+      {
+        "net": "CH004_N_ELECTRODE",
+        "trial": 1,
+        "source_via": [
+          19.75,
+          7.6
+        ],
+        "mux_via": [
+          13.35,
+          20.5
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 2.977
+      },
+      {
+        "net": "CH004_P_ELECTRODE",
+        "status": "no_legal_drop"
+      },
+      {
+        "net": "CH005_N_ELECTRODE",
+        "trial": 0,
+        "source_via": [
+          20.25,
+          7.6
+        ],
+        "mux_via": [
+          13.35,
+          18.2
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.638
+      },
+      {
+        "net": "CH005_N_ELECTRODE",
+        "trial": 1,
+        "source_via": [
+          20.25,
+          7.6
+        ],
+        "mux_via": [
+          13.450000000000001,
+          18.2
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 2.508
+      },
+      {
+        "net": "CH006_N_ELECTRODE",
+        "trial": 0,
+        "source_via": [
+          20.75,
+          7.6
+        ],
+        "mux_via": [
+          13.35,
+          15.6
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.565
+      },
+      {
+        "net": "CH006_N_ELECTRODE",
+        "trial": 1,
+        "source_via": [
+          20.75,
+          7.6
+        ],
+        "mux_via": [
+          13.450000000000001,
+          15.6
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 2.72
+      },
+      {
+        "net": "CH006_P_ELECTRODE",
+        "status": "no_legal_drop"
+      },
+      {
+        "net": "CH010_N_ELECTRODE",
+        "trial": 0,
+        "source_via": [
+          22.75,
+          7.6
+        ],
+        "mux_via": [
+          23.849999999999998,
+          18.2
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.422
+      },
+      {
+        "net": "CH010_N_ELECTRODE",
+        "trial": 1,
+        "source_via": [
+          22.75,
+          7.6
+        ],
+        "mux_via": [
+          23.95,
+          18.2
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 2.86
+      },
+      {
+        "net": "CH010_P_ELECTRODE",
+        "status": "no_legal_drop"
+      },
+      {
+        "net": "CH012_N_ELECTRODE",
+        "trial": 0,
+        "source_via": [
+          23.75,
+          7.6
+        ],
+        "mux_via": [
+          23.849999999999998,
+          23.4
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.384
+      },
+      {
+        "net": "CH012_N_ELECTRODE",
+        "trial": 1,
+        "source_via": [
+          23.75,
+          7.6
+        ],
+        "mux_via": [
+          23.95,
+          23.4
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 2.669
+      },
+      {
+        "net": "CH012_P_ELECTRODE",
+        "trial": 0,
+        "source_via": [
+          15.75,
+          7.6
+        ],
+        "mux_via": [
+          18.15,
+          23.4
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.125
+      },
+      {
+        "net": "CH012_P_ELECTRODE",
+        "trial": 1,
+        "source_via": [
+          15.75,
+          7.6
+        ],
+        "mux_via": [
+          18.049999999999997,
+          23.299999999999997
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 1.655
+      },
+      {
+        "net": "CH014_P_ELECTRODE",
+        "trial": 0,
+        "source_via": [
+          16.75,
+          7.6
+        ],
+        "mux_via": [
+          18.25,
+          28.6
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.091
+      },
+      {
+        "net": "CH014_P_ELECTRODE",
+        "trial": 1,
+        "source_via": [
+          16.75,
+          7.6
+        ],
+        "mux_via": [
+          18.25,
+          28.8
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 1.786
+      },
+      {
+        "net": "CH015_N_ELECTRODE",
+        "trial": 0,
+        "source_via": [
+          25.25,
+          7.6
+        ],
+        "mux_via": [
+          23.65,
+          31.2
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.055
+      },
+      {
+        "net": "CH015_N_ELECTRODE",
+        "trial": 1,
+        "source_via": [
+          25.25,
+          7.6
+        ],
+        "mux_via": [
+          23.549999999999997,
+          31.099999999999998
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 2.208
+      },
+      {
+        "net": "CH015_P_ELECTRODE",
+        "trial": 0,
+        "source_via": [
+          17.25,
+          7.6
+        ],
+        "mux_via": [
+          18.25,
+          31.2
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.146
+      },
+      {
+        "net": "CH015_P_ELECTRODE",
+        "trial": 1,
+        "source_via": [
+          17.25,
+          7.6
+        ],
+        "mux_via": [
+          18.25,
+          31.4
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 1.903
+      }
+    ]
+  },
+  "VCM_down_detour_clean_but_no_closure": {
+    "accepted_board": "/workspace/scratch/c3e1942d61e8/closure-block1-vcm-detour-v2/eeg128-tdm.kicad_pcb",
+    "unconnected": 178,
+    "history": [],
+    "attempts": [
+      {
+        "net": "CH011_N_MUX",
+        "trial": 0,
+        "source_via": [
+          25.25,
+          20.8
+        ],
+        "mux_via": [
+          15.595,
+          48.85
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 4.019
+      },
+      {
+        "net": "CH011_N_MUX",
+        "trial": 1,
+        "source_via": [
+          25.25,
+          20.8
+        ],
+        "mux_via": [
+          15.695,
+          48.95
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 4.767
+      },
+      {
+        "net": "CH002_N_MUX",
+        "trial": 0,
+        "source_via": [
+          15.25,
+          26.0
+        ],
+        "mux_via": [
+          18.135,
+          58.15
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.321
+      },
+      {
+        "net": "CH002_N_MUX",
+        "trial": 1,
+        "source_via": [
+          15.25,
+          26.0
+        ],
+        "mux_via": [
+          18.035,
+          58.05
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 4.152
+      },
+      {
+        "net": "CH004_N_MUX",
+        "trial": 0,
+        "source_via": [
+          14.75,
+          20.8
+        ],
+        "mux_via": [
+          15.595,
+          58.15
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.444
+      },
+      {
+        "net": "CH004_N_MUX",
+        "trial": 1,
+        "source_via": [
+          14.75,
+          20.8
+        ],
+        "mux_via": [
+          15.495000000000001,
+          58.05
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 1.991
+      },
+      {
+        "net": "CH005_N_MUX",
+        "trial": 0,
+        "source_via": [
+          14.75,
+          18.2
+        ],
+        "mux_via": [
+          14.325,
+          58.15
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.748
+      },
+      {
+        "net": "CH005_N_MUX",
+        "trial": 1,
+        "source_via": [
+          14.75,
+          18.2
+        ],
+        "mux_via": [
+          14.225,
+          58.05
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 3.697
+      },
+      {
+        "net": "CH008_N_MUX",
+        "status": "no_legal_drop"
+      },
+      {
+        "net": "CH008_P_MUX",
+        "status": "no_legal_drop"
+      },
+      {
+        "net": "CH010_N_MUX",
+        "trial": 0,
+        "source_via": [
+          25.25,
+          18.2
+        ],
+        "mux_via": [
+          14.325,
+          48.85
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 3.66
+      },
+      {
+        "net": "CH010_N_MUX",
+        "trial": 1,
+        "source_via": [
+          25.25,
+          18.2
+        ],
+        "mux_via": [
+          14.225,
+          48.75
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 4.442
+      },
+      {
+        "net": "CH014_N_MUX",
+        "trial": 0,
+        "source_via": [
+          25.25,
+          28.6
+        ],
+        "mux_via": [
+          19.405,
+          48.85
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 2.432
+      },
+      {
+        "net": "CH014_N_MUX",
+        "trial": 1,
+        "source_via": [
+          25.25,
+          28.6
+        ],
+        "mux_via": [
+          19.405,
+          49.35
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 4.211
+      }
+    ]
+  },
+  "VCM_up_detour_progress": {
+    "accepted_board": "/workspace/scratch/c3e1942d61e8/closure-block1-next-CH014_N_MUX-0/eeg128-tdm.kicad_pcb",
+    "unconnected": 174,
+    "history": [
+      {
+        "net": "CH002_N_MUX",
+        "unconnected": 176,
+        "board": "/workspace/scratch/c3e1942d61e8/closure-block1-next-CH002_N_MUX-1/eeg128-tdm.kicad_pcb"
+      },
+      {
+        "net": "CH010_N_MUX",
+        "unconnected": 175,
+        "board": "/workspace/scratch/c3e1942d61e8/closure-block1-next-CH010_N_MUX-0/eeg128-tdm.kicad_pcb"
+      },
+      {
+        "net": "CH014_N_MUX",
+        "unconnected": 174,
+        "board": "/workspace/scratch/c3e1942d61e8/closure-block1-next-CH014_N_MUX-0/eeg128-tdm.kicad_pcb"
+      }
+    ],
+    "attempts": [
+      {
+        "net": "CH002_N_MUX",
+        "trial": 0,
+        "source_via": [
+          15.75,
+          26.0
+        ],
+        "mux_via": [
+          18.135,
+          58.15
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.417
+      },
+      {
+        "net": "CH002_N_MUX",
+        "trial": 1,
+        "source_via": [
+          15.75,
+          26.0
+        ],
+        "mux_via": [
+          18.035,
+          58.05
+        ],
+        "margin_mm": 18,
+        "path_found": true,
+        "search_seconds": 5.82,
+        "accepted": true
+      },
+      {
+        "net": "CH004_N_MUX",
+        "trial": 0,
+        "source_via": [
+          15.25,
+          20.8
+        ],
+        "mux_via": [
+          15.595,
+          58.15
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.401
+      },
+      {
+        "net": "CH004_N_MUX",
+        "trial": 1,
+        "source_via": [
+          15.25,
+          20.8
+        ],
+        "mux_via": [
+          15.495000000000001,
+          58.05
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 2.256
+      },
+      {
+        "net": "CH005_N_MUX",
+        "trial": 0,
+        "source_via": [
+          15.25,
+          18.2
+        ],
+        "mux_via": [
+          14.325,
+          58.15
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.606
+      },
+      {
+        "net": "CH005_N_MUX",
+        "trial": 1,
+        "source_via": [
+          15.25,
+          18.2
+        ],
+        "mux_via": [
+          14.225,
+          58.05
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 2.277
+      },
+      {
+        "net": "CH008_N_MUX",
+        "status": "no_legal_drop"
+      },
+      {
+        "net": "CH008_P_MUX",
+        "status": "no_legal_drop"
+      },
+      {
+        "net": "CH010_N_MUX",
+        "trial": 0,
+        "source_via": [
+          25.75,
+          18.2
+        ],
+        "mux_via": [
+          14.325,
+          48.85
+        ],
+        "margin_mm": 8,
+        "path_found": true,
+        "search_seconds": 5.648,
+        "accepted": true
+      },
+      {
+        "net": "CH014_N_MUX",
+        "trial": 0,
+        "source_via": [
+          25.75,
+          28.6
+        ],
+        "mux_via": [
+          19.405,
+          48.85
+        ],
+        "margin_mm": 8,
+        "path_found": true,
+        "search_seconds": 3.084,
+        "accepted": true
+      }
+    ]
+  },
+  "remaining_MUX_F_F": {
+    "accepted_board": "/workspace/scratch/c3e1942d61e8/closure-block1-next-CH014_N_MUX-0/eeg128-tdm.kicad_pcb",
+    "unconnected": 174,
+    "history": [],
+    "attempts": [
+      {
+        "net": "CH004_N_MUX",
+        "trial": 0,
+        "start": [
+          15.25,
+          20.8
+        ],
+        "goal": [
+          15.595,
+          58.15
+        ],
+        "margin_mm": 12,
+        "path_found": false,
+        "search_seconds": 1.809
+      },
+      {
+        "net": "CH004_N_MUX",
+        "trial": 1,
+        "start": [
+          15.25,
+          20.8
+        ],
+        "goal": [
+          15.595,
+          58.15
+        ],
+        "margin_mm": 24,
+        "path_found": false,
+        "search_seconds": 2.658
+      },
+      {
+        "net": "CH005_N_MUX",
+        "trial": 0,
+        "start": [
+          15.25,
+          18.2
+        ],
+        "goal": [
+          14.325,
+          58.15
+        ],
+        "margin_mm": 12,
+        "path_found": false,
+        "search_seconds": 1.912
+      },
+      {
+        "net": "CH005_N_MUX",
+        "trial": 1,
+        "start": [
+          15.25,
+          18.2
+        ],
+        "goal": [
+          14.325,
+          58.15
+        ],
+        "margin_mm": 24,
+        "path_found": false,
+        "search_seconds": 2.605
+      },
+      {
+        "net": "CH008_N_MUX",
+        "trial": 0,
+        "start": [
+          25.75,
+          13.0
+        ],
+        "goal": [
+          11.785,
+          48.85
+        ],
+        "margin_mm": 12,
+        "path_found": false,
+        "search_seconds": 2.416
+      },
+      {
+        "net": "CH008_N_MUX",
+        "trial": 1,
+        "start": [
+          25.75,
+          13.0
+        ],
+        "goal": [
+          11.785,
+          48.85
+        ],
+        "margin_mm": 24,
+        "path_found": false,
+        "search_seconds": 3.175
+      },
+      {
+        "net": "CH008_P_MUX",
+        "trial": 0,
+        "start": [
+          20.25,
+          13.0
+        ],
+        "goal": [
+          11.785,
+          35.85
+        ],
+        "margin_mm": 12,
+        "path_found": false,
+        "search_seconds": 1.764
+      },
+      {
+        "net": "CH008_P_MUX",
+        "trial": 1,
+        "start": [
+          20.25,
+          13.0
+        ],
+        "goal": [
+          11.785,
+          35.85
+        ],
+        "margin_mm": 24,
+        "path_found": false,
+        "search_seconds": 2.79
+      }
+    ]
+  },
+  "remaining_MUX_B_F": {
+    "accepted_board": "/workspace/scratch/c3e1942d61e8/closure-block1-next-CH014_N_MUX-0/eeg128-tdm.kicad_pcb",
+    "unconnected": 174,
+    "history": [],
+    "attempts": [
+      {
+        "net": "CH004_N_MUX",
+        "trial": 0,
+        "source_via": [
+          15.15,
+          20.8
+        ],
+        "mux_via": [
+          15.595,
+          58.15
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.459
+      },
+      {
+        "net": "CH004_N_MUX",
+        "trial": 1,
+        "source_via": [
+          15.25,
+          20.8
+        ],
+        "mux_via": [
+          15.595,
+          58.15
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 2.137
+      },
+      {
+        "net": "CH005_N_MUX",
+        "trial": 0,
+        "source_via": [
+          15.15,
+          18.2
+        ],
+        "mux_via": [
+          14.325,
+          58.15
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.478
+      },
+      {
+        "net": "CH005_N_MUX",
+        "trial": 1,
+        "source_via": [
+          15.25,
+          18.2
+        ],
+        "mux_via": [
+          14.325,
+          58.15
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 1.984
+      },
+      {
+        "net": "CH008_N_MUX",
+        "status": "no_legal_drop"
+      },
+      {
+        "net": "CH008_P_MUX",
+        "trial": 0,
+        "source_via": [
+          20.15,
+          13.0
+        ],
+        "mux_via": [
+          11.785,
+          35.85
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 2.099
+      },
+      {
+        "net": "CH008_P_MUX",
+        "trial": 1,
+        "source_via": [
+          20.15,
+          13.3
+        ],
+        "mux_via": [
+          11.785,
+          35.85
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 3.89
+      }
+    ]
+  },
+  "electrode_F_F": {
+    "accepted_board": "/workspace/scratch/c3e1942d61e8/closure-block1-next-CH014_N_MUX-0/eeg128-tdm.kicad_pcb",
+    "unconnected": 174,
+    "history": [],
+    "attempts": [
+      {
+        "net": "CH011_P_ELECTRODE",
+        "trial": 0,
+        "start": [
+          15.25,
+          7.6
+        ],
+        "goal": [
+          18.15,
+          20.8
+        ],
+        "margin_mm": 12,
+        "path_found": false,
+        "search_seconds": 1.46
+      },
+      {
+        "net": "CH011_P_ELECTRODE",
+        "trial": 1,
+        "start": [
+          15.25,
+          7.6
+        ],
+        "goal": [
+          18.15,
+          20.8
+        ],
+        "margin_mm": 24,
+        "path_found": false,
+        "search_seconds": 2.413
+      },
+      {
+        "net": "CH000_N_ELECTRODE",
+        "trial": 0,
+        "start": [
+          17.75,
+          7.6
+        ],
+        "goal": [
+          13.15,
+          31.2
+        ],
+        "margin_mm": 12,
+        "path_found": false,
+        "search_seconds": 1.555
+      },
+      {
+        "net": "CH000_N_ELECTRODE",
+        "trial": 1,
+        "start": [
+          17.75,
+          7.6
+        ],
+        "goal": [
+          13.15,
+          31.2
+        ],
+        "margin_mm": 24,
+        "path_found": false,
+        "search_seconds": 2.602
+      },
+      {
+        "net": "CH004_N_ELECTRODE",
+        "trial": 0,
+        "start": [
+          19.75,
+          7.6
+        ],
+        "goal": [
+          13.15,
+          20.8
+        ],
+        "margin_mm": 12,
+        "path_found": false,
+        "search_seconds": 2.083
+      },
+      {
+        "net": "CH004_N_ELECTRODE",
+        "trial": 1,
+        "start": [
+          19.75,
+          7.6
+        ],
+        "goal": [
+          13.15,
+          20.8
+        ],
+        "margin_mm": 24,
+        "path_found": false,
+        "search_seconds": 3.048
+      },
+      {
+        "net": "CH004_P_ELECTRODE",
+        "trial": 0,
+        "start": [
+          11.75,
+          7.6
+        ],
+        "goal": [
+          7.65,
+          20.8
+        ],
+        "margin_mm": 12,
+        "path_found": false,
+        "search_seconds": 1.628
+      },
+      {
+        "net": "CH004_P_ELECTRODE",
+        "trial": 1,
+        "start": [
+          11.75,
+          7.6
+        ],
+        "goal": [
+          7.65,
+          20.8
+        ],
+        "margin_mm": 24,
+        "path_found": false,
+        "search_seconds": 2.601
+      },
+      {
+        "net": "CH005_N_ELECTRODE",
+        "trial": 0,
+        "start": [
+          20.25,
+          7.6
+        ],
+        "goal": [
+          13.15,
+          18.2
+        ],
+        "margin_mm": 12,
+        "path_found": false,
+        "search_seconds": 1.957
+      },
+      {
+        "net": "CH005_N_ELECTRODE",
+        "trial": 1,
+        "start": [
+          20.25,
+          7.6
+        ],
+        "goal": [
+          13.15,
+          18.2
+        ],
+        "margin_mm": 24,
+        "path_found": false,
+        "search_seconds": 2.929
+      },
+      {
+        "net": "CH006_N_ELECTRODE",
+        "trial": 0,
+        "start": [
+          20.75,
+          7.6
+        ],
+        "goal": [
+          13.15,
+          15.6
+        ],
+        "margin_mm": 12,
+        "path_found": false,
+        "search_seconds": 1.9
+      },
+      {
+        "net": "CH006_N_ELECTRODE",
+        "trial": 1,
+        "start": [
+          20.75,
+          7.6
+        ],
+        "goal": [
+          13.15,
+          15.6
+        ],
+        "margin_mm": 24,
+        "path_found": false,
+        "search_seconds": 2.878
+      },
+      {
+        "net": "CH006_P_ELECTRODE",
+        "trial": 0,
+        "start": [
+          12.75,
+          7.6
+        ],
+        "goal": [
+          7.65,
+          15.6
+        ],
+        "margin_mm": 12,
+        "path_found": false,
+        "search_seconds": 1.492
+      },
+      {
+        "net": "CH006_P_ELECTRODE",
+        "trial": 1,
+        "start": [
+          12.75,
+          7.6
+        ],
+        "goal": [
+          7.65,
+          15.6
+        ],
+        "margin_mm": 24,
+        "path_found": false,
+        "search_seconds": 2.581
+      },
+      {
+        "net": "CH010_N_ELECTRODE",
+        "trial": 0,
+        "start": [
+          22.75,
+          7.6
+        ],
+        "goal": [
+          23.65,
+          18.2
+        ],
+        "margin_mm": 12,
+        "path_found": false,
+        "search_seconds": 1.952
+      },
+      {
+        "net": "CH010_N_ELECTRODE",
+        "trial": 1,
+        "start": [
+          22.75,
+          7.6
+        ],
+        "goal": [
+          23.65,
+          18.2
+        ],
+        "margin_mm": 24,
+        "path_found": false,
+        "search_seconds": 3.105
+      },
+      {
+        "net": "CH010_P_ELECTRODE",
+        "trial": 0,
+        "start": [
+          14.75,
+          7.6
+        ],
+        "goal": [
+          18.15,
+          18.2
+        ],
+        "margin_mm": 12,
+        "path_found": false,
+        "search_seconds": 1.257
+      },
+      {
+        "net": "CH010_P_ELECTRODE",
+        "trial": 1,
+        "start": [
+          14.75,
+          7.6
+        ],
+        "goal": [
+          18.15,
+          18.2
+        ],
+        "margin_mm": 24,
+        "path_found": false,
+        "search_seconds": 2.056
+      },
+      {
+        "net": "CH012_N_ELECTRODE",
+        "trial": 0,
+        "start": [
+          23.75,
+          7.6
+        ],
+        "goal": [
+          23.65,
+          23.4
+        ],
+        "margin_mm": 12,
+        "path_found": false,
+        "search_seconds": 1.894
+      },
+      {
+        "net": "CH012_N_ELECTRODE",
+        "trial": 1,
+        "start": [
+          23.75,
+          7.6
+        ],
+        "goal": [
+          23.65,
+          23.4
+        ],
+        "margin_mm": 24,
+        "path_found": false,
+        "search_seconds": 3.333
+      },
+      {
+        "net": "CH012_P_ELECTRODE",
+        "trial": 0,
+        "start": [
+          15.75,
+          7.6
+        ],
+        "goal": [
+          18.15,
+          23.4
+        ],
+        "margin_mm": 12,
+        "path_found": false,
+        "search_seconds": 1.353
+      },
+      {
+        "net": "CH012_P_ELECTRODE",
+        "trial": 1,
+        "start": [
+          15.75,
+          7.6
+        ],
+        "goal": [
+          18.15,
+          23.4
+        ],
+        "margin_mm": 24,
+        "path_found": false,
+        "search_seconds": 2.239
+      },
+      {
+        "net": "CH014_P_ELECTRODE",
+        "trial": 0,
+        "start": [
+          16.75,
+          7.6
+        ],
+        "goal": [
+          18.15,
+          28.6
+        ],
+        "margin_mm": 12,
+        "path_found": false,
+        "search_seconds": 1.568
+      },
+      {
+        "net": "CH014_P_ELECTRODE",
+        "trial": 1,
+        "start": [
+          16.75,
+          7.6
+        ],
+        "goal": [
+          18.15,
+          28.6
+        ],
+        "margin_mm": 24,
+        "path_found": false,
+        "search_seconds": 2.364
+      },
+      {
+        "net": "CH015_N_ELECTRODE",
+        "trial": 0,
+        "start": [
+          25.25,
+          7.6
+        ],
+        "goal": [
+          23.65,
+          31.2
+        ],
+        "margin_mm": 12,
+        "path_found": false,
+        "search_seconds": 1.709
+      },
+      {
+        "net": "CH015_N_ELECTRODE",
+        "trial": 1,
+        "start": [
+          25.25,
+          7.6
+        ],
+        "goal": [
+          23.65,
+          31.2
+        ],
+        "margin_mm": 24,
+        "path_found": false,
+        "search_seconds": 2.903
+      },
+      {
+        "net": "CH015_P_ELECTRODE",
+        "trial": 0,
+        "start": [
+          17.25,
+          7.6
+        ],
+        "goal": [
+          18.15,
+          31.2
+        ],
+        "margin_mm": 12,
+        "path_found": false,
+        "search_seconds": 1.499
+      },
+      {
+        "net": "CH015_P_ELECTRODE",
+        "trial": 1,
+        "start": [
+          17.25,
+          7.6
+        ],
+        "goal": [
+          18.15,
+          31.2
+        ],
+        "margin_mm": 24,
+        "path_found": false,
+        "search_seconds": 2.784
+      }
+    ]
+  },
+  "CH011_P_ELECTRODE_reverse_component": {
+    "nodes": 1257,
+    "F_Cu_nodes": 1257,
+    "B_Cu_nodes": 0,
+    "x_bounds_mm": [
+      13.98,
+      18.63
+    ],
+    "y_bounds_mm": [
+      19.68,
+      21.63
+    ],
+    "grid_mm": 0.05,
+    "via_diameter_mm": 0.6,
+    "model_is_conservative": true,
+    "note": "Pad/track obstacle model finds no layer transition from the RC input pocket. This is a bounded search result, not a mathematical proof that native routing is impossible."
+  },
+  "rejected_down_detour_warning": [
+    {
+      "description": "Track has unconnected end",
+      "items": [
+        {
+          "description": "Track [VCM] on B.Cu, length 3.2000 mm",
+          "pos": {
+            "x": 27.75,
+            "y": 36.4
+          },
+          "uuid": "e4a3d492-728e-4732-946b-f887bd2e6536"
+        }
+      ],
+      "severity": "warning",
+      "type": "track_dangling"
+    }
+  ]
+}

@@ -1,0 +1,444 @@
+{
+  "baseline": "/workspace/scratch/c3e1942d61e8/recovery-candidate-CH023_N_MUX-1/eeg128-tdm.kicad_pcb",
+  "accepted_board": "/workspace/scratch/c3e1942d61e8/recovery-candidate-CH023_N_MUX-1/eeg128-tdm.kicad_pcb",
+  "unconnected": 150,
+  "history": [],
+  "attempts": [
+    {
+      "nets": [
+        "CH018_N_MUX",
+        "CH018_P_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH018_N_MUX": [
+          0,
+          12
+        ]
+      },
+      "paths": [],
+      "reason": "blocked F escape/via"
+    },
+    {
+      "nets": [
+        "CH018_N_MUX",
+        "CH018_P_MUX"
+      ],
+      "trial": 1,
+      "windows": {
+        "CH018_N_MUX": [
+          0,
+          12
+        ]
+      },
+      "paths": [],
+      "reason": "blocked F escape/via"
+    },
+    {
+      "nets": [
+        "CH018_N_MUX",
+        "CH018_P_MUX"
+      ],
+      "trial": 2,
+      "windows": {
+        "CH018_N_MUX": [
+          0,
+          12
+        ]
+      },
+      "paths": [],
+      "reason": "blocked F escape/via"
+    },
+    {
+      "nets": [
+        "CH018_N_MUX",
+        "CH018_P_MUX"
+      ],
+      "trial": 3,
+      "windows": {
+        "CH018_N_MUX": [
+          0,
+          12
+        ]
+      },
+      "paths": [],
+      "reason": "blocked F escape/via"
+    },
+    {
+      "nets": [
+        "CH020_N_MUX",
+        "CH020_P_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH020_N_MUX": [
+          2,
+          12
+        ],
+        "CH020_P_MUX": [
+          12,
+          11
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH020_N_MUX",
+          "found": false,
+          "layer": 0
+        }
+      ],
+      "reason": "no path"
+    },
+    {
+      "nets": [
+        "CH020_N_MUX",
+        "CH020_P_MUX"
+      ],
+      "trial": 1,
+      "windows": {
+        "CH020_N_MUX": [
+          2,
+          12
+        ],
+        "CH020_P_MUX": [
+          12,
+          11
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH020_N_MUX",
+          "found": false,
+          "layer": 1
+        }
+      ],
+      "reason": "no path"
+    },
+    {
+      "nets": [
+        "CH020_N_MUX",
+        "CH020_P_MUX"
+      ],
+      "trial": 2,
+      "windows": {
+        "CH020_N_MUX": [
+          2,
+          12
+        ],
+        "CH020_P_MUX": [
+          12,
+          11
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH020_N_MUX",
+          "found": false,
+          "layer": 0
+        }
+      ],
+      "reason": "no path"
+    },
+    {
+      "nets": [
+        "CH020_N_MUX",
+        "CH020_P_MUX"
+      ],
+      "trial": 3,
+      "windows": {
+        "CH020_N_MUX": [
+          2,
+          12
+        ],
+        "CH020_P_MUX": [
+          12,
+          11
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH020_N_MUX",
+          "found": false,
+          "layer": 1
+        }
+      ],
+      "reason": "no path"
+    },
+    {
+      "nets": [
+        "CH024_N_MUX",
+        "CH024_P_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH024_N_MUX": [
+          0,
+          12
+        ]
+      },
+      "paths": [],
+      "reason": "blocked F escape/via"
+    },
+    {
+      "nets": [
+        "CH024_N_MUX",
+        "CH024_P_MUX"
+      ],
+      "trial": 1,
+      "windows": {
+        "CH024_N_MUX": [
+          0,
+          12
+        ]
+      },
+      "paths": [],
+      "reason": "blocked F escape/via"
+    },
+    {
+      "nets": [
+        "CH024_N_MUX",
+        "CH024_P_MUX"
+      ],
+      "trial": 2,
+      "windows": {
+        "CH024_N_MUX": [
+          0,
+          12
+        ]
+      },
+      "paths": [],
+      "reason": "blocked F escape/via"
+    },
+    {
+      "nets": [
+        "CH024_N_MUX",
+        "CH024_P_MUX"
+      ],
+      "trial": 3,
+      "windows": {
+        "CH024_N_MUX": [
+          0,
+          12
+        ]
+      },
+      "paths": [],
+      "reason": "blocked F escape/via"
+    },
+    {
+      "nets": [
+        "CH028_N_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH028_N_MUX": [
+          1,
+          12
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH028_N_MUX",
+          "found": false,
+          "layer": 0
+        }
+      ],
+      "reason": "no path"
+    },
+    {
+      "nets": [
+        "CH028_N_MUX"
+      ],
+      "trial": 1,
+      "windows": {
+        "CH028_N_MUX": [
+          1,
+          12
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH028_N_MUX",
+          "found": false,
+          "layer": 1
+        }
+      ],
+      "reason": "no path"
+    },
+    {
+      "nets": [
+        "CH028_N_MUX"
+      ],
+      "trial": 2,
+      "windows": {
+        "CH028_N_MUX": [
+          1,
+          12
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH028_N_MUX",
+          "found": false,
+          "layer": 0
+        }
+      ],
+      "reason": "no path"
+    },
+    {
+      "nets": [
+        "CH028_N_MUX"
+      ],
+      "trial": 3,
+      "windows": {
+        "CH028_N_MUX": [
+          1,
+          12
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH028_N_MUX",
+          "found": false,
+          "layer": 1
+        }
+      ],
+      "reason": "no path"
+    },
+    {
+      "nets": [
+        "CH029_N_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH029_N_MUX": [
+          3,
+          5
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH029_N_MUX",
+          "found": false,
+          "layer": 0
+        }
+      ],
+      "reason": "no path"
+    },
+    {
+      "nets": [
+        "CH029_N_MUX"
+      ],
+      "trial": 1,
+      "windows": {
+        "CH029_N_MUX": [
+          3,
+          5
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH029_N_MUX",
+          "found": false,
+          "layer": 1
+        }
+      ],
+      "reason": "no path"
+    },
+    {
+      "nets": [
+        "CH029_N_MUX"
+      ],
+      "trial": 2,
+      "windows": {
+        "CH029_N_MUX": [
+          3,
+          5
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH029_N_MUX",
+          "found": false,
+          "layer": 0
+        }
+      ],
+      "reason": "no path"
+    },
+    {
+      "nets": [
+        "CH029_N_MUX"
+      ],
+      "trial": 3,
+      "windows": {
+        "CH029_N_MUX": [
+          3,
+          5
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH029_N_MUX",
+          "found": false,
+          "layer": 1
+        }
+      ],
+      "reason": "no path"
+    },
+    {
+      "nets": [
+        "CH030_N_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH030_N_MUX": [
+          5,
+          0
+        ]
+      },
+      "paths": [],
+      "reason": "blocked F escape/via"
+    },
+    {
+      "nets": [
+        "CH030_N_MUX"
+      ],
+      "trial": 1,
+      "windows": {
+        "CH030_N_MUX": [
+          5,
+          0
+        ]
+      },
+      "paths": [],
+      "reason": "blocked F escape/via"
+    },
+    {
+      "nets": [
+        "CH030_N_MUX"
+      ],
+      "trial": 2,
+      "windows": {
+        "CH030_N_MUX": [
+          5,
+          0
+        ]
+      },
+      "paths": [],
+      "reason": "blocked F escape/via"
+    },
+    {
+      "nets": [
+        "CH030_N_MUX"
+      ],
+      "trial": 3,
+      "windows": {
+        "CH030_N_MUX": [
+          5,
+          0
+        ]
+      },
+      "paths": [],
+      "reason": "blocked F escape/via"
+    }
+  ]
+}

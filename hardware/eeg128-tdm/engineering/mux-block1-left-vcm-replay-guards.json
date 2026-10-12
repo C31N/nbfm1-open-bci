@@ -1,0 +1,67 @@
+[
+  {
+    "case": "unscoped",
+    "rejected": true,
+    "reason": "Removal requires a scoped core/ADC/VCM copper replacement"
+  },
+  {
+    "case": "wrong_baseline",
+    "rejected": true,
+    "reason": "Left VCM escape requires the exact verified 174 PCB"
+  },
+  {
+    "case": "wrong_trunk",
+    "rejected": true,
+    "reason": "Left VCM may remove only its 26 original segments"
+  },
+  {
+    "case": "out_of_block",
+    "rejected": true,
+    "reason": "Left VCM escape contains an out-of-block net"
+  },
+  {
+    "case": "wrong_reference_layer",
+    "rejected": true,
+    "reason": "VCM replacement requires 0.20/0.25 mm B.Cu segments"
+  },
+  {
+    "case": "wrong_reference_width",
+    "rejected": true,
+    "reason": "VCM replacement requires 0.20/0.25 mm B.Cu segments"
+  },
+  {
+    "case": "duplicate_uuid",
+    "rejected": true,
+    "reason": "Left VCM recipe contains a duplicate UUID"
+  },
+  {
+    "case": "wrong_declared_net",
+    "rejected": true,
+    "reason": "Left VCM copper net differs from its declared net"
+  },
+  {
+    "case": "signal_L2",
+    "rejected": true,
+    "reason": "Block-1 signal traces require 0.15 mm L1/L3/L4 geometry"
+  },
+  {
+    "case": "signal_width",
+    "rejected": true,
+    "reason": "Block-1 signal traces require 0.15 mm L1/L3/L4 geometry"
+  },
+  {
+    "case": "via_drill",
+    "rejected": true,
+    "reason": "Block-1 signal vias require 0.60/0.30 mm F.Cu/B.Cu geometry"
+  },
+  {
+    "case": "L3_outside_corridor",
+    "rejected": true,
+    "reason": "L3 signal routing must remain in the upper free corridor"
+  },
+  {
+    "case": "missing_reference_removal",
+    "rejected": true,
+    "reason": "Left VCM escape requires all 26 removals and a replacement"
+  }
+]

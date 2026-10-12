@@ -1,0 +1,18 @@
+{
+  "selected_pairs": [
+    "CH002_MUX",
+    "CH004_MUX"
+  ],
+  "selected_nets": [
+    "CH002_P_MUX",
+    "CH002_N_MUX",
+    "CH004_P_MUX",
+    "CH004_N_MUX"
+  ],
+  "budget_seconds": 120,
+  "grid_step_mm": 0.05,
+  "before": 179,
+  "after": 179,
+  "closed": 0,
+  "promoted": false
+}

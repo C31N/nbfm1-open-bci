@@ -1,0 +1,775 @@
+{
+  "entry": {
+    "MUX": 9,
+    "ELECTRODE": 14
+  },
+  "manual_pass": {
+    "accepted_board": "/workspace/scratch/c3e1942d61e8/closure-block1-CH011_P_MUX-0/eeg128-tdm.kicad_pcb",
+    "unconnected": 178,
+    "history": [
+      {
+        "net": "CH011_P_MUX",
+        "unconnected": 178,
+        "board": "/workspace/scratch/c3e1942d61e8/closure-block1-CH011_P_MUX-0/eeg128-tdm.kicad_pcb"
+      }
+    ],
+    "attempts": [
+      {
+        "net": "CH002_N_MUX",
+        "trial": 0,
+        "source_via": [
+          15.25,
+          26.0
+        ],
+        "mux_via": [
+          18.135,
+          58.15
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 2.021
+      },
+      {
+        "net": "CH002_N_MUX",
+        "trial": 1,
+        "source_via": [
+          15.15,
+          25.9
+        ],
+        "mux_via": [
+          18.035,
+          58.05
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 4.402
+      },
+      {
+        "net": "CH004_N_MUX",
+        "trial": 0,
+        "source_via": [
+          15.15,
+          20.8
+        ],
+        "mux_via": [
+          15.595,
+          58.15
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.772
+      },
+      {
+        "net": "CH004_N_MUX",
+        "trial": 1,
+        "source_via": [
+          15.25,
+          20.8
+        ],
+        "mux_via": [
+          15.495000000000001,
+          58.05
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 3.685
+      },
+      {
+        "net": "CH005_N_MUX",
+        "trial": 0,
+        "source_via": [
+          15.15,
+          18.2
+        ],
+        "mux_via": [
+          14.325,
+          58.15
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.877
+      },
+      {
+        "net": "CH005_N_MUX",
+        "trial": 1,
+        "source_via": [
+          15.25,
+          18.2
+        ],
+        "mux_via": [
+          14.225,
+          58.05
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 3.929
+      },
+      {
+        "net": "CH008_N_MUX",
+        "status": "no_legal_drop"
+      },
+      {
+        "net": "CH008_P_MUX",
+        "status": "no_legal_drop"
+      },
+      {
+        "net": "CH010_N_MUX",
+        "trial": 0,
+        "source_via": [
+          25.45,
+          18.2
+        ],
+        "mux_via": [
+          14.325,
+          48.85
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 3.886
+      },
+      {
+        "net": "CH010_N_MUX",
+        "trial": 1,
+        "source_via": [
+          25.55,
+          18.2
+        ],
+        "mux_via": [
+          14.225,
+          48.75
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 5.187
+      },
+      {
+        "net": "CH011_N_MUX",
+        "trial": 0,
+        "source_via": [
+          25.45,
+          20.8
+        ],
+        "mux_via": [
+          15.595,
+          48.85
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 3.632
+      },
+      {
+        "net": "CH011_N_MUX",
+        "trial": 1,
+        "source_via": [
+          25.55,
+          20.8
+        ],
+        "mux_via": [
+          15.695,
+          48.95
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 4.764
+      },
+      {
+        "net": "CH011_P_MUX",
+        "trial": 0,
+        "source_via": [
+          20.15,
+          20.8
+        ],
+        "mux_via": [
+          15.595,
+          35.75
+        ],
+        "margin_mm": 8,
+        "path_found": true,
+        "search_seconds": 1.763,
+        "accepted": true
+      },
+      {
+        "net": "CH014_N_MUX",
+        "trial": 0,
+        "source_via": [
+          25.25,
+          28.6
+        ],
+        "mux_via": [
+          19.405,
+          48.85
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 2.788
+      },
+      {
+        "net": "CH014_N_MUX",
+        "trial": 1,
+        "source_via": [
+          25.15,
+          28.5
+        ],
+        "mux_via": [
+          19.405,
+          49.35
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 4.154
+      }
+    ]
+  },
+  "alternate_goal_layer": {
+    "accepted_board": "/workspace/scratch/c3e1942d61e8/verified-adc6-via-179/eeg128-tdm.kicad_pcb",
+    "unconnected": 179,
+    "history": [],
+    "attempts": [
+      {
+        "net": "CH002_N_MUX",
+        "trial": 0,
+        "source_via": [
+          15.25,
+          26.0
+        ],
+        "mux_via": [
+          18.135,
+          58.15
+        ],
+        "margin_mm": 12,
+        "path_found": false,
+        "search_seconds": 2.999
+      },
+      {
+        "net": "CH004_N_MUX",
+        "trial": 0,
+        "source_via": [
+          15.15,
+          20.8
+        ],
+        "mux_via": [
+          15.595,
+          58.15
+        ],
+        "margin_mm": 12,
+        "path_found": false,
+        "search_seconds": 2.704
+      },
+      {
+        "net": "CH005_N_MUX",
+        "trial": 0,
+        "source_via": [
+          15.15,
+          18.2
+        ],
+        "mux_via": [
+          14.325,
+          58.15
+        ],
+        "margin_mm": 12,
+        "path_found": false,
+        "search_seconds": 2.648
+      },
+      {
+        "net": "CH008_N_MUX",
+        "status": "no_legal_drop"
+      },
+      {
+        "net": "CH008_P_MUX",
+        "trial": 0,
+        "source_via": [
+          20.15,
+          13.0
+        ],
+        "mux_via": [
+          11.785,
+          35.85
+        ],
+        "margin_mm": 12,
+        "path_found": false,
+        "search_seconds": 3.903
+      },
+      {
+        "net": "CH010_N_MUX",
+        "trial": 0,
+        "source_via": [
+          25.45,
+          18.2
+        ],
+        "mux_via": [
+          14.325,
+          48.85
+        ],
+        "margin_mm": 12,
+        "path_found": false,
+        "search_seconds": 5.436
+      },
+      {
+        "net": "CH011_N_MUX",
+        "trial": 0,
+        "source_via": [
+          25.45,
+          20.8
+        ],
+        "mux_via": [
+          15.595,
+          48.85
+        ],
+        "margin_mm": 12,
+        "path_found": false,
+        "search_seconds": 4.425
+      },
+      {
+        "net": "CH011_P_MUX",
+        "trial": 0,
+        "source_via": [
+          20.15,
+          20.8
+        ],
+        "mux_via": [
+          15.595,
+          35.85
+        ],
+        "margin_mm": 12,
+        "path_found": false,
+        "search_seconds": 3.372
+      },
+      {
+        "net": "CH014_N_MUX",
+        "trial": 0,
+        "source_via": [
+          25.25,
+          28.6
+        ],
+        "mux_via": [
+          19.405,
+          48.85
+        ],
+        "margin_mm": 12,
+        "path_found": false,
+        "search_seconds": 3.486
+      }
+    ]
+  },
+  "small_via_pass": {
+    "accepted_board": "/workspace/scratch/c3e1942d61e8/closure-block1-CH011_P_MUX-0/eeg128-tdm.kicad_pcb",
+    "unconnected": 178,
+    "history": [],
+    "attempts": [
+      {
+        "net": "CH002_N_MUX",
+        "trial": 0,
+        "source_via": [
+          15.25,
+          26.0
+        ],
+        "mux_via": [
+          18.135,
+          58.15
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.396
+      },
+      {
+        "net": "CH002_N_MUX",
+        "trial": 1,
+        "source_via": [
+          15.15,
+          25.9
+        ],
+        "mux_via": [
+          18.035,
+          58.05
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 4.086
+      },
+      {
+        "net": "CH004_N_MUX",
+        "trial": 0,
+        "source_via": [
+          15.15,
+          20.8
+        ],
+        "mux_via": [
+          15.595,
+          58.15
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.666
+      },
+      {
+        "net": "CH004_N_MUX",
+        "trial": 1,
+        "source_via": [
+          15.25,
+          20.8
+        ],
+        "mux_via": [
+          15.495000000000001,
+          58.05
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 3.98
+      },
+      {
+        "net": "CH005_N_MUX",
+        "trial": 0,
+        "source_via": [
+          15.15,
+          18.2
+        ],
+        "mux_via": [
+          14.325,
+          58.15
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.868
+      },
+      {
+        "net": "CH005_N_MUX",
+        "trial": 1,
+        "source_via": [
+          15.25,
+          18.2
+        ],
+        "mux_via": [
+          14.225,
+          58.05
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 4.144
+      },
+      {
+        "net": "CH008_N_MUX",
+        "status": "no_legal_drop"
+      },
+      {
+        "net": "CH008_P_MUX",
+        "status": "no_legal_drop"
+      },
+      {
+        "net": "CH010_N_MUX",
+        "trial": 0,
+        "source_via": [
+          25.45,
+          18.2
+        ],
+        "mux_via": [
+          14.325,
+          48.85
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 3.646
+      },
+      {
+        "net": "CH010_N_MUX",
+        "trial": 1,
+        "source_via": [
+          25.55,
+          18.2
+        ],
+        "mux_via": [
+          14.225,
+          48.75
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 4.592
+      },
+      {
+        "net": "CH011_N_MUX",
+        "trial": 0,
+        "source_via": [
+          25.45,
+          20.8
+        ],
+        "mux_via": [
+          15.595,
+          48.85
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 3.439
+      },
+      {
+        "net": "CH011_N_MUX",
+        "trial": 1,
+        "source_via": [
+          25.55,
+          20.8
+        ],
+        "mux_via": [
+          15.695,
+          48.95
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 4.553
+      },
+      {
+        "net": "CH014_N_MUX",
+        "trial": 0,
+        "source_via": [
+          25.25,
+          28.6
+        ],
+        "mux_via": [
+          19.405,
+          48.85
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 2.465
+      },
+      {
+        "net": "CH014_N_MUX",
+        "trial": 1,
+        "source_via": [
+          25.15,
+          28.5
+        ],
+        "mux_via": [
+          19.405,
+          49.35
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 4.326
+      }
+    ]
+  },
+  "outer_escape_pass": {
+    "accepted_board": "/workspace/scratch/c3e1942d61e8/closure-block1-CH011_P_MUX-0/eeg128-tdm.kicad_pcb",
+    "unconnected": 178,
+    "history": [],
+    "attempts": [
+      {
+        "net": "CH002_N_MUX",
+        "trial": 0,
+        "source_via": [
+          15.25,
+          26.0
+        ],
+        "mux_via": [
+          18.135,
+          56.949999999999996
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.402
+      },
+      {
+        "net": "CH002_N_MUX",
+        "trial": 1,
+        "source_via": [
+          15.15,
+          25.9
+        ],
+        "mux_via": [
+          18.235000000000003,
+          59.35
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 4.511
+      },
+      {
+        "net": "CH004_N_MUX",
+        "trial": 0,
+        "source_via": [
+          15.15,
+          20.8
+        ],
+        "mux_via": [
+          15.595,
+          56.949999999999996
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 1.858
+      },
+      {
+        "net": "CH004_N_MUX",
+        "trial": 1,
+        "source_via": [
+          15.25,
+          20.8
+        ],
+        "mux_via": [
+          15.695,
+          59.35
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 4.196
+      },
+      {
+        "net": "CH005_N_MUX",
+        "trial": 0,
+        "source_via": [
+          15.15,
+          18.2
+        ],
+        "mux_via": [
+          14.325,
+          56.949999999999996
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 2.003
+      },
+      {
+        "net": "CH005_N_MUX",
+        "trial": 1,
+        "source_via": [
+          15.25,
+          18.2
+        ],
+        "mux_via": [
+          14.424999999999999,
+          59.35
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 3.721
+      },
+      {
+        "net": "CH008_N_MUX",
+        "status": "no_legal_drop"
+      },
+      {
+        "net": "CH008_P_MUX",
+        "status": "no_legal_drop"
+      },
+      {
+        "net": "CH010_N_MUX",
+        "trial": 0,
+        "source_via": [
+          25.45,
+          18.2
+        ],
+        "mux_via": [
+          14.325,
+          47.65
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 3.6
+      },
+      {
+        "net": "CH010_N_MUX",
+        "trial": 1,
+        "source_via": [
+          25.55,
+          18.2
+        ],
+        "mux_via": [
+          14.424999999999999,
+          47.45
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 4.577
+      },
+      {
+        "net": "CH011_N_MUX",
+        "trial": 0,
+        "source_via": [
+          25.45,
+          20.8
+        ],
+        "mux_via": [
+          15.795,
+          47.65
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 3.281
+      },
+      {
+        "net": "CH011_N_MUX",
+        "trial": 1,
+        "source_via": [
+          25.55,
+          20.8
+        ],
+        "mux_via": [
+          15.895000000000001,
+          47.550000000000004
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 4.477
+      },
+      {
+        "net": "CH014_N_MUX",
+        "trial": 0,
+        "source_via": [
+          25.25,
+          28.6
+        ],
+        "mux_via": [
+          19.405,
+          47.65
+        ],
+        "margin_mm": 8,
+        "path_found": false,
+        "search_seconds": 2.495
+      },
+      {
+        "net": "CH014_N_MUX",
+        "trial": 1,
+        "source_via": [
+          25.15,
+          28.5
+        ],
+        "mux_via": [
+          19.405,
+          50.45
+        ],
+        "margin_mm": 18,
+        "path_found": false,
+        "search_seconds": 4.308
+      }
+    ]
+  },
+  "ch008_offset_escapes": {
+    "accepted_board": "/workspace/scratch/c3e1942d61e8/closure-block1-local-guard/eeg128-tdm.kicad_pcb",
+    "unconnected": 178,
+    "history": [],
+    "attempts": [
+      {
+        "net": "CH008_P_MUX",
+        "path_found": false,
+        "start": [
+          20.15,
+          13
+        ],
+        "goal": [
+          12.45,
+          34.15
+        ]
+      },
+      {
+        "net": "CH008_N_MUX",
+        "path_found": false,
+        "start": [
+          25.25,
+          11.8
+        ],
+        "goal": [
+          12.45,
+          47.15
+        ]
+      }
+    ]
+  }
+}

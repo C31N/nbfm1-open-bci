@@ -1,0 +1,116 @@
+{
+  "entry_unconnected": 174,
+  "unconnected": 167,
+  "closed_nets": [
+    "CH004_N_ELECTRODE",
+    "CH006_N_ELECTRODE",
+    "CH006_P_ELECTRODE",
+    "CH008_N_MUX",
+    "CH008_P_MUX",
+    "CH010_N_ELECTRODE",
+    "CH012_N_ELECTRODE"
+  ],
+  "global_MUX": 95,
+  "global_ELECTRODE": 72,
+  "block_MUX": 2,
+  "block_ELECTRODE": 9,
+  "new_complete_channels": [
+    "CH006",
+    "CH008"
+  ],
+  "channels": [
+    {
+      "channel": "CH000",
+      "before_open": 1,
+      "after_open": 1
+    },
+    {
+      "channel": "CH001",
+      "before_open": 0,
+      "after_open": 0
+    },
+    {
+      "channel": "CH002",
+      "before_open": 0,
+      "after_open": 0
+    },
+    {
+      "channel": "CH003",
+      "before_open": 0,
+      "after_open": 0
+    },
+    {
+      "channel": "CH004",
+      "before_open": 3,
+      "after_open": 2
+    },
+    {
+      "channel": "CH005",
+      "before_open": 2,
+      "after_open": 2
+    },
+    {
+      "channel": "CH006",
+      "before_open": 2,
+      "after_open": 0
+    },
+    {
+      "channel": "CH007",
+      "before_open": 0,
+      "after_open": 0
+    },
+    {
+      "channel": "CH008",
+      "before_open": 2,
+      "after_open": 0
+    },
+    {
+      "channel": "CH009",
+      "before_open": 0,
+      "after_open": 0
+    },
+    {
+      "channel": "CH010",
+      "before_open": 2,
+      "after_open": 1
+    },
+    {
+      "channel": "CH011",
+      "before_open": 1,
+      "after_open": 1
+    },
+    {
+      "channel": "CH012",
+      "before_open": 2,
+      "after_open": 1
+    },
+    {
+      "channel": "CH013",
+      "before_open": 0,
+      "after_open": 0
+    },
+    {
+      "channel": "CH014",
+      "before_open": 1,
+      "after_open": 1
+    },
+    {
+      "channel": "CH015",
+      "before_open": 2,
+      "after_open": 2
+    }
+  ],
+  "remaining_block_nets": [
+    "CH000_N_ELECTRODE",
+    "CH004_N_MUX",
+    "CH004_P_ELECTRODE",
+    "CH005_N_ELECTRODE",
+    "CH005_N_MUX",
+    "CH010_P_ELECTRODE",
+    "CH011_P_ELECTRODE",
+    "CH012_P_ELECTRODE",
+    "CH014_P_ELECTRODE",
+    "CH015_N_ELECTRODE",
+    "CH015_P_ELECTRODE"
+  ]
+}

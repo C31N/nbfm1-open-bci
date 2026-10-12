@@ -1,0 +1,1076 @@
+{
+  "baseline": "/workspace/scratch/c3e1942d61e8/candidate-rc-l34-165-CH011_P_ELECTRODE-0/eeg128-tdm.kicad_pcb",
+  "accepted_board": "/workspace/scratch/c3e1942d61e8/recovery-candidate-CH023_N_MUX-1/eeg128-tdm.kicad_pcb",
+  "unconnected": 150,
+  "history": [
+    {
+      "nets": [
+        "CH016_N_MUX",
+        "CH016_P_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH016_N_MUX": [
+          12,
+          12
+        ],
+        "CH016_P_MUX": [
+          12,
+          12
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH016_N_MUX",
+          "found": true,
+          "layer": 0
+        },
+        {
+          "net": "CH016_P_MUX",
+          "found": true,
+          "layer": 0
+        }
+      ],
+      "accepted": true,
+      "board": "/workspace/scratch/c3e1942d61e8/recovery-candidate-CH016_N_MUX-0/eeg128-tdm.kicad_pcb",
+      "unconnected": 162
+    },
+    {
+      "nets": [
+        "CH017_N_MUX",
+        "CH017_P_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH017_N_MUX": [
+          11,
+          12
+        ],
+        "CH017_P_MUX": [
+          12,
+          12
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH017_N_MUX",
+          "found": true,
+          "layer": 0
+        },
+        {
+          "net": "CH017_P_MUX",
+          "found": true,
+          "layer": 0
+        }
+      ],
+      "accepted": true,
+      "board": "/workspace/scratch/c3e1942d61e8/recovery-candidate-CH017_N_MUX-0/eeg128-tdm.kicad_pcb",
+      "unconnected": 160
+    },
+    {
+      "nets": [
+        "CH019_N_MUX",
+        "CH019_P_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH019_N_MUX": [
+          2,
+          12
+        ],
+        "CH019_P_MUX": [
+          12,
+          12
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH019_N_MUX",
+          "found": true,
+          "layer": 0
+        },
+        {
+          "net": "CH019_P_MUX",
+          "found": true,
+          "layer": 0
+        }
+      ],
+      "accepted": true,
+      "board": "/workspace/scratch/c3e1942d61e8/recovery-candidate-CH019_N_MUX-0/eeg128-tdm.kicad_pcb",
+      "unconnected": 158
+    },
+    {
+      "nets": [
+        "CH021_N_MUX",
+        "CH021_P_MUX"
+      ],
+      "trial": 1,
+      "windows": {
+        "CH021_N_MUX": [
+          12,
+          12
+        ],
+        "CH021_P_MUX": [
+          12,
+          12
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH021_N_MUX",
+          "found": true,
+          "layer": 1
+        },
+        {
+          "net": "CH021_P_MUX",
+          "found": true,
+          "layer": 1
+        }
+      ],
+      "accepted": true,
+      "board": "/workspace/scratch/c3e1942d61e8/recovery-candidate-CH021_N_MUX-1/eeg128-tdm.kicad_pcb",
+      "unconnected": 156
+    },
+    {
+      "nets": [
+        "CH022_N_MUX",
+        "CH022_P_MUX"
+      ],
+      "trial": 1,
+      "windows": {
+        "CH022_N_MUX": [
+          8,
+          12
+        ],
+        "CH022_P_MUX": [
+          12,
+          4
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH022_N_MUX",
+          "found": true,
+          "layer": 1
+        },
+        {
+          "net": "CH022_P_MUX",
+          "found": true,
+          "layer": 1
+        }
+      ],
+      "accepted": true,
+      "board": "/workspace/scratch/c3e1942d61e8/recovery-candidate-CH022_N_MUX-1/eeg128-tdm.kicad_pcb",
+      "unconnected": 154
+    },
+    {
+      "nets": [
+        "CH025_N_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH025_N_MUX": [
+          11,
+          8
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH025_N_MUX",
+          "found": true,
+          "layer": 0
+        }
+      ],
+      "accepted": true,
+      "board": "/workspace/scratch/c3e1942d61e8/recovery-candidate-CH025_N_MUX-0/eeg128-tdm.kicad_pcb",
+      "unconnected": 153
+    },
+    {
+      "nets": [
+        "CH026_N_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH026_N_MUX": [
+          5,
+          10
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH026_N_MUX",
+          "found": true,
+          "layer": 0
+        }
+      ],
+      "accepted": true,
+      "board": "/workspace/scratch/c3e1942d61e8/recovery-candidate-CH026_N_MUX-0/eeg128-tdm.kicad_pcb",
+      "unconnected": 152
+    },
+    {
+      "nets": [
+        "CH023_N_MUX",
+        "CH023_P_MUX"
+      ],
+      "trial": 1,
+      "windows": {
+        "CH023_N_MUX": [
+          11,
+          12
+        ],
+        "CH023_P_MUX": [
+          12,
+          4
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH023_N_MUX",
+          "found": true,
+          "layer": 1
+        },
+        {
+          "net": "CH023_P_MUX",
+          "found": true,
+          "layer": 1
+        }
+      ],
+      "accepted": true,
+      "board": "/workspace/scratch/c3e1942d61e8/recovery-candidate-CH023_N_MUX-1/eeg128-tdm.kicad_pcb",
+      "unconnected": 150
+    }
+  ],
+  "attempts": [
+    {
+      "nets": [
+        "CH016_N_MUX",
+        "CH016_P_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH016_N_MUX": [
+          12,
+          12
+        ],
+        "CH016_P_MUX": [
+          12,
+          12
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH016_N_MUX",
+          "found": true,
+          "layer": 0
+        },
+        {
+          "net": "CH016_P_MUX",
+          "found": true,
+          "layer": 0
+        }
+      ],
+      "accepted": true,
+      "board": "/workspace/scratch/c3e1942d61e8/recovery-candidate-CH016_N_MUX-0/eeg128-tdm.kicad_pcb",
+      "unconnected": 162
+    },
+    {
+      "nets": [
+        "CH017_N_MUX",
+        "CH017_P_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH017_N_MUX": [
+          11,
+          12
+        ],
+        "CH017_P_MUX": [
+          12,
+          12
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH017_N_MUX",
+          "found": true,
+          "layer": 0
+        },
+        {
+          "net": "CH017_P_MUX",
+          "found": true,
+          "layer": 0
+        }
+      ],
+      "accepted": true,
+      "board": "/workspace/scratch/c3e1942d61e8/recovery-candidate-CH017_N_MUX-0/eeg128-tdm.kicad_pcb",
+      "unconnected": 160
+    },
+    {
+      "nets": [
+        "CH018_N_MUX",
+        "CH018_P_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH018_N_MUX": [
+          7,
+          12
+        ],
+        "CH018_P_MUX": [
+          12,
+          4
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH018_N_MUX",
+          "found": true,
+          "layer": 0
+        },
+        {
+          "net": "CH018_P_MUX",
+          "found": true,
+          "layer": 0
+        }
+      ],
+      "accepted": false,
+      "reason": ""
+    },
+    {
+      "nets": [
+        "CH018_N_MUX",
+        "CH018_P_MUX"
+      ],
+      "trial": 1,
+      "windows": {
+        "CH018_N_MUX": [
+          7,
+          12
+        ],
+        "CH018_P_MUX": [
+          12,
+          4
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH018_N_MUX",
+          "found": true,
+          "layer": 1
+        },
+        {
+          "net": "CH018_P_MUX",
+          "found": true,
+          "layer": 1
+        }
+      ],
+      "accepted": false,
+      "reason": ""
+    },
+    {
+      "nets": [
+        "CH018_N_MUX",
+        "CH018_P_MUX"
+      ],
+      "trial": 2,
+      "windows": {
+        "CH018_N_MUX": [
+          7,
+          12
+        ],
+        "CH018_P_MUX": [
+          12,
+          4
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH018_N_MUX",
+          "found": true,
+          "layer": 0
+        },
+        {
+          "net": "CH018_P_MUX",
+          "found": true,
+          "layer": 0
+        }
+      ],
+      "accepted": false,
+      "reason": ""
+    },
+    {
+      "nets": [
+        "CH018_N_MUX",
+        "CH018_P_MUX"
+      ],
+      "trial": 3,
+      "windows": {
+        "CH018_N_MUX": [
+          7,
+          12
+        ],
+        "CH018_P_MUX": [
+          12,
+          4
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH018_N_MUX",
+          "found": true,
+          "layer": 1
+        },
+        {
+          "net": "CH018_P_MUX",
+          "found": true,
+          "layer": 1
+        }
+      ],
+      "accepted": false,
+      "reason": ""
+    },
+    {
+      "nets": [
+        "CH019_N_MUX",
+        "CH019_P_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH019_N_MUX": [
+          2,
+          12
+        ],
+        "CH019_P_MUX": [
+          12,
+          12
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH019_N_MUX",
+          "found": true,
+          "layer": 0
+        },
+        {
+          "net": "CH019_P_MUX",
+          "found": true,
+          "layer": 0
+        }
+      ],
+      "accepted": true,
+      "board": "/workspace/scratch/c3e1942d61e8/recovery-candidate-CH019_N_MUX-0/eeg128-tdm.kicad_pcb",
+      "unconnected": 158
+    },
+    {
+      "nets": [
+        "CH021_N_MUX",
+        "CH021_P_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH021_N_MUX": [
+          12,
+          12
+        ],
+        "CH021_P_MUX": [
+          12,
+          12
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH021_N_MUX",
+          "found": false,
+          "layer": 0
+        }
+      ],
+      "reason": "no path"
+    },
+    {
+      "nets": [
+        "CH021_N_MUX",
+        "CH021_P_MUX"
+      ],
+      "trial": 1,
+      "windows": {
+        "CH021_N_MUX": [
+          12,
+          12
+        ],
+        "CH021_P_MUX": [
+          12,
+          12
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH021_N_MUX",
+          "found": true,
+          "layer": 1
+        },
+        {
+          "net": "CH021_P_MUX",
+          "found": true,
+          "layer": 1
+        }
+      ],
+      "accepted": true,
+      "board": "/workspace/scratch/c3e1942d61e8/recovery-candidate-CH021_N_MUX-1/eeg128-tdm.kicad_pcb",
+      "unconnected": 156
+    },
+    {
+      "nets": [
+        "CH022_N_MUX",
+        "CH022_P_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH022_N_MUX": [
+          8,
+          12
+        ],
+        "CH022_P_MUX": [
+          12,
+          4
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH022_N_MUX",
+          "found": false,
+          "layer": 0
+        }
+      ],
+      "reason": "no path"
+    },
+    {
+      "nets": [
+        "CH022_N_MUX",
+        "CH022_P_MUX"
+      ],
+      "trial": 1,
+      "windows": {
+        "CH022_N_MUX": [
+          8,
+          12
+        ],
+        "CH022_P_MUX": [
+          12,
+          4
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH022_N_MUX",
+          "found": true,
+          "layer": 1
+        },
+        {
+          "net": "CH022_P_MUX",
+          "found": true,
+          "layer": 1
+        }
+      ],
+      "accepted": true,
+      "board": "/workspace/scratch/c3e1942d61e8/recovery-candidate-CH022_N_MUX-1/eeg128-tdm.kicad_pcb",
+      "unconnected": 154
+    },
+    {
+      "nets": [
+        "CH025_N_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH025_N_MUX": [
+          11,
+          8
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH025_N_MUX",
+          "found": true,
+          "layer": 0
+        }
+      ],
+      "accepted": true,
+      "board": "/workspace/scratch/c3e1942d61e8/recovery-candidate-CH025_N_MUX-0/eeg128-tdm.kicad_pcb",
+      "unconnected": 153
+    },
+    {
+      "nets": [
+        "CH026_N_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH026_N_MUX": [
+          5,
+          10
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH026_N_MUX",
+          "found": true,
+          "layer": 0
+        }
+      ],
+      "accepted": true,
+      "board": "/workspace/scratch/c3e1942d61e8/recovery-candidate-CH026_N_MUX-0/eeg128-tdm.kicad_pcb",
+      "unconnected": 152
+    },
+    {
+      "nets": [
+        "CH020_N_MUX",
+        "CH020_P_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH020_N_MUX": [
+          2,
+          12
+        ],
+        "CH020_P_MUX": [
+          12,
+          11
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH020_N_MUX",
+          "found": false,
+          "layer": 0
+        }
+      ],
+      "reason": "no path"
+    },
+    {
+      "nets": [
+        "CH020_N_MUX",
+        "CH020_P_MUX"
+      ],
+      "trial": 1,
+      "windows": {
+        "CH020_N_MUX": [
+          2,
+          12
+        ],
+        "CH020_P_MUX": [
+          12,
+          11
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH020_N_MUX",
+          "found": true,
+          "layer": 1
+        },
+        {
+          "net": "CH020_P_MUX",
+          "found": true,
+          "layer": 1
+        }
+      ],
+      "accepted": false,
+      "reason": ""
+    },
+    {
+      "nets": [
+        "CH020_N_MUX",
+        "CH020_P_MUX"
+      ],
+      "trial": 2,
+      "windows": {
+        "CH020_N_MUX": [
+          2,
+          12
+        ],
+        "CH020_P_MUX": [
+          12,
+          11
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH020_N_MUX",
+          "found": false,
+          "layer": 0
+        }
+      ],
+      "reason": "no path"
+    },
+    {
+      "nets": [
+        "CH020_N_MUX",
+        "CH020_P_MUX"
+      ],
+      "trial": 3,
+      "windows": {
+        "CH020_N_MUX": [
+          2,
+          12
+        ],
+        "CH020_P_MUX": [
+          12,
+          11
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH020_N_MUX",
+          "found": true,
+          "layer": 1
+        },
+        {
+          "net": "CH020_P_MUX",
+          "found": true,
+          "layer": 1
+        }
+      ],
+      "accepted": false,
+      "reason": ""
+    },
+    {
+      "nets": [
+        "CH023_N_MUX",
+        "CH023_P_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH023_N_MUX": [
+          11,
+          12
+        ],
+        "CH023_P_MUX": [
+          12,
+          4
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH023_N_MUX",
+          "found": false,
+          "layer": 0
+        }
+      ],
+      "reason": "no path"
+    },
+    {
+      "nets": [
+        "CH023_N_MUX",
+        "CH023_P_MUX"
+      ],
+      "trial": 1,
+      "windows": {
+        "CH023_N_MUX": [
+          11,
+          12
+        ],
+        "CH023_P_MUX": [
+          12,
+          4
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH023_N_MUX",
+          "found": true,
+          "layer": 1
+        },
+        {
+          "net": "CH023_P_MUX",
+          "found": true,
+          "layer": 1
+        }
+      ],
+      "accepted": true,
+      "board": "/workspace/scratch/c3e1942d61e8/recovery-candidate-CH023_N_MUX-1/eeg128-tdm.kicad_pcb",
+      "unconnected": 150
+    },
+    {
+      "nets": [
+        "CH028_N_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH028_N_MUX": [
+          1,
+          12
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH028_N_MUX",
+          "found": true,
+          "layer": 0
+        }
+      ],
+      "accepted": false,
+      "reason": ""
+    },
+    {
+      "nets": [
+        "CH028_N_MUX"
+      ],
+      "trial": 1,
+      "windows": {
+        "CH028_N_MUX": [
+          1,
+          12
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH028_N_MUX",
+          "found": true,
+          "layer": 1
+        }
+      ],
+      "accepted": false,
+      "reason": ""
+    },
+    {
+      "nets": [
+        "CH028_N_MUX"
+      ],
+      "trial": 2,
+      "windows": {
+        "CH028_N_MUX": [
+          1,
+          12
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH028_N_MUX",
+          "found": true,
+          "layer": 0
+        }
+      ],
+      "accepted": false,
+      "reason": ""
+    },
+    {
+      "nets": [
+        "CH028_N_MUX"
+      ],
+      "trial": 3,
+      "windows": {
+        "CH028_N_MUX": [
+          1,
+          12
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH028_N_MUX",
+          "found": true,
+          "layer": 1
+        }
+      ],
+      "accepted": false,
+      "reason": ""
+    },
+    {
+      "nets": [
+        "CH029_N_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH029_N_MUX": [
+          3,
+          5
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH029_N_MUX",
+          "found": true,
+          "layer": 0
+        }
+      ],
+      "accepted": false,
+      "reason": ""
+    },
+    {
+      "nets": [
+        "CH029_N_MUX"
+      ],
+      "trial": 1,
+      "windows": {
+        "CH029_N_MUX": [
+          3,
+          5
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH029_N_MUX",
+          "found": true,
+          "layer": 1
+        }
+      ],
+      "accepted": false,
+      "reason": ""
+    },
+    {
+      "nets": [
+        "CH029_N_MUX"
+      ],
+      "trial": 2,
+      "windows": {
+        "CH029_N_MUX": [
+          3,
+          5
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH029_N_MUX",
+          "found": true,
+          "layer": 0
+        }
+      ],
+      "accepted": false,
+      "reason": ""
+    },
+    {
+      "nets": [
+        "CH029_N_MUX"
+      ],
+      "trial": 3,
+      "windows": {
+        "CH029_N_MUX": [
+          3,
+          5
+        ]
+      },
+      "paths": [
+        {
+          "net": "CH029_N_MUX",
+          "found": true,
+          "layer": 1
+        }
+      ],
+      "accepted": false,
+      "reason": ""
+    },
+    {
+      "nets": [
+        "CH030_N_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH030_N_MUX": [
+          5,
+          0
+        ]
+      },
+      "paths": [],
+      "reason": "blocked F escape/via"
+    },
+    {
+      "nets": [
+        "CH030_N_MUX"
+      ],
+      "trial": 1,
+      "windows": {
+        "CH030_N_MUX": [
+          5,
+          0
+        ]
+      },
+      "paths": [],
+      "reason": "blocked F escape/via"
+    },
+    {
+      "nets": [
+        "CH030_N_MUX"
+      ],
+      "trial": 2,
+      "windows": {
+        "CH030_N_MUX": [
+          5,
+          0
+        ]
+      },
+      "paths": [],
+      "reason": "blocked F escape/via"
+    },
+    {
+      "nets": [
+        "CH030_N_MUX"
+      ],
+      "trial": 3,
+      "windows": {
+        "CH030_N_MUX": [
+          5,
+          0
+        ]
+      },
+      "paths": [],
+      "reason": "blocked F escape/via"
+    },
+    {
+      "nets": [
+        "CH024_N_MUX",
+        "CH024_P_MUX"
+      ],
+      "trial": 0,
+      "windows": {
+        "CH024_N_MUX": [
+          0,
+          12
+        ]
+      },
+      "paths": [],
+      "reason": "blocked F escape/via"
+    },
+    {
+      "nets": [
+        "CH024_N_MUX",
+        "CH024_P_MUX"
+      ],
+      "trial": 1,
+      "windows": {
+        "CH024_N_MUX": [
+          0,
+          12
+        ]
+      },
+      "paths": [],
+      "reason": "blocked F escape/via"
+    },
+    {
+      "nets": [
+        "CH024_N_MUX",
+        "CH024_P_MUX"
+      ],
+      "trial": 2,
+      "windows": {
+        "CH024_N_MUX": [
+          0,
+          12
+        ]
+      },
+      "paths": [],
+      "reason": "blocked F escape/via"
+    },
+    {
+      "nets": [
+        "CH024_N_MUX",
+        "CH024_P_MUX"
+      ],
+      "trial": 3,
+      "windows": {
+        "CH024_N_MUX": [
+          0,
+          12
+        ]
+      },
+      "paths": [],
+      "reason": "blocked F escape/via"
+    }
+  ]
+}

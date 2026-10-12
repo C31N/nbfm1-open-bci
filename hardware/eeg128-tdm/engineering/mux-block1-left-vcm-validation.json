@@ -1,0 +1,26 @@
+{
+  "native_kicad_version": "8.0.9",
+  "entry_unconnected": 174,
+  "unconnected": 167,
+  "violations": 0,
+  "warnings": 0,
+  "replay_byte_identical": true,
+  "per_net_regression_guard_checked": true,
+  "negative_scope_cases_rejected": 13,
+  "diagnostic_pin_net_assignments_verified": 2054,
+  "primary_schematic_LVS_passed": false,
+  "archive_native_revalidation_passed": true,
+  "hardware_identity_positions_verified": 642,
+  "primary_and_manufacturing_files_unchanged": true,
+  "zero_debt_scan_passed": true,
+  "git_diff_check_passed": true,
+  "CI_rerun_this_turn": false,
+  "routing_completed": false,
+  "fabrication_release": false,
+  "manifest_excludes": [
+    "CHECKPOINT_SHA256SUMS",
+    "*.log",
+    "*.pyc",
+    "__pycache__"
+  ]
+}

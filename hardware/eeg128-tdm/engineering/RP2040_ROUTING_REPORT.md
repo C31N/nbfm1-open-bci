@@ -1,6 +1,8 @@
-# RP2040 Escape und nativer Routing-Nachweis — 2026-10-06
+> Historischer Bericht. Aktueller 167er-Checkpoint: [MUX_BLOCK1_LEFT_VCM_2026-10-07.md](MUX_BLOCK1_LEFT_VCM_2026-10-07.md).
 
-**Zwischenstand: 0 DRC-Verletzungen, 0 Warnungen, 265 offene Verbindungen. Kein Abschluss und keine Fertigungsfreigabe.**
+# RP2040 Escape und nativer Routing-Nachweis — 2026-10-07
+
+**Zwischenstand: 0 DRC-Verletzungen, 0 Warnungen, 180 offene Verbindungen. Kein Abschluss und keine Fertigungsfreigabe.**
 
 Das Exposed Pad von U23 hat jetzt einen direkten AGND-Kontakt zur durchgehenden L2-Fläche. Das beseitigt seinen isolierten Ground-Anschluss, schließt aber die verbliebenen Analognetze nicht automatisch.
 
@@ -26,10 +28,10 @@ Im Board heißt SCLK **QSPI_CLK**. Die Tabelle zeigt Kupfer-Mittellinienlängen;
 
 | Netz | L1 Länge mm | L4 Länge mm | Vias |
 |---|---:|---:|---:|
-| QSPI_CLK | 5.483 | 17.562 | 2 |
+| QSPI_CLK | 5.483 | 17.658 | 2 |
 | QSPI_SD0 | 11.684 | 17.456 | 2 |
 | QSPI_SD1 | 3.468 | 18.054 | 2 |
-| QSPI_SD2 | 13.604 | 10.273 | 2 |
+| QSPI_SD2 | 13.708 | 10.273 | 2 |
 | QSPI_SD3 | 6.093 | 15.576 | 2 |
 | QSPI_SS | 5.167 | 15.075 | 2 |
 
@@ -39,16 +41,16 @@ EP-Vias im Lötpad benötigen eine abgestimmte Füll-/Cap- und Pastenschablonen-
 
 | Gruppe | Offen |
 |---|---:|
-| POWER | 31 |
-| AGND | 11 |
-| TDM_ANALOG | 218 |
-| MUX_CONTROL | 5 |
+| POWER | 0 |
+| AGND | 0 |
+| TDM_ANALOG | 180 |
+| MUX_CONTROL | 0 |
 
 Der ursprüngliche 308er-Bericht umfasst 225 TDM-Analog-, 38 Power-, 26 AGND-, 16 MUX-, 1 QSPI- und 2 USB-Verbindungen. Überlappende Baugruppen-Endpunkte: U1–U16 159, U23 18, U21 4, Steckverbinder 88, passive/sonstige 135. Diese Endpunktgruppen dürfen nicht addiert werden. U17–U20 haben im 308er-Bericht keine direkten offenen Pad-Endpunkte; die vier offenen U21-Endpunkte sind Versorgung/Masse, nicht ADC-Analogeingänge.
 
 route_targeted_closure.py nutzt L1 vorwiegend horizontal und L4 vorwiegend vertikal. Es kann bestehende Kupfer-Trunks entlang ihrer Länge anzapfen und weitere Punkte einer verbundenen Kupfergruppe als Escape-Anker nutzen. Der Suchplaner berücksichtigt auch die Clearance des Nachbarnetzes: Power/VCM/Analog-Referenzen erfordern 0,20 mm, auch wenn das geroutete CH-Netz selbst nur 0,15 mm fordert. Native Via-Abstandsfehler mit 0,175 mm statt 0,20 mm zu VCM wurden damit adressiert; CH118_P_ELECTRODE konnte im anschließenden diagnostischen Pass geschlossen werden. DRC-Regeln wurden dafür nicht abgeschwächt.
 
-TDM-Traces bleiben mindestens 0,15 mm breit. QSPI bleibt 0,20 mm. Standard-Vias sind 0,65/0,30 mm. Die experimentellen U23-Power-Necks sind 0,15 mm breit und 0,80 mm lang; die passende ausdrücklich lokale Custom-Rule liegt im Paket, die globale Clearance bleibt erhalten.
+TDM-Traces bleiben mindestens 0,15 mm breit. QSPI bleibt 0,20 mm. Standard-Vias sind 0,65/0,30 mm. Die lokalen U23-Power-Escapes sind 0,15 mm breit; außerhalb der lokalen Ausnahme werden 0,30 mm verwendet; die passende ausdrücklich lokale Custom-Rule liegt im Paket, die globale Clearance bleibt erhalten.
 
 Längere CH/BANK-Routen auf L4 sind ein Engineering-Versuch und bestehen nicht automatisch die bisherige Analog-Layer-Policy. Deshalb wurde dieses Board nicht in den konservativen 308er-Checkpoint oder in die primäre Fertigungs-PCB übernommen. Rückstrompfade, Paarführung und Analogqualität müssen vor einer Übernahme geprüft werden.
 
@@ -60,12 +62,12 @@ Der installierte native KiCad 8.0.9-CLI hat keinen Unterbefehl `pcb fill-zones`.
 
 | Netz | Layer | Gefüllte Insel | Via-Kontakte | Thermal-Gap mm | Spoke mm |
 |---|---|---:|---:|---:|---:|
-| AGND | In1.Cu | 0 | 137 | 0.200 | 0.250 |
-| 3V3A | In2.Cu | 0 | 23 | 0.200 | 0.250 |
-| 5V_ISO | In2.Cu | 0 | 7 | 0.200 | 0.250 |
-| 3V3D | In2.Cu | 0 | 16 | 0.200 | 0.250 |
+| AGND | In1.Cu | 0 | 149 | 0.200 | 0.250 |
+| 3V3A | In2.Cu | 0 | 39 | 0.200 | 0.250 |
+| 5V_ISO | In2.Cu | 0 | 8 | 0.200 | 0.250 |
+| 3V3D | In2.Cu | 0 | 23 | 0.200 | 0.250 |
 
-Es existiert eine AGND-Fläche auf L2 und je eine Power-Fläche auf L3, keine L1-/L4-Zonen. Alle gefüllten Inseln haben mindestens einen gleichnamigen Via-Kontakt. Das ist ein Inselkontakt-Nachweis, kein Beweis für die Anbindung aller Bauteilpads; die verbleibenden Power-/AGND-Luftlinien bleiben reale Blocker. Power-Inseln werden niemals mit AGND kurzgeschlossen.
+Es existiert eine AGND-Fläche auf L2 und je eine Power-Fläche auf L3, keine L1-/L4-Zonen. Alle gefüllten Inseln haben mindestens einen gleichnamigen Via-Kontakt. Das ist ein Inselkontakt-Nachweis, kein Beweis für die Anbindung aller Bauteilpads; Power, AGND und MUX_CONTROL sind inzwischen geschlossen; verbleibende Analog-Luftlinien bleiben reale Blocker. Power-Inseln werden niemals mit AGND kurzgeschlossen.
 
 ## Reproduzierbare Befehle
 
@@ -91,11 +93,11 @@ Das Paket enthält genau PCB, Projekt und angewendete Custom-Rules unter demselb
 ```json
 {
   "kicad_version": "8.0.9",
-  "date": "2026-10-06T22:19:00+0100",
+  "date": "2026-10-07T00:32:38-0500",
   "source": "eeg128-tdm.kicad_pcb",
   "violations": 0,
   "warnings": 0,
-  "unconnected": 265
+  "unconnected": 180
 }
 ```
 

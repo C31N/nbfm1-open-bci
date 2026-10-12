@@ -15,14 +15,22 @@ def main() -> int:
     parser.add_argument("board")
     args = parser.parse_args()
 
-    path = Path(args.board)
-    board = pcbnew.LoadBoard(str(path))
-    if board is None:
-        raise RuntimeError(f"cannot load {path}")
-
-    zone_count = board.GetAreaCount()
-    pcbnew.ZONE_FILLER(board).Fill(board.Zones())
-    pcbnew.SaveBoard(str(path), board)
+    path = Path(args.board).resolve()
+    project = path.with_suffix('.kicad_pro')
+    original_project = project.read_bytes() if project.exists() else None
+    try:
+        board = pcbnew.LoadBoard(str(path))
+        if board is None:
+            raise RuntimeError(f"cannot load {path}")
+        zone_count = board.GetAreaCount()
+        pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+        if not pcbnew.SaveBoard(str(path), board):
+            raise RuntimeError(f"cannot save filled board {path}")
+    finally:
+        # Preserve the authoritative netclasses even if native SaveBoard writes
+        # process-global default project settings next to this board basename.
+        if original_project is not None:
+            project.write_bytes(original_project)
     print({"board": str(path), "zones_filled": zone_count})
     return 0
 

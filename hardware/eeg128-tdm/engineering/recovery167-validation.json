@@ -1,0 +1,18 @@
+{
+  "native_kicad_version": "8.0.9",
+  "violations": 0,
+  "warnings": 0,
+  "unconnected": 149,
+  "replay_byte_identical": true,
+  "archive_extraction_verified": true,
+  "refill_member_bytes_unchanged": true,
+  "test_count": 3,
+  "negative_recipe_cases_rejected": 14,
+  "checkpoint_manifest_entries": 138,
+  "original_manifest_passed": 117,
+  "original_manifest_failed": 1,
+  "independent_lvs_signoff": false,
+  "routing_completed": false,
+  "fabrication_release": false,
+  "remote_push_performed": false
+}

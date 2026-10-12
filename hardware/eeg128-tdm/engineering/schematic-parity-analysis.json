@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "baseline_report": "engineering/drc-schematic-parity-179.json",
+  "reported_warnings": 398,
+  "reported_types": {
+    "footprint_symbol_mismatch": 199,
+    "net_conflict": 199
+  },
+  "metadata_subtypes": {
+    "value_mismatch": 99,
+    "footprint_id_mismatch": 100
+  },
+  "reported_reference_families": {
+    "footprint_symbol_mismatch": {
+      "C": 128,
+      "J": 21,
+      "R": 50
+    },
+    "net_conflict": {
+      "C": 128,
+      "J": 71
+    }
+  },
+  "reported_metadata_references": 100,
+  "reported_net_conflict_references": 67,
+  "full_native_export_check": {
+    "connected_expected_pins": 2026,
+    "incorrect_pin_net_assignments_after_namespace_normalization": 2017,
+    "corrected_total_pin_net_assignments": 2054
+  },
+  "original_report_not_a_complete_count_of_underlying_mismatches": true,
+  "corrective_actions": {
+    "BOM_sourced_value_fields": 641,
+    "schematic_footprint_ids": "actual PCB IDs, no physical footprint replacement",
+    "pin_label_y_transform": "sheet_y = origin_y - library_pin_y",
+    "global_labels": "retain literal PCB net names, no hierarchical slash prefix",
+    "explicit_isolated_NC_pads": 28,
+    "same_pin_J9_SHIELD_tabs_connected_on_B_Cu": 3,
+    "anonymous_pad_features_unchanged": true
+  },
+  "stage_reported_parity_counts": [
+    398,
+    199,
+    31,
+    0
+  ],
+  "generated_connectivity_parity_pass": true,
+  "independent_lvs_signoff": false,
+  "primary_PCB_and_primary_schematic_promoted": false,
+  "routing_completed": false,
+  "fabrication_release": false
+}

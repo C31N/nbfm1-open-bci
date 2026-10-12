@@ -1,0 +1,1265 @@
+{
+  "pcb_sha256": "bb2b1bc7b3baeb3586a7d9c65246fcc80c666e38ebe3cc9cee89decebf8ffa0c",
+  "pairs": [
+    {
+      "pair": "CH000_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH000_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 9.148348,
+          "B.Cu": 18.764217
+        },
+        "via_count": 2,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 27.912565
+      },
+      "N": {
+        "net": "CH000_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 29.697109
+        },
+        "via_count": 0,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 29.697109
+      },
+      "partial_copper_length_difference_mm": 1.784544,
+      "via_count_difference": 2,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH001_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH001_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 12.33212,
+          "B.Cu": 8.853541
+        },
+        "via_count": 2,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 21.185661
+      },
+      "N": {
+        "net": "CH001_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 32.577117
+        },
+        "via_count": 0,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 32.577117
+      },
+      "partial_copper_length_difference_mm": 11.391456,
+      "via_count_difference": 2,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH002_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH002_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 24.049247
+        },
+        "via_count": 0,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 24.049247
+      },
+      "N": {
+        "net": "CH002_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 2.362016,
+          "In2.Cu": 18.989662,
+          "B.Cu": 33.486753
+        },
+        "via_count": 4,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 54.838431
+      },
+      "partial_copper_length_difference_mm": 30.789184,
+      "via_count_difference": 4,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH003_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH003_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 27.690198
+        },
+        "via_count": 0,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 27.690198
+      },
+      "N": {
+        "net": "CH003_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 6.290728,
+          "B.Cu": 34.075531
+        },
+        "via_count": 2,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 40.366259
+      },
+      "partial_copper_length_difference_mm": 12.676061,
+      "via_count_difference": 2,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH004_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH004_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 42.127949
+        },
+        "via_count": 0,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 42.127949
+      },
+      "N": {
+        "net": "CH004_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 0.6,
+          "In2.Cu": 20.314889,
+          "B.Cu": 26.075548
+        },
+        "via_count": 5,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 46.990437
+      },
+      "partial_copper_length_difference_mm": 4.862488,
+      "via_count_difference": 5,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH005_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH005_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 3.120752,
+          "B.Cu": 26.224275
+        },
+        "via_count": 2,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 29.345027
+      },
+      "N": {
+        "net": "CH005_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 0.6,
+          "In2.Cu": 22.872532,
+          "B.Cu": 47.248657
+        },
+        "via_count": 9,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 70.721189
+      },
+      "partial_copper_length_difference_mm": 41.376162,
+      "via_count_difference": 7,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH006_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH006_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 3.075534,
+          "B.Cu": 28.94662
+        },
+        "via_count": 2,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 32.022154
+      },
+      "N": {
+        "net": "CH006_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 6.389502,
+          "B.Cu": 42.040621
+        },
+        "via_count": 2,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 48.430123
+      },
+      "partial_copper_length_difference_mm": 16.407969,
+      "via_count_difference": 0,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH007_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH007_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 4.730852,
+          "B.Cu": 29.724125
+        },
+        "via_count": 2,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 34.454977
+      },
+      "N": {
+        "net": "CH007_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 6.903306,
+          "B.Cu": 44.58582
+        },
+        "via_count": 2,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 51.489126
+      },
+      "partial_copper_length_difference_mm": 17.034149,
+      "via_count_difference": 0,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH008_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH008_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 0.585,
+          "In2.Cu": 22.152318,
+          "B.Cu": 13.263004
+        },
+        "via_count": 3,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 36.000322
+      },
+      "N": {
+        "net": "CH008_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 5.264964,
+          "In2.Cu": 32.068338,
+          "B.Cu": 12.81382
+        },
+        "via_count": 5,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 50.147122
+      },
+      "partial_copper_length_difference_mm": 14.1468,
+      "via_count_difference": 2,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH009_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH009_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 7.738854,
+          "B.Cu": 18.593786
+        },
+        "via_count": 2,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 26.33264
+      },
+      "N": {
+        "net": "CH009_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 24.022813,
+          "B.Cu": 23.622309
+        },
+        "via_count": 2,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 47.645122
+      },
+      "partial_copper_length_difference_mm": 21.312482,
+      "via_count_difference": 0,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH010_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH010_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 26.829068
+        },
+        "via_count": 0,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 26.829068
+      },
+      "N": {
+        "net": "CH010_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 33.133998,
+          "B.Cu": 24.402438
+        },
+        "via_count": 8,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 57.536436
+      },
+      "partial_copper_length_difference_mm": 30.707368,
+      "via_count_difference": 8,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH011_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH011_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 7.838478,
+          "B.Cu": 13.899263
+        },
+        "via_count": 6,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 21.737741
+      },
+      "N": {
+        "net": "CH011_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 18.75,
+          "B.Cu": 24.014688
+        },
+        "via_count": 6,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 42.764688
+      },
+      "partial_copper_length_difference_mm": 21.026947,
+      "via_count_difference": 0,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH012_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH012_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 3.632619,
+          "B.Cu": 10.497056
+        },
+        "via_count": 2,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 14.129675
+      },
+      "N": {
+        "net": "CH012_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 23.32018,
+          "B.Cu": 73.326198
+        },
+        "via_count": 8,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 96.646378
+      },
+      "partial_copper_length_difference_mm": 82.516703,
+      "via_count_difference": 6,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH013_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH013_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 10.64035,
+          "B.Cu": 7.106844
+        },
+        "via_count": 2,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 17.747194
+      },
+      "N": {
+        "net": "CH013_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 12.685439,
+          "B.Cu": 18.856854
+        },
+        "via_count": 4,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 31.542293
+      },
+      "partial_copper_length_difference_mm": 13.795099,
+      "via_count_difference": 2,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH014_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH014_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 8.175646
+        },
+        "via_count": 0,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 8.175646
+      },
+      "N": {
+        "net": "CH014_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 18.362707,
+          "B.Cu": 25.797085
+        },
+        "via_count": 8,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 44.159792
+      },
+      "partial_copper_length_difference_mm": 35.984146,
+      "via_count_difference": 8,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH015_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH015_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 5.326041
+        },
+        "via_count": 0,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 5.326041
+      },
+      "N": {
+        "net": "CH015_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 9.690453,
+          "B.Cu": 10.481221
+        },
+        "via_count": 2,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 20.171674
+      },
+      "partial_copper_length_difference_mm": 14.845633,
+      "via_count_difference": 2,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH016_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH016_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 0.6,
+          "In2.Cu": 12.342388,
+          "B.Cu": 6.64234
+        },
+        "via_count": 4,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 19.584728
+      },
+      "N": {
+        "net": "CH016_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 0.6,
+          "In2.Cu": 23.351219,
+          "B.Cu": 5.839823
+        },
+        "via_count": 4,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 29.791042
+      },
+      "partial_copper_length_difference_mm": 10.206314,
+      "via_count_difference": 0,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH017_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH017_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 0.6,
+          "In2.Cu": 16.088835,
+          "B.Cu": 6.092337
+        },
+        "via_count": 4,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 22.781172
+      },
+      "N": {
+        "net": "CH017_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 0.6,
+          "In2.Cu": 29.273149,
+          "B.Cu": 3.583647
+        },
+        "via_count": 4,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 33.456796
+      },
+      "partial_copper_length_difference_mm": 10.675624,
+      "via_count_difference": 0,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH019_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH019_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 0.6,
+          "In2.Cu": 25.15452,
+          "B.Cu": 8.272334
+        },
+        "via_count": 4,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 34.026854
+      },
+      "N": {
+        "net": "CH019_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 0.6,
+          "In2.Cu": 27.558936,
+          "B.Cu": 10.448984
+        },
+        "via_count": 4,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 38.60792
+      },
+      "partial_copper_length_difference_mm": 4.581066,
+      "via_count_difference": 0,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH021_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH021_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 0.6,
+          "In2.Cu": 30.478256,
+          "B.Cu": 2.1
+        },
+        "via_count": 4,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 33.178256
+      },
+      "N": {
+        "net": "CH021_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 0.6,
+          "In2.Cu": 45.265716
+        },
+        "via_count": 2,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 45.865716
+      },
+      "partial_copper_length_difference_mm": 12.68746,
+      "via_count_difference": 2,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH022_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH022_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 0.691421,
+          "In2.Cu": 30.024268,
+          "B.Cu": 2.757716
+        },
+        "via_count": 4,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 33.473405
+      },
+      "N": {
+        "net": "CH022_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 0.6,
+          "In2.Cu": 49.951218
+        },
+        "via_count": 2,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 50.551218
+      },
+      "partial_copper_length_difference_mm": 17.077813,
+      "via_count_difference": 2,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH023_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH023_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 0.849999,
+          "In2.Cu": 31.365423,
+          "B.Cu": 4.858326
+        },
+        "via_count": 4,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 37.073748
+      },
+      "N": {
+        "net": "CH023_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 0.6,
+          "In2.Cu": 53.994927
+        },
+        "via_count": 2,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 54.594927
+      },
+      "partial_copper_length_difference_mm": 17.521179,
+      "via_count_difference": 2,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH025_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH025_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 13.2226,
+          "B.Cu": 25.179899
+        },
+        "via_count": 8,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 38.402499
+      },
+      "N": {
+        "net": "CH025_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 1.539949,
+          "In2.Cu": 38.288835,
+          "B.Cu": 10.254411
+        },
+        "via_count": 4,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 50.083195
+      },
+      "partial_copper_length_difference_mm": 11.680696,
+      "via_count_difference": 4,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH026_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH026_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 26.417998
+        },
+        "via_count": 0,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 26.417998
+      },
+      "N": {
+        "net": "CH026_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 2.11205,
+          "In2.Cu": 35.041778,
+          "B.Cu": 11.596548
+        },
+        "via_count": 6,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 48.750376
+      },
+      "partial_copper_length_difference_mm": 22.332378,
+      "via_count_difference": 6,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH027_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH027_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 21.706468
+        },
+        "via_count": 0,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 21.706468
+      },
+      "N": {
+        "net": "CH027_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 10.309891,
+          "B.Cu": 39.045926
+        },
+        "via_count": 4,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 49.355817
+      },
+      "partial_copper_length_difference_mm": 27.649349,
+      "via_count_difference": 4,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH031_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH031_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 5.326041
+        },
+        "via_count": 0,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 5.326041
+      },
+      "N": {
+        "net": "CH031_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 20.733678
+        },
+        "via_count": 0,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 20.733678
+      },
+      "partial_copper_length_difference_mm": 15.407637,
+      "via_count_difference": 0,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH032_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH032_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 46.064818,
+          "B.Cu": 8.529646
+        },
+        "via_count": 4,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 54.594464
+      },
+      "N": {
+        "net": "CH032_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 15.577157,
+          "B.Cu": 23.593464
+        },
+        "via_count": 2,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 39.170621
+      },
+      "partial_copper_length_difference_mm": 15.423843,
+      "via_count_difference": 2,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH034_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH034_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 26.322756
+        },
+        "via_count": 0,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 26.322756
+      },
+      "N": {
+        "net": "CH034_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 34.593872,
+          "B.Cu": 9.261127
+        },
+        "via_count": 2,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 43.854999
+      },
+      "partial_copper_length_difference_mm": 17.532243,
+      "via_count_difference": 2,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH035_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH035_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 29.036176
+        },
+        "via_count": 0,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 29.036176
+      },
+      "N": {
+        "net": "CH035_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 17.281566,
+          "B.Cu": 19.826761
+        },
+        "via_count": 2,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 37.108327
+      },
+      "partial_copper_length_difference_mm": 8.072151,
+      "via_count_difference": 2,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH038_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH038_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 41.764029
+        },
+        "via_count": 0,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 41.764029
+      },
+      "N": {
+        "net": "CH038_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 17.639144,
+          "B.Cu": 30.718504
+        },
+        "via_count": 4,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 48.357648
+      },
+      "partial_copper_length_difference_mm": 6.593619,
+      "via_count_difference": 4,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH039_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH039_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 13.383063,
+          "B.Cu": 23.42821
+        },
+        "via_count": 2,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 36.811273
+      },
+      "N": {
+        "net": "CH039_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 13.494834,
+          "B.Cu": 34.470306
+        },
+        "via_count": 4,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 47.96514
+      },
+      "partial_copper_length_difference_mm": 11.153867,
+      "via_count_difference": 2,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH040_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH040_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 1.850759,
+          "In2.Cu": 26.992998,
+          "B.Cu": 1.59239
+        },
+        "via_count": 4,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 30.436147
+      },
+      "N": {
+        "net": "CH040_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 48.75827,
+          "B.Cu": 24.905374
+        },
+        "via_count": 2,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 73.663644
+      },
+      "partial_copper_length_difference_mm": 43.227497,
+      "via_count_difference": 2,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH045_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH045_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 4.830312,
+          "B.Cu": 7.280664
+        },
+        "via_count": 2,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 12.110976
+      },
+      "N": {
+        "net": "CH045_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 19.016932,
+          "B.Cu": 23.181118
+        },
+        "via_count": 8,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 42.19805
+      },
+      "partial_copper_length_difference_mm": 30.087074,
+      "via_count_difference": 6,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH046_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH046_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 8.175646
+        },
+        "via_count": 0,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 8.175646
+      },
+      "N": {
+        "net": "CH046_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 12.120565,
+          "B.Cu": 20.246804
+        },
+        "via_count": 8,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 32.367369
+      },
+      "partial_copper_length_difference_mm": 24.191723,
+      "via_count_difference": 8,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    },
+    {
+      "pair": "CH047_MUX",
+      "open_airwires": 0,
+      "P": {
+        "net": "CH047_P_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 5.326041
+        },
+        "via_count": 0,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 5.326041
+      },
+      "N": {
+        "net": "CH047_N_MUX",
+        "open_airwires": 0,
+        "length_mm": {
+          "F.Cu": 20.508946
+        },
+        "via_count": 0,
+        "widths_mm": [
+          0.15,
+          0.2
+        ],
+        "total_copper_length_mm": 20.508946
+      },
+      "partial_copper_length_difference_mm": 15.182905,
+      "via_count_difference": 0,
+      "pair_geometry_qualified": false,
+      "length_note": "Total network copper, including branches; incomplete pairs are not length matched."
+    }
+  ],
+  "qualified": false
+}

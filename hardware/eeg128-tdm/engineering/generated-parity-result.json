@@ -1,0 +1,22 @@
+{
+  "native_kicad_version": "8.0.9",
+  "baseline_sha256": {
+    ".kicad_pcb": "abcaaa433404dabbb9d120db0bca88233ef29c95ee9bf28c73385aba5e27125c",
+    ".kicad_pro": "3bb857f19a1de6b23841a13a881e6e3e61a77708e9063fdbbff9d519121795e0",
+    ".kicad_dru": "5b82bbcbf12c3c84da2be6bf13b4ab347a3de57e3226cab3c71c8523d4df3b10"
+  },
+  "pcb_violations": 0,
+  "pcb_warnings": 0,
+  "schematic_parity_items": 0,
+  "unconnected": 149,
+  "pin_net_assignments_verified": 2054,
+  "generated_connectivity_parity_pass": true,
+  "independent_lvs_signoff": false,
+  "routing_completed": false,
+  "fabrication_release": false,
+  "verification_scope": "Full native XML against current PCB pad/net map; PCB-derived diagnostic schematic",
+  "current_verified_pcb_sha256": "bb2b1bc7b3baeb3586a7d9c65246fcc80c666e38ebe3cc9cee89decebf8ffa0c",
+  "current_verification_date": "2026-10-08T14:01:03+0200",
+  "baseline_scope": "Historical pre-parity baseline; current verification identified separately",
+  "native_netlist": "engineering/native-generated-netlist-149.xml"
+}

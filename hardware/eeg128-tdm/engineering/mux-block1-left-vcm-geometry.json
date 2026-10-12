@@ -1,0 +1,56 @@
+{
+  "native_kicad_version": "8.0.9-8.0.9-0~ubuntu24.04.1",
+  "engineering_only": true,
+  "baseline_sha256": "69927dc28b099641f3ae1a92c37bb91e247ca80d0ff595bb78ea5f3df7ce1124",
+  "pcb_sha256": "79b30a218cf4913f67c5515e707e362799c5ef3cef080a310c24c15f8f357f68",
+  "ADC6_ADC7_copper_unchanged": true,
+  "footprints_unchanged": true,
+  "zone_outlines_unchanged": true,
+  "project_rules_unchanged": true,
+  "new_L3_signal_geometry": {
+    "CH004_N_ELECTRODE": {
+      "length_mm": 14.832052042579193,
+      "minimum_baseline_power_clearance_mm": 16.1283073488708,
+      "new_L3_segments": 241
+    },
+    "CH006_N_ELECTRODE": {
+      "length_mm": 12.866366617629943,
+      "minimum_baseline_power_clearance_mm": 21.327500987556927,
+      "new_L3_segments": 205
+    },
+    "CH006_P_ELECTRODE": {
+      "length_mm": 9.200071527239707,
+      "minimum_baseline_power_clearance_mm": 22.82500004178864,
+      "new_L3_segments": 147
+    },
+    "CH008_N_MUX": {
+      "length_mm": 32.06833846744585,
+      "minimum_baseline_power_clearance_mm": 2.245000999999995,
+      "new_L3_segments": 537
+    },
+    "CH008_P_MUX": {
+      "length_mm": 22.152317797824672,
+      "minimum_baseline_power_clearance_mm": 3.201278365708565,
+      "new_L3_segments": 413
+    },
+    "CH010_N_ELECTRODE": {
+      "length_mm": 11.912942453236052,
+      "minimum_baseline_power_clearance_mm": 18.729980454230247,
+      "new_L3_segments": 197
+    },
+    "CH012_N_ELECTRODE": {
+      "length_mm": 17.226546350168213,
+      "minimum_baseline_power_clearance_mm": 12.825002115435913,
+      "new_L3_segments": 307
+    }
+  },
+  "required_baseline_power_clearance_mm": 0.2,
+  "L3_power_cut_for_signal_routing": false,
+  "note": "Signal geometry against prior filled copper; through-via antipads still require local return-path review.",
+  "pair_coupling_qualified": false,
+  "return_current_qualified": false,
+  "guard_ring_qualified": false,
+  "independent_lvs_signoff": false,
+  "routing_completed": false,
+  "fabrication_release": false
+}

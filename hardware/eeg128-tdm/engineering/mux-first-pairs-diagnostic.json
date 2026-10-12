@@ -1,0 +1,38 @@
+{
+  "automatic_pass": {
+    "pairs": [
+      "CH011_MUX",
+      "CH075_MUX",
+      "CH016_MUX"
+    ],
+    "seconds": 240,
+    "grid_step_mm": 0.05,
+    "unconnected_before": 179,
+    "unconnected_after": 179,
+    "closed": 0
+  },
+  "manual_escape_passes": {
+    "mux-manual-drops-result.json": {
+      "history": [],
+      "accepted_board": "/workspace/scratch/c3e1942d61e8/closure-adc6-aligned-tuned/eeg128-tdm.kicad_pcb",
+      "unconnected": 179
+    },
+    "mux-pad-escape-result.json": {
+      "history": [],
+      "accepted_board": "/workspace/scratch/c3e1942d61e8/closure-adc6-aligned-tuned/eeg128-tdm.kicad_pcb",
+      "unconnected": 179
+    },
+    "mux-pad-multilayer-result.json": {
+      "history": [],
+      "accepted_board": "/workspace/scratch/c3e1942d61e8/closure-adc6-aligned-tuned/eeg128-tdm.kicad_pcb",
+      "unconnected": 179
+    },
+    "mux-pad-endpoint-result.json": {
+      "history": [],
+      "accepted_board": "/workspace/scratch/c3e1942d61e8/closure-adc6-aligned-tuned/eeg128-tdm.kicad_pcb",
+      "unconnected": 179
+    }
+  },
+  "promoted": false,
+  "all_selected_pair_P_N_nets_remain_in_existing_connectivity_state": true
+}

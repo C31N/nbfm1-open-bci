@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse,json,shutil,subprocess,sys,time
 from pathlib import Path
 from typing import Any
+from native_connectivity import regressed_nets
 
 HERE=Path(__file__).resolve().parent
 
@@ -24,7 +25,8 @@ def verify(board: Path, report: Path) -> dict[str, Any]:
   proc=subprocess.run([sys.executable,'-c',code],stdout=stream,stderr=subprocess.STDOUT)
  if proc.returncode:raise RuntimeError(f'Native verification failed; see {log}')
  data=json.loads(report.read_text())
- if data['violations']:raise RuntimeError(f'Candidate has native violations/warnings; see {report}')
+ if data['violations'] or any(i['severity']=='warning' for i in data['unconnected_items']):
+  raise RuntimeError(f'Candidate has native violations/warnings; see {report}')
  return data
 
 def main() -> None:
@@ -32,7 +34,11 @@ def main() -> None:
  p.add_argument('--board',type=Path,required=True);p.add_argument('--output-dir',type=Path,required=True)
  p.add_argument('--seconds',type=int,default=900);p.add_argument('--mode',choices=['all','planes','signals'],default='all')
  p.add_argument('--allow-bottom-analog',action='store_true');p.add_argument('--qfn-power-neckdown',action='store_true')
- a=p.parse_args();a.output_dir.mkdir(parents=True,exist_ok=True)
+ p.add_argument('--cluster-power-neckdown',action='store_true')
+ p.add_argument('--qfn-neck-length',type=float,choices=[.8,1.2,1.6],default=.8)
+ p.add_argument('--grid-step',type=float,choices=[.01,.025,.05,.1],default=.1)
+ p.add_argument('--path-seconds',type=float,default=2)
+ a=p.parse_args();a.board=a.board.resolve();a.output_dir=a.output_dir.resolve();a.output_dir.mkdir(parents=True,exist_ok=True)
  board=a.output_dir/'eeg128-tdm.kicad_pcb'
  for ext in ('.kicad_pcb','.kicad_pro','.kicad_dru'):shutil.copy2(a.board.with_suffix(ext),board.with_suffix(ext))
  project=board.with_suffix('.kicad_pro').read_text()
@@ -44,9 +50,11 @@ def main() -> None:
   worker=a.output_dir/f'worker-{epoch:02d}'
   cmd=[sys.executable,str(HERE/'route_targeted_closure.py'),'--board',str(board),
        '--output-dir',str(worker),'--seconds',str(duration),'--mode',a.mode,
-       '--candidate-offset',str(epoch*35)]
+       '--candidate-offset',str(epoch*35),'--grid-step',str(a.grid_step),
+       '--qfn-neck-length',str(a.qfn_neck_length),'--path-seconds',str(a.path_seconds)]
   if a.allow_bottom_analog:cmd.append('--allow-bottom-analog')
   if a.qfn_power_neckdown:cmd.append('--qfn-power-neckdown')
+  if a.cluster_power_neckdown:cmd.append('--cluster-power-neckdown')
   log=a.output_dir/f'worker-{epoch:02d}.log'
   with log.open('w') as stream:
    proc=subprocess.run(cmd,stdout=stream,stderr=subprocess.STDOUT)
@@ -57,10 +65,14 @@ def main() -> None:
    shutil.copy2(worker/'eeg128-tdm.kicad_dru',board.with_suffix('.kicad_dru'))
    try:
     report=verify(board,a.output_dir/f'drc-worker-{epoch:02d}.json')
-    promoted=len(report['unconnected_items'])<=len(current['unconnected_items'])
+    claimed=worker/'drc-accepted.json'
+    expected=json.loads(claimed.read_text()) if claimed.exists() else json.loads((worker/'drc-initial.json').read_text())
+    promoted=(len(report['unconnected_items'])==len(expected['unconnected_items'])
+              and len(report['unconnected_items'])<=len(current['unconnected_items'])
+              and not regressed_nets(current,report))
     if promoted:
      current=report;shutil.copy2(board,accepted);reason='Fresh native verification passed'
-    else:reason='Native connectivity regressed'
+    else:reason='Fresh native connectivity differs from the claimed checkpoint or regressed'
    except RuntimeError as exc:reason=str(exc)
    if not promoted:board.write_bytes(previous);board.with_suffix('.kicad_dru').write_bytes(previous_rules)
   event={'worker':epoch,'returncode':proc.returncode,'checkpoint_verified':promoted,

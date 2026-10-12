@@ -1,0 +1,1603 @@
+{
+  "schema_version": 1,
+  "engineering_only": true,
+  "native_kicad_version": "8.0.9-8.0.9-0~ubuntu24.04.1",
+  "audited_nets": [
+    "CH002_N_MUX",
+    "CH002_P_MUX",
+    "CH004_N_ELECTRODE",
+    "CH004_P_ELECTRODE",
+    "CH006_N_ELECTRODE",
+    "CH006_P_ELECTRODE",
+    "CH008_N_MUX",
+    "CH008_P_MUX",
+    "CH010_N_ELECTRODE",
+    "CH010_N_MUX",
+    "CH010_P_ELECTRODE",
+    "CH010_P_MUX",
+    "CH011_N_MUX",
+    "CH011_P_MUX",
+    "CH012_N_ELECTRODE",
+    "CH012_P_ELECTRODE",
+    "CH014_N_MUX",
+    "CH014_P_MUX"
+  ],
+  "pcb_sha256": "79b30a218cf4913f67c5515e707e362799c5ef3cef080a310c24c15f8f357f68",
+  "L2_AGND_filled_islands": 1,
+  "reference_projection": [
+    {
+      "net": "CH002_N_MUX",
+      "signal_layer": "F.Cu",
+      "sampled_length_mm": 14.216178679317904,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 70.23806521317881,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 57.46180716843098,
+      "L3_projection_length_mm": {},
+      "uncovered_runs": [
+        {
+          "track_uuid": "08938ded-d4cc-4880-a363-efa916ab26c3",
+          "longest_sampled_uncovered_run_mm": 0.04999999999999716
+        },
+        {
+          "track_uuid": "098bb8f9-3ef0-4d67-922d-e89a39e47065",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865324
+        },
+        {
+          "track_uuid": "0dd91f6a-3e70-44c3-91f0-139f9ffbfc29",
+          "longest_sampled_uncovered_run_mm": 0.3420454545454549
+        },
+        {
+          "track_uuid": "467876f1-6d87-4459-bd88-1c428c5d7df0",
+          "longest_sampled_uncovered_run_mm": 0.4406250000000003
+        },
+        {
+          "track_uuid": "4e754934-9507-4c3e-961b-833ae07e501e",
+          "longest_sampled_uncovered_run_mm": 0.14142135623730648
+        },
+        {
+          "track_uuid": "5ced8da8-8732-4206-9ef9-e64b2885de2b",
+          "longest_sampled_uncovered_run_mm": 0.42426406871192823
+        },
+        {
+          "track_uuid": "74f9966e-686f-45f1-9ce4-33dc81f43cf4",
+          "longest_sampled_uncovered_run_mm": 0.43752232085917686
+        },
+        {
+          "track_uuid": "7f8b17d9-6280-4a2e-bafe-17cda3c18db7",
+          "longest_sampled_uncovered_run_mm": 0.1414213562373115
+        },
+        {
+          "track_uuid": "a30b4004-c09b-46a1-8c1c-2abe78f11ff1",
+          "longest_sampled_uncovered_run_mm": 0.44999999999999996
+        },
+        {
+          "track_uuid": "dad2fefb-b95e-4281-8bfb-589e2074496d",
+          "longest_sampled_uncovered_run_mm": 0.44547727214752336
+        },
+        {
+          "track_uuid": "db330baf-5a40-4187-b362-abb5a8afa871",
+          "longest_sampled_uncovered_run_mm": 0.44999999999999996
+        }
+      ],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH002_N_MUX",
+      "signal_layer": "B.Cu",
+      "sampled_length_mm": 56.703467948801666,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 91.95385860483965,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 78.90882271707927,
+      "L3_projection_length_mm": {
+        "3V3A": 21.8139777701405,
+        "no_filled_L3_zone": 34.889490178661354
+      },
+      "uncovered_runs": [
+        {
+          "track_uuid": "024ec165-ef6f-4976-bfd9-6a5bac47d7e8",
+          "longest_sampled_uncovered_run_mm": 0.44999999999999996
+        },
+        {
+          "track_uuid": "5807385d-d9f9-424b-ba88-fad75f87eeef",
+          "longest_sampled_uncovered_run_mm": 0.4499999999999999
+        },
+        {
+          "track_uuid": "6294a201-a17c-491f-8491-78aac9362a9a",
+          "longest_sampled_uncovered_run_mm": 0.47140452079103423
+        },
+        {
+          "track_uuid": "7869312d-2250-4783-a63e-f785f393b0ff",
+          "longest_sampled_uncovered_run_mm": 0.2985561965009871
+        },
+        {
+          "track_uuid": "7fbcf103-862a-4c65-a23f-55cbd1254879",
+          "longest_sampled_uncovered_run_mm": 0.14784959970264155
+        },
+        {
+          "track_uuid": "81db7237-1769-4667-87a9-4fd763f24c5b",
+          "longest_sampled_uncovered_run_mm": 0.44999999999999996
+        },
+        {
+          "track_uuid": "9c8d7152-0559-4d55-9c40-8fddcc23712e",
+          "longest_sampled_uncovered_run_mm": 0.3500000000000014
+        },
+        {
+          "track_uuid": "aa641165-2463-488e-b990-3cf18f5d1c63",
+          "longest_sampled_uncovered_run_mm": 0.4496276815153591
+        },
+        {
+          "track_uuid": "aaa6785f-95a3-425f-b901-3c12d3a19666",
+          "longest_sampled_uncovered_run_mm": 0.4714045207910322
+        },
+        {
+          "track_uuid": "db8d8512-e02d-4ed3-ab6a-cc9a23537b55",
+          "longest_sampled_uncovered_run_mm": 0.43953488372093047
+        },
+        {
+          "track_uuid": "ec043507-9694-4a9d-8a2f-ab1b81457ab7",
+          "longest_sampled_uncovered_run_mm": 0.44613335060429565
+        },
+        {
+          "track_uuid": "f0d2bb8d-39a5-4827-b700-e1de6bf376f5",
+          "longest_sampled_uncovered_run_mm": 0.13793045349377753
+        }
+      ],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH002_P_MUX",
+      "signal_layer": "F.Cu",
+      "sampled_length_mm": 24.049247189427547,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 100.0,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 91.75516934560473,
+      "L3_projection_length_mm": {},
+      "uncovered_runs": [],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH004_N_ELECTRODE",
+      "signal_layer": "F.Cu",
+      "sampled_length_mm": 1.2099999999999995,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 47.69775678866589,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 47.69775678866589,
+      "L3_projection_length_mm": {},
+      "uncovered_runs": [
+        {
+          "track_uuid": "7d7ae2de-b198-4c04-bf57-9502e35e2d3c",
+          "longest_sampled_uncovered_run_mm": 0.1999999999999993
+        },
+        {
+          "track_uuid": "d081a38c-b15e-4afd-8c7b-33aa1f5afcd2",
+          "longest_sampled_uncovered_run_mm": 0.4328571428571428
+        }
+      ],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH004_N_ELECTRODE",
+      "signal_layer": "In2.Cu",
+      "sampled_length_mm": 14.832052042579166,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 93.51798843126166,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 83.89142121584003,
+      "L3_projection_length_mm": {},
+      "uncovered_runs": [
+        {
+          "track_uuid": "03d080f0-002b-40f7-b620-0e8504816def",
+          "longest_sampled_uncovered_run_mm": 0.05000000000000071
+        },
+        {
+          "track_uuid": "2df0a1ea-04d5-4aa9-8c3d-a1aa3d312e65",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865199
+        },
+        {
+          "track_uuid": "38d549ec-17f6-4298-8867-d03cfa128484",
+          "longest_sampled_uncovered_run_mm": 0.05000000000000071
+        },
+        {
+          "track_uuid": "63ef47c6-6270-442d-95c1-f80d85f28f77",
+          "longest_sampled_uncovered_run_mm": 0.1442223283753269
+        },
+        {
+          "track_uuid": "6f8b7997-65d7-4708-ab3f-3bba99854978",
+          "longest_sampled_uncovered_run_mm": 0.0707106781186545
+        },
+        {
+          "track_uuid": "774e38f5-9df2-425c-8573-648a4ca4bf79",
+          "longest_sampled_uncovered_run_mm": 0.05000000000000071
+        },
+        {
+          "track_uuid": "7d2395fd-772f-424a-8335-2dbe811aed61",
+          "longest_sampled_uncovered_run_mm": 0.16970562749066287
+        },
+        {
+          "track_uuid": "89f5fa4f-b28b-4308-9aaf-31c17d638264",
+          "longest_sampled_uncovered_run_mm": 0.049999999999998934
+        },
+        {
+          "track_uuid": "97c5e573-f50b-4495-918b-5f36b021332b",
+          "longest_sampled_uncovered_run_mm": 0.035355339059327875
+        },
+        {
+          "track_uuid": "9c55f251-ea25-411e-9794-0ca2888abd02",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865575
+        },
+        {
+          "track_uuid": "bafe2e5a-e734-4aee-a662-2c8ac6ee5218",
+          "longest_sampled_uncovered_run_mm": 0.05000000000000071
+        },
+        {
+          "track_uuid": "c29b3fd3-bd1b-4cdd-ad92-f9ebb8fc9fc1",
+          "longest_sampled_uncovered_run_mm": 0.05000000000000071
+        },
+        {
+          "track_uuid": "ce35d1b8-d88e-48d7-9c98-4dd584dbb02f",
+          "longest_sampled_uncovered_run_mm": 0.04999999999999716
+        },
+        {
+          "track_uuid": "ed1b869d-3c43-4675-81f8-02e60a1fb421",
+          "longest_sampled_uncovered_run_mm": 0.05000000000000071
+        }
+      ],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH006_N_ELECTRODE",
+      "signal_layer": "F.Cu",
+      "sampled_length_mm": 1.1899999999999986,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 45.756302521008436,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 45.756302521008436,
+      "L3_projection_length_mm": {},
+      "uncovered_runs": [
+        {
+          "track_uuid": "b8ef1dae-1f41-48b8-b4d7-d635c34b18fb",
+          "longest_sampled_uncovered_run_mm": 0.1999999999999993
+        },
+        {
+          "track_uuid": "f6b6e0a8-0d8a-4d33-8828-2b2edf506f88",
+          "longest_sampled_uncovered_run_mm": 0.4454999999999998
+        }
+      ],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH006_N_ELECTRODE",
+      "signal_layer": "In2.Cu",
+      "sampled_length_mm": 12.866366617629938,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 92.88867831093175,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 58.21715730524439,
+      "L3_projection_length_mm": {},
+      "uncovered_runs": [
+        {
+          "track_uuid": "0ef27efd-3a1c-41ea-9820-dfa91b4356ae",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865513
+        },
+        {
+          "track_uuid": "182e4519-190a-4f77-8505-d81a5452d8e4",
+          "longest_sampled_uncovered_run_mm": 0.16970562749066287
+        },
+        {
+          "track_uuid": "1d7918ca-8283-4164-adac-3219430c3646",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865513
+        },
+        {
+          "track_uuid": "620cc049-ad66-4116-84a3-ca66ab713aec",
+          "longest_sampled_uncovered_run_mm": 0.0707106781186545
+        },
+        {
+          "track_uuid": "75e080c8-2ab3-4384-bfe7-1a2f1f5156a4",
+          "longest_sampled_uncovered_run_mm": 0.0707106781186545
+        },
+        {
+          "track_uuid": "8c217974-a8fc-4618-8f8a-4ee26004ccfc",
+          "longest_sampled_uncovered_run_mm": 0.1442223283753254
+        },
+        {
+          "track_uuid": "b0e1864c-a197-4175-9b9a-f4b031b7cb27",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865575
+        },
+        {
+          "track_uuid": "bdc30605-a892-4f53-809f-691ac5c24374",
+          "longest_sampled_uncovered_run_mm": 0.035355339059327875
+        },
+        {
+          "track_uuid": "c20ae258-f517-4aa6-8d2e-786e1f6d61dc",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865513
+        },
+        {
+          "track_uuid": "c8ee245b-0317-4de6-8d89-41382b0916f5",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865513
+        },
+        {
+          "track_uuid": "f9fd22fc-8f79-412d-914c-9655f6d92817",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865324
+        }
+      ],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH006_P_ELECTRODE",
+      "signal_layer": "F.Cu",
+      "sampled_length_mm": 2.765528090456473,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 67.84042708937665,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 67.84042708937665,
+      "L3_projection_length_mm": {},
+      "uncovered_runs": [
+        {
+          "track_uuid": "4f6a6766-5abb-48e4-b6c7-67d67ac7d74a",
+          "longest_sampled_uncovered_run_mm": 0.4454999999999998
+        },
+        {
+          "track_uuid": "d841f6ff-ec9c-4376-90d5-fcdeafaf5ad4",
+          "longest_sampled_uncovered_run_mm": 0.4438820226141175
+        }
+      ],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH006_P_ELECTRODE",
+      "signal_layer": "In2.Cu",
+      "sampled_length_mm": 9.200071527239718,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 89.93420879957222,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 61.83742462959849,
+      "L3_projection_length_mm": {},
+      "uncovered_runs": [
+        {
+          "track_uuid": "0d3b45be-a21e-4292-af17-a34c567f1c63",
+          "longest_sampled_uncovered_run_mm": 0.049999999999998934
+        },
+        {
+          "track_uuid": "11740dd8-1dd3-4f6a-9e6c-8f03c2b7932b",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865575
+        },
+        {
+          "track_uuid": "1ada3688-7278-4fc3-a4c2-da25334c165d",
+          "longest_sampled_uncovered_run_mm": 0.04999999999999982
+        },
+        {
+          "track_uuid": "24383dbc-d9fc-4aec-b177-697db84ec20e",
+          "longest_sampled_uncovered_run_mm": 0.16970562749066412
+        },
+        {
+          "track_uuid": "5138d8c8-6292-42d6-8fef-8263ca64f55a",
+          "longest_sampled_uncovered_run_mm": 0.04999999999999982
+        },
+        {
+          "track_uuid": "52375922-397c-4cc9-8c2c-9e3b8b937694",
+          "longest_sampled_uncovered_run_mm": 0.1442223283753254
+        },
+        {
+          "track_uuid": "65d2b9c8-73a5-4465-9c90-b9a99f2a8c02",
+          "longest_sampled_uncovered_run_mm": 0.05000000000000071
+        },
+        {
+          "track_uuid": "75f1b9b4-2533-4e6a-9ed7-9c9d7f2169a4",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865324
+        },
+        {
+          "track_uuid": "9ab9eae4-15a8-4ed1-9df0-11ec6429cdce",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865575
+        },
+        {
+          "track_uuid": "af2d9292-b7da-44a5-8f74-82bc4fb66422",
+          "longest_sampled_uncovered_run_mm": 0.04999999999999982
+        },
+        {
+          "track_uuid": "c40cf418-b444-45c5-900d-d815bf882e07",
+          "longest_sampled_uncovered_run_mm": 0.04999999999999982
+        },
+        {
+          "track_uuid": "e99319bc-fa3f-4c62-a567-b860a7195bba",
+          "longest_sampled_uncovered_run_mm": 0.05000000000000071
+        },
+        {
+          "track_uuid": "f10e97a6-1edf-48df-abdd-23b8d0f5a08c",
+          "longest_sampled_uncovered_run_mm": 0.04999999999999982
+        }
+      ],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH008_N_MUX",
+      "signal_layer": "F.Cu",
+      "sampled_length_mm": 5.264963587627098,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 67.48852758359305,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 66.55158360361858,
+      "L3_projection_length_mm": {},
+      "uncovered_runs": [
+        {
+          "track_uuid": "6921bc44-cb90-4100-a0df-508f1ada8cff",
+          "longest_sampled_uncovered_run_mm": 0.43274935008616744
+        },
+        {
+          "track_uuid": "81c6c88a-b253-4b99-99d5-7adc6ba85f47",
+          "longest_sampled_uncovered_run_mm": 0.3849999999999998
+        },
+        {
+          "track_uuid": "9042b323-cb9f-4d61-97b3-fef2f3a10f91",
+          "longest_sampled_uncovered_run_mm": 0.4439678344390827
+        },
+        {
+          "track_uuid": "c75409e1-ed16-42a8-bd7f-19e051adef4b",
+          "longest_sampled_uncovered_run_mm": 0.4499999999999992
+        }
+      ],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH008_N_MUX",
+      "signal_layer": "In2.Cu",
+      "sampled_length_mm": 32.068338467445365,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 96.9665540359813,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 77.67336310627479,
+      "L3_projection_length_mm": {},
+      "uncovered_runs": [
+        {
+          "track_uuid": "0b95325a-fc3c-4c7c-a62a-e51e78002d1b",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865324
+        },
+        {
+          "track_uuid": "1538928c-97c8-4cef-b929-f000032738a5",
+          "longest_sampled_uncovered_run_mm": 0.05000000000000071
+        },
+        {
+          "track_uuid": "234abba5-7724-497c-9505-7fbad1036448",
+          "longest_sampled_uncovered_run_mm": 0.05000000000000426
+        },
+        {
+          "track_uuid": "3666dd06-6fd4-4863-9477-9e5f092ec778",
+          "longest_sampled_uncovered_run_mm": 0.1442223283753259
+        },
+        {
+          "track_uuid": "55a07230-e911-4d21-88eb-ffbd7f5e337e",
+          "longest_sampled_uncovered_run_mm": 0.05000000000000426
+        },
+        {
+          "track_uuid": "5a8c4c65-28f1-407e-b7ec-aa5e192ef29f",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865199
+        },
+        {
+          "track_uuid": "5e8ed483-9890-4038-a603-c668fd647309",
+          "longest_sampled_uncovered_run_mm": 0.05000000000000071
+        },
+        {
+          "track_uuid": "73f3f459-5bf9-49ab-ad20-f79342e872d7",
+          "longest_sampled_uncovered_run_mm": 0.04999999999999716
+        },
+        {
+          "track_uuid": "77dd5574-bd40-4d17-b056-d3d97e4f4825",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865826
+        },
+        {
+          "track_uuid": "973693e3-2b91-4cd4-8453-3fff68d7837f",
+          "longest_sampled_uncovered_run_mm": 0.14142135623731025
+        },
+        {
+          "track_uuid": "a00d270d-b517-4a01-ba4d-0300a9169095",
+          "longest_sampled_uncovered_run_mm": 0.05000000000000071
+        },
+        {
+          "track_uuid": "adc9d0a9-93ac-4f80-a524-9296ba3c4879",
+          "longest_sampled_uncovered_run_mm": 0.05000000000000071
+        },
+        {
+          "track_uuid": "c8a562e7-6899-4bd7-9593-30bc972443a3",
+          "longest_sampled_uncovered_run_mm": 0.04999999999999716
+        },
+        {
+          "track_uuid": "ef36a29f-0108-4a1c-94e1-656569204059",
+          "longest_sampled_uncovered_run_mm": 0.025000000000000355
+        },
+        {
+          "track_uuid": "f04ae2e0-6455-40b6-b58c-94bd7e45d21d",
+          "longest_sampled_uncovered_run_mm": 0.04999999999999716
+        }
+      ],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH008_N_MUX",
+      "signal_layer": "B.Cu",
+      "sampled_length_mm": 12.813819591393797,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 86.10327737651403,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 86.10327737651403,
+      "L3_projection_length_mm": {
+        "3V3A": 9.035262962405001,
+        "no_filled_L3_zone": 3.778556628988746
+      },
+      "uncovered_runs": [
+        {
+          "track_uuid": "a3001656-9783-42ba-bbf3-9ed47680699b",
+          "longest_sampled_uncovered_run_mm": 0.43799063352090445
+        },
+        {
+          "track_uuid": "adf6ed9b-5be9-43e6-b902-adde6ad98116",
+          "longest_sampled_uncovered_run_mm": 0.4499999999999998
+        },
+        {
+          "track_uuid": "e6b44070-cd62-4aa4-a3d9-7540f584af2d",
+          "longest_sampled_uncovered_run_mm": 0.44271033256897036
+        }
+      ],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH008_P_MUX",
+      "signal_layer": "F.Cu",
+      "sampled_length_mm": 0.5850000000000009,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 0.0,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 0.0,
+      "L3_projection_length_mm": {},
+      "uncovered_runs": [
+        {
+          "track_uuid": "41bde330-07fb-4e93-a461-f83519b32127",
+          "longest_sampled_uncovered_run_mm": 0.49999999999999994
+        },
+        {
+          "track_uuid": "e5383fa9-c93c-4a4e-a077-87dbdb4b93ee",
+          "longest_sampled_uncovered_run_mm": 0.08500000000000085
+        }
+      ],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH008_P_MUX",
+      "signal_layer": "In2.Cu",
+      "sampled_length_mm": 22.152317797824303,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 95.970986732289,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 68.32013372167584,
+      "L3_projection_length_mm": {},
+      "uncovered_runs": [
+        {
+          "track_uuid": "18fefeaf-2d0f-4028-bbdf-4ffffb64297c",
+          "longest_sampled_uncovered_run_mm": 0.0707106781186545
+        },
+        {
+          "track_uuid": "233eee45-cbb4-4a0e-b1b8-66418a0b583a",
+          "longest_sampled_uncovered_run_mm": 0.03535533905932913
+        },
+        {
+          "track_uuid": "29fa268b-ece6-4444-8b55-0cfff89e5ced",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865575
+        },
+        {
+          "track_uuid": "5b7db9bc-fcd4-411d-b9fe-96f4ce88fa40",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865575
+        },
+        {
+          "track_uuid": "68236bb4-d18f-4fb5-b71c-71f734c4b264",
+          "longest_sampled_uncovered_run_mm": 0.12806186005599174
+        },
+        {
+          "track_uuid": "685ac0b5-e371-4035-b1f0-227224fb454d",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865575
+        },
+        {
+          "track_uuid": "73b67eab-26b7-444c-8ee8-f841448532a5",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865324
+        },
+        {
+          "track_uuid": "87bc9ce8-f53d-4e42-bf4c-483e15e100b0",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865199
+        },
+        {
+          "track_uuid": "93428568-36dd-4867-acc2-9e210ddc95df",
+          "longest_sampled_uncovered_run_mm": 0.035355339059327875
+        },
+        {
+          "track_uuid": "dbf36471-a3f8-4bcb-9c32-aa35a1cd7250",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865324
+        },
+        {
+          "track_uuid": "e021dc25-6eeb-47c4-94a9-54ed91936e2e",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865324
+        },
+        {
+          "track_uuid": "e697817b-a808-4c0d-b19a-feb4bd589219",
+          "longest_sampled_uncovered_run_mm": 0.12806186005599174
+        }
+      ],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH008_P_MUX",
+      "signal_layer": "B.Cu",
+      "sampled_length_mm": 13.26300367761363,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 93.32399529152615,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 93.32399529152615,
+      "L3_projection_length_mm": {
+        "no_filled_L3_zone": 13.26300367761363
+      },
+      "uncovered_runs": [
+        {
+          "track_uuid": "1548fb62-7e61-478d-8496-6ddbc0ca5722",
+          "longest_sampled_uncovered_run_mm": 0.44999999999999946
+        },
+        {
+          "track_uuid": "243196ea-f61e-4186-ab7d-39f8d0b08551",
+          "longest_sampled_uncovered_run_mm": 0.08543875000255988
+        },
+        {
+          "track_uuid": "36977a60-2ad4-4ccd-91e9-41a338c62298",
+          "longest_sampled_uncovered_run_mm": 0.34999999999999987
+        }
+      ],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH010_N_ELECTRODE",
+      "signal_layer": "F.Cu",
+      "sampled_length_mm": 1.2100000000000022,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 47.697756788665785,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 47.697756788665785,
+      "L3_projection_length_mm": {},
+      "uncovered_runs": [
+        {
+          "track_uuid": "79191843-e734-498d-ae9f-5d787ec97ac2",
+          "longest_sampled_uncovered_run_mm": 0.4328571428571428
+        },
+        {
+          "track_uuid": "c8f588f2-70cb-47bc-9bdd-b3254977641f",
+          "longest_sampled_uncovered_run_mm": 0.20000000000000284
+        }
+      ],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH010_N_ELECTRODE",
+      "signal_layer": "In2.Cu",
+      "sampled_length_mm": 11.912942453236031,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 92.6188554011846,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 65.53616269622121,
+      "L3_projection_length_mm": {},
+      "uncovered_runs": [
+        {
+          "track_uuid": "28f4bd4d-64cc-4699-a0c1-a158f5298587",
+          "longest_sampled_uncovered_run_mm": 0.035355339059327875
+        },
+        {
+          "track_uuid": "68f4af59-c867-48f8-94d5-7a2ac566d58b",
+          "longest_sampled_uncovered_run_mm": 0.12206498269774355
+        },
+        {
+          "track_uuid": "7735df55-060e-440c-a874-5fc4c8fc9ef5",
+          "longest_sampled_uncovered_run_mm": 0.0707106781186545
+        },
+        {
+          "track_uuid": "94015ab1-efaa-4688-87ff-7b8a84240017",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865073
+        },
+        {
+          "track_uuid": "a1052c8a-35d0-46cf-a458-b4409957686b",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865199
+        },
+        {
+          "track_uuid": "ad72424c-cb57-4841-937a-b609ee415f0c",
+          "longest_sampled_uncovered_run_mm": 0.15620576174072198
+        },
+        {
+          "track_uuid": "def9d125-cd01-4998-95b3-d5f489f113d2",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865575
+        },
+        {
+          "track_uuid": "e2a0aad6-d649-4939-a1af-31c298c02dca",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865575
+        },
+        {
+          "track_uuid": "ebd4c392-8ae5-4d73-b46f-b394ce3f0f51",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865575
+        },
+        {
+          "track_uuid": "f3a60f24-9158-4504-b168-be313376423a",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865575
+        },
+        {
+          "track_uuid": "f5419504-f654-42b1-a3c9-01d5e4341528",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865575
+        }
+      ],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH010_N_MUX",
+      "signal_layer": "F.Cu",
+      "sampled_length_mm": 33.13399796783952,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 90.2832457448745,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 57.4680729125274,
+      "L3_projection_length_mm": {},
+      "uncovered_runs": [
+        {
+          "track_uuid": "17bd2fcf-ee7e-45f1-9711-2a279ce83b08",
+          "longest_sampled_uncovered_run_mm": 0.19473684210526332
+        },
+        {
+          "track_uuid": "20016946-1ea0-4f41-a400-738693625e31",
+          "longest_sampled_uncovered_run_mm": 0.32998316455372223
+        },
+        {
+          "track_uuid": "322d5311-148c-427b-b5f3-abf7a9ee219c",
+          "longest_sampled_uncovered_run_mm": 0.2828427124746205
+        },
+        {
+          "track_uuid": "3c53c5b6-9ffe-4b98-882b-493896361099",
+          "longest_sampled_uncovered_run_mm": 0.44999999999999996
+        },
+        {
+          "track_uuid": "4b6d37b3-02d3-4bb2-a817-fc8401cc3601",
+          "longest_sampled_uncovered_run_mm": 0.14999999999999858
+        },
+        {
+          "track_uuid": "8b7043f7-b98d-4838-ad8e-8eee99cecd9b",
+          "longest_sampled_uncovered_run_mm": 0.44058191750853865
+        },
+        {
+          "track_uuid": "b4ef5507-505c-44f8-9761-c1dc00cc8051",
+          "longest_sampled_uncovered_run_mm": 0.47140452079103
+        },
+        {
+          "track_uuid": "b645ef21-41fd-43e8-b094-58ab4e4f676c",
+          "longest_sampled_uncovered_run_mm": 0.44999999999999984
+        }
+      ],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH010_N_MUX",
+      "signal_layer": "B.Cu",
+      "sampled_length_mm": 24.402437954657533,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 85.2096274460093,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 78.29541852585234,
+      "L3_projection_length_mm": {
+        "3V3A": 18.307608953396507,
+        "no_filled_L3_zone": 6.094829001260838
+      },
+      "uncovered_runs": [
+        {
+          "track_uuid": "07945550-1298-49c4-b019-1db8a537ca87",
+          "longest_sampled_uncovered_run_mm": 0.46666666666666856
+        },
+        {
+          "track_uuid": "3982cb97-96d4-427d-8095-763b9202e180",
+          "longest_sampled_uncovered_run_mm": 0.44058167274087706
+        },
+        {
+          "track_uuid": "6920c289-ad29-4488-bd17-4b6b05b7f5cd",
+          "longest_sampled_uncovered_run_mm": 0.44999999999999996
+        },
+        {
+          "track_uuid": "6a8d903d-35ba-4e80-9f7b-ac40bfa034ef",
+          "longest_sampled_uncovered_run_mm": 0.4583333333333339
+        },
+        {
+          "track_uuid": "6f1fe983-eb15-4800-b792-601912d99f43",
+          "longest_sampled_uncovered_run_mm": 0.4615384615384626
+        },
+        {
+          "track_uuid": "9ed2a3fe-f3c1-4273-8290-6dfe5d87d49f",
+          "longest_sampled_uncovered_run_mm": 0.44150943396226444
+        },
+        {
+          "track_uuid": "c7da0553-db9c-4199-8e98-ebce79b88f2e",
+          "longest_sampled_uncovered_run_mm": 0.44999999999999984
+        },
+        {
+          "track_uuid": "f8ee1b44-2e14-4f73-bcda-c53be26cac80",
+          "longest_sampled_uncovered_run_mm": 0.4405819175085396
+        }
+      ],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH010_P_MUX",
+      "signal_layer": "F.Cu",
+      "sampled_length_mm": 26.829068132358316,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 100.0,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 73.70806616329443,
+      "L3_projection_length_mm": {},
+      "uncovered_runs": [],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH011_N_MUX",
+      "signal_layer": "F.Cu",
+      "sampled_length_mm": 18.750000000000103,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 88.12631578947362,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 76.22456140350863,
+      "L3_projection_length_mm": {},
+      "uncovered_runs": [
+        {
+          "track_uuid": "2078c16a-e600-4230-83f7-d8e7a0387a10",
+          "longest_sampled_uncovered_run_mm": 0.44999999999999996
+        },
+        {
+          "track_uuid": "2c4598f6-9a7f-406e-a49d-a6a72ddb8f0d",
+          "longest_sampled_uncovered_run_mm": 0.43815789473684247
+        },
+        {
+          "track_uuid": "ea4d1b3a-e1c1-462c-9379-bae64cb3148b",
+          "longest_sampled_uncovered_run_mm": 0.4499999999999996
+        }
+      ],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH011_N_MUX",
+      "signal_layer": "B.Cu",
+      "sampled_length_mm": 24.014687646809975,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 88.54625098395645,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 80.30978043481633,
+      "L3_projection_length_mm": {
+        "3V3A": 18.811809002988827,
+        "no_filled_L3_zone": 5.20287864382118
+      },
+      "uncovered_runs": [
+        {
+          "track_uuid": "15a8ff1d-5a60-4dc1-aafb-362eb36c6bbf",
+          "longest_sampled_uncovered_run_mm": 0.1312433998378595
+        },
+        {
+          "track_uuid": "76d3eb20-1134-4e51-8433-ec387993e9ff",
+          "longest_sampled_uncovered_run_mm": 0.44999999999999885
+        },
+        {
+          "track_uuid": "78486c75-b878-4a4b-ae71-8893128fcc41",
+          "longest_sampled_uncovered_run_mm": 0.3386669320419778
+        },
+        {
+          "track_uuid": "9507ed67-54ad-4956-bd9f-6e78a6fafab9",
+          "longest_sampled_uncovered_run_mm": 0.12806186005599174
+        },
+        {
+          "track_uuid": "bd557401-c11f-4089-aa25-67f77c1d299f",
+          "longest_sampled_uncovered_run_mm": 0.3499999999999996
+        },
+        {
+          "track_uuid": "dcd8304f-a290-413b-89ab-a2933e6e6676",
+          "longest_sampled_uncovered_run_mm": 0.4583333333333339
+        },
+        {
+          "track_uuid": "f3eb9156-5dad-47a6-bac9-60deec7540b6",
+          "longest_sampled_uncovered_run_mm": 0.44427652478324575
+        },
+        {
+          "track_uuid": "f546246e-5690-4dc8-abf4-713e6c7b06f0",
+          "longest_sampled_uncovered_run_mm": 0.44999999999999984
+        }
+      ],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH011_P_MUX",
+      "signal_layer": "F.Cu",
+      "sampled_length_mm": 7.838477631085006,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 66.81090513066603,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 49.32395495193708,
+      "L3_projection_length_mm": {},
+      "uncovered_runs": [
+        {
+          "track_uuid": "070c2b6d-483c-47c6-a610-8cc797d5c010",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865826
+        },
+        {
+          "track_uuid": "227b8480-6f35-42cc-90df-afd225a3d900",
+          "longest_sampled_uncovered_run_mm": 0.35
+        },
+        {
+          "track_uuid": "33f991c9-f058-4506-b3ec-c140b8988a16",
+          "longest_sampled_uncovered_run_mm": 0.14142135623731025
+        },
+        {
+          "track_uuid": "3595ed15-5317-49be-b70b-f6ab57f89501",
+          "longest_sampled_uncovered_run_mm": 0.49999999999999994
+        },
+        {
+          "track_uuid": "3b0ab120-3510-4022-95eb-7e141b7e4520",
+          "longest_sampled_uncovered_run_mm": 0.04999999999999716
+        },
+        {
+          "track_uuid": "4494c382-cdbc-4417-b2db-5a5440bc7292",
+          "longest_sampled_uncovered_run_mm": 0.14142135623731025
+        },
+        {
+          "track_uuid": "44e6eb62-8a4a-4025-a3fd-9cb3c877a506",
+          "longest_sampled_uncovered_run_mm": 0.10000000000000142
+        },
+        {
+          "track_uuid": "6c1c838f-1695-47c0-a80d-74a63a63a055",
+          "longest_sampled_uncovered_run_mm": 0.04999999999999716
+        },
+        {
+          "track_uuid": "7daacb86-1316-4d59-b44b-bdcab7f92ac5",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865826
+        },
+        {
+          "track_uuid": "850e8642-9c6e-4772-a983-7a5aec5b4959",
+          "longest_sampled_uncovered_run_mm": 0.49190036952107713
+        },
+        {
+          "track_uuid": "9f746748-4c51-42b9-b441-8f1999d36263",
+          "longest_sampled_uncovered_run_mm": 0.03535533905932851
+        },
+        {
+          "track_uuid": "b6960335-a9d3-4fbb-9cd4-d191d9d77a37",
+          "longest_sampled_uncovered_run_mm": 0.4499999999999958
+        },
+        {
+          "track_uuid": "bed96b1c-7340-41d1-8cc8-7f39bf9707e6",
+          "longest_sampled_uncovered_run_mm": 0.09999999999999432
+        },
+        {
+          "track_uuid": "f330942e-77ef-4ccb-a922-57bde9b39e71",
+          "longest_sampled_uncovered_run_mm": 0.04999999999999716
+        }
+      ],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH011_P_MUX",
+      "signal_layer": "B.Cu",
+      "sampled_length_mm": 13.899263481886976,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 79.58049633876853,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 74.18452696976287,
+      "L3_projection_length_mm": {
+        "no_filled_L3_zone": 13.899263481886976
+      },
+      "uncovered_runs": [
+        {
+          "track_uuid": "0098efba-a747-4c2a-bef5-241803308879",
+          "longest_sampled_uncovered_run_mm": 0.35
+        },
+        {
+          "track_uuid": "1c6b70ca-ec8c-4fc6-8b38-da508ffe37c3",
+          "longest_sampled_uncovered_run_mm": 0.48380990291711173
+        },
+        {
+          "track_uuid": "320127e8-0a5f-4757-ae31-a799934d0163",
+          "longest_sampled_uncovered_run_mm": 0.49999999999999994
+        },
+        {
+          "track_uuid": "57585b58-5ae6-472b-84fb-faac9ff3642d",
+          "longest_sampled_uncovered_run_mm": 0.14142135623731025
+        },
+        {
+          "track_uuid": "60dc9d85-649f-4a44-a685-80e9786c2fd2",
+          "longest_sampled_uncovered_run_mm": 0.10012497191510003
+        },
+        {
+          "track_uuid": "cdff29f0-3570-45a4-a0d5-bc6e31b0711f",
+          "longest_sampled_uncovered_run_mm": 0.472222222222223
+        },
+        {
+          "track_uuid": "fc9d2a11-6f66-4efe-9eb6-4821fab04b7e",
+          "longest_sampled_uncovered_run_mm": 0.44058216227634106
+        }
+      ],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH012_N_ELECTRODE",
+      "signal_layer": "F.Cu",
+      "sampled_length_mm": 2.087092816493346,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 58.13334065334571,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 58.13334065334571,
+      "L3_projection_length_mm": {},
+      "uncovered_runs": [
+        {
+          "track_uuid": "0f076015-1299-4d4c-ac7f-6f57c9b05ab3",
+          "longest_sampled_uncovered_run_mm": 0.43411851411512137
+        },
+        {
+          "track_uuid": "cf734821-6fc8-428f-b1bb-07fab3eeb8be",
+          "longest_sampled_uncovered_run_mm": 0.43967752561464063
+        }
+      ],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH012_N_ELECTRODE",
+      "signal_layer": "In2.Cu",
+      "sampled_length_mm": 17.226546350168114,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 94.89560187763102,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 93.86941420365821,
+      "L3_projection_length_mm": {},
+      "uncovered_runs": [
+        {
+          "track_uuid": "11e592dd-068c-41db-aa59-3ec15daedc1b",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865575
+        },
+        {
+          "track_uuid": "450b51fd-f7f1-4bc7-aba7-0372b2db8b20",
+          "longest_sampled_uncovered_run_mm": 0.0707106781186545
+        },
+        {
+          "track_uuid": "466a5deb-b1f0-4add-b626-24fc7c1df7aa",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865324
+        },
+        {
+          "track_uuid": "50a70660-b09f-4286-a685-4c4727c1a0cc",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865324
+        },
+        {
+          "track_uuid": "5d7cdc94-a23e-4fc2-85f1-813d6e5b7b3e",
+          "longest_sampled_uncovered_run_mm": 0.156205761740727
+        },
+        {
+          "track_uuid": "61326805-65fa-4461-90b3-678de87699ae",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865575
+        },
+        {
+          "track_uuid": "7fd0f036-3e67-4104-ba46-9bf0722d13ec",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865575
+        },
+        {
+          "track_uuid": "a6936452-9ef7-489f-82b6-01cbe9fc42b2",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865575
+        },
+        {
+          "track_uuid": "c5067efa-288b-4484-959f-2b53f9359072",
+          "longest_sampled_uncovered_run_mm": 0.12206498269774252
+        },
+        {
+          "track_uuid": "e679b772-41b3-41ff-8bae-197e468b6f95",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865324
+        },
+        {
+          "track_uuid": "f9db129c-e642-402a-b369-9e97c0182ee6",
+          "longest_sampled_uncovered_run_mm": 0.03535533905932725
+        }
+      ],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH014_N_MUX",
+      "signal_layer": "F.Cu",
+      "sampled_length_mm": 18.36270688820233,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 82.73672773701506,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 72.51030201702578,
+      "L3_projection_length_mm": {},
+      "uncovered_runs": [
+        {
+          "track_uuid": "13909e0a-8122-4470-a516-8a6984b96868",
+          "longest_sampled_uncovered_run_mm": 0.47140452079103623
+        },
+        {
+          "track_uuid": "358163d0-1829-4056-a600-4adcc7549f21",
+          "longest_sampled_uncovered_run_mm": 0.4435487991079261
+        },
+        {
+          "track_uuid": "3c10aa82-84d2-41e0-982c-d02972cf2dfc",
+          "longest_sampled_uncovered_run_mm": 0.35355339059327384
+        },
+        {
+          "track_uuid": "7d27da35-38ad-48e5-827b-f97234605a35",
+          "longest_sampled_uncovered_run_mm": 0.44997704257325755
+        },
+        {
+          "track_uuid": "8b2f6427-f9c2-4ad3-a791-3af14f270f2a",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865324
+        },
+        {
+          "track_uuid": "8c1b62bb-89df-44e2-a68a-943dc8b0cfdf",
+          "longest_sampled_uncovered_run_mm": 0.05000000000000071
+        },
+        {
+          "track_uuid": "c8a23975-2224-44b0-84bb-5df63815f267",
+          "longest_sampled_uncovered_run_mm": 0.3999999999999986
+        },
+        {
+          "track_uuid": "f2dffcf6-21bd-435d-8748-c5f05eb26684",
+          "longest_sampled_uncovered_run_mm": 0.43274935008616694
+        }
+      ],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH014_N_MUX",
+      "signal_layer": "B.Cu",
+      "sampled_length_mm": 25.79708477311357,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 85.64006702419317,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 66.99501083773218,
+      "L3_projection_length_mm": {
+        "3V3A": 17.53491021667932,
+        "no_filled_L3_zone": 8.262174556434164
+      },
+      "uncovered_runs": [
+        {
+          "track_uuid": "035d0944-8ed7-460b-bc6f-0b7a56741637",
+          "longest_sampled_uncovered_run_mm": 0.4454772721475268
+        },
+        {
+          "track_uuid": "1c3f6e26-f3ef-4fe9-98fb-e97231594750",
+          "longest_sampled_uncovered_run_mm": 0.02500000000000213
+        },
+        {
+          "track_uuid": "2ba246ad-0395-4d89-8b3b-2fade14f2fbd",
+          "longest_sampled_uncovered_run_mm": 0.05000000000000071
+        },
+        {
+          "track_uuid": "409a3bc4-d3bf-450d-abac-e4d56c89e40d",
+          "longest_sampled_uncovered_run_mm": 0.025000000000000355
+        },
+        {
+          "track_uuid": "4840296b-cd38-41fa-96f6-ccd9e93ccfa1",
+          "longest_sampled_uncovered_run_mm": 0.21213203435596226
+        },
+        {
+          "track_uuid": "4ceb1fda-01c1-48fa-82b6-6bff26792f40",
+          "longest_sampled_uncovered_run_mm": 0.19999999999999957
+        },
+        {
+          "track_uuid": "594406e3-af25-4b3b-ad02-95b5460652c4",
+          "longest_sampled_uncovered_run_mm": 0.1414213562373115
+        },
+        {
+          "track_uuid": "6d15b2ec-91db-481d-916f-269f917e1347",
+          "longest_sampled_uncovered_run_mm": 0.04999999999999716
+        },
+        {
+          "track_uuid": "6f0f03ae-d764-452d-96c0-60ecef600e88",
+          "longest_sampled_uncovered_run_mm": 0.05000000000000071
+        },
+        {
+          "track_uuid": "8332640a-3883-4616-98ad-c859332a9a95",
+          "longest_sampled_uncovered_run_mm": 0.449999999999999
+        },
+        {
+          "track_uuid": "89877524-5707-4f6d-b109-fa676822146b",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865826
+        },
+        {
+          "track_uuid": "89ededd6-edd8-4205-a451-a5cdd6f6ea82",
+          "longest_sampled_uncovered_run_mm": 0.2828427124746205
+        },
+        {
+          "track_uuid": "9d526141-017c-4898-8964-cacb28880eb4",
+          "longest_sampled_uncovered_run_mm": 0.4242640687119245
+        },
+        {
+          "track_uuid": "a92b3343-8785-4206-bce4-b6661814611d",
+          "longest_sampled_uncovered_run_mm": 0.07071067811865073
+        },
+        {
+          "track_uuid": "b05f0db5-faa5-488d-bab7-85553449a18b",
+          "longest_sampled_uncovered_run_mm": 0.1118033988749895
+        },
+        {
+          "track_uuid": "b31a31eb-493e-416e-bf60-00ba05faec32",
+          "longest_sampled_uncovered_run_mm": 0.25
+        },
+        {
+          "track_uuid": "d7819eec-90e9-41c2-8cd6-36ad6f3b6e4c",
+          "longest_sampled_uncovered_run_mm": 0.39508188409153144
+        },
+        {
+          "track_uuid": "f93969c5-982c-4a9f-b951-c05390446135",
+          "longest_sampled_uncovered_run_mm": 0.44999999999999796
+        }
+      ],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    },
+    {
+      "net": "CH014_P_MUX",
+      "signal_layer": "F.Cu",
+      "sampled_length_mm": 8.175645856694578,
+      "sample_step_max_mm": 0.05,
+      "L2_AGND_centerline_coverage_percent": 100.0,
+      "L2_AGND_center_plus_minus_0_30_mm_coverage_percent": 90.25805160887913,
+      "L3_projection_length_mm": {},
+      "uncovered_runs": [],
+      "note": "Filled-copper projection only. Signal-via anti-pads are legitimate gaps; no 3D return-current model."
+    }
+  ],
+  "pair_distance_samples": [
+    {
+      "net": "CH002_N_MUX",
+      "layer": "F.Cu",
+      "opposite_net": "CH002_P_MUX",
+      "samples": 294,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": 5.025,
+        "median": 12.578729019434137,
+        "p95": 14.658464288246584,
+        "maximum": 15.141064666406406
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH002_N_MUX",
+      "layer": "B.Cu",
+      "opposite_net": "CH002_P_MUX",
+      "samples": 0,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH002_P_MUX",
+      "layer": "F.Cu",
+      "opposite_net": "CH002_N_MUX",
+      "samples": 486,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": 5.025,
+        "median": 10.955966107927054,
+        "p95": 14.452569932756715,
+        "maximum": 14.801985312248236
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH004_N_ELECTRODE",
+      "layer": "F.Cu",
+      "opposite_net": "CH004_P_ELECTRODE",
+      "samples": 0,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH004_N_ELECTRODE",
+      "layer": "In2.Cu",
+      "opposite_net": "CH004_P_ELECTRODE",
+      "samples": 0,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH006_N_ELECTRODE",
+      "layer": "F.Cu",
+      "opposite_net": "CH006_P_ELECTRODE",
+      "samples": 24,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": 4.814626153711211,
+        "median": 8.0,
+        "p95": 8.0,
+        "maximum": 8.0
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH006_N_ELECTRODE",
+      "layer": "In2.Cu",
+      "opposite_net": "CH006_P_ELECTRODE",
+      "samples": 384,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": 4.260905126848051,
+        "median": 5.243628840041255,
+        "p95": 7.506185971514218,
+        "maximum": 7.985013963669696
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH006_P_ELECTRODE",
+      "layer": "F.Cu",
+      "opposite_net": "CH006_N_ELECTRODE",
+      "samples": 56,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": 4.796944607308534,
+        "median": 5.299426790135832,
+        "p95": 8.0,
+        "maximum": 8.0
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH006_P_ELECTRODE",
+      "layer": "In2.Cu",
+      "opposite_net": "CH006_N_ELECTRODE",
+      "samples": 267,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": 4.2609051268480505,
+        "median": 4.671067895032355,
+        "p95": 5.213319235545214,
+        "maximum": 5.561477892611059
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH008_N_MUX",
+      "layer": "F.Cu",
+      "opposite_net": "CH008_P_MUX",
+      "samples": 107,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": 4.452000148920388,
+        "median": 5.096255534949391,
+        "p95": 13.000033572278817,
+        "maximum": 13.002928189600459
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH008_N_MUX",
+      "layer": "In2.Cu",
+      "opposite_net": "CH008_P_MUX",
+      "samples": 984,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": 0.5985045989814923,
+        "median": 5.720001,
+        "p95": 14.620001,
+        "maximum": 14.867828304616538
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH008_N_MUX",
+      "layer": "B.Cu",
+      "opposite_net": "CH008_P_MUX",
+      "samples": 259,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": 3.6700044046297813,
+        "median": 7.620080380153483,
+        "p95": 12.133931282257926,
+        "maximum": 12.434284455756654
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH008_P_MUX",
+      "layer": "F.Cu",
+      "opposite_net": "CH008_N_MUX",
+      "samples": 12,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": 4.4626925728757065,
+        "median": 4.729697010098073,
+        "p95": 4.874400991945872,
+        "maximum": 4.900063775095179
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH008_P_MUX",
+      "layer": "In2.Cu",
+      "opposite_net": "CH008_N_MUX",
+      "samples": 741,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": 0.6124733200552265,
+        "median": 7.137091164473171,
+        "p95": 11.99279266851558,
+        "maximum": 13.021103088875043
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH008_P_MUX",
+      "layer": "B.Cu",
+      "opposite_net": "CH008_N_MUX",
+      "samples": 280,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": 3.6900007499999994,
+        "median": 10.060036666092069,
+        "p95": 14.558528660345136,
+        "maximum": 15.254609958959948
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH010_N_ELECTRODE",
+      "layer": "F.Cu",
+      "opposite_net": "CH010_P_ELECTRODE",
+      "samples": 0,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH010_N_ELECTRODE",
+      "layer": "In2.Cu",
+      "opposite_net": "CH010_P_ELECTRODE",
+      "samples": 0,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH010_N_MUX",
+      "layer": "F.Cu",
+      "opposite_net": "CH010_P_MUX",
+      "samples": 684,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": 5.024999999999999,
+        "median": 12.749998999999999,
+        "p95": 20.303828626315177,
+        "maximum": 21.47843324244115
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH010_N_MUX",
+      "layer": "B.Cu",
+      "opposite_net": "CH010_P_MUX",
+      "samples": 0,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH010_P_MUX",
+      "layer": "F.Cu",
+      "opposite_net": "CH010_N_MUX",
+      "samples": 546,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": 5.024999999999999,
+        "median": 12.822089635438992,
+        "p95": 16.523081846088598,
+        "maximum": 16.860818306979592
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH011_N_MUX",
+      "layer": "F.Cu",
+      "opposite_net": "CH011_P_MUX",
+      "samples": 377,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": 5.024999999999999,
+        "median": 7.368084154649769,
+        "p95": 16.815040213582368,
+        "maximum": 17.23187124612674
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH011_N_MUX",
+      "layer": "B.Cu",
+      "opposite_net": "CH011_P_MUX",
+      "samples": 491,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": 10.281656432831163,
+        "median": 13.74404139647356,
+        "p95": 17.019345839818552,
+        "maximum": 17.324360146629118
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH011_P_MUX",
+      "layer": "F.Cu",
+      "opposite_net": "CH011_N_MUX",
+      "samples": 161,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": 5.024999999999999,
+        "median": 10.230001000000003,
+        "p95": 12.655001,
+        "maximum": 12.655001
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH011_P_MUX",
+      "layer": "B.Cu",
+      "opposite_net": "CH011_N_MUX",
+      "samples": 283,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": 10.261073891837082,
+        "median": 12.793735295448357,
+        "p95": 14.510150990234452,
+        "maximum": 15.106431762856289
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH012_N_ELECTRODE",
+      "layer": "F.Cu",
+      "opposite_net": "CH012_P_ELECTRODE",
+      "samples": 0,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH012_N_ELECTRODE",
+      "layer": "In2.Cu",
+      "opposite_net": "CH012_P_ELECTRODE",
+      "samples": 0,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH014_N_MUX",
+      "layer": "F.Cu",
+      "opposite_net": "CH014_P_MUX",
+      "samples": 382,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": 4.360155727267532,
+        "median": 10.85891124207551,
+        "p95": 18.744548762536517,
+        "maximum": 18.828030226824637
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH014_N_MUX",
+      "layer": "B.Cu",
+      "opposite_net": "CH014_P_MUX",
+      "samples": 0,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    },
+    {
+      "net": "CH014_P_MUX",
+      "layer": "F.Cu",
+      "opposite_net": "CH014_N_MUX",
+      "samples": 165,
+      "track_centerline_to_opposite_track_distance_mm": {
+        "minimum": 4.3738884302185825,
+        "median": 5.4321875313048595,
+        "p95": 6.092098003293927,
+        "maximum": 6.160110970627885
+      },
+      "note": "Excludes pads/vias; distances are geometric, not an impedance/coupling measurement."
+    }
+  ],
+  "return_current_qualified": false,
+  "pair_coupling_qualified": false,
+  "ADC_guard_ring_qualified": false,
+  "qualification_limits_specified": false,
+  "independent_lvs_signoff": false,
+  "routing_completed": false,
+  "fabrication_release": false
+}
