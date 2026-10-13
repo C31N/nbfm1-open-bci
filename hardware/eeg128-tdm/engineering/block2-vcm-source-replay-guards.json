@@ -1,0 +1,45 @@
+{
+  "valid_recipe_passed": true,
+  "negative_cases": [
+    {
+      "case": "wrong_net",
+      "rejected": true,
+      "reason": "Only VCM copper is allowed"
+    },
+    {
+      "case": "via_position",
+      "rejected": true,
+      "reason": "Only the 0.20-mm VCM endpoint shift is allowed"
+    },
+    {
+      "case": "via_geometry",
+      "rejected": true,
+      "reason": "Only the 0.20-mm VCM endpoint shift is allowed"
+    },
+    {
+      "case": "layer",
+      "rejected": true,
+      "reason": "VCM link geometry differs"
+    },
+    {
+      "case": "extra_item",
+      "rejected": true,
+      "reason": "Expected exactly the two VCM objects and one new link"
+    },
+    {
+      "case": "missing_link",
+      "rejected": true,
+      "reason": "Expected exactly the two VCM objects and one new link"
+    },
+    {
+      "case": "duplicate_uuid",
+      "rejected": true,
+      "reason": "Expected exactly the two VCM objects and one new link"
+    },
+    {
+      "case": "original_mismatch",
+      "rejected": true,
+      "reason": "Exact original VCM copper differs"
+    }
+  ]
+}

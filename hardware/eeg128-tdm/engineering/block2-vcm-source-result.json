@@ -1,0 +1,12 @@
+{
+  "kicad_version": "8.0.9",
+  "violations": 0,
+  "warnings": 0,
+  "unconnected": 149,
+  "power_regressions": [],
+  "pcb_sha256": "feb5eeedd8458e05fc9a7e3756b28b63555f81da3fd8720d63857706b2a798b7",
+  "archive_sha256": "777b9f77a975e441b75279e3b83f105db7bdcc47306ba52e8ea066104ad74672",
+  "routing_completed": false,
+  "fabrication_release": false,
+  "engineering_candidate_only": true
+}

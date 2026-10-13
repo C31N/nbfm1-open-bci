@@ -1,0 +1,81 @@
+{
+  "baseline": "/workspace/scratch/c3e1942d61e8/block2-vcm-source-window/eeg128-tdm.kicad_pcb",
+  "accepted_board": null,
+  "attempts": [
+    {
+      "trial": 0,
+      "paths": [
+        {
+          "net": "CH018_N_MUX",
+          "found": false
+        }
+      ]
+    },
+    {
+      "trial": 1,
+      "paths": [
+        {
+          "net": "CH018_N_MUX",
+          "found": false
+        }
+      ]
+    },
+    {
+      "trial": 2,
+      "paths": [
+        {
+          "net": "CH018_N_MUX",
+          "found": false
+        }
+      ]
+    },
+    {
+      "trial": 3,
+      "paths": [
+        {
+          "net": "CH018_N_MUX",
+          "found": false
+        }
+      ]
+    },
+    {
+      "trial": 4,
+      "paths": [
+        {
+          "net": "CH018_P_MUX",
+          "found": false
+        }
+      ]
+    },
+    {
+      "trial": 5,
+      "paths": [
+        {
+          "net": "CH018_P_MUX",
+          "found": false
+        }
+      ]
+    },
+    {
+      "trial": 6,
+      "paths": [
+        {
+          "net": "CH018_P_MUX",
+          "found": false
+        }
+      ]
+    },
+    {
+      "trial": 7,
+      "paths": [
+        {
+          "net": "CH018_P_MUX",
+          "found": false
+        }
+      ]
+    }
+  ],
+  "unconnected": 149,
+  "routing_completed": false,
+  "fabrication_release": false
+}
