@@ -1,0 +1,24 @@
+{
+  "shifted_39_65": {
+    "L4_component_area_mm2": 0.5865256978525998,
+    "L4_component_bounds_mm": [
+      38.499999999,
+      25.446937966784397,
+      39.075000001,
+      26.603480509288243
+    ],
+    "touches_model_window": false
+  },
+  "via_only_counterfactual_39_45": {
+    "L4_component_area_mm2": 0.44568470868946586,
+    "L4_component_bounds_mm": [
+      38.499999999,
+      25.446937966784397,
+      39.075000001,
+      26.603480509288243
+    ],
+    "touches_model_window": false
+  },
+  "copper_written": false,
+  "note": "Via-position-only counterfactual in memory; all other 147 checkpoint copper fixed. Conservative routing model, not a DRC or electrical signoff."
+}

@@ -1,0 +1,48 @@
+{
+  "initial_archive": "../block2-ch099-closed147.zip",
+  "steps": [
+    {
+      "recipe": "147-146-ch020n-recipe.json",
+      "closed_nets": [
+        "CH020_N_ELECTRODE"
+      ],
+      "unconnected": 146,
+      "pcb_sha256": "a6b99f3c8fe184c8e4abdf080569e1bcb19efa2bbb7946d224c957d9859526f5",
+      "archive_sha256": "2ce7c6874fd0cc542625a90873716f1cc6a822309181608fcc6532cb3b8744c0",
+      "byte_identical_replay": true
+    },
+    {
+      "recipe": "146-145-ch023n-recipe.json",
+      "closed_nets": [
+        "CH023_N_ELECTRODE"
+      ],
+      "unconnected": 145,
+      "pcb_sha256": "808ed3a4255cefa036c650df627102d7a713c988f4822191702c0a8a13f8ae6c",
+      "archive_sha256": "15c96461de975b12e41f564d6bffb19e43ed375647151f8300af2ea752f286c2",
+      "byte_identical_replay": true
+    },
+    {
+      "recipe": "145-144-ch016p-recipe.json",
+      "closed_nets": [
+        "CH016_P_ELECTRODE"
+      ],
+      "unconnected": 144,
+      "pcb_sha256": "a153d13955c08cbbd9f95b508fb1c6d98505950d4d2d4a8a31dbbf16d01d0d34",
+      "archive_sha256": "8de9ee22293352a643128d6972faa953c8c1e62b2ec5c605c052584e2c19aa7b",
+      "byte_identical_replay": true
+    },
+    {
+      "recipe": "144-143-ch027n-recipe.json",
+      "closed_nets": [
+        "CH027_N_ELECTRODE"
+      ],
+      "unconnected": 143,
+      "pcb_sha256": "497b588e580caf24766d5d60e9753def8dfe10ad3495b75faf5cd3fdd6276f24",
+      "archive_sha256": "e8d60a9835aea686af2d34d9e0e31b3a948b8c7dd2caae81c2c24786e4a3a8e1",
+      "byte_identical_replay": true
+    }
+  ],
+  "final_archive": "../block2-electrode-closed143.zip",
+  "routing_completed": false,
+  "fabrication_release": false
+}

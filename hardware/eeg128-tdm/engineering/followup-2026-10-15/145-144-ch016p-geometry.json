@@ -1,0 +1,10 @@
+{
+  "existing_copper_unchanged": true,
+  "footprints_unchanged": true,
+  "zone_outlines_unchanged": true,
+  "project_rules_unchanged": true,
+  "added_copper_objects": 23,
+  "L3_power_loss_mm2": 0.0,
+  "L3_power_gain_mm2": 0.0,
+  "minimum_new_L3_to_baseline_power_mm": 4.895001000000001
+}

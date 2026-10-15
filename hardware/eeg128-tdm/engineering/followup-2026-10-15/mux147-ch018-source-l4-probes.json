@@ -1,0 +1,66 @@
+{
+  "net": "CH018_N_MUX",
+  "probes": [
+    {
+      "start": [
+        38.75,
+        26
+      ],
+      "goal": [
+        39.8,
+        25.5
+      ],
+      "layer": "B.Cu",
+      "step_mm": 0.01,
+      "found": false,
+      "path": null,
+      "elapsed_seconds": 1.9863044119999813
+    },
+    {
+      "start": [
+        38.75,
+        26
+      ],
+      "goal": [
+        40.3,
+        26.8
+      ],
+      "layer": "B.Cu",
+      "step_mm": 0.01,
+      "found": false,
+      "path": null,
+      "elapsed_seconds": 1.861678867999899
+    },
+    {
+      "start": [
+        38.75,
+        26
+      ],
+      "goal": [
+        38.4,
+        24.4
+      ],
+      "layer": "B.Cu",
+      "step_mm": 0.01,
+      "found": false,
+      "path": null,
+      "elapsed_seconds": 2.361271593000083
+    },
+    {
+      "start": [
+        38.75,
+        26
+      ],
+      "goal": [
+        38.4,
+        28.0
+      ],
+      "layer": "B.Cu",
+      "step_mm": 0.01,
+      "found": false,
+      "path": null,
+      "elapsed_seconds": 3.538106319999997
+    }
+  ],
+  "copper_written": false
+}

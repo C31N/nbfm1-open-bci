@@ -1,0 +1,45 @@
+{
+  "baseline_sha256": "52122b691e649d3b7328672e3d6ef303618e1fbc263f3c486821e3a1b95542be",
+  "mode": "direct",
+  "step_mm": 0.025,
+  "margin_mm": 20.0,
+  "search_seconds": 20.0,
+  "via_diameter_mm": 0.6,
+  "new_copper_layers": [
+    "F.Cu",
+    "B.Cu"
+  ],
+  "nets": {
+    "CH018_N_MUX": {
+      "start_mm": [
+        38.25,
+        26.0
+      ],
+      "goal_mm": [
+        41.135,
+        58.15
+      ],
+      "results": {
+        "forward": null,
+        "reverse": null
+      }
+    },
+    "CH018_P_MUX": {
+      "start_mm": [
+        32.75,
+        26.0
+      ],
+      "goal_mm": [
+        41.135,
+        45.15
+      ],
+      "results": {
+        "forward": null,
+        "reverse": null
+      }
+    }
+  },
+  "copper_written": false,
+  "routing_completed": false,
+  "fabrication_release": false
+}

@@ -1,0 +1,24 @@
+{
+  "violations": 0,
+  "warnings": 0,
+  "unconnected": 144,
+  "existing_copper_unchanged": true,
+  "footprints_unchanged": true,
+  "zone_outlines_unchanged": true,
+  "project_rules_unchanged": true,
+  "added_copper_objects": 23,
+  "L3_power_loss_mm2": 0.0,
+  "L3_power_gain_mm2": 0.0,
+  "minimum_new_L3_to_baseline_power_mm": 4.895001000000001,
+  "accepted": true,
+  "kicad_version": "8.0.9",
+  "closed_nets": [
+    "CH016_P_ELECTRODE"
+  ],
+  "regressed_nets": [],
+  "diagnostic_parity_findings": 0,
+  "pcb_sha256": "a153d13955c08cbbd9f95b508fb1c6d98505950d4d2d4a8a31dbbf16d01d0d34",
+  "routing_completed": false,
+  "fabrication_release": false,
+  "archive_sha256": "8de9ee22293352a643128d6972faa953c8c1e62b2ec5c605c052584e2c19aa7b"
+}

@@ -1,0 +1,218 @@
+[
+  {
+    "net": "CH018_N_MUX",
+    "endpoint": "source",
+    "anchor_mm": [
+      38.25,
+      26.0
+    ],
+    "model": "conservative foreign-pad boxes and same-pad via exclusion",
+    "window_mm": [
+      30.25,
+      18.0,
+      46.25,
+      34.0
+    ],
+    "reachable_F_area_mm2": 3.3317875681920963,
+    "geometric_via_centre_area_mm2": 0.0,
+    "zero_power_loss_via_centre_area_mm2": 0.0
+  },
+  {
+    "net": "CH018_N_MUX",
+    "endpoint": "target",
+    "anchor_mm": [
+      41.135,
+      58.15
+    ],
+    "model": "conservative foreign-pad boxes and same-pad via exclusion",
+    "window_mm": [
+      33.135,
+      50.15,
+      49.135,
+      66.15
+    ],
+    "reachable_F_area_mm2": 33.834020636204116,
+    "geometric_via_centre_area_mm2": 20.40811632642224,
+    "zero_power_loss_via_centre_area_mm2": 0.0
+  },
+  {
+    "net": "CH018_P_MUX",
+    "endpoint": "source",
+    "anchor_mm": [
+      32.75,
+      26.0
+    ],
+    "model": "conservative foreign-pad boxes and same-pad via exclusion",
+    "window_mm": [
+      24.75,
+      18.0,
+      40.75,
+      34.0
+    ],
+    "reachable_F_area_mm2": 58.05346838758165,
+    "geometric_via_centre_area_mm2": 2.4773352827973563,
+    "zero_power_loss_via_centre_area_mm2": 2.4773352827973554
+  },
+  {
+    "net": "CH018_P_MUX",
+    "endpoint": "target",
+    "anchor_mm": [
+      41.135,
+      45.15
+    ],
+    "model": "conservative foreign-pad boxes and same-pad via exclusion",
+    "window_mm": [
+      33.135,
+      37.15,
+      49.135,
+      53.15
+    ],
+    "reachable_F_area_mm2": 9.891429945813478,
+    "geometric_via_centre_area_mm2": 0.08168375208492216,
+    "zero_power_loss_via_centre_area_mm2": 0.008418733066308092
+  },
+  {
+    "net": "CH020_N_MUX",
+    "endpoint": "source",
+    "anchor_mm": [
+      38.25,
+      20.8
+    ],
+    "model": "conservative foreign-pad boxes and same-pad via exclusion",
+    "window_mm": [
+      30.25,
+      12.8,
+      46.25,
+      28.8
+    ],
+    "reachable_F_area_mm2": 2.8408110954431924,
+    "geometric_via_centre_area_mm2": 0.0,
+    "zero_power_loss_via_centre_area_mm2": 0.0
+  },
+  {
+    "net": "CH020_N_MUX",
+    "endpoint": "target",
+    "anchor_mm": [
+      38.595,
+      58.15
+    ],
+    "model": "conservative foreign-pad boxes and same-pad via exclusion",
+    "window_mm": [
+      30.595,
+      50.15,
+      46.595,
+      66.15
+    ],
+    "reachable_F_area_mm2": 30.683289133875412,
+    "geometric_via_centre_area_mm2": 18.653950042242364,
+    "zero_power_loss_via_centre_area_mm2": 0.0
+  },
+  {
+    "net": "CH020_P_MUX",
+    "endpoint": "source",
+    "anchor_mm": [
+      32.75,
+      20.8
+    ],
+    "model": "conservative foreign-pad boxes and same-pad via exclusion",
+    "window_mm": [
+      24.75,
+      12.8,
+      40.75,
+      28.8
+    ],
+    "reachable_F_area_mm2": 63.6240411996608,
+    "geometric_via_centre_area_mm2": 2.586159560330501,
+    "zero_power_loss_via_centre_area_mm2": 2.5861595603305014
+  },
+  {
+    "net": "CH020_P_MUX",
+    "endpoint": "target",
+    "anchor_mm": [
+      38.595,
+      45.15
+    ],
+    "model": "conservative foreign-pad boxes and same-pad via exclusion",
+    "window_mm": [
+      30.595,
+      37.15,
+      46.595,
+      53.15
+    ],
+    "reachable_F_area_mm2": 9.891429945813478,
+    "geometric_via_centre_area_mm2": 0.08168375208492216,
+    "zero_power_loss_via_centre_area_mm2": 0.008418733066308092
+  },
+  {
+    "net": "CH024_N_MUX",
+    "endpoint": "source",
+    "anchor_mm": [
+      48.25,
+      13.0
+    ],
+    "model": "conservative foreign-pad boxes and same-pad via exclusion",
+    "window_mm": [
+      40.25,
+      5.0,
+      56.25,
+      21.0
+    ],
+    "reachable_F_area_mm2": 3.2061727552306154,
+    "geometric_via_centre_area_mm2": 0.0,
+    "zero_power_loss_via_centre_area_mm2": 0.0
+  },
+  {
+    "net": "CH024_N_MUX",
+    "endpoint": "target",
+    "anchor_mm": [
+      34.785,
+      48.85
+    ],
+    "model": "conservative foreign-pad boxes and same-pad via exclusion",
+    "window_mm": [
+      26.784999999999997,
+      40.85,
+      42.785,
+      56.85
+    ],
+    "reachable_F_area_mm2": 2.924784166113373,
+    "geometric_via_centre_area_mm2": 0.0,
+    "zero_power_loss_via_centre_area_mm2": 0.0
+  },
+  {
+    "net": "CH024_P_MUX",
+    "endpoint": "source",
+    "anchor_mm": [
+      42.75,
+      13.0
+    ],
+    "model": "conservative foreign-pad boxes and same-pad via exclusion",
+    "window_mm": [
+      34.75,
+      5.0,
+      50.75,
+      21.0
+    ],
+    "reachable_F_area_mm2": 1.4544816628889137,
+    "geometric_via_centre_area_mm2": 0.0,
+    "zero_power_loss_via_centre_area_mm2": 0.0
+  },
+  {
+    "net": "CH024_P_MUX",
+    "endpoint": "target",
+    "anchor_mm": [
+      34.785,
+      35.85
+    ],
+    "model": "conservative foreign-pad boxes and same-pad via exclusion",
+    "window_mm": [
+      26.784999999999997,
+      27.85,
+      42.785,
+      43.85
+    ],
+    "reachable_F_area_mm2": 40.337193940483644,
+    "geometric_via_centre_area_mm2": 1.5314224231868587,
+    "zero_power_loss_via_centre_area_mm2": 1.5314224231868585
+  }
+]

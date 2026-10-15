@@ -1,0 +1,132 @@
+{
+  "baseline_sha256": "52122b691e649d3b7328672e3d6ef303618e1fbc263f3c486821e3a1b95542be",
+  "baseline_refilled_sha256": "52122b691e649d3b7328672e3d6ef303618e1fbc263f3c486821e3a1b95542be",
+  "channels": [
+    102
+  ],
+  "trials": [
+    {
+      "channel": 102,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 18.0,
+      "paths": [
+        {
+          "net": "CH102_N_MUX",
+          "start_mm": [
+            152.75,
+            15.6
+          ],
+          "goal_mm": [
+            151.055,
+            58.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false,
+      "extra_power_margin_mm": 0.05
+    },
+    {
+      "channel": 102,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 18.0,
+      "paths": [
+        {
+          "net": "CH102_P_MUX",
+          "start_mm": [
+            147.75,
+            15.6
+          ],
+          "goal_mm": [
+            151.055,
+            45.15
+          ],
+          "found": true
+        },
+        {
+          "net": "CH102_N_MUX",
+          "start_mm": [
+            152.75,
+            15.6
+          ],
+          "goal_mm": [
+            151.055,
+            58.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false,
+      "extra_power_margin_mm": 0.05
+    },
+    {
+      "channel": 102,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 18.0,
+      "paths": [
+        {
+          "net": "CH102_N_MUX",
+          "start_mm": [
+            152.75,
+            15.6
+          ],
+          "goal_mm": [
+            151.055,
+            58.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false,
+      "extra_power_margin_mm": 0.05
+    },
+    {
+      "channel": 102,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 18.0,
+      "paths": [
+        {
+          "net": "CH102_P_MUX",
+          "start_mm": [
+            147.75,
+            15.6
+          ],
+          "goal_mm": [
+            151.055,
+            45.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false,
+      "extra_power_margin_mm": 0.05
+    }
+  ],
+  "accepted_board": null,
+  "routing_completed": false,
+  "fabrication_release": false
+}

@@ -1,0 +1,30 @@
+{
+  "bom_cpl": {
+    "approved_lcsc_mappings": 27,
+    "bom_rows_verified": 27,
+    "cpl_rows_verified": 642,
+    "placements_verified": 642
+  },
+  "pcb": {
+    "adc_pinout_verified": true,
+    "ads131m08_pbs_landpattern_verified": true,
+    "ads131m08_pbs_opposite_row_centers_mm": 6.2,
+    "ads131m08_pbs_pad_mm": [
+      0.3,
+      1.6
+    ],
+    "ads131m08_pbs_pitch_mm": 0.5,
+    "buffer_pinouts_verified": 4,
+    "cpl_coordinates_verified": 642,
+    "critical_footprints_verified": 22,
+    "mux_pinouts_verified": 16,
+    "pcb_references_verified": 642,
+    "qspi_flash_pinout_verified": true,
+    "rp2040_ep_mm": [
+      3.2,
+      3.2
+    ],
+    "rp2040_pinout_verified": true
+  },
+  "result": "PASS"
+}

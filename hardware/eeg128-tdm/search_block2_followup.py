@@ -30,6 +30,8 @@ def main() -> None:
     p.add_argument('--output-dir', required=True, type=Path)
     p.add_argument('--path-seconds', type=float, default=4)
     p.add_argument('--max-pairs', type=int, default=16)
+    p.add_argument('--expected-open', type=int, default=149,
+                   help='Required native airwire count of the approved input checkpoint')
     p.add_argument('--channel', type=int, action='append', default=[])
     p.add_argument('--power-margin', type=float, default=.05,
                    help='Extra reserved-plane buffer: .05 enforces .20-mm power clearance')
@@ -43,7 +45,7 @@ def main() -> None:
     shutil.copy2(schematic, board.with_suffix('.kicad_sch'))
     original = board.read_bytes()
     before = native_fresh(board, a.output_dir / 'drc-initial.json')
-    assert metrics(before) == {'violations': 0, 'warnings': 0, 'unconnected': 149}
+    assert metrics(before) == {'violations': 0, 'warnings': 0, 'unconnected': a.expected_open}
     filled = board.read_bytes()
     baseline = pcbnew.LoadBoard(str(board))
     old_power = power_copper(baseline)

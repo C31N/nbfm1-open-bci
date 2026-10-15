@@ -1,18 +1,27 @@
 {
   "approved_report": "BLOCK2_SOURCE_FOLLOWUP_2026-10-12.md",
   "approval_date": "2026-10-13",
-  "source_commit": "7e5129f4618262bd002cf848c0970c8ac8661d71",
-  "working_archive": "block2-ch099-closed147.zip",
-  "archive_sha256": "5e579742d45bd449428ec77ea5658f63e79d52f98cae9a1d9c8062ccfc473ae0",
-  "pcb_sha256": "52122b691e649d3b7328672e3d6ef303618e1fbc263f3c486821e3a1b95542be",
+  "source_commit": "97649467eecf5a1d9359fdb39f5d0089b834968c",
+  "working_archive": "block2-electrode-closed143.zip",
+  "archive_sha256": "e8d60a9835aea686af2d34d9e0e31b3a948b8c7dd2caae81c2c24786e4a3a8e1",
+  "pcb_sha256": "497b588e580caf24766d5d60e9753def8dfe10ad3495b75faf5cd3fdd6276f24",
   "VCM_R38_via_mm": [
     39.65,
     26.0
   ],
-  "unconnected": 147,
+  "unconnected": 143,
   "routing_completed": false,
   "fabrication_release": false,
-  "scope": "Approved engineering baseline for continued MUX pair searches; manufacturing checkpoint is unchanged.",
+  "scope": "Engineering continuation from the user-confirmed 147-airwire checkpoint; routing and fabrication release remain false.",
   "closed_pair": 99,
-  "previous_working_archive": "block2-vcm-source-candidate.zip"
+  "previous_working_archive": "block2-ch099-closed147.zip",
+  "last_user_confirmed_unconnected": 147,
+  "last_user_confirmation_date": "2026-10-15",
+  "continuation_report": "BLOCK2_SOURCE_FOLLOWUP_2026-10-15.md",
+  "closed_since_147": [
+    "CH020_N_ELECTRODE",
+    "CH023_N_ELECTRODE",
+    "CH016_P_ELECTRODE",
+    "CH027_N_ELECTRODE"
+  ]
 }

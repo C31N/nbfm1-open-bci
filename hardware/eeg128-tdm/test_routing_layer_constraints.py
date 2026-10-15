@@ -8,6 +8,16 @@ from route_targeted_closure import obstacles, search, make_track, vector
 
 
 class LayerConstraints(unittest.TestCase):
+    def test_via_keepout_blocks_layer_changes_without_blocking_traces(self) -> None:
+        board = self.board()
+        net = board.FindNet('CH000_P_MUX').GetNetCode()
+        options = dict(board=board, start=(3, 8), goal=(17, 8), net=net,
+                       width=.15, clearance=.15, both_layers=True, margin=7,
+                       step=.5, max_nodes=10000)
+        self.assertIsNotNone(search(**options, goal_layer=1))
+        self.assertIsNone(search(**options, goal_layer=1, via_keepout=box(0, 0, 20, 20)))
+        self.assertIsNotNone(search(**options, goal_layer=0, via_keepout=box(0, 0, 20, 20)))
+
     def board(self) -> pcbnew.BOARD:
         board = pcbnew.BOARD()
         for name in ('CH000_P_MUX', 'CH001_P_MUX', '3V3A'):

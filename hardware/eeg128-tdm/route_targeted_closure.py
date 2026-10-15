@@ -251,7 +251,8 @@ def search(board: pcbnew.BOARD, start: Point2, goal: Point2, net: int, width: fl
            plane_layer: int | None = None, via_diameter: float = .65,
            layers: tuple[int, int] | None = None,
            cost_regions: tuple[tuple[int, BaseGeometry, float], ...] = (),
-           escape_via_only: bool = False) -> RoutingPath | None:
+           escape_via_only: bool = False,
+           via_keepout: BaseGeometry | None = None) -> RoutingPath | None:
     if step is None: step = ROUTING_GRID
     layers = LAYERS if layers is None else layers
     if (len(layers) != 2 or layers[0] == layers[1]
@@ -269,6 +270,10 @@ def search(board: pcbnew.BOARD, start: Point2, goal: Point2, net: int, width: fl
         return None
     window = box(x0, y0, x1, y1)
     shapes, via_shape = obstacles(board, net, width, clearance, window, via_diameter, layers)
+    if via_keepout is not None:
+        # This is a keepout for via centres only. L1/L4 traces may cross the
+        # projection of an existing plane without displacing its copper.
+        via_shape = unary_union([via_shape, via_keepout])
     if reserved_bottom is not None:
         shapes[1] = unary_union([shapes[1], reserved_bottom.buffer(width/2+clearance+.005)])
         via_shape = unary_union([via_shape, reserved_bottom.buffer(via_diameter/2+clearance+.005)])
