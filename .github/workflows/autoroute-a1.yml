@@ -163,7 +163,29 @@ jobs:
           print(json.dumps(metrics, indent=2))
           PY
 
+      - name: Gate manufacturing exports on clean routing and explicit release
+        id: manufacturing_gate
+        run: |
+          python3 - <<'PYGATE'
+          import json
+          import os
+          from pathlib import Path
+
+          report = json.loads(Path("/tmp/a1/drc-after.json").read_text())
+          status = json.loads(Path("hardware/eeg128-tdm/RELEASE_STATUS.json").read_text())
+          valid_report = {"violations", "unconnected_items"}.issubset(report)
+          clean = valid_report and not report["violations"] and not report["unconnected_items"]
+          released = all(status.get(key) is True for key in (
+              "routing_completed", "fabrication_release", "drc_passed", "schematic_parity_passed"
+          ))
+          allowed = bool(clean and released)
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
+              output.write("allowed=" + str(allowed).lower() + "\n")
+          print("Manufacturing export allowed:", allowed)
+          PYGATE
+
       - name: Export routed placement
+        if: steps.manufacturing_gate.outputs.allowed == 'true'
         run: |
           kicad-cli pcb export pos \
             --format csv \

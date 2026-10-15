@@ -126,6 +126,9 @@ erzeugte der bereits bestehende native CI-Smoke-Test allerdings automatisch
 der Vorgabe, vor dem 0/0/0-Gate keine Fertigungsartefakte zu erzeugen.
 Dieser Export und sein Artefakt-Upload wurden aus dem nativen Workflow
 entfernt und durch eine Kontrolle auf unerwartete Fertigungsdateien ersetzt.
+Die beiden älteren A1-Export-Schritte (Placement sowie Gerber/Drill) sind
+zusätzlich an einen nativen 0/0/0-Bericht und explizit gesetzte Release-Gates
+gebunden; bei den weiter falschen Release-Flags werden sie übersprungen.
 Die historische CI-CSV ist kein Bestandteil des 143er-Archivs und keine
 Fertigungsfreigabe; ihre bereits erfolgte Erzeugung wird hier ausdrücklich
 als Prozessabweichung dokumentiert.

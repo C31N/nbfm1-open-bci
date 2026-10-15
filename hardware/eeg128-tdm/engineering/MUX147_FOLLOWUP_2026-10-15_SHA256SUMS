@@ -1,5 +1,5 @@
 808a7538b75a705b4b7ab4065695deafc1d2ad595471eb1ff0301c6149d95c2f  BLOCK2_FOLLOWUP_2026-10-13_SHA256SUMS
-fc1b69c15cb4ea401728325356b83a2525f493172eaa1a4f9730f4a89367f60b  BLOCK2_SOURCE_FOLLOWUP_2026-10-15.md
+b2c7b4c36dda342f7e6852c4ae134eb2112acc09ee5f36e2212db5f65f82cb33  BLOCK2_SOURCE_FOLLOWUP_2026-10-15.md
 17536a354eb5f1b27cf330aa747053dc4fc9cbcea29d5ef0cf6cd5d5931cb2db  BLOCK2_WORKING_BASELINE.json
 9bd09ee4afe7c1e666d4ada1e00995e5fa0c9162b69dafd25684bd1b916c9aeb  CHECKPOINT_SHA256SUMS
 e8d60a9835aea686af2d34d9e0e31b3a948b8c7dd2caae81c2c24786e4a3a8e1  block2-electrode-closed143.zip
@@ -59,3 +59,5 @@ d768bf5a809ff0b59ca14f5367562e048a15ee5ab19e0c2f04e1b54458d0f22e  ../replay_mux1
 7cfb7190940b087c9a363f4fbe3dcc96f84ed8df8f6422f2ff7b1a2efe0e6229  ../test_mux147_replay.py
 158dfcb79ade0a0568395147ed9ebe94ede5f1fd96e1ec2dc1a5f7e5223e737e  ../test_routing_layer_constraints.py
 7d1d051cbfcf810cab2ea6d242d62aa444a98c75eeaedf7f61b0881f6b530414  ../../../.github/workflows/kicad-native.yml
+48fba4f1a3ca4626133edbc507d52123ed0d8a6f9edb7c0e7ce9e08737bf25a7  ../../../.github/workflows/autoroute-a1.yml
+99e5fa5955fe1c4b59ad695d0f415d07c19c619f3932bb23c69fdcb4189876b1  ../../../.github/workflows/autoroute-a1-converge.yml
