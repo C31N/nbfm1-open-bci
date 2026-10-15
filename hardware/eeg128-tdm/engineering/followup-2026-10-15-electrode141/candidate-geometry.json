@@ -1,0 +1,13 @@
+{
+  "L3_power_loss_mm2": 0.0,
+  "L3_power_gain_mm2": 0.0,
+  "zone_outlines_unchanged": true,
+  "footprints_unchanged": true,
+  "project_rules_unchanged": true,
+  "regressed_nets": [],
+  "diagnostic_parity_findings": 0,
+  "pcb_sha256": "a5a961817e2c7b61f673114b6def0ce14ca33445f6f128a53075a0f7a7ec438e",
+  "violations": 0,
+  "warnings": 0,
+  "unconnected": 141
+}

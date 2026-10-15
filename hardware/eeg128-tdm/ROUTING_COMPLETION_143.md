@@ -120,3 +120,13 @@ centroids and rotations match the engineering PCB in its CAD coordinate frame.
 JLCPCB import orientation, Gerber/placement origin and independent visual
 assembly review remain release gates. Do not submit these source CSVs as a
 manufacturing release while 143 connections remain open.
+
+## Follow-up: verified 141-airwire checkpoint (2026-10-15)
+
+CH029_P_ELECTRODE is closed by a complete CH025_P_MUX neighbor replacement;
+native KiCad 8.0.9 confirms 0 errors, 0 warnings, 141 open connections,
+zero parity findings and exactly unchanged filled L3 power. CH018_P_MUX
+remains open: electrically successful probes fail the exact power gate.
+See [the 141 follow-up](engineering/BLOCK2_SOURCE_FOLLOWUP_2026-10-15_ELECTRODE141.md)
+and `engineering/current-routing-status.json` for the authoritative checkpoint.
+Release flags remain false; no manufacturing exports are authorized.
