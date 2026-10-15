@@ -14,13 +14,13 @@ from shapely.geometry import MultiLineString, Point
 from route_targeted_closure import xy, vector
 
 
-def percentile(values, fraction):
+def percentile(values: list[float], fraction: float) -> float | None:
     if not values:return None
     ordered=sorted(values);index=(len(ordered)-1)*fraction;a=int(index);b=min(a+1,len(ordered)-1)
     return ordered[a]+(ordered[b]-ordered[a])*(index-a)
 
 
-def main():
+def main() -> None:
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--board',type=Path,required=True);p.add_argument('--output',type=Path,required=True)
     p.add_argument('--net', action='append', default=[],

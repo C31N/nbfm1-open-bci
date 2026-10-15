@@ -10,9 +10,11 @@ import math
 import re
 from collections import defaultdict
 from pathlib import Path
+from typing import Any
 
 import pcbnew
 from shapely.geometry import LineString, Polygon, box
+from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
 from merge_native_closure import copper
@@ -20,7 +22,7 @@ from route_targeted_closure import xy
 from verify_hardware_identity import balanced_blocks
 
 
-def power_copper(board):
+def power_copper(board: pcbnew.BOARD) -> BaseGeometry:
     shapes = []
     for zone in board.Zones():
         if not zone.IsOnLayer(pcbnew.In2_Cu):
@@ -37,9 +39,9 @@ def power_copper(board):
     return unary_union(shapes)
 
 
-def outlines(board):
+def outlines(board: pcbnew.BOARD) -> dict[str, dict[str, Any]]:
     result = {}
-    def points(chain):
+    def points(chain: pcbnew.SHAPE_LINE_CHAIN) -> list[tuple[float, float]]:
         return [xy(chain.CPoint(i)) for i in range(chain.PointCount())]
     for zone in board.Zones():
         polygons = zone.Outline()
@@ -54,7 +56,7 @@ def outlines(board):
     return result
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--baseline', type=Path, required=True)
     parser.add_argument('--board', type=Path, required=True)

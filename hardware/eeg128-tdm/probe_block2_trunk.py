@@ -14,7 +14,7 @@ from native_connectivity import regressed_nets
 from route_targeted_closure import add_path, make_track, make_via, metrics, native_fresh, net_of
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('board', 'head', 'trunk', 'output-dir'):
         parser.add_argument('--'+name, required=True, type=Path)

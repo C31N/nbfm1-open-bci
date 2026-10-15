@@ -10,11 +10,11 @@ from pathlib import Path
 import pcbnew
 
 
-def point(p):
+def point(p: pcbnew.VECTOR2I) -> tuple[float, float]:
     return (round(pcbnew.ToMM(p.x),6),round(pcbnew.ToMM(p.y),6))
 
 
-def main():
+def main() -> None:
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--board',type=Path,required=True)
     p.add_argument('--output',type=Path,required=True)

@@ -8,7 +8,7 @@ from route_targeted_closure import obstacles, search, make_track, vector
 
 
 class LayerConstraints(unittest.TestCase):
-    def board(self):
+    def board(self) -> pcbnew.BOARD:
         board = pcbnew.BOARD()
         for name in ('CH000_P_MUX', 'CH001_P_MUX', '3V3A'):
             board.Add(pcbnew.NETINFO_ITEM(board, name))
@@ -21,7 +21,7 @@ class LayerConstraints(unittest.TestCase):
             board.Add(edge)
         return board
 
-    def test_through_vias_avoid_unselected_signal_and_power_layers(self):
+    def test_through_vias_avoid_unselected_signal_and_power_layers(self) -> None:
         board = self.board()
         own = board.FindNet('CH000_P_MUX').GetNetCode()
         foreign = board.FindNet('CH001_P_MUX').GetNetCode()
@@ -39,7 +39,7 @@ class LayerConstraints(unittest.TestCase):
         _, default_vias = obstacles(board, own, .15, .15, box(0, 0, 6, 7), .6)
         self.assertTrue(default_vias.contains(Point(2, 3.3)))
 
-    def test_routing_cost_avoids_a_plane_when_a_same_layer_detour_exists(self):
+    def test_routing_cost_avoids_a_plane_when_a_same_layer_detour_exists(self) -> None:
         board = self.board()
         net = board.FindNet('CH000_P_MUX').GetNetCode()
         region = box(8, 6, 12, 10)

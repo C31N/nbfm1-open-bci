@@ -11,7 +11,7 @@ from replay_copper_checkpoint import validate_recovery167
 
 
 class RecoveryGuards(unittest.TestCase):
-    def test_reviewed_recipe_and_unsafe_changes(self):
+    def test_reviewed_recipe_and_unsafe_changes(self) -> None:
         root = Path(__file__).resolve().parent/'engineering'
         recipe = json.loads((root/'recovery167-recipes.json').read_text())
         with zipfile.ZipFile(root/'recovery-baseline167.zip') as z:

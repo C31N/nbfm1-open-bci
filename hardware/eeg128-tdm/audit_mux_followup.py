@@ -15,7 +15,7 @@ from route_targeted_closure import xy
 from verify_hardware_identity import balanced_blocks
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('baseline', 'board', 'output'):
         parser.add_argument('--'+name, required=True, type=Path)

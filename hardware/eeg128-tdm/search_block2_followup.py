@@ -24,7 +24,7 @@ from native_connectivity import regressed_nets
 from route_targeted_closure import add_path, metrics, native_fresh, net_of, search, xy
 
 
-def main():
+def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--board', required=True, type=Path)
     p.add_argument('--output-dir', required=True, type=Path)
