@@ -120,3 +120,12 @@ Ergebnis liegen unter `followup-2026-10-15-edge-safe140/` und sind SHA-256-
 manifestiert. Der aktuelle Routingstatus und das akzeptierte 140er-Archiv
 bleiben unverändert. `routing_completed=false`, `fabrication_release=false`.
 Keine Gerber-, NC-Drill-, CPL- oder BOM-Dateien wurden erzeugt oder freigegeben.
+
+Der Legacy-Workflow `a2-targeted-closure.yml` startet noch aus
+`engineering/latest-pcb.zip`, nicht aus dem freigegebenen aktuellen
+Routingcheckpoint. Sein experimenteller Routingjob darf deshalb nur durch
+`workflow_dispatch` laufen. Pushes führen weiterhin die verpflichtenden
+nativen Replays und Tests aus. Die vorhandene Workflow-Konkurrenzregel
+(`eeg128-a2-targeted`, `cancel-in-progress: true`) löst überholte automatische
+Läufe beim nächsten Start ab. Der manuelle Experimentlauf erhält damit keine
+Freigabe zur Übernahme seiner Geometrie oder zum Export von Fertigungsdateien.

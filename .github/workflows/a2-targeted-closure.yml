@@ -27,6 +27,9 @@ concurrency:
 
 jobs:
   close:
+    # This legacy experiment starts from latest-pcb.zip, not the reviewed
+    # current-routing-status.json checkpoint. Source fixes only run CI replays.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:

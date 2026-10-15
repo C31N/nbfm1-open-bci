@@ -4,7 +4,7 @@ c9e8bb453c425efff8d80dbf24def35899850f0b11c652a598c1f52c63250f2b  ../../../.gith
 ab02a4030d83b038c2d86fb55161c20ccbcbb8c2d46cce4c97102c3627fbfd2f  ../replay_ch030_probe.py
 3d53b0dcaacc2b6e6b3e99bb3df2807dee695a1468609216945141ab8be4634d  ../test_ch030_probe_replay.py
 a2e8866fa6995b530a104ed93698fc7720e9e117731bb1ac65bd4bb8b4414ed7  ../ROUTING_COMPLETION_143.md
-5497dc53f40161530a76e3b9450c51e35febaac9a69afeb9d128b20197969763  BLOCK2_SOURCE_FOLLOWUP_2026-10-15_EDGE_SAFE140.md
+d55c0fcdf21c02616ccf65ce3b0dc505a46538abd2ef6a290baf0f8bf9574a8a  BLOCK2_SOURCE_FOLLOWUP_2026-10-15_EDGE_SAFE140.md
 5b4f06aacac55c4c85c954d54e5317865d23ddb044f6b3b2f3b16b8ffc0716c6  current-routing-status.json
 06817fef09feb864a8ef96a93e60034bb5aec7b8baecfe350ae0277a25a424b4  block2-ch025-electrode-closed140.zip
 31941d6ed4b3e4e8e12f8e69fb6204f15e6dfa59e7922274bdfe76bd788e02b9  ../RELEASE_STATUS.json
@@ -22,3 +22,4 @@ dc450acc0f1c200d18fa6718511c73ab0cc3da2822ec250938fe14b07e1d54d2  followup-2026-
 5ce11ff456f2647005970d8dc136d6f3bd74f2b70050d72a361b75cd26f89db1  followup-2026-10-15-edge-safe140/ch030-replay-result.json
 af7b66af6bf08d040e688c44af175951bad2e7b0277402e4c1033d2bbb5a065b  followup-2026-10-15-edge-safe140/ch030-short-native-geometry.json
 a5b26d0e138265988779b5860833f261612c592c7ba0de593c861de4ddea9357  followup-2026-10-15-edge-safe140/ch030-short-plan.json
+17397874c39aabc916aedd4f822afb792ceef794d0e26e66ded6a898cabbe8bf  ../../../.github/workflows/a2-targeted-closure.yml
