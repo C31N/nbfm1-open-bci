@@ -1,0 +1,756 @@
+{
+  "baseline_unconnected": 139,
+  "checkpoint_promoted": false,
+  "routing_completed": false,
+  "fabrication_release": false,
+  "all_unadopted": true,
+  "strategies": [
+    {
+      "strategy": "probe139-buses",
+      "events": [
+        {
+          "P_found": true,
+          "points": 1187
+        },
+        {
+          "case": 0,
+          "net": "MUX_S2",
+          "found": true,
+          "points": 1075
+        },
+        {
+          "case": 0,
+          "net": "MUX_S3",
+          "found": false,
+          "points": 0
+        },
+        {
+          "case": 1,
+          "net": "MUX_S2",
+          "found": true,
+          "points": 1075
+        },
+        {
+          "case": 1,
+          "net": "MUX_EN",
+          "found": false,
+          "points": 0
+        },
+        {
+          "case": 2,
+          "net": "MUX_S3",
+          "found": true,
+          "points": 933
+        },
+        {
+          "case": 2,
+          "net": "MUX_S2",
+          "found": false,
+          "points": 0
+        },
+        {
+          "case": 3,
+          "net": "MUX_S3",
+          "found": true,
+          "points": 933
+        },
+        {
+          "case": 3,
+          "net": "MUX_EN",
+          "found": false,
+          "points": 0
+        },
+        {
+          "case": 4,
+          "net": "MUX_EN",
+          "found": true,
+          "points": 895
+        },
+        {
+          "case": 4,
+          "net": "MUX_S2",
+          "found": false,
+          "points": 0
+        },
+        {
+          "case": 5,
+          "net": "MUX_EN",
+          "found": true,
+          "points": 895
+        },
+        {
+          "case": 5,
+          "net": "MUX_S3",
+          "found": false,
+          "points": 0
+        }
+      ],
+      "plans": [
+        {
+          "file": "case0-plan.json",
+          "complete": false,
+          "accepted": false
+        },
+        {
+          "file": "case1-plan.json",
+          "complete": false,
+          "accepted": false
+        },
+        {
+          "file": "case2-plan.json",
+          "complete": false,
+          "accepted": false
+        },
+        {
+          "file": "case3-plan.json",
+          "complete": false,
+          "accepted": false
+        },
+        {
+          "file": "case4-plan.json",
+          "complete": false,
+          "accepted": false
+        },
+        {
+          "file": "case5-plan.json",
+          "complete": false,
+          "accepted": false
+        },
+        {
+          "file": "p-plan.json",
+          "complete": false,
+          "accepted": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "strategy": "probe139-buses-existing-b",
+      "events": [
+        {
+          "case": 0,
+          "net": "MUX_S2",
+          "found": false,
+          "points": 0
+        },
+        {
+          "case": 1,
+          "net": "MUX_S2",
+          "found": false,
+          "points": 0
+        },
+        {
+          "case": 2,
+          "net": "MUX_S3",
+          "found": true,
+          "points": 987
+        },
+        {
+          "case": 2,
+          "net": "MUX_S2",
+          "found": false,
+          "points": 0
+        },
+        {
+          "case": 3,
+          "net": "MUX_S3",
+          "found": true,
+          "points": 987
+        },
+        {
+          "case": 3,
+          "net": "MUX_EN",
+          "found": false,
+          "points": 0
+        },
+        {
+          "case": 4,
+          "net": "MUX_EN",
+          "found": true,
+          "points": 895
+        },
+        {
+          "case": 4,
+          "net": "MUX_S2",
+          "found": false,
+          "points": 0
+        },
+        {
+          "case": 5,
+          "net": "MUX_EN",
+          "found": true,
+          "points": 895
+        },
+        {
+          "case": 5,
+          "net": "MUX_S3",
+          "found": false,
+          "points": 0
+        }
+      ],
+      "plans": [
+        {
+          "file": "case0-plan.json",
+          "complete": false,
+          "accepted": false
+        },
+        {
+          "file": "case1-plan.json",
+          "complete": false,
+          "accepted": false
+        },
+        {
+          "file": "case2-plan.json",
+          "complete": false,
+          "accepted": false
+        },
+        {
+          "file": "case3-plan.json",
+          "complete": false,
+          "accepted": false
+        },
+        {
+          "file": "case4-plan.json",
+          "complete": false,
+          "accepted": false
+        },
+        {
+          "file": "case5-plan.json",
+          "complete": false,
+          "accepted": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "strategy": "probe139-joint21",
+      "events": [
+        {
+          "case": 2,
+          "stage": "trunk",
+          "found": false,
+          "points": 0
+        },
+        {
+          "case": 2,
+          "complete": false
+        },
+        {
+          "case": 1,
+          "stage": "trunk",
+          "found": false,
+          "points": 0
+        },
+        {
+          "case": 1,
+          "complete": false
+        },
+        {
+          "case": 5,
+          "stage": "trunk",
+          "found": false,
+          "points": 0
+        },
+        {
+          "case": 5,
+          "complete": false
+        }
+      ],
+      "plans": [
+        {
+          "file": "case1-plan.json",
+          "complete": false,
+          "accepted": false
+        },
+        {
+          "file": "case2-plan.json",
+          "complete": false,
+          "accepted": false
+        },
+        {
+          "file": "case5-plan.json",
+          "complete": false,
+          "accepted": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "strategy": "probe139-joint21-graph",
+      "events": [
+        {
+          "case": 2,
+          "graph_found": false
+        },
+        {
+          "case": 2,
+          "complete": false
+        },
+        {
+          "case": 1,
+          "graph_found": false
+        },
+        {
+          "case": 1,
+          "complete": false
+        },
+        {
+          "case": 5,
+          "graph_found": false
+        },
+        {
+          "case": 5,
+          "complete": false
+        }
+      ],
+      "plans": [
+        {
+          "file": "case1-plan.json",
+          "complete": false,
+          "accepted": false
+        },
+        {
+          "file": "case2-plan.json",
+          "complete": false,
+          "accepted": false
+        },
+        {
+          "file": "case5-plan.json",
+          "complete": false,
+          "accepted": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "strategy": "probe139-joint21-graph-c26",
+      "events": [
+        {
+          "case": 2,
+          "graph_found": false
+        },
+        {
+          "case": 2,
+          "complete": false
+        },
+        {
+          "case": 1,
+          "graph_found": false
+        },
+        {
+          "case": 1,
+          "complete": false
+        },
+        {
+          "case": 5,
+          "graph_found": false
+        },
+        {
+          "case": 5,
+          "complete": false
+        }
+      ],
+      "plans": [
+        {
+          "file": "case1-plan.json",
+          "complete": false,
+          "accepted": false
+        },
+        {
+          "file": "case2-plan.json",
+          "complete": false,
+          "accepted": false
+        },
+        {
+          "file": "case5-plan.json",
+          "complete": false,
+          "accepted": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "strategy": "probe139-joint21-wide",
+      "events": [
+        {
+          "case": 2,
+          "graph_found": true
+        },
+        {
+          "case": 2,
+          "restore": "CH026_P_ELECTRODE",
+          "anchors": [
+            [
+              35.4508,
+              14.8346
+            ]
+          ],
+          "found": false
+        },
+        {
+          "case": 2,
+          "complete": false
+        },
+        {
+          "case": 1,
+          "graph_found": true
+        },
+        {
+          "case": 1,
+          "restore": "CH026_P_ELECTRODE",
+          "anchors": [
+            [
+              35.4508,
+              14.8346
+            ]
+          ],
+          "found": false
+        },
+        {
+          "case": 1,
+          "complete": false
+        },
+        {
+          "case": 5,
+          "graph_found": true
+        },
+        {
+          "case": 5,
+          "restore": "CH026_P_ELECTRODE",
+          "anchors": [
+            [
+              35.4508,
+              14.8346
+            ]
+          ],
+          "found": false
+        },
+        {
+          "case": 5,
+          "complete": false
+        }
+      ],
+      "plans": [
+        {
+          "file": "case1-plan.json",
+          "complete": false,
+          "accepted": false
+        },
+        {
+          "file": "case2-plan.json",
+          "complete": false,
+          "accepted": false
+        },
+        {
+          "file": "case5-plan.json",
+          "complete": false,
+          "accepted": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "strategy": "probe139-joint21-wide-graphrestore",
+      "events": [
+        {
+          "case": 2,
+          "graph_found": true
+        },
+        {
+          "case": 2,
+          "restore_graph": "CH026_P_ELECTRODE",
+          "found": false
+        },
+        {
+          "case": 2,
+          "complete": false
+        },
+        {
+          "case": 1,
+          "graph_found": true
+        },
+        {
+          "case": 1,
+          "restore_graph": "CH026_P_ELECTRODE",
+          "found": false
+        },
+        {
+          "case": 1,
+          "complete": false
+        },
+        {
+          "case": 5,
+          "graph_found": true
+        },
+        {
+          "case": 5,
+          "restore_graph": "CH026_P_ELECTRODE",
+          "found": false
+        },
+        {
+          "case": 5,
+          "complete": false
+        }
+      ],
+      "plans": [
+        {
+          "file": "case1-plan.json",
+          "complete": false,
+          "accepted": false
+        },
+        {
+          "file": "case2-plan.json",
+          "complete": false,
+          "accepted": false
+        },
+        {
+          "file": "case5-plan.json",
+          "complete": false,
+          "accepted": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "strategy": "probe139-wide-restored",
+      "events": [
+        {
+          "fixed": 5
+        },
+        {
+          "case": 0,
+          "net": "CH026_P_ELECTRODE",
+          "kind": "F-B",
+          "start": 0,
+          "found": false
+        },
+        {
+          "case": 0,
+          "net": "CH026_P_ELECTRODE",
+          "kind": "F-L3",
+          "start": 0,
+          "found": false
+        },
+        {
+          "case": 0,
+          "net": "CH026_P_ELECTRODE",
+          "kind": "F-B",
+          "start": 1,
+          "found": false
+        },
+        {
+          "case": 0,
+          "complete": false
+        },
+        {
+          "case": 1,
+          "net": "CH026_P_ELECTRODE",
+          "kind": "F-B",
+          "start": 1,
+          "found": false
+        },
+        {
+          "case": 1,
+          "net": "CH026_P_ELECTRODE",
+          "kind": "F-L3",
+          "start": 0,
+          "found": false
+        },
+        {
+          "case": 1,
+          "net": "CH026_P_ELECTRODE",
+          "kind": "F-B",
+          "start": 0,
+          "found": false
+        },
+        {
+          "case": 1,
+          "complete": false
+        },
+        {
+          "case": 2,
+          "net": "CH026_P_ELECTRODE",
+          "kind": "F-B",
+          "start": 0,
+          "found": false
+        },
+        {
+          "case": 2,
+          "net": "CH026_P_ELECTRODE",
+          "kind": "F-L3",
+          "start": 1,
+          "found": false
+        },
+        {
+          "case": 2,
+          "net": "CH026_P_ELECTRODE",
+          "kind": "F-B",
+          "start": 0,
+          "found": false
+        },
+        {
+          "case": 2,
+          "complete": false
+        },
+        {
+          "case": 3,
+          "net": "CH023_N_ELECTRODE",
+          "kind": "F-B",
+          "start": 0,
+          "found": false
+        },
+        {
+          "case": 3,
+          "net": "CH023_N_ELECTRODE",
+          "kind": "F-L3",
+          "start": 0,
+          "found": false
+        },
+        {
+          "case": 3,
+          "net": "CH023_N_ELECTRODE",
+          "kind": "F-B",
+          "start": 1,
+          "found": true
+        },
+        {
+          "case": 3,
+          "net": "CH026_P_ELECTRODE",
+          "kind": "F-B",
+          "start": 0,
+          "found": false
+        },
+        {
+          "case": 3,
+          "net": "CH026_P_ELECTRODE",
+          "kind": "F-L3",
+          "start": 0,
+          "found": false
+        },
+        {
+          "case": 3,
+          "net": "CH026_P_ELECTRODE",
+          "kind": "F-B",
+          "start": 1,
+          "found": false
+        },
+        {
+          "case": 3,
+          "complete": false
+        },
+        {
+          "case": 4,
+          "net": "CH023_N_ELECTRODE",
+          "kind": "F-B",
+          "start": 1,
+          "found": true
+        },
+        {
+          "case": 4,
+          "net": "CH026_P_ELECTRODE",
+          "kind": "F-B",
+          "start": 1,
+          "found": false
+        },
+        {
+          "case": 4,
+          "net": "CH026_P_ELECTRODE",
+          "kind": "F-L3",
+          "start": 0,
+          "found": false
+        },
+        {
+          "case": 4,
+          "net": "CH026_P_ELECTRODE",
+          "kind": "F-B",
+          "start": 0,
+          "found": false
+        },
+        {
+          "case": 4,
+          "complete": false
+        },
+        {
+          "case": 5,
+          "net": "CH023_N_ELECTRODE",
+          "kind": "F-B",
+          "start": 0,
+          "found": false
+        },
+        {
+          "case": 5,
+          "net": "CH023_N_ELECTRODE",
+          "kind": "F-L3",
+          "start": 1,
+          "found": false
+        },
+        {
+          "case": 5,
+          "net": "CH023_N_ELECTRODE",
+          "kind": "F-B",
+          "start": 0,
+          "found": false
+        },
+        {
+          "case": 5,
+          "complete": false
+        }
+      ],
+      "plans": [
+        {
+          "file": "case0-plan.json",
+          "complete": false,
+          "accepted": false
+        },
+        {
+          "file": "case1-plan.json",
+          "complete": false,
+          "accepted": false
+        },
+        {
+          "file": "case2-plan.json",
+          "complete": false,
+          "accepted": false
+        },
+        {
+          "file": "case3-plan.json",
+          "complete": false,
+          "accepted": false
+        },
+        {
+          "file": "case4-plan.json",
+          "complete": false,
+          "accepted": false
+        },
+        {
+          "file": "case5-plan.json",
+          "complete": false,
+          "accepted": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "strategy": "probe139-c20-bridge",
+      "events": [
+        {
+          "both": false,
+          "found": false
+        },
+        {
+          "both": true,
+          "found": false
+        }
+      ],
+      "plans": [
+        {
+          "file": "plan.json",
+          "complete": false,
+          "accepted": false
+        }
+      ],
+      "accepted": false
+    }
+  ],
+  "limits": "Finite windows, sampled via transitions and bounded A*: failures are not global impossibility proofs."
+}

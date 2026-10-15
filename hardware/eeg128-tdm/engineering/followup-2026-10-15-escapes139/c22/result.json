@@ -1,0 +1,22 @@
+{
+  "violations": 0,
+  "warnings": 0,
+  "unconnected": 139,
+  "exact_reviewed_copper": true,
+  "footprints_unchanged": true,
+  "zone_outlines_unchanged": true,
+  "project_rules_unchanged": true,
+  "L3_power_loss_mm2": 0.0,
+  "L3_power_gain_mm2": 0.0,
+  "case": "c22",
+  "kicad_version": "8.0.9",
+  "diagnostic_parity_findings": 0,
+  "regressed_nets": [],
+  "pcb_sha256": "072c9dd32afd33523a23a322d51465305adfb9384dacb7314e7984f27c38b573",
+  "preparatory_reroute_verified": true,
+  "accepted": false,
+  "routing_progress": false,
+  "routing_completed": false,
+  "fabrication_release": false,
+  "reason": "No airwire reduction; CH018_P_MUX and CH021_N_ELECTRODE remain open"
+}

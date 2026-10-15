@@ -1,0 +1,366 @@
+{
+  "model_only": true,
+  "accepted": false,
+  "rows": [
+    {
+      "case": 0,
+      "removed_nets": [
+        "CH020_N_ELECTRODE"
+      ],
+      "removed_uuids": [
+        "84dca209-446d-5878-981c-36e8c484558b",
+        "e2363270-f39d-5755-9b12-0624678051da",
+        "f738b867-d442-5e9d-afcf-4cfb12512fd5",
+        "fbadbd51-0001-572b-874d-6334b1c7c776"
+      ],
+      "area_mm2": 0.0,
+      "windows": [],
+      "accepted": false
+    },
+    {
+      "case": 1,
+      "removed_nets": [
+        "CH022_N_ELECTRODE"
+      ],
+      "removed_uuids": [
+        "037bb046-f365-4b34-966c-24812c9dae76",
+        "04240e45-89b4-4ae8-a7b2-5e21d372bca4",
+        "08ece86b-b365-4593-8a72-3b4ea9db6ee2",
+        "14ae65b4-f96a-401d-8864-91707140dfa1",
+        "2c02da5e-1bb8-4e2b-8137-cb543c840864",
+        "30f51f17-1c0a-4c50-8f95-fe940b2c016b",
+        "3333e460-be31-445a-83ad-46717b69e98e",
+        "33418ec0-f1e3-4567-9db4-bc3b5ad1811f",
+        "38c82b01-5eae-4f92-9be4-8a17fbdfa9d2",
+        "3de616aa-ef71-4ea3-a29a-573334ba1786",
+        "424a8972-68d1-4f2e-b5e1-905698e27fc6",
+        "46c3a910-e9c6-4333-a924-30266ac817d2",
+        "4ba0857b-88fa-4e47-bb25-be033cd861ef",
+        "4eb661bd-4d04-4276-8b87-f82944ee04ba",
+        "505aa677-2893-4d37-ad9e-24d523f96ca6",
+        "598f0900-dbdb-40e3-a080-0710a22760a7",
+        "5b57817a-3ae6-44bf-9961-45cfde1912bb",
+        "5d1b8ae8-2516-47cc-8db1-52bd7c3cec9b",
+        "5ee46b1f-b06a-47af-a6e2-dfa72b9bee90",
+        "6b134c86-17f7-4186-95ea-b1a94855f0c8",
+        "743ba5a1-6c9a-4285-bdf8-cb3756e34eab",
+        "774e6fdd-a0b1-468c-bbec-639b2b135455",
+        "88f67d88-8575-41ad-83cb-9ba00e0dbf5d",
+        "a973a7c0-2f1f-4ecc-afec-e2bea229d05c",
+        "ac919cd9-80e3-499c-b9ac-8f0ad0521e87",
+        "b5f614c5-d438-4478-977a-3911737b8d95",
+        "bc1e9c7c-1337-49c1-8cc7-247d5ec82340",
+        "bf49840c-84fd-441d-91b0-55d884b5d314",
+        "ce921e2e-2014-4dd6-af6c-0af8329c56b8",
+        "d6345a28-b90e-4002-bdef-8c928c80adc2",
+        "dadc3270-9226-4ed1-88c6-8026efd971ab",
+        "e1e2e277-f16d-4631-b521-f0443f386675",
+        "e4c12078-9c4f-472c-a57f-9717b7021ee3",
+        "f0124f1d-3074-4ec0-aca7-38c57404f22c",
+        "f233ecdc-e62f-47ff-b5f1-f68368023cf0"
+      ],
+      "area_mm2": 0.21293353567100762,
+      "windows": [
+        {
+          "point": [
+            44.026049749584075,
+            9.208768939669959
+          ],
+          "area_mm2": 0.21293353567100762
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "case": 2,
+      "removed_nets": [
+        "CH023_N_ELECTRODE"
+      ],
+      "removed_uuids": [
+        "0f3c48df-c46d-52b2-ba51-f511ef6a95d9",
+        "24a6eee0-aabc-5513-af29-7cb31a85a651",
+        "35d14f6c-fbe8-5c1a-b492-51c2a624642e",
+        "7627f581-d49e-594d-ba14-5ce861c10499",
+        "9bbb6a79-477f-52cf-b469-eb181af0832b",
+        "a120bc12-a19e-5598-ac8a-87923d2c8487",
+        "a7cfa75a-a326-53ba-8bc5-50f0099360b7",
+        "a7fd2691-4897-54e3-a02e-7026a0779c71",
+        "b601452b-14fe-551d-acd0-0443149a7ff6",
+        "d399c346-eb0a-50e4-ba99-66a9f83b6cf6",
+        "d9d6bd4b-0763-51a6-99f8-fd5acdeb80b1",
+        "da1eec3d-89c7-5883-842f-9c031f5a08bd",
+        "f28400b6-e40b-53ab-ae9c-7b6990ba0568",
+        "f65a0279-139d-59b5-89ae-9ae80a1e56f7",
+        "ffbd2d6a-7537-568b-a394-40c92db12e38"
+      ],
+      "area_mm2": 8.377594811270656,
+      "windows": [
+        {
+          "point": [
+            50.4762000005,
+            8.80836893916996
+          ],
+          "area_mm2": 8.377594811270656
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "case": 3,
+      "removed_nets": [
+        "CH020_N_ELECTRODE",
+        "CH022_N_ELECTRODE"
+      ],
+      "removed_uuids": [
+        "84dca209-446d-5878-981c-36e8c484558b",
+        "e2363270-f39d-5755-9b12-0624678051da",
+        "f738b867-d442-5e9d-afcf-4cfb12512fd5",
+        "fbadbd51-0001-572b-874d-6334b1c7c776",
+        "037bb046-f365-4b34-966c-24812c9dae76",
+        "04240e45-89b4-4ae8-a7b2-5e21d372bca4",
+        "08ece86b-b365-4593-8a72-3b4ea9db6ee2",
+        "14ae65b4-f96a-401d-8864-91707140dfa1",
+        "2c02da5e-1bb8-4e2b-8137-cb543c840864",
+        "30f51f17-1c0a-4c50-8f95-fe940b2c016b",
+        "3333e460-be31-445a-83ad-46717b69e98e",
+        "33418ec0-f1e3-4567-9db4-bc3b5ad1811f",
+        "38c82b01-5eae-4f92-9be4-8a17fbdfa9d2",
+        "3de616aa-ef71-4ea3-a29a-573334ba1786",
+        "424a8972-68d1-4f2e-b5e1-905698e27fc6",
+        "46c3a910-e9c6-4333-a924-30266ac817d2",
+        "4ba0857b-88fa-4e47-bb25-be033cd861ef",
+        "4eb661bd-4d04-4276-8b87-f82944ee04ba",
+        "505aa677-2893-4d37-ad9e-24d523f96ca6",
+        "598f0900-dbdb-40e3-a080-0710a22760a7",
+        "5b57817a-3ae6-44bf-9961-45cfde1912bb",
+        "5d1b8ae8-2516-47cc-8db1-52bd7c3cec9b",
+        "5ee46b1f-b06a-47af-a6e2-dfa72b9bee90",
+        "6b134c86-17f7-4186-95ea-b1a94855f0c8",
+        "743ba5a1-6c9a-4285-bdf8-cb3756e34eab",
+        "774e6fdd-a0b1-468c-bbec-639b2b135455",
+        "88f67d88-8575-41ad-83cb-9ba00e0dbf5d",
+        "a973a7c0-2f1f-4ecc-afec-e2bea229d05c",
+        "ac919cd9-80e3-499c-b9ac-8f0ad0521e87",
+        "b5f614c5-d438-4478-977a-3911737b8d95",
+        "bc1e9c7c-1337-49c1-8cc7-247d5ec82340",
+        "bf49840c-84fd-441d-91b0-55d884b5d314",
+        "ce921e2e-2014-4dd6-af6c-0af8329c56b8",
+        "d6345a28-b90e-4002-bdef-8c928c80adc2",
+        "dadc3270-9226-4ed1-88c6-8026efd971ab",
+        "e1e2e277-f16d-4631-b521-f0443f386675",
+        "e4c12078-9c4f-472c-a57f-9717b7021ee3",
+        "f0124f1d-3074-4ec0-aca7-38c57404f22c",
+        "f233ecdc-e62f-47ff-b5f1-f68368023cf0"
+      ],
+      "area_mm2": 0.21293353567100887,
+      "windows": [
+        {
+          "point": [
+            44.026049749584075,
+            9.208768939669959
+          ],
+          "area_mm2": 0.21293353567100887
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "case": 4,
+      "removed_nets": [
+        "CH020_N_ELECTRODE",
+        "CH023_N_ELECTRODE"
+      ],
+      "removed_uuids": [
+        "84dca209-446d-5878-981c-36e8c484558b",
+        "e2363270-f39d-5755-9b12-0624678051da",
+        "f738b867-d442-5e9d-afcf-4cfb12512fd5",
+        "fbadbd51-0001-572b-874d-6334b1c7c776",
+        "0f3c48df-c46d-52b2-ba51-f511ef6a95d9",
+        "24a6eee0-aabc-5513-af29-7cb31a85a651",
+        "35d14f6c-fbe8-5c1a-b492-51c2a624642e",
+        "7627f581-d49e-594d-ba14-5ce861c10499",
+        "9bbb6a79-477f-52cf-b469-eb181af0832b",
+        "a120bc12-a19e-5598-ac8a-87923d2c8487",
+        "a7cfa75a-a326-53ba-8bc5-50f0099360b7",
+        "a7fd2691-4897-54e3-a02e-7026a0779c71",
+        "b601452b-14fe-551d-acd0-0443149a7ff6",
+        "d399c346-eb0a-50e4-ba99-66a9f83b6cf6",
+        "d9d6bd4b-0763-51a6-99f8-fd5acdeb80b1",
+        "da1eec3d-89c7-5883-842f-9c031f5a08bd",
+        "f28400b6-e40b-53ab-ae9c-7b6990ba0568",
+        "f65a0279-139d-59b5-89ae-9ae80a1e56f7",
+        "ffbd2d6a-7537-568b-a394-40c92db12e38"
+      ],
+      "area_mm2": 8.377594811270656,
+      "windows": [
+        {
+          "point": [
+            50.4762000005,
+            8.80836893916996
+          ],
+          "area_mm2": 8.377594811270656
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "case": 5,
+      "removed_nets": [
+        "CH022_N_ELECTRODE",
+        "CH023_N_ELECTRODE"
+      ],
+      "removed_uuids": [
+        "037bb046-f365-4b34-966c-24812c9dae76",
+        "04240e45-89b4-4ae8-a7b2-5e21d372bca4",
+        "08ece86b-b365-4593-8a72-3b4ea9db6ee2",
+        "14ae65b4-f96a-401d-8864-91707140dfa1",
+        "2c02da5e-1bb8-4e2b-8137-cb543c840864",
+        "30f51f17-1c0a-4c50-8f95-fe940b2c016b",
+        "3333e460-be31-445a-83ad-46717b69e98e",
+        "33418ec0-f1e3-4567-9db4-bc3b5ad1811f",
+        "38c82b01-5eae-4f92-9be4-8a17fbdfa9d2",
+        "3de616aa-ef71-4ea3-a29a-573334ba1786",
+        "424a8972-68d1-4f2e-b5e1-905698e27fc6",
+        "46c3a910-e9c6-4333-a924-30266ac817d2",
+        "4ba0857b-88fa-4e47-bb25-be033cd861ef",
+        "4eb661bd-4d04-4276-8b87-f82944ee04ba",
+        "505aa677-2893-4d37-ad9e-24d523f96ca6",
+        "598f0900-dbdb-40e3-a080-0710a22760a7",
+        "5b57817a-3ae6-44bf-9961-45cfde1912bb",
+        "5d1b8ae8-2516-47cc-8db1-52bd7c3cec9b",
+        "5ee46b1f-b06a-47af-a6e2-dfa72b9bee90",
+        "6b134c86-17f7-4186-95ea-b1a94855f0c8",
+        "743ba5a1-6c9a-4285-bdf8-cb3756e34eab",
+        "774e6fdd-a0b1-468c-bbec-639b2b135455",
+        "88f67d88-8575-41ad-83cb-9ba00e0dbf5d",
+        "a973a7c0-2f1f-4ecc-afec-e2bea229d05c",
+        "ac919cd9-80e3-499c-b9ac-8f0ad0521e87",
+        "b5f614c5-d438-4478-977a-3911737b8d95",
+        "bc1e9c7c-1337-49c1-8cc7-247d5ec82340",
+        "bf49840c-84fd-441d-91b0-55d884b5d314",
+        "ce921e2e-2014-4dd6-af6c-0af8329c56b8",
+        "d6345a28-b90e-4002-bdef-8c928c80adc2",
+        "dadc3270-9226-4ed1-88c6-8026efd971ab",
+        "e1e2e277-f16d-4631-b521-f0443f386675",
+        "e4c12078-9c4f-472c-a57f-9717b7021ee3",
+        "f0124f1d-3074-4ec0-aca7-38c57404f22c",
+        "f233ecdc-e62f-47ff-b5f1-f68368023cf0",
+        "0f3c48df-c46d-52b2-ba51-f511ef6a95d9",
+        "24a6eee0-aabc-5513-af29-7cb31a85a651",
+        "35d14f6c-fbe8-5c1a-b492-51c2a624642e",
+        "7627f581-d49e-594d-ba14-5ce861c10499",
+        "9bbb6a79-477f-52cf-b469-eb181af0832b",
+        "a120bc12-a19e-5598-ac8a-87923d2c8487",
+        "a7cfa75a-a326-53ba-8bc5-50f0099360b7",
+        "a7fd2691-4897-54e3-a02e-7026a0779c71",
+        "b601452b-14fe-551d-acd0-0443149a7ff6",
+        "d399c346-eb0a-50e4-ba99-66a9f83b6cf6",
+        "d9d6bd4b-0763-51a6-99f8-fd5acdeb80b1",
+        "da1eec3d-89c7-5883-842f-9c031f5a08bd",
+        "f28400b6-e40b-53ab-ae9c-7b6990ba0568",
+        "f65a0279-139d-59b5-89ae-9ae80a1e56f7",
+        "ffbd2d6a-7537-568b-a394-40c92db12e38"
+      ],
+      "area_mm2": 8.590528346941664,
+      "windows": [
+        {
+          "point": [
+            50.4762000005,
+            8.80836893916996
+          ],
+          "area_mm2": 8.377594811270656
+        },
+        {
+          "point": [
+            44.026049749584075,
+            9.208768939669959
+          ],
+          "area_mm2": 0.21293353567100753
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "case": 6,
+      "removed_nets": [
+        "CH020_N_ELECTRODE",
+        "CH022_N_ELECTRODE",
+        "CH023_N_ELECTRODE"
+      ],
+      "removed_uuids": [
+        "84dca209-446d-5878-981c-36e8c484558b",
+        "e2363270-f39d-5755-9b12-0624678051da",
+        "f738b867-d442-5e9d-afcf-4cfb12512fd5",
+        "fbadbd51-0001-572b-874d-6334b1c7c776",
+        "037bb046-f365-4b34-966c-24812c9dae76",
+        "04240e45-89b4-4ae8-a7b2-5e21d372bca4",
+        "08ece86b-b365-4593-8a72-3b4ea9db6ee2",
+        "14ae65b4-f96a-401d-8864-91707140dfa1",
+        "2c02da5e-1bb8-4e2b-8137-cb543c840864",
+        "30f51f17-1c0a-4c50-8f95-fe940b2c016b",
+        "3333e460-be31-445a-83ad-46717b69e98e",
+        "33418ec0-f1e3-4567-9db4-bc3b5ad1811f",
+        "38c82b01-5eae-4f92-9be4-8a17fbdfa9d2",
+        "3de616aa-ef71-4ea3-a29a-573334ba1786",
+        "424a8972-68d1-4f2e-b5e1-905698e27fc6",
+        "46c3a910-e9c6-4333-a924-30266ac817d2",
+        "4ba0857b-88fa-4e47-bb25-be033cd861ef",
+        "4eb661bd-4d04-4276-8b87-f82944ee04ba",
+        "505aa677-2893-4d37-ad9e-24d523f96ca6",
+        "598f0900-dbdb-40e3-a080-0710a22760a7",
+        "5b57817a-3ae6-44bf-9961-45cfde1912bb",
+        "5d1b8ae8-2516-47cc-8db1-52bd7c3cec9b",
+        "5ee46b1f-b06a-47af-a6e2-dfa72b9bee90",
+        "6b134c86-17f7-4186-95ea-b1a94855f0c8",
+        "743ba5a1-6c9a-4285-bdf8-cb3756e34eab",
+        "774e6fdd-a0b1-468c-bbec-639b2b135455",
+        "88f67d88-8575-41ad-83cb-9ba00e0dbf5d",
+        "a973a7c0-2f1f-4ecc-afec-e2bea229d05c",
+        "ac919cd9-80e3-499c-b9ac-8f0ad0521e87",
+        "b5f614c5-d438-4478-977a-3911737b8d95",
+        "bc1e9c7c-1337-49c1-8cc7-247d5ec82340",
+        "bf49840c-84fd-441d-91b0-55d884b5d314",
+        "ce921e2e-2014-4dd6-af6c-0af8329c56b8",
+        "d6345a28-b90e-4002-bdef-8c928c80adc2",
+        "dadc3270-9226-4ed1-88c6-8026efd971ab",
+        "e1e2e277-f16d-4631-b521-f0443f386675",
+        "e4c12078-9c4f-472c-a57f-9717b7021ee3",
+        "f0124f1d-3074-4ec0-aca7-38c57404f22c",
+        "f233ecdc-e62f-47ff-b5f1-f68368023cf0",
+        "0f3c48df-c46d-52b2-ba51-f511ef6a95d9",
+        "24a6eee0-aabc-5513-af29-7cb31a85a651",
+        "35d14f6c-fbe8-5c1a-b492-51c2a624642e",
+        "7627f581-d49e-594d-ba14-5ce861c10499",
+        "9bbb6a79-477f-52cf-b469-eb181af0832b",
+        "a120bc12-a19e-5598-ac8a-87923d2c8487",
+        "a7cfa75a-a326-53ba-8bc5-50f0099360b7",
+        "a7fd2691-4897-54e3-a02e-7026a0779c71",
+        "b601452b-14fe-551d-acd0-0443149a7ff6",
+        "d399c346-eb0a-50e4-ba99-66a9f83b6cf6",
+        "d9d6bd4b-0763-51a6-99f8-fd5acdeb80b1",
+        "da1eec3d-89c7-5883-842f-9c031f5a08bd",
+        "f28400b6-e40b-53ab-ae9c-7b6990ba0568",
+        "f65a0279-139d-59b5-89ae-9ae80a1e56f7",
+        "ffbd2d6a-7537-568b-a394-40c92db12e38"
+      ],
+      "area_mm2": 8.590528346941664,
+      "windows": [
+        {
+          "point": [
+            50.4762000005,
+            8.80836893916996
+          ],
+          "area_mm2": 8.377594811270656
+        },
+        {
+          "point": [
+            44.026049749584075,
+            9.208768939669959
+          ],
+          "area_mm2": 0.2129335356710077
+        }
+      ],
+      "accepted": false
+    }
+  ]
+}

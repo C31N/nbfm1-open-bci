@@ -1,0 +1,266 @@
+{
+  "CH021_N_ELECTRODE": {
+    "source": {
+      "bounds": [
+        34.34526506629771,
+        16.045977718616914,
+        39.97473593370229,
+        18.679999001
+      ],
+      "patterns": [
+        {
+          "point": [
+            35.6,
+            17.275
+          ],
+          "distance": 1.0761621625015403,
+          "blockers": [
+            {
+              "net": "CH022_N_MUX",
+              "layer": "In2.Cu",
+              "uuid": "ef75b3f0-9976-4f43-81d9-e84dc7ef7a2d"
+            }
+          ]
+        },
+        {
+          "point": [
+            38.225,
+            17.25
+          ],
+          "distance": 2.2821316789352912,
+          "blockers": [
+            {
+              "net": "CH026_P_ELECTRODE",
+              "layer": "F.Cu",
+              "uuid": "e3c4e6fe-fce1-48bf-a3e0-bef9b53a8faa"
+            }
+          ]
+        },
+        {
+          "point": [
+            35.9,
+            17.25
+          ],
+          "distance": 0.9823441352194243,
+          "blockers": [
+            {
+              "net": "CH016_N_ELECTRODE",
+              "layer": "B.Cu",
+              "uuid": "d82642b5-c9d0-4781-8c01-6307b12f91d3"
+            },
+            {
+              "net": "CH022_N_MUX",
+              "layer": "In2.Cu",
+              "uuid": "ef75b3f0-9976-4f43-81d9-e84dc7ef7a2d"
+            }
+          ]
+        },
+        {
+          "point": [
+            35.55,
+            17.3
+          ],
+          "distance": 1.0816653826391924,
+          "blockers": [
+            {
+              "net": "CH022_N_MUX",
+              "layer": "In2.Cu",
+              "uuid": "ef75b3f0-9976-4f43-81d9-e84dc7ef7a2d"
+            },
+            {
+              "net": "CH027_P_ELECTRODE",
+              "layer": "F.Cu",
+              "uuid": "775d1084-fb51-4eb7-b828-e3955b1f73bf"
+            }
+          ]
+        },
+        {
+          "point": [
+            35.6,
+            16.925
+          ],
+          "distance": 1.3885694076998791,
+          "blockers": [
+            {
+              "net": "CH022_N_MUX",
+              "layer": "In2.Cu",
+              "uuid": "ef75b3f0-9976-4f43-81d9-e84dc7ef7a2d"
+            },
+            {
+              "net": "CH026_P_ELECTRODE",
+              "layer": "F.Cu",
+              "uuid": "9dd73183-097f-4e10-a5b8-8875dab1c044"
+            }
+          ]
+        },
+        {
+          "point": [
+            38.125,
+            17.2
+          ],
+          "distance": 2.2137355307262894,
+          "blockers": [
+            {
+              "net": "CH020_N_ELECTRODE",
+              "layer": "In2.Cu",
+              "uuid": "7841a92b-db3b-54d1-9c0c-cfb4210e15a6"
+            },
+            {
+              "net": "CH026_P_ELECTRODE",
+              "layer": "F.Cu",
+              "uuid": "e3c4e6fe-fce1-48bf-a3e0-bef9b53a8faa"
+            }
+          ]
+        },
+        {
+          "point": [
+            39.05,
+            17.425
+          ],
+          "distance": 3.001770310999832,
+          "blockers": [
+            {
+              "net": "VCM",
+              "layer": "B.Cu",
+              "uuid": "3f39ff0c-4c8e-445d-8e0d-ea5f28918940"
+            },
+            {
+              "net": "VCM",
+              "layer": "B.Cu",
+              "uuid": "45c65a13-251f-4cbd-b03c-81e52f7f8ff6"
+            }
+          ]
+        },
+        {
+          "point": [
+            35.85,
+            17.175
+          ],
+          "distance": 1.0680004681646893,
+          "blockers": [
+            {
+              "net": "CH016_N_ELECTRODE",
+              "layer": "B.Cu",
+              "uuid": "d82642b5-c9d0-4781-8c01-6307b12f91d3"
+            },
+            {
+              "net": "CH022_N_MUX",
+              "layer": "In2.Cu",
+              "uuid": "ef75b3f0-9976-4f43-81d9-e84dc7ef7a2d"
+            },
+            {
+              "net": "CH026_P_ELECTRODE",
+              "layer": "F.Cu",
+              "uuid": "9dd73183-097f-4e10-a5b8-8875dab1c044"
+            }
+          ]
+        },
+        {
+          "point": [
+            36.95,
+            17.425
+          ],
+          "distance": 1.1138334704972752,
+          "blockers": [
+            {
+              "net": "CH018_N_ELECTRODE",
+              "layer": "B.Cu",
+              "uuid": "ac4577dd-e176-566b-b146-fa1e6369f2c1"
+            },
+            {
+              "net": "CH019_N_ELECTRODE",
+              "layer": "B.Cu",
+              "uuid": "70cfdae4-9ad0-52ec-8b83-e15fe3b350d2"
+            },
+            {
+              "net": "CH020_N_ELECTRODE",
+              "layer": "In2.Cu",
+              "uuid": "7841a92b-db3b-54d1-9c0c-cfb4210e15a6"
+            }
+          ]
+        },
+        {
+          "point": [
+            35.4,
+            17.375
+          ],
+          "distance": 1.1149551560488873,
+          "blockers": [
+            {
+              "net": "CH022_N_MUX",
+              "layer": "In2.Cu",
+              "uuid": "ef75b3f0-9976-4f43-81d9-e84dc7ef7a2d"
+            },
+            {
+              "net": "CH027_P_ELECTRODE",
+              "layer": "F.Cu",
+              "uuid": "06d8e95a-98f4-45d3-9a6c-98e04e97105f"
+            },
+            {
+              "net": "CH027_P_ELECTRODE",
+              "layer": "F.Cu",
+              "uuid": "775d1084-fb51-4eb7-b828-e3955b1f73bf"
+            }
+          ]
+        },
+        {
+          "point": [
+            37.025,
+            17.35
+          ],
+          "distance": 1.2198872898755837,
+          "blockers": [
+            {
+              "net": "CH019_N_ELECTRODE",
+              "layer": "B.Cu",
+              "uuid": "70cfdae4-9ad0-52ec-8b83-e15fe3b350d2"
+            },
+            {
+              "net": "CH020_N_ELECTRODE",
+              "layer": "In2.Cu",
+              "uuid": "7841a92b-db3b-54d1-9c0c-cfb4210e15a6"
+            },
+            {
+              "net": "CH026_P_ELECTRODE",
+              "layer": "F.Cu",
+              "uuid": "e3c4e6fe-fce1-48bf-a3e0-bef9b53a8faa"
+            }
+          ]
+        },
+        {
+          "point": [
+            35.35,
+            17.025
+          ],
+          "distance": 1.421486897582946,
+          "blockers": [
+            {
+              "net": "CH022_N_MUX",
+              "layer": "In2.Cu",
+              "uuid": "ef75b3f0-9976-4f43-81d9-e84dc7ef7a2d"
+            },
+            {
+              "net": "VCM",
+              "layer": "B.Cu",
+              "uuid": "06c55df4-237c-4318-9f90-de88be07a983"
+            },
+            {
+              "net": "VCM",
+              "layer": "B.Cu",
+              "uuid": "c931731b-fc77-46e7-84aa-bf8e3e0cd4f1"
+            }
+          ]
+        }
+      ]
+    },
+    "target": {
+      "bounds": [
+        42.76335566684722,
+        6.86009099892442,
+        43.375636704905716,
+        8.700829864078928
+      ],
+      "patterns": []
+    }
+  }
+}
