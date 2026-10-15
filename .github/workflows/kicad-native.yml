@@ -150,12 +150,20 @@ jobs:
           /usr/bin/python3 hardware/eeg128-tdm/replay_ch029_electrode.py \
             --output-dir /tmp/ch029-reviewed-replay
 
+      - name: Test reviewed CH025 electrode replay guards
+        run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_electrode_replay.py -v
+
+      - name: Replay reviewed CH025 electrode engineering closure
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/replay_ch025_electrode.py \
+            --output-dir /tmp/ch025-reviewed-replay
+
       - name: Confirm diagnostic audit contains no manufacturing exports
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
-          audits = [Path("/tmp/kicad-audit"), Path("/tmp/ch018-reviewed-replay"), Path("/tmp/ch029-reviewed-replay")]
+          audits = [Path("/tmp/kicad-audit"), Path("/tmp/ch018-reviewed-replay"), Path("/tmp/ch029-reviewed-replay"), Path("/tmp/ch025-reviewed-replay")]
           forbidden_suffixes = {".gbr", ".gerber", ".drl", ".pos"}
           forbidden_names = {"placement.csv", "bom.csv", "cpl.csv"}
           exports = [
@@ -214,5 +222,9 @@ jobs:
             /tmp/ch029-reviewed-replay/drc-after.json
             /tmp/ch029-reviewed-replay/parity.json
             /tmp/ch029-reviewed-replay/result.json
+            /tmp/ch025-reviewed-replay/drc-before.json
+            /tmp/ch025-reviewed-replay/drc-after.json
+            /tmp/ch025-reviewed-replay/parity.json
+            /tmp/ch025-reviewed-replay/result.json
           if-no-files-found: error
           retention-days: 30

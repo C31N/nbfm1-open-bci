@@ -130,3 +130,11 @@ remains open: electrically successful probes fail the exact power gate.
 See [the 141 follow-up](engineering/BLOCK2_SOURCE_FOLLOWUP_2026-10-15_ELECTRODE141.md)
 and `engineering/current-routing-status.json` for the authoritative checkpoint.
 Release flags remain false; no manufacturing exports are authorized.
+
+## Power-sicherer Fortschritt auf 140 offene Verbindungen
+
+Der unabhängig nativ geprüfte 141→140-Replay schließt CH025_P_ELECTRODE nach
+vollständiger F.Cu-Ersatzführung von CH026_P_ELECTRODE. 0 Fehler, 0 Warnungen,
+0 diagnostische Paritätsbefunde, exakt 0.0 mm² L3-Power-Verlust/-Zugewinn.
+CH018_P bleibt offen; keine Fertigungsfreigabe. Einzelheiten und Prüfevidenz:
+[POWER_SAFE140](engineering/BLOCK2_SOURCE_FOLLOWUP_2026-10-15_POWER_SAFE140.md).
