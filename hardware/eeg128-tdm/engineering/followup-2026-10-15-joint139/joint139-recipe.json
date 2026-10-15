@@ -1,0 +1,196 @@
+{
+  "scope": "BLOCK2_JOINT_E17_E18_E19_CLOSURE_139",
+  "routing_completed": false,
+  "fabrication_release": false,
+  "baseline_archive_sha256": "06817fef09feb864a8ef96a93e60034bb5aec7b8baecfe350ae0277a25a424b4",
+  "baseline_member_sha256": {
+    "eeg128-tdm.kicad_pcb": "d95f88c9e58766600eb536a38fb3d7e72241d370d998b16c18a703bc9da4f25f",
+    "eeg128-tdm.kicad_pro": "3bb857f19a1de6b23841a13a881e6e3e61a77708e9063fdbbff9d519121795e0",
+    "eeg128-tdm.kicad_dru": "5b82bbcbf12c3c84da2be6bf13b4ab347a3de57e3226cab3c71c8523d4df3b10"
+  },
+  "expected_applied_sha256": "4f94fedc1822cb0fc24604bfe5a80fba1c877e362fb4c446c1b26e2a9d6a3339",
+  "expected_pcb_sha256": "f2780989e2dee6233f207df1f420f7e89d8e855493eb6b1e7fb731d4a4dda1ea",
+  "expected_archive_sha256": "f022d711bf860c6ec9383dae6f511c41189bf7348035d8d1e5e0e0ca6bcd6d1b",
+  "changes": {
+    "12b5eaa0-7024-450e-9764-282da7125d90": {
+      "before": "(segment\n\t\t(start 41.25 7.6)\n\t\t(end 41.25 8.2825)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 130)\n\t\t(uuid \"12b5eaa0-7024-450e-9764-282da7125d90\")\n\t)",
+      "after": ""
+    },
+    "5da1b790-e219-45fa-af88-05a563fb0467": {
+      "before": "(segment\n\t\t(start 37.401 27.349)\n\t\t(end 36.15 28.6)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 130)\n\t\t(uuid \"5da1b790-e219-45fa-af88-05a563fb0467\")\n\t)",
+      "after": ""
+    },
+    "77eb2911-9212-4f14-a94f-2fdf5e5ed73a": {
+      "before": "(segment\n\t\t(start 41.25 8.2825)\n\t\t(end 40.7797 8.7528)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 130)\n\t\t(uuid \"77eb2911-9212-4f14-a94f-2fdf5e5ed73a\")\n\t)",
+      "after": ""
+    },
+    "86c0fa97-a076-4421-8814-e667fa6e51c1": {
+      "before": "(segment\n\t\t(start 38.5302 10.9182)\n\t\t(end 39.0274 10.421)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 130)\n\t\t(uuid \"86c0fa97-a076-4421-8814-e667fa6e51c1\")\n\t)",
+      "after": ""
+    },
+    "8ea6a805-20d0-4de6-915f-c3ec5eec17ee": {
+      "before": "(segment\n\t\t(start 38.5302 11.5885)\n\t\t(end 38.5302 10.9182)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 130)\n\t\t(uuid \"8ea6a805-20d0-4de6-915f-c3ec5eec17ee\")\n\t)",
+      "after": ""
+    },
+    "d390329e-50f9-47cd-b8be-2320d613b32b": {
+      "before": "(segment\n\t\t(start 40.7797 8.7528)\n\t\t(end 40.6956 8.7528)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 130)\n\t\t(uuid \"d390329e-50f9-47cd-b8be-2320d613b32b\")\n\t)",
+      "after": ""
+    },
+    "f61122f8-d35f-428c-a7c4-15fec0110b2b": {
+      "before": "(segment\n\t\t(start 37.583 27.349)\n\t\t(end 37.401 27.349)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 130)\n\t\t(uuid \"f61122f8-d35f-428c-a7c4-15fec0110b2b\")\n\t)",
+      "after": ""
+    },
+    "1025e615-fb2d-45e1-92b7-9b9a89c01cee": {
+      "before": "(via\n\t\t(at 40.6956 8.7528)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"1025e615-fb2d-45e1-92b7-9b9a89c01cee\")\n\t)",
+      "after": ""
+    },
+    "600ba73b-8695-479e-9a60-9e230b8924c8": {
+      "before": "(via\n\t\t(at 38.5302 11.5885)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"600ba73b-8695-479e-9a60-9e230b8924c8\")\n\t)",
+      "after": ""
+    },
+    "6cb0c595-4845-4b95-94ad-a2cd32f11dfd": {
+      "before": "(via\n\t\t(at 37.583 27.349)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"6cb0c595-4845-4b95-94ad-a2cd32f11dfd\")\n\t)",
+      "after": ""
+    },
+    "d70db1e5-1d0a-4442-a745-5e67d023bb6b": {
+      "before": "(via\n\t\t(at 39.0274 10.421)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"d70db1e5-1d0a-4442-a745-5e67d023bb6b\")\n\t)",
+      "after": ""
+    },
+    "35dbda8d-27ae-4dfa-8fd4-b05f0d8df56c": {
+      "before": "(segment\n\t\t(start 37.583 27.349)\n\t\t(end 37.583 12.5357)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"35dbda8d-27ae-4dfa-8fd4-b05f0d8df56c\")\n\t)",
+      "after": ""
+    },
+    "3fdfbc7f-b458-432e-8291-ea0463431112": {
+      "before": "(segment\n\t\t(start 37.583 12.5357)\n\t\t(end 38.5302 11.5885)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"3fdfbc7f-b458-432e-8291-ea0463431112\")\n\t)",
+      "after": ""
+    },
+    "f5ca2d14-a982-4159-96ce-c19ee074a827": {
+      "before": "(segment\n\t\t(start 39.0274 10.421)\n\t\t(end 40.6956 8.7528)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"f5ca2d14-a982-4159-96ce-c19ee074a827\")\n\t)",
+      "after": ""
+    },
+    "23c3fd91-7881-48ea-ae85-9cdc6768a6a3": {
+      "before": "(segment\n\t\t(start 36.8665 14.4122)\n\t\t(end 40.9165 14.4122)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"23c3fd91-7881-48ea-ae85-9cdc6768a6a3\")\n\t)",
+      "after": ""
+    },
+    "248cccaf-c82c-416f-8e9f-a1da1a083ebc": {
+      "before": "(segment\n\t\t(start 41.75 8.254)\n\t\t(end 41.75 7.6)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"248cccaf-c82c-416f-8e9f-a1da1a083ebc\")\n\t)",
+      "after": ""
+    },
+    "3c6960b7-381d-4691-8a57-a8720a863ac7": {
+      "before": "(segment\n\t\t(start 36.15 26)\n\t\t(end 35.409 26.741)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"3c6960b7-381d-4691-8a57-a8720a863ac7\")\n\t)",
+      "after": ""
+    },
+    "80fd0258-fdb8-4ded-832e-9e00c0cbc927": {
+      "before": "(segment\n\t\t(start 43.0336 9.6707)\n\t\t(end 43.0336 9.1767)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"80fd0258-fdb8-4ded-832e-9e00c0cbc927\")\n\t)",
+      "after": ""
+    },
+    "85835784-fb4e-464e-8b2c-1685c3632af9": {
+      "before": "(segment\n\t\t(start 40.9165 14.4122)\n\t\t(end 41.95 13.3787)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"85835784-fb4e-464e-8b2c-1685c3632af9\")\n\t)",
+      "after": ""
+    },
+    "c3e06dfa-1ccd-4cd8-99fc-e67654535c1e": {
+      "before": "(segment\n\t\t(start 42.7077 8.8508)\n\t\t(end 42.3468 8.8508)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"c3e06dfa-1ccd-4cd8-99fc-e67654535c1e\")\n\t)",
+      "after": ""
+    },
+    "c9ec8d25-5abe-4f6a-891c-6eaf2aa5513d": {
+      "before": "(segment\n\t\t(start 41.95 13.3787)\n\t\t(end 41.95 10.7543)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"c9ec8d25-5abe-4f6a-891c-6eaf2aa5513d\")\n\t)",
+      "after": ""
+    },
+    "cfbca4e6-8b37-4c12-bdc0-ad2d9ca8835a": {
+      "before": "(segment\n\t\t(start 41.95 10.7543)\n\t\t(end 43.0336 9.6707)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"cfbca4e6-8b37-4c12-bdc0-ad2d9ca8835a\")\n\t)",
+      "after": ""
+    },
+    "f21422ce-657b-4561-85f5-0a5a117a4dbe": {
+      "before": "(segment\n\t\t(start 42.3468 8.8508)\n\t\t(end 41.75 8.254)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"f21422ce-657b-4561-85f5-0a5a117a4dbe\")\n\t)",
+      "after": ""
+    },
+    "ffdc8ac2-ceb5-43bd-bc98-3cc440b1a5b2": {
+      "before": "(segment\n\t\t(start 43.0336 9.1767)\n\t\t(end 42.7077 8.8508)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"ffdc8ac2-ceb5-43bd-bc98-3cc440b1a5b2\")\n\t)",
+      "after": ""
+    },
+    "6cfb1789-5e57-4b04-bbeb-20d456cdfc04": {
+      "before": "(via\n\t\t(at 35.409 26.741)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 134)\n\t\t(uuid \"6cfb1789-5e57-4b04-bbeb-20d456cdfc04\")\n\t)",
+      "after": ""
+    },
+    "86449542-2bf7-4249-81d0-cc9d0a0babfb": {
+      "before": "(via\n\t\t(at 36.8665 14.4122)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 134)\n\t\t(uuid \"86449542-2bf7-4249-81d0-cc9d0a0babfb\")\n\t)",
+      "after": ""
+    },
+    "0824ed74-4dc3-4c54-9661-22fd54e62cd5": {
+      "before": "(segment\n\t\t(start 35.409 30.3055)\n\t\t(end 35.409 26.741)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 134)\n\t\t(uuid \"0824ed74-4dc3-4c54-9661-22fd54e62cd5\")\n\t)",
+      "after": ""
+    },
+    "15b9c881-837f-455a-a19d-5dc262a5b1fb": {
+      "before": "(segment\n\t\t(start 36.4173 30.8013)\n\t\t(end 35.9048 30.8013)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 134)\n\t\t(uuid \"15b9c881-837f-455a-a19d-5dc262a5b1fb\")\n\t)",
+      "after": ""
+    },
+    "553a1cf6-e3db-4d48-91b2-b5eccd2a2806": {
+      "before": "(segment\n\t\t(start 35.9048 30.8013)\n\t\t(end 35.409 30.3055)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 134)\n\t\t(uuid \"553a1cf6-e3db-4d48-91b2-b5eccd2a2806\")\n\t)",
+      "after": ""
+    },
+    "5eaf2c0f-1b4f-46d9-8ede-7f56f71f1027": {
+      "before": "(segment\n\t\t(start 36.8665 30.3521)\n\t\t(end 36.4173 30.8013)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 134)\n\t\t(uuid \"5eaf2c0f-1b4f-46d9-8ede-7f56f71f1027\")\n\t)",
+      "after": ""
+    },
+    "a2d92910-3738-4b15-807c-753c07c9c1a2": {
+      "before": "(segment\n\t\t(start 36.8665 14.4122)\n\t\t(end 36.8665 30.3521)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 134)\n\t\t(uuid \"a2d92910-3738-4b15-807c-753c07c9c1a2\")\n\t)",
+      "after": ""
+    }
+  },
+  "additions": {
+    "430575af-5332-5807-b91f-46257fddc181": "(segment\n\t\t(start 45.87525 5.497993)\n\t\t(end 43.8 5.8)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 130)\n\t\t(uuid \"430575af-5332-5807-b91f-46257fddc181\")\n\t)",
+    "7a931028-302d-5508-bc24-0ad0a1be9ef6": "(segment\n\t\t(start 41.25 7.6)\n\t\t(end 41.102803 6.802471)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 130)\n\t\t(uuid \"7a931028-302d-5508-bc24-0ad0a1be9ef6\")\n\t)",
+    "948d5908-9ac0-5c62-9ca5-bfe3fda2902d": "(segment\n\t\t(start 36.15 28.6)\n\t\t(end 37.344255 27.176452)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 130)\n\t\t(uuid \"948d5908-9ac0-5c62-9ca5-bfe3fda2902d\")\n\t)",
+    "daa06496-0323-5f01-912e-428e777c7014": "(segment\n\t\t(start 41.102803 6.802471)\n\t\t(end 40.76338 6.178993)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 130)\n\t\t(uuid \"daa06496-0323-5f01-912e-428e777c7014\")\n\t)",
+    "dbab729c-79cf-5539-90f9-61f5f95fc05d": "(segment\n\t\t(start 41.361745 5.452817)\n\t\t(end 45.87525 5.497993)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 130)\n\t\t(uuid \"dbab729c-79cf-5539-90f9-61f5f95fc05d\")\n\t)",
+    "f19c62e1-c5b1-54ba-9634-0574a1c693d3": "(segment\n\t\t(start 40.76338 6.178993)\n\t\t(end 41.361745 5.452817)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 130)\n\t\t(uuid \"f19c62e1-c5b1-54ba-9634-0574a1c693d3\")\n\t)",
+    "436b5e74-c52f-5fd8-90e1-fd45edf3bb00": "(via\n\t\t(at 43.8 5.8)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"436b5e74-c52f-5fd8-90e1-fd45edf3bb00\")\n\t)",
+    "c1b196fa-54d6-5458-8113-9c9b75357e3a": "(via\n\t\t(at 37.344255 27.176452)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"c1b196fa-54d6-5458-8113-9c9b75357e3a\")\n\t)",
+    "f1d9b084-e63e-5eb8-b710-c17f18c8ab36": "(via\n\t\t(at 38.843033 19.120389)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"f1d9b084-e63e-5eb8-b710-c17f18c8ab36\")\n\t)",
+    "15c731a5-46ce-5ffe-a7c7-2cfd38a649f9": "(segment\n\t\t(start 38.643367 25.88908)\n\t\t(end 39.548343 25.136011)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 130)\n\t\t(uuid \"15c731a5-46ce-5ffe-a7c7-2cfd38a649f9\")\n\t)",
+    "1631950d-1077-56ea-97d1-8bbc0b9f985d": "(segment\n\t\t(start 41.781517 26.040553)\n\t\t(end 44.954904 19.5)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 130)\n\t\t(uuid \"1631950d-1077-56ea-97d1-8bbc0b9f985d\")\n\t)",
+    "18452ec1-0756-56bd-845c-b05d94719529": "(segment\n\t\t(start 44.954904 19.5)\n\t\t(end 45.995383 18.747465)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 130)\n\t\t(uuid \"18452ec1-0756-56bd-845c-b05d94719529\")\n\t)",
+    "1b1770a7-2173-5454-b4f1-7a7b0558775a": "(segment\n\t\t(start 38.505995 20.39264)\n\t\t(end 37.474129 22.534934)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 130)\n\t\t(uuid \"1b1770a7-2173-5454-b4f1-7a7b0558775a\")\n\t)",
+    "1b4c12a2-a8f6-5171-a00d-8b540b9f1769": "(segment\n\t\t(start 37.474129 22.534934)\n\t\t(end 37.973828 24.842051)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 130)\n\t\t(uuid \"1b4c12a2-a8f6-5171-a00d-8b540b9f1769\")\n\t)",
+    "20e55133-3290-541a-9ab1-d2e72c237923": "(segment\n\t\t(start 37.973828 24.842051)\n\t\t(end 38.643367 25.88908)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 130)\n\t\t(uuid \"20e55133-3290-541a-9ab1-d2e72c237923\")\n\t)",
+    "6576d4eb-d62b-5cfc-9272-235ee5cb91ae": "(segment\n\t\t(start 38.843033 19.120389)\n\t\t(end 38.505995 20.39264)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 130)\n\t\t(uuid \"6576d4eb-d62b-5cfc-9272-235ee5cb91ae\")\n\t)",
+    "66c8e7bd-f5d7-5407-8449-5b6e7355d06a": "(segment\n\t\t(start 45.995383 18.747465)\n\t\t(end 45.838744 12.366257)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 130)\n\t\t(uuid \"66c8e7bd-f5d7-5407-8449-5b6e7355d06a\")\n\t)",
+    "abdc13b9-ba1f-563d-804b-f164d1fff795": "(segment\n\t\t(start 44.612347 8.670357)\n\t\t(end 43.8 5.8)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 130)\n\t\t(uuid \"abdc13b9-ba1f-563d-804b-f164d1fff795\")\n\t)",
+    "ac6e0ddc-b57e-51c8-a107-1b8a3636cac1": "(segment\n\t\t(start 39.548343 25.136011)\n\t\t(end 41.781517 26.040553)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 130)\n\t\t(uuid \"ac6e0ddc-b57e-51c8-a107-1b8a3636cac1\")\n\t)",
+    "dc09d531-b066-5cbf-bd70-078bb51e8c78": "(segment\n\t\t(start 45.1738 11.740576)\n\t\t(end 44.612347 8.670357)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 130)\n\t\t(uuid \"dc09d531-b066-5cbf-bd70-078bb51e8c78\")\n\t)",
+    "e20e0042-91d2-54e0-b304-d0d6141198cb": "(segment\n\t\t(start 45.838744 12.366257)\n\t\t(end 45.1738 11.740576)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 130)\n\t\t(uuid \"e20e0042-91d2-54e0-b304-d0d6141198cb\")\n\t)",
+    "0f6a505f-cc7f-5f9d-948d-c5216744673c": "(segment\n\t\t(start 37.825471 23.998044)\n\t\t(end 37.458788 22.871688)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"0f6a505f-cc7f-5f9d-948d-c5216744673c\")\n\t)",
+    "1e6c26be-5a0c-5dba-8ea4-4d0a5f4838ca": "(segment\n\t\t(start 37.867747 18.785154)\n\t\t(end 38.843033 19.120389)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"1e6c26be-5a0c-5dba-8ea4-4d0a5f4838ca\")\n\t)",
+    "4aa24dbb-0a8d-5bc6-afe9-6f73d285e716": "(segment\n\t\t(start 37.584236 20.819041)\n\t\t(end 37.547194 16.955987)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"4aa24dbb-0a8d-5bc6-afe9-6f73d285e716\")\n\t)",
+    "7fe1321f-277e-5477-b1cd-3624dec2d508": "(segment\n\t\t(start 37.865982 25.559157)\n\t\t(end 37.825471 23.998044)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"7fe1321f-277e-5477-b1cd-3624dec2d508\")\n\t)",
+    "b3e3ea18-423c-5c74-b7d2-12e3a2b6d04f": "(segment\n\t\t(start 37.344255 27.176452)\n\t\t(end 37.865982 25.559157)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"b3e3ea18-423c-5c74-b7d2-12e3a2b6d04f\")\n\t)",
+    "d04ea811-0e34-5d4f-8320-88b489821ec6": "(segment\n\t\t(start 37.547194 16.955987)\n\t\t(end 37.867747 18.785154)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"d04ea811-0e34-5d4f-8320-88b489821ec6\")\n\t)",
+    "e7f4c4b3-d9aa-5c95-b8f9-71b47bf88a3e": "(segment\n\t\t(start 37.458788 22.871688)\n\t\t(end 37.584236 20.819041)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"e7f4c4b3-d9aa-5c95-b8f9-71b47bf88a3e\")\n\t)",
+    "043f7c22-216e-5e8d-a80f-95503942e118": "(segment\n\t\t(start 36.15 26)\n\t\t(end 37.30868 24.44782)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"043f7c22-216e-5e8d-a80f-95503942e118\")\n\t)",
+    "8b3a8905-6b0c-57df-8fc3-57c0d5959cfc": "(segment\n\t\t(start 41.75 7.6)\n\t\t(end 41.709173 8.813906)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"8b3a8905-6b0c-57df-8fc3-57c0d5959cfc\")\n\t)",
+    "d4af40ff-bd58-5927-978f-cdee1ee2e9dd": "(segment\n\t\t(start 41.709173 8.813906)\n\t\t(end 40.7085 8.775938)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"d4af40ff-bd58-5927-978f-cdee1ee2e9dd\")\n\t)",
+    "61ddd2c1-81d3-5c33-ab3d-7ccb46dbe8ab": "(via\n\t\t(at 37.30868 24.44782)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 134)\n\t\t(uuid \"61ddd2c1-81d3-5c33-ab3d-7ccb46dbe8ab\")\n\t)",
+    "a4016152-e887-5a4b-83c2-7320f60fde49": "(via\n\t\t(at 38.50245 11.5929)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 134)\n\t\t(uuid \"a4016152-e887-5a4b-83c2-7320f60fde49\")\n\t)",
+    "e961da38-c2a6-5dac-b244-cfc4fe74eda5": "(via\n\t\t(at 40.7085 8.775938)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 134)\n\t\t(uuid \"e961da38-c2a6-5dac-b244-cfc4fe74eda5\")\n\t)",
+    "497737a6-7d7a-5aa2-b3ae-44108e470c9c": "(segment\n\t\t(start 38.50245 11.5929)\n\t\t(end 40.7085 8.775938)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 134)\n\t\t(uuid \"497737a6-7d7a-5aa2-b3ae-44108e470c9c\")\n\t)",
+    "48690e8a-942f-532d-9809-31d4d36fe079": "(segment\n\t\t(start 37.30868 24.44782)\n\t\t(end 36.450136 25.958461)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 134)\n\t\t(uuid \"48690e8a-942f-532d-9809-31d4d36fe079\")\n\t)",
+    "ac4577dd-e176-566b-b146-fa1e6369f2c1": "(segment\n\t\t(start 36.450136 17.675914)\n\t\t(end 36.8143 13.602539)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 134)\n\t\t(uuid \"ac4577dd-e176-566b-b146-fa1e6369f2c1\")\n\t)",
+    "c67055ae-720b-5350-8667-f2c447f7bb42": "(segment\n\t\t(start 36.8143 13.602539)\n\t\t(end 38.50245 11.5929)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 134)\n\t\t(uuid \"c67055ae-720b-5350-8667-f2c447f7bb42\")\n\t)",
+    "ee2d531d-0da3-57b2-bf01-c877d13c5144": "(segment\n\t\t(start 36.450136 25.958461)\n\t\t(end 36.450136 17.675914)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 134)\n\t\t(uuid \"ee2d531d-0da3-57b2-bf01-c877d13c5144\")\n\t)",
+    "02844927-37f7-5713-ae92-c5cf70fb485c": "(segment\n\t\t(start 41.788652 13.542929)\n\t\t(end 41.208168 14.039997)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 138)\n\t\t(uuid \"02844927-37f7-5713-ae92-c5cf70fb485c\")\n\t)",
+    "2cca137a-d4eb-5376-a122-855742609364": "(segment\n\t\t(start 41.208168 14.039997)\n\t\t(end 39.016823 14.125309)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 138)\n\t\t(uuid \"2cca137a-d4eb-5376-a122-855742609364\")\n\t)",
+    "35674dde-5484-511a-b57a-e9c56e36e7de": "(segment\n\t\t(start 41.755248 10.696742)\n\t\t(end 41.95 12.691607)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 138)\n\t\t(uuid \"35674dde-5484-511a-b57a-e9c56e36e7de\")\n\t)",
+    "45728bfb-9e5e-54f9-b264-22d4fd18dd39": "(segment\n\t\t(start 42.748413 9.919095)\n\t\t(end 41.755248 10.696742)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 138)\n\t\t(uuid \"45728bfb-9e5e-54f9-b264-22d4fd18dd39\")\n\t)",
+    "46535934-e453-5eba-9fd5-853cd22c1cf6": "(segment\n\t\t(start 42.44149 8.681085)\n\t\t(end 43.038813 9.045405)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 138)\n\t\t(uuid \"46535934-e453-5eba-9fd5-853cd22c1cf6\")\n\t)",
+    "67a846be-4de9-5cef-bee5-3595cefb569b": "(segment\n\t\t(start 42.25 7.6)\n\t\t(end 42.44149 8.681085)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 138)\n\t\t(uuid \"67a846be-4de9-5cef-bee5-3595cefb569b\")\n\t)",
+    "82cd2f8f-ec99-5e13-a34d-3b7d4df156d2": "(segment\n\t\t(start 41.95 12.691607)\n\t\t(end 41.788652 13.542929)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 138)\n\t\t(uuid \"82cd2f8f-ec99-5e13-a34d-3b7d4df156d2\")\n\t)",
+    "a8933184-b32a-5566-896c-bd650f0575b6": "(segment\n\t\t(start 36.15 23.4)\n\t\t(end 36.975 22.1)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 138)\n\t\t(uuid \"a8933184-b32a-5566-896c-bd650f0575b6\")\n\t)",
+    "e56243c2-7786-5caf-a998-87e06ff3ebb6": "(segment\n\t\t(start 39.016823 14.125309)\n\t\t(end 38.407134 14.181268)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 138)\n\t\t(uuid \"e56243c2-7786-5caf-a998-87e06ff3ebb6\")\n\t)",
+    "e82824ea-d0a1-5491-abf6-1d53df547845": "(segment\n\t\t(start 43.038813 9.045405)\n\t\t(end 43.025885 9.610301)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 138)\n\t\t(uuid \"e82824ea-d0a1-5491-abf6-1d53df547845\")\n\t)",
+    "f6dca84e-eacf-5f13-af3e-e1fc1d0f1bdb": "(segment\n\t\t(start 43.025885 9.610301)\n\t\t(end 42.748413 9.919095)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 138)\n\t\t(uuid \"f6dca84e-eacf-5f13-af3e-e1fc1d0f1bdb\")\n\t)",
+    "215db0bd-c345-5c92-a91a-258bab85864d": "(via\n\t\t(at 36.975 22.1)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 138)\n\t\t(uuid \"215db0bd-c345-5c92-a91a-258bab85864d\")\n\t)",
+    "774a648b-b235-54fa-b40f-51a852a55c0e": "(via\n\t\t(at 38.407134 14.181268)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 138)\n\t\t(uuid \"774a648b-b235-54fa-b40f-51a852a55c0e\")\n\t)",
+    "4d03646c-f1a1-50ac-9118-b42738d7b80c": "(segment\n\t\t(start 37.193548 14.241846)\n\t\t(end 38.407134 14.181268)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 138)\n\t\t(uuid \"4d03646c-f1a1-50ac-9118-b42738d7b80c\")\n\t)",
+    "70cfdae4-9ad0-52ec-8b83-e15fe3b350d2": "(segment\n\t\t(start 36.975 22.1)\n\t\t(end 37.193548 14.241846)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 138)\n\t\t(uuid \"70cfdae4-9ad0-52ec-8b83-e15fe3b350d2\")\n\t)"
+  }
+}

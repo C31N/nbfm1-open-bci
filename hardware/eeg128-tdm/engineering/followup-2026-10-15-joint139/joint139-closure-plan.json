@@ -1,0 +1,725 @@
+{
+  "changes": {
+    "12b5eaa0-7024-450e-9764-282da7125d90": {
+      "before": "(segment\n\t\t(start 41.25 7.6)\n\t\t(end 41.25 8.2825)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 130)\n\t\t(uuid \"12b5eaa0-7024-450e-9764-282da7125d90\")\n\t)",
+      "after": ""
+    },
+    "5da1b790-e219-45fa-af88-05a563fb0467": {
+      "before": "(segment\n\t\t(start 37.401 27.349)\n\t\t(end 36.15 28.6)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 130)\n\t\t(uuid \"5da1b790-e219-45fa-af88-05a563fb0467\")\n\t)",
+      "after": ""
+    },
+    "77eb2911-9212-4f14-a94f-2fdf5e5ed73a": {
+      "before": "(segment\n\t\t(start 41.25 8.2825)\n\t\t(end 40.7797 8.7528)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 130)\n\t\t(uuid \"77eb2911-9212-4f14-a94f-2fdf5e5ed73a\")\n\t)",
+      "after": ""
+    },
+    "86c0fa97-a076-4421-8814-e667fa6e51c1": {
+      "before": "(segment\n\t\t(start 38.5302 10.9182)\n\t\t(end 39.0274 10.421)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 130)\n\t\t(uuid \"86c0fa97-a076-4421-8814-e667fa6e51c1\")\n\t)",
+      "after": ""
+    },
+    "8ea6a805-20d0-4de6-915f-c3ec5eec17ee": {
+      "before": "(segment\n\t\t(start 38.5302 11.5885)\n\t\t(end 38.5302 10.9182)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 130)\n\t\t(uuid \"8ea6a805-20d0-4de6-915f-c3ec5eec17ee\")\n\t)",
+      "after": ""
+    },
+    "d390329e-50f9-47cd-b8be-2320d613b32b": {
+      "before": "(segment\n\t\t(start 40.7797 8.7528)\n\t\t(end 40.6956 8.7528)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 130)\n\t\t(uuid \"d390329e-50f9-47cd-b8be-2320d613b32b\")\n\t)",
+      "after": ""
+    },
+    "f61122f8-d35f-428c-a7c4-15fec0110b2b": {
+      "before": "(segment\n\t\t(start 37.583 27.349)\n\t\t(end 37.401 27.349)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 130)\n\t\t(uuid \"f61122f8-d35f-428c-a7c4-15fec0110b2b\")\n\t)",
+      "after": ""
+    },
+    "1025e615-fb2d-45e1-92b7-9b9a89c01cee": {
+      "before": "(via\n\t\t(at 40.6956 8.7528)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"1025e615-fb2d-45e1-92b7-9b9a89c01cee\")\n\t)",
+      "after": ""
+    },
+    "600ba73b-8695-479e-9a60-9e230b8924c8": {
+      "before": "(via\n\t\t(at 38.5302 11.5885)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"600ba73b-8695-479e-9a60-9e230b8924c8\")\n\t)",
+      "after": ""
+    },
+    "6cb0c595-4845-4b95-94ad-a2cd32f11dfd": {
+      "before": "(via\n\t\t(at 37.583 27.349)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"6cb0c595-4845-4b95-94ad-a2cd32f11dfd\")\n\t)",
+      "after": ""
+    },
+    "d70db1e5-1d0a-4442-a745-5e67d023bb6b": {
+      "before": "(via\n\t\t(at 39.0274 10.421)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"d70db1e5-1d0a-4442-a745-5e67d023bb6b\")\n\t)",
+      "after": ""
+    },
+    "35dbda8d-27ae-4dfa-8fd4-b05f0d8df56c": {
+      "before": "(segment\n\t\t(start 37.583 27.349)\n\t\t(end 37.583 12.5357)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"35dbda8d-27ae-4dfa-8fd4-b05f0d8df56c\")\n\t)",
+      "after": ""
+    },
+    "3fdfbc7f-b458-432e-8291-ea0463431112": {
+      "before": "(segment\n\t\t(start 37.583 12.5357)\n\t\t(end 38.5302 11.5885)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"3fdfbc7f-b458-432e-8291-ea0463431112\")\n\t)",
+      "after": ""
+    },
+    "f5ca2d14-a982-4159-96ce-c19ee074a827": {
+      "before": "(segment\n\t\t(start 39.0274 10.421)\n\t\t(end 40.6956 8.7528)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"f5ca2d14-a982-4159-96ce-c19ee074a827\")\n\t)",
+      "after": ""
+    },
+    "23c3fd91-7881-48ea-ae85-9cdc6768a6a3": {
+      "before": "(segment\n\t\t(start 36.8665 14.4122)\n\t\t(end 40.9165 14.4122)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"23c3fd91-7881-48ea-ae85-9cdc6768a6a3\")\n\t)",
+      "after": ""
+    },
+    "248cccaf-c82c-416f-8e9f-a1da1a083ebc": {
+      "before": "(segment\n\t\t(start 41.75 8.254)\n\t\t(end 41.75 7.6)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"248cccaf-c82c-416f-8e9f-a1da1a083ebc\")\n\t)",
+      "after": ""
+    },
+    "3c6960b7-381d-4691-8a57-a8720a863ac7": {
+      "before": "(segment\n\t\t(start 36.15 26)\n\t\t(end 35.409 26.741)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"3c6960b7-381d-4691-8a57-a8720a863ac7\")\n\t)",
+      "after": ""
+    },
+    "80fd0258-fdb8-4ded-832e-9e00c0cbc927": {
+      "before": "(segment\n\t\t(start 43.0336 9.6707)\n\t\t(end 43.0336 9.1767)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"80fd0258-fdb8-4ded-832e-9e00c0cbc927\")\n\t)",
+      "after": ""
+    },
+    "85835784-fb4e-464e-8b2c-1685c3632af9": {
+      "before": "(segment\n\t\t(start 40.9165 14.4122)\n\t\t(end 41.95 13.3787)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"85835784-fb4e-464e-8b2c-1685c3632af9\")\n\t)",
+      "after": ""
+    },
+    "c3e06dfa-1ccd-4cd8-99fc-e67654535c1e": {
+      "before": "(segment\n\t\t(start 42.7077 8.8508)\n\t\t(end 42.3468 8.8508)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"c3e06dfa-1ccd-4cd8-99fc-e67654535c1e\")\n\t)",
+      "after": ""
+    },
+    "c9ec8d25-5abe-4f6a-891c-6eaf2aa5513d": {
+      "before": "(segment\n\t\t(start 41.95 13.3787)\n\t\t(end 41.95 10.7543)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"c9ec8d25-5abe-4f6a-891c-6eaf2aa5513d\")\n\t)",
+      "after": ""
+    },
+    "cfbca4e6-8b37-4c12-bdc0-ad2d9ca8835a": {
+      "before": "(segment\n\t\t(start 41.95 10.7543)\n\t\t(end 43.0336 9.6707)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"cfbca4e6-8b37-4c12-bdc0-ad2d9ca8835a\")\n\t)",
+      "after": ""
+    },
+    "f21422ce-657b-4561-85f5-0a5a117a4dbe": {
+      "before": "(segment\n\t\t(start 42.3468 8.8508)\n\t\t(end 41.75 8.254)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"f21422ce-657b-4561-85f5-0a5a117a4dbe\")\n\t)",
+      "after": ""
+    },
+    "ffdc8ac2-ceb5-43bd-bc98-3cc440b1a5b2": {
+      "before": "(segment\n\t\t(start 43.0336 9.1767)\n\t\t(end 42.7077 8.8508)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"ffdc8ac2-ceb5-43bd-bc98-3cc440b1a5b2\")\n\t)",
+      "after": ""
+    },
+    "6cfb1789-5e57-4b04-bbeb-20d456cdfc04": {
+      "before": "(via\n\t\t(at 35.409 26.741)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 134)\n\t\t(uuid \"6cfb1789-5e57-4b04-bbeb-20d456cdfc04\")\n\t)",
+      "after": ""
+    },
+    "86449542-2bf7-4249-81d0-cc9d0a0babfb": {
+      "before": "(via\n\t\t(at 36.8665 14.4122)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 134)\n\t\t(uuid \"86449542-2bf7-4249-81d0-cc9d0a0babfb\")\n\t)",
+      "after": ""
+    },
+    "0824ed74-4dc3-4c54-9661-22fd54e62cd5": {
+      "before": "(segment\n\t\t(start 35.409 30.3055)\n\t\t(end 35.409 26.741)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 134)\n\t\t(uuid \"0824ed74-4dc3-4c54-9661-22fd54e62cd5\")\n\t)",
+      "after": ""
+    },
+    "15b9c881-837f-455a-a19d-5dc262a5b1fb": {
+      "before": "(segment\n\t\t(start 36.4173 30.8013)\n\t\t(end 35.9048 30.8013)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 134)\n\t\t(uuid \"15b9c881-837f-455a-a19d-5dc262a5b1fb\")\n\t)",
+      "after": ""
+    },
+    "553a1cf6-e3db-4d48-91b2-b5eccd2a2806": {
+      "before": "(segment\n\t\t(start 35.9048 30.8013)\n\t\t(end 35.409 30.3055)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 134)\n\t\t(uuid \"553a1cf6-e3db-4d48-91b2-b5eccd2a2806\")\n\t)",
+      "after": ""
+    },
+    "5eaf2c0f-1b4f-46d9-8ede-7f56f71f1027": {
+      "before": "(segment\n\t\t(start 36.8665 30.3521)\n\t\t(end 36.4173 30.8013)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 134)\n\t\t(uuid \"5eaf2c0f-1b4f-46d9-8ede-7f56f71f1027\")\n\t)",
+      "after": ""
+    },
+    "a2d92910-3738-4b15-807c-753c07c9c1a2": {
+      "before": "(segment\n\t\t(start 36.8665 14.4122)\n\t\t(end 36.8665 30.3521)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 134)\n\t\t(uuid \"a2d92910-3738-4b15-807c-753c07c9c1a2\")\n\t)",
+      "after": ""
+    }
+  },
+  "routes": [
+    {
+      "net": "CH017_N_ELECTRODE",
+      "label": "c2-CH017_N_ELECTRODE-F",
+      "layers": [
+        "B.Cu",
+        "F.Cu"
+      ],
+      "path": [
+        [
+          1,
+          41.25,
+          7.6
+        ],
+        [
+          1,
+          41.102803,
+          6.802471
+        ],
+        [
+          1,
+          40.76338,
+          6.178993
+        ],
+        [
+          1,
+          41.361745,
+          5.452817
+        ],
+        [
+          1,
+          45.87525,
+          5.497993
+        ],
+        [
+          1,
+          43.8,
+          5.8
+        ]
+      ],
+      "mesh_triangles": 3515,
+      "planning_margin_mm": 0.001,
+      "length_mm": 9.072664689546098
+    },
+    {
+      "net": "CH018_N_ELECTRODE",
+      "label": "c2-CH018_N_ELECTRODE-F",
+      "layers": [
+        "B.Cu",
+        "F.Cu"
+      ],
+      "path": [
+        [
+          1,
+          41.75,
+          7.6
+        ],
+        [
+          1,
+          41.709173,
+          8.813906
+        ],
+        [
+          1,
+          40.7085,
+          8.775938
+        ]
+      ],
+      "mesh_triangles": 2811,
+      "planning_margin_mm": 0.001,
+      "length_mm": 2.2159854088439817
+    },
+    {
+      "net": "CH019_N_ELECTRODE",
+      "label": "c2-CH019_N_ELECTRODE-F",
+      "layers": [
+        "B.Cu",
+        "F.Cu"
+      ],
+      "path": [
+        [
+          1,
+          42.25,
+          7.6
+        ],
+        [
+          1,
+          42.44149,
+          8.681085
+        ],
+        [
+          1,
+          43.038813,
+          9.045405
+        ],
+        [
+          1,
+          43.025885,
+          9.610301
+        ],
+        [
+          1,
+          42.748413,
+          9.919095
+        ],
+        [
+          1,
+          41.755248,
+          10.696742
+        ],
+        [
+          1,
+          41.95,
+          12.691607
+        ],
+        [
+          1,
+          41.788652,
+          13.542929
+        ],
+        [
+          1,
+          41.208168,
+          14.039997
+        ],
+        [
+          1,
+          39.016823,
+          14.125309
+        ],
+        [
+          1,
+          38.407134,
+          14.181268
+        ]
+      ],
+      "mesh_triangles": 3526,
+      "planning_margin_mm": 0.001,
+      "length_mm": 10.479459971750169
+    },
+    {
+      "net": "CH017_N_ELECTRODE",
+      "label": "c2-CH017_N_ELECTRODE-sourceF",
+      "layers": [
+        "B.Cu",
+        "F.Cu"
+      ],
+      "path": [
+        [
+          1,
+          36.15,
+          28.6
+        ],
+        [
+          1,
+          37.344255,
+          27.176452
+        ]
+      ],
+      "mesh_triangles": 2369,
+      "planning_margin_mm": 0.001,
+      "length_mm": 1.8581533610897127
+    },
+    {
+      "net": "CH018_N_ELECTRODE",
+      "label": "c2-CH018_N_ELECTRODE-sourceF",
+      "layers": [
+        "B.Cu",
+        "F.Cu"
+      ],
+      "path": [
+        [
+          1,
+          36.15,
+          26
+        ],
+        [
+          1,
+          37.30868,
+          24.44782
+        ]
+      ],
+      "mesh_triangles": 818,
+      "planning_margin_mm": 0.001,
+      "length_mm": 1.936956916092872
+    },
+    {
+      "net": "CH019_N_ELECTRODE",
+      "label": "c2-CH019_N_ELECTRODE-sourceF",
+      "layers": [
+        "B.Cu",
+        "F.Cu"
+      ],
+      "path": [
+        [
+          1,
+          36.15,
+          23.4
+        ],
+        [
+          1,
+          36.975,
+          22.1
+        ]
+      ],
+      "mesh_triangles": 323,
+      "planning_margin_mm": 0.001,
+      "length_mm": 1.5396834090162812
+    },
+    {
+      "net": "CH019_N_ELECTRODE",
+      "label": "c2-CH019_N_ELECTRODE-trunk-leg0",
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "path": [
+        [
+          1,
+          36.975,
+          22.1
+        ],
+        [
+          1,
+          37.193548,
+          14.241846
+        ],
+        [
+          1,
+          38.407134,
+          14.181268
+        ]
+      ],
+      "mesh_triangles": 4154,
+      "planning_margin_mm": 0.001,
+      "length_mm": 9.07628948071676
+    },
+    {
+      "net": "CH017_N_ELECTRODE",
+      "label": "c2-CH017_N_ELECTRODE-trunk-leg0",
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "path": [
+        [
+          1,
+          37.344255,
+          27.176452
+        ],
+        [
+          1,
+          37.865982,
+          25.559157
+        ],
+        [
+          1,
+          37.825471,
+          23.998044
+        ],
+        [
+          1,
+          37.458788,
+          22.871688
+        ],
+        [
+          1,
+          37.584236,
+          20.819041
+        ],
+        [
+          1,
+          37.547194,
+          16.955987
+        ],
+        [
+          1,
+          37.867747,
+          18.785154
+        ],
+        [
+          1,
+          38.843033,
+          19.120389
+        ]
+      ],
+      "mesh_triangles": 4492,
+      "planning_margin_mm": 0.001,
+      "length_mm": 13.2535871905257
+    },
+    {
+      "net": "CH017_N_ELECTRODE",
+      "label": "c2-CH017_N_ELECTRODE-trunk-leg1",
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "path": [
+        [
+          1,
+          38.843033,
+          19.120389
+        ],
+        [
+          1,
+          38.505995,
+          20.39264
+        ],
+        [
+          1,
+          37.474129,
+          22.534934
+        ],
+        [
+          1,
+          37.973828,
+          24.842051
+        ],
+        [
+          1,
+          38.643367,
+          25.88908
+        ],
+        [
+          1,
+          39.548343,
+          25.136011
+        ],
+        [
+          1,
+          41.781517,
+          26.040553
+        ],
+        [
+          1,
+          44.954904,
+          19.5
+        ],
+        [
+          1,
+          45.995383,
+          18.747465
+        ],
+        [
+          1,
+          45.838744,
+          12.366257
+        ],
+        [
+          1,
+          45.1738,
+          11.740576
+        ],
+        [
+          1,
+          44.612347,
+          8.670357
+        ],
+        [
+          1,
+          43.8,
+          5.8
+        ]
+      ],
+      "mesh_triangles": 12675,
+      "planning_margin_mm": 0.001,
+      "length_mm": 32.83837030474467
+    },
+    {
+      "net": "CH018_N_ELECTRODE",
+      "label": "c2-CH018_N_ELECTRODE-trunk-leg0",
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "path": [
+        [
+          1,
+          37.30868,
+          24.44782
+        ],
+        [
+          1,
+          36.450136,
+          25.958461
+        ],
+        [
+          1,
+          36.450136,
+          17.675914
+        ],
+        [
+          1,
+          36.8143,
+          13.602539
+        ],
+        [
+          1,
+          38.50245,
+          11.5929
+        ]
+      ],
+      "mesh_triangles": 4035,
+      "planning_margin_mm": 1e-05,
+      "length_mm": 16.734328551900386
+    },
+    {
+      "net": "CH018_N_ELECTRODE",
+      "label": "c2-CH018_N_ELECTRODE-trunk-leg1",
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "path": [
+        [
+          1,
+          38.50245,
+          11.5929
+        ],
+        [
+          1,
+          40.7085,
+          8.775938
+        ]
+      ],
+      "mesh_triangles": 11698,
+      "planning_margin_mm": 0.001,
+      "length_mm": 3.577978690817483
+    },
+    {
+      "net": "CH019_N_ELECTRODE",
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "path": [
+        [
+          0,
+          38.407134,
+          14.181268
+        ],
+        [
+          1,
+          38.407134,
+          14.181268
+        ]
+      ]
+    },
+    {
+      "net": "CH019_N_ELECTRODE",
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "path": [
+        [
+          0,
+          36.975,
+          22.1
+        ],
+        [
+          1,
+          36.975,
+          22.1
+        ]
+      ]
+    },
+    {
+      "net": "CH017_N_ELECTRODE",
+      "layers": [
+        "B.Cu",
+        "In2.Cu"
+      ],
+      "path": [
+        [
+          0,
+          38.843033,
+          19.120389
+        ],
+        [
+          1,
+          38.843033,
+          19.120389
+        ]
+      ]
+    },
+    {
+      "net": "CH017_N_ELECTRODE",
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "path": [
+        [
+          0,
+          43.8,
+          5.8
+        ],
+        [
+          1,
+          43.8,
+          5.8
+        ]
+      ]
+    },
+    {
+      "net": "CH017_N_ELECTRODE",
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "path": [
+        [
+          0,
+          37.344255,
+          27.176452
+        ],
+        [
+          1,
+          37.344255,
+          27.176452
+        ]
+      ]
+    },
+    {
+      "net": "CH018_N_ELECTRODE",
+      "layers": [
+        "B.Cu",
+        "In2.Cu"
+      ],
+      "path": [
+        [
+          0,
+          38.50245,
+          11.5929
+        ],
+        [
+          1,
+          38.50245,
+          11.5929
+        ]
+      ]
+    },
+    {
+      "net": "CH018_N_ELECTRODE",
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "path": [
+        [
+          0,
+          40.7085,
+          8.775938
+        ],
+        [
+          1,
+          40.7085,
+          8.775938
+        ]
+      ]
+    },
+    {
+      "net": "CH018_N_ELECTRODE",
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "path": [
+        [
+          0,
+          37.30868,
+          24.44782
+        ],
+        [
+          1,
+          37.30868,
+          24.44782
+        ]
+      ]
+    }
+  ],
+  "accepted": false,
+  "model_only": true,
+  "complete": true,
+  "case": 2,
+  "target_order": [
+    "CH017_N_ELECTRODE",
+    "CH018_N_ELECTRODE",
+    "CH019_N_ELECTRODE"
+  ],
+  "trunk_order": [
+    "CH019_N_ELECTRODE",
+    "CH017_N_ELECTRODE",
+    "CH018_N_ELECTRODE"
+  ],
+  "failed": null
+}

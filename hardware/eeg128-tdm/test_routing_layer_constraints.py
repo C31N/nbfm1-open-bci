@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: CERN-OHL-S-2.0
 """Regression checks for through-via obstacles and plane-avoidance route costs."""
+import math
 import unittest
 import pcbnew
 from shapely.geometry import Point, box, LineString
-from route_targeted_closure import obstacles, search, make_track, vector, routing_domain
+from route_targeted_closure import (
+    obstacles, search, make_track, vector, routing_domain, pad_copper_shape,
+)
 
 
 class LayerConstraints(unittest.TestCase):
@@ -83,6 +86,54 @@ class LayerConstraints(unittest.TestCase):
     def test_missing_outline_fails_closed(self) -> None:
         with self.assertRaisesRegex(ValueError, 'closed board outline'):
             routing_domain(pcbnew.BOARD(), .075)
+
+    def test_rounded_pad_corner_is_usable_without_relaxing_clearance(self) -> None:
+        board = self.board()
+        footprint = pcbnew.FOOTPRINT(board)
+        board.Add(footprint)
+        pad = pcbnew.PAD(footprint)
+        footprint.Add(pad)
+        pad.SetAttribute(pcbnew.PAD_ATTRIB_SMD)
+        pad.SetLayerSet(pcbnew.LSET(pcbnew.F_Cu))
+        pad.SetShape(pcbnew.PAD_SHAPE_ROUNDRECT)
+        pad.SetSize(vector((2, 2)))
+        pad.SetPosition(vector((10, 10)))
+        pad.SetRoundRectRadiusRatio(.25)
+        pad.SetNetCode(board.FindNet('CH001_P_MUX').GetNetCode())
+        own = board.FindNet('CH000_P_MUX').GetNetCode()
+        layers, vias = obstacles(board, own, .15, .15, box(5, 5, 15, 15), .6)
+        # Actual rounded-pad corner clearance is 0.3485 mm; required is
+        # 0.225 mm including the routed trace radius. A box falsely blocks it.
+        self.assertFalse(layers[0].covers(Point(11.1, 11.1)))
+        self.assertTrue(layers[0].covers(Point(10.8, 10.8)))
+        # The entire pad box still excludes through-vias on every layer.
+        self.assertTrue(vias.covers(Point(11.1, 11.1)))
+
+    def test_pad_polygon_bound_contains_actual_roundrect_perimeters(self) -> None:
+        board = self.board()
+        footprint = pcbnew.FOOTPRINT(board)
+        board.Add(footprint)
+        for width, height in [(2, 2), (.3, 1.4), (.9, .95)]:
+            radius = min(width, height) * .25
+            for rotation in (0, 90):
+                with self.subTest(size=(width, height), rotation=rotation):
+                    pad = pcbnew.PAD(footprint)
+                    footprint.Add(pad)
+                    pad.SetShape(pcbnew.PAD_SHAPE_ROUNDRECT)
+                    pad.SetSize(vector((width, height)))
+                    pad.SetRoundRectRadiusRatio(.25)
+                    pad.SetPosition(vector((10, 10)))
+                    pad.SetOrientationDegrees(rotation)
+                    shape = pad_copper_shape(pad, pcbnew.F_Cu)
+                    cx, cy = width / 2 - radius, height / 2 - radius
+                    for x, y, start in [(cx, cy, 0), (-cx, cy, 90),
+                                        (-cx, -cy, 180), (cx, -cy, 270)]:
+                        for angle in range(start, start + 91):
+                            px = x + radius * math.cos(math.radians(angle))
+                            py = y + radius * math.sin(math.radians(angle))
+                            if rotation == 90:
+                                px, py = -py, px
+                            self.assertTrue(shape.covers(Point(10 + px, 10 + py)))
 
     def test_routing_cost_avoids_a_plane_when_a_same_layer_detour_exists(self) -> None:
         board = self.board()

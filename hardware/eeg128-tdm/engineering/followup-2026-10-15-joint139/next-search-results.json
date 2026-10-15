@@ -1,0 +1,50 @@
+{
+  "baseline_pcb_sha256": "f2780989e2dee6233f207df1f420f7e89d8e855493eb6b1e7fb731d4a4dda1ea",
+  "edge_rule_mm": 0.25,
+  "via_diameter_mm": 0.6,
+  "step_mm": 0.01,
+  "max_nodes": 1000000,
+  "per_probe_search_deadline_seconds": 30,
+  "new_vias_outside_L3_power_outline": true,
+  "results": [
+    {
+      "net": "CH018_P_MUX",
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "start": [
+        32.75,
+        26
+      ],
+      "goal": [
+        41.135,
+        45.15
+      ],
+      "found": false,
+      "path": null,
+      "elapsed_seconds": 30.229520111000056,
+      "model_only": true
+    },
+    {
+      "net": "CH021_N_ELECTRODE",
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "start": [
+        36.15,
+        18.2
+      ],
+      "goal": [
+        43.25,
+        7.6
+      ],
+      "found": false,
+      "path": null,
+      "elapsed_seconds": 12.362878271000227,
+      "model_only": true
+    }
+  ],
+  "accepted_mutation": false
+}

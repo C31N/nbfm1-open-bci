@@ -146,3 +146,12 @@ den korrigierten Edge.Cuts-Abgleich widerlegt. Der akzeptierte 140er-Stand
 bleibt unverändert; weder der lange L3-Prüfling mit zwei Randverletzungen noch
 der elektrisch saubere, aber nicht korridoröffnende B.Cu-Ersatz wird übernommen.
 Siehe [EDGE_SAFE140](engineering/BLOCK2_SOURCE_FOLLOWUP_2026-10-15_EDGE_SAFE140.md).
+
+## Gemeinsame Elektrodenumlegung auf 139
+
+CH019_N_ELECTRODE ist durch vollständige gemeinsame Neuführung von CH017-N und
+CH018-N geschlossen. Unabhängiger KiCad-8.0.9-Replay: 0 Fehler, 0 Warnungen,
+139 Luftlinien, Parität 0 und exakt 0.0 mm² L3-Power-Verlust/-Zugewinn.
+CH017-N ist länger; die elektrische Labor-/Rauschbewertung bleibt offen.
+[JOINT139](engineering/BLOCK2_SOURCE_FOLLOWUP_2026-10-15_JOINT139.md) enthält
+Geometrie, Leitungslängen, Replay, Inventar und verbliebene Block-2-Engpässe.

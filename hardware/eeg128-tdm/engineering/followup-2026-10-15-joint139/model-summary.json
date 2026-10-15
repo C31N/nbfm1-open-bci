@@ -1,0 +1,513 @@
+{
+  "all_incomplete_models_accepted": false,
+  "qualified_variant": "joint1718-precise-spread140/case2-plan.json",
+  "qualification": "replay-result.json",
+  "strategies": [
+    {
+      "strategy": "joint1718-solve140",
+      "geometric_variants": 12,
+      "results": [
+        {
+          "case": 1,
+          "routed": "CH018_N_ELECTRODE",
+          "vias": 2,
+          "length": 34.466670638547306,
+          "complete": false,
+          "failed": "trunk-CH019_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 2,
+          "routed": "CH017_N_ELECTRODE",
+          "vias": 1,
+          "length": 48.753840990306934,
+          "complete": false,
+          "failed": "trunk-CH019_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 3,
+          "routed": "CH017_N_ELECTRODE",
+          "vias": 1,
+          "length": 30.271102633935318,
+          "complete": false,
+          "failed": "trunk-CH019_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 4,
+          "routed": "CH018_N_ELECTRODE",
+          "vias": 1,
+          "length": 30.637218846737362,
+          "complete": false,
+          "failed": "trunk-CH019_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 5,
+          "routed": "CH017_N_ELECTRODE",
+          "vias": 1,
+          "length": 55.25000964760231,
+          "complete": false,
+          "failed": "trunk-CH018_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 6,
+          "routed": "CH019_N_ELECTRODE",
+          "vias": 1,
+          "length": 13.993072164565916,
+          "complete": false,
+          "failed": "trunk-CH018_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 7,
+          "routed": "CH018_N_ELECTRODE",
+          "vias": 2,
+          "length": 34.466670638547306,
+          "complete": false,
+          "failed": "trunk-CH019_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 8,
+          "routed": "CH017_N_ELECTRODE",
+          "vias": 1,
+          "length": 48.753840990306934,
+          "complete": false,
+          "failed": "trunk-CH019_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 9,
+          "routed": "CH017_N_ELECTRODE",
+          "vias": 1,
+          "length": 30.271102633935318,
+          "complete": false,
+          "failed": "trunk-CH019_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 10,
+          "routed": "CH018_N_ELECTRODE",
+          "vias": 1,
+          "length": 30.637218846737362,
+          "complete": false,
+          "failed": "trunk-CH019_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 11,
+          "routed": "CH017_N_ELECTRODE",
+          "vias": 1,
+          "length": 55.25000964760231,
+          "complete": false,
+          "failed": "trunk-CH018_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 12,
+          "routed": "CH019_N_ELECTRODE",
+          "vias": 1,
+          "length": 13.993072164565916,
+          "complete": false,
+          "failed": "trunk-CH018_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        }
+      ]
+    },
+    {
+      "strategy": "joint1718-3layer140",
+      "geometric_variants": 6,
+      "results": [
+        {
+          "case": 1,
+          "routed": "CH019_N_ELECTRODE",
+          "vias": 2,
+          "length": 15.836033560659372,
+          "complete": false,
+          "failed": "trunk-CH018_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 2,
+          "routed": "CH017_N_ELECTRODE",
+          "vias": 1,
+          "length": 55.32001469275676,
+          "complete": false,
+          "failed": "trunk-CH018_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 3,
+          "routed": "CH018_N_ELECTRODE",
+          "vias": 1,
+          "length": 30.635713100633822,
+          "complete": false,
+          "failed": "trunk-CH019_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 4,
+          "routed": "CH019_N_ELECTRODE",
+          "vias": 2,
+          "length": 15.836033560659372,
+          "complete": false,
+          "failed": "trunk-CH018_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 5,
+          "routed": "CH017_N_ELECTRODE",
+          "vias": 1,
+          "length": 55.32001469275676,
+          "complete": false,
+          "failed": "trunk-CH018_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 6,
+          "routed": "CH018_N_ELECTRODE",
+          "vias": 1,
+          "length": 30.635713100633822,
+          "complete": false,
+          "failed": "trunk-CH019_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        }
+      ]
+    },
+    {
+      "strategy": "joint1718-all-src140",
+      "geometric_variants": 6,
+      "results": [
+        {
+          "case": 1,
+          "routed": "CH019_N_ELECTRODE",
+          "vias": 2,
+          "length": 15.836033560659372,
+          "complete": false,
+          "failed": "trunk-CH018_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 2,
+          "routed": "CH017_N_ELECTRODE",
+          "vias": 2,
+          "length": 32.083386904179285,
+          "complete": false,
+          "failed": "trunk-CH018_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 3,
+          "routed": "CH018_N_ELECTRODE",
+          "vias": 2,
+          "length": 20.64354605995898,
+          "complete": false,
+          "failed": "trunk-CH019_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 4,
+          "routed": "CH019_N_ELECTRODE",
+          "vias": 2,
+          "length": 15.836033560659372,
+          "complete": false,
+          "failed": "trunk-CH018_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 5,
+          "routed": "CH017_N_ELECTRODE",
+          "vias": 2,
+          "length": 32.083386904179285,
+          "complete": false,
+          "failed": "trunk-CH018_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 6,
+          "routed": "CH018_N_ELECTRODE",
+          "vias": 2,
+          "length": 20.64354605995898,
+          "complete": false,
+          "failed": "trunk-CH019_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        }
+      ]
+    },
+    {
+      "strategy": "joint1718-swapped140",
+      "geometric_variants": 6,
+      "results": [
+        {
+          "case": 1,
+          "failed": "target-CH019_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 2,
+          "failed": "target-CH019_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 3,
+          "failed": "target-CH019_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 4,
+          "failed": "target-CH018_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 5,
+          "failed": "target-CH018_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 6,
+          "failed": "target-CH018_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        }
+      ]
+    },
+    {
+      "strategy": "joint1718-reserved-src140",
+      "geometric_variants": 6,
+      "results": [
+        {
+          "case": 1,
+          "routed": "CH019_N_ELECTRODE",
+          "vias": 1,
+          "length": 13.850785283650524,
+          "complete": false,
+          "failed": "trunk-CH018_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 2,
+          "routed": "CH017_N_ELECTRODE",
+          "vias": 1,
+          "length": 55.71600523525179,
+          "complete": false,
+          "failed": "trunk-CH018_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 3,
+          "routed": "CH018_N_ELECTRODE",
+          "vias": 1,
+          "length": 21.698049922266044,
+          "complete": false,
+          "failed": "trunk-CH019_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 4,
+          "routed": "CH019_N_ELECTRODE",
+          "vias": 1,
+          "length": 13.850785283650524,
+          "complete": false,
+          "failed": "trunk-CH018_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 5,
+          "routed": "CH017_N_ELECTRODE",
+          "vias": 1,
+          "length": 55.71600523525179,
+          "complete": false,
+          "failed": "trunk-CH018_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 6,
+          "routed": "CH018_N_ELECTRODE",
+          "vias": 1,
+          "length": 21.698049922266044,
+          "complete": false,
+          "failed": "trunk-CH019_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        }
+      ]
+    },
+    {
+      "strategy": "joint1718-precise-reserved140",
+      "geometric_variants": 6,
+      "results": [
+        {
+          "case": 1,
+          "routed": "CH019_N_ELECTRODE",
+          "vias": 1,
+          "length": 13.850785283650524,
+          "complete": false,
+          "failed": "trunk-CH018_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 2,
+          "routed": "CH017_N_ELECTRODE",
+          "vias": 1,
+          "length": 55.71600523525179,
+          "complete": false,
+          "failed": "trunk-CH018_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 3,
+          "routed": "CH018_N_ELECTRODE",
+          "vias": 1,
+          "length": 21.698049922266044,
+          "complete": false,
+          "failed": "trunk-CH019_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 4,
+          "routed": "CH019_N_ELECTRODE",
+          "vias": 1,
+          "length": 13.850785283650524,
+          "complete": false,
+          "failed": "trunk-CH018_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 5,
+          "routed": "CH017_N_ELECTRODE",
+          "vias": 1,
+          "length": 55.71600523525179,
+          "complete": false,
+          "failed": "trunk-CH018_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 6,
+          "routed": "CH018_N_ELECTRODE",
+          "vias": 1,
+          "length": 21.698049922266044,
+          "complete": false,
+          "failed": "trunk-CH019_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        }
+      ]
+    },
+    {
+      "strategy": "joint1718-precise-spread140",
+      "geometric_variants": 2,
+      "results": [
+        {
+          "case": 1,
+          "routed": "CH018_N_ELECTRODE",
+          "vias": 1,
+          "length": 17.601801559334586,
+          "complete": false,
+          "failed": "trunk-CH017_N_ELECTRODE",
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        },
+        {
+          "case": 2,
+          "routed": "CH018_N_ELECTRODE",
+          "vias": 1,
+          "length": 20.31230724271787,
+          "complete": true,
+          "failed": null,
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        }
+      ]
+    },
+    {
+      "strategy": "joint1718-shift140",
+      "geometric_variants": 1,
+      "results": [
+        {
+          "case": 1,
+          "joined_F": "CH017_N_ELECTRODE",
+          "length": 9.095925915986829,
+          "complete": false,
+          "failed": "trunk-E17",
+          "changes": 28,
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        }
+      ]
+    },
+    {
+      "strategy": "joint1718-precise-shift140",
+      "geometric_variants": 1,
+      "results": [
+        {
+          "case": 1,
+          "joined_F": "CH017_N_ELECTRODE",
+          "length": 9.072664689546098,
+          "complete": false,
+          "failed": "trunk-E17",
+          "changes": 28,
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        }
+      ]
+    },
+    {
+      "strategy": "joint1718-auto-target140",
+      "geometric_variants": 1,
+      "results": [
+        {
+          "case": 1,
+          "joined_F": "CH019_N_ELECTRODE",
+          "length": 1.5396834090162812,
+          "complete": false,
+          "failed": "trunk-E17",
+          "changes": 28,
+          "accepted": false,
+          "stage": "planning only; qualification recorded separately"
+        }
+      ]
+    }
+  ]
+}

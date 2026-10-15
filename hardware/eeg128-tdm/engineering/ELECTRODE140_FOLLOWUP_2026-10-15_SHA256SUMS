@@ -1,8 +1,8 @@
-c9e8bb453c425efff8d80dbf24def35899850f0b11c652a598c1f52c63250f2b  ../../../.github/workflows/kicad-native.yml
+bd13f3266328757c4f884a1b797e2ebeb7ea649842cc3db7fd8cbd73acd1b564  ../../../.github/workflows/kicad-native.yml
 ec061c77b889d2af9d6ed8c684084ece3a669ca7dcc44620e73867e6d1aa3b2f  ../replay_ch025_electrode.py
 b17b27a0b16c3a4d2e36a18062583a4346ba561b9c05c1f08a2365ec5ffaa356  ../test_ch025_electrode_replay.py
-a2e8866fa6995b530a104ed93698fc7720e9e117731bb1ac65bd4bb8b4414ed7  ../ROUTING_COMPLETION_143.md
-5b4f06aacac55c4c85c954d54e5317865d23ddb044f6b3b2f3b16b8ffc0716c6  current-routing-status.json
+073ff85c1a305eaaf0db771f299a4dcb3bff345bc5ae5d65c61c0778be93dda6  ../ROUTING_COMPLETION_143.md
+e8f94af8409687e70f1f23eb8558645bda54021807d9fc7983fbd3d6bb357c99  current-routing-status.json
 a69aadf1bdd2436aadd7b9ae80e2796f1b5937b816389b44a11582685b2699a1  block2-ch029-electrode-closed141.zip
 06817fef09feb864a8ef96a93e60034bb5aec7b8baecfe350ae0277a25a424b4  block2-ch025-electrode-closed140.zip
 b42b6ddc765cde27e699dd69e93ac5221b59cb3dcff7fd5c933223a24380ad78  BLOCK2_SOURCE_FOLLOWUP_2026-10-15_POWER_SAFE140.md

@@ -204,13 +204,41 @@ def routing_domain(board: pcbnew.BOARD, copper_radius: float,
     return unary_union(shapes).buffer(-(edge_clearance + copper_radius + .000001))
 
 
+def pad_copper_shape(pad: pcbnew.PAD, layer: int) -> BaseGeometry:
+    """Native pad outline with an outward bound on polygonization error.
+
+    KiCad's default polygonization is inside the copper outline. Bound its
+    0.0001 mm approximation error by expanding 0.001 mm (32 segments per
+    quadrant). Unsupported/invalid outlines retain the conservative pad box.
+    Via-in-pad exclusions deliberately continue to use the entire pad box.
+    """
+    bounds = pad.GetBoundingBox()
+    fallback = box(pcbnew.ToMM(bounds.GetX()), pcbnew.ToMM(bounds.GetY()),
+                   pcbnew.ToMM(bounds.GetRight()), pcbnew.ToMM(bounds.GetBottom()))
+    polygons = pcbnew.SHAPE_POLY_SET()
+    try:
+        pad.TransformShapeToPolygon(polygons, layer, 0, pcbnew.FromMM(.0001))
+        shapes = []
+        for index in range(polygons.OutlineCount()):
+            chain = polygons.Outline(index)
+            shape = Polygon([xy(chain.CPoint(i)) for i in range(chain.PointCount())])
+            if not shape.is_valid or shape.is_empty:
+                return fallback
+            shapes.append(shape)
+        if not shapes:
+            return fallback
+        return unary_union(shapes).buffer(.001, quad_segs=32)
+    except (RuntimeError, TypeError, ValueError):
+        return fallback
+
+
 def obstacles(board: pcbnew.BOARD, net: int, width: float, clearance: float, window: BaseGeometry,
               via_diameter: float = .65,
               layers: tuple[int, int] | None = None) -> tuple[list[BaseGeometry], BaseGeometry]:
-    """Conservative pad boxes; exact buffered track/via obstacles.
+    """Conservative native pad outlines; buffered track/via obstacles.
 
     Native DRC is authoritative for rotated/custom pads, holes, arcs and zones.
-    Pad boxes overestimate rotated-pad outlines rather than underestimating them.
+    Native pad polygons include a conservative outward approximation margin.
     """
     if via_diameter < .60:
         raise ValueError('Engineering escape vias require at least 0.60 mm diameter')
@@ -229,7 +257,8 @@ def obstacles(board: pcbnew.BOARD, net: int, width: float, clearance: float, win
                 continue
             for index, layer in enumerate(layers):
                 if pad.IsOnLayer(layer):
-                    by_layer[index].append(shape.buffer(neighbor_clearance + width / 2 - 1e-9))
+                    copper = pad_copper_shape(pad, layer)
+                    by_layer[index].append(copper.buffer(neighbor_clearance + width / 2 - 1e-9))
     via_obstacles = []
     for track in board.GetTracks():
         if isinstance(track, pcbnew.PCB_VIA):

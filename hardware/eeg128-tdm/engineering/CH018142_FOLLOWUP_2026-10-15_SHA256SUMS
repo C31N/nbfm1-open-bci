@@ -1,11 +1,11 @@
-c9e8bb453c425efff8d80dbf24def35899850f0b11c652a598c1f52c63250f2b  ../../../.github/workflows/kicad-native.yml
-a2e8866fa6995b530a104ed93698fc7720e9e117731bb1ac65bd4bb8b4414ed7  ../ROUTING_COMPLETION_143.md
+bd13f3266328757c4f884a1b797e2ebeb7ea649842cc3db7fd8cbd73acd1b564  ../../../.github/workflows/kicad-native.yml
+073ff85c1a305eaaf0db771f299a4dcb3bff345bc5ae5d65c61c0778be93dda6  ../ROUTING_COMPLETION_143.md
 c8da4432f9d9dcc12cb83c0ffa7b71ce95ee43560ec0ed0934b35383964c267f  ../replay_ch018_neighbors.py
 57457509874575bc17d7ad2350cbc0f7259fb5fd946c0c37a5d4444eafbdc892  ../test_ch018_neighbor_replay.py
 8c4415b7f59acd6b85da5927b72975758bc8622c2f3ae3e29f6eac9f9a39ed8b  BLOCK2_SOURCE_FOLLOWUP_2026-10-15_CH018142.md
 d084ed667e46e542b6dfe780e01f4f735e12f507e27492fc2226f9f194acd1d7  block2-ch018n-closed142.zip
 e8d60a9835aea686af2d34d9e0e31b3a948b8c7dd2caae81c2c24786e4a3a8e1  block2-electrode-closed143.zip
-5b4f06aacac55c4c85c954d54e5317865d23ddb044f6b3b2f3b16b8ffc0716c6  current-routing-status.json
+e8f94af8409687e70f1f23eb8558645bda54021807d9fc7983fbd3d6bb357c99  current-routing-status.json
 ee2fa21d7ed5d7a1a00631db6f03d312f042a465c8dc04f97740c3bcb94ab0bf  followup-2026-10-15-ch018/baseline-runtime-drc.json
 a6c6197fb964892135b1cfb5d7394d3e2a58db4f95afb2843e8ad34b90d7834c  followup-2026-10-15-ch018/baseline-runtime-geometry.json
 de914acf471a6b6d99430c34e6dd2cdec5667cb6a103cda6a7eed22c3069a1a9  followup-2026-10-15-ch018/ch018n-exchange-plan.json

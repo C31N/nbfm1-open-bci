@@ -161,6 +161,14 @@ jobs:
           /usr/bin/python3 hardware/eeg128-tdm/replay_ch025_electrode.py \
             --output-dir /tmp/ch025-reviewed-replay
 
+      - name: Test reviewed joint electrode replay guards
+        run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch019_electrode_replay.py -v
+
+      - name: Replay reviewed joint CH017-CH019 electrode engineering closure
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/replay_ch019_electrode.py \
+            --output-dir /tmp/ch019-reviewed-replay
+
       - name: Test unadopted CH030 probe replay guards
         run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch030_probe_replay.py -v
 
@@ -174,7 +182,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
-          audits = [Path("/tmp/kicad-audit"), Path("/tmp/ch018-reviewed-replay"), Path("/tmp/ch029-reviewed-replay"), Path("/tmp/ch025-reviewed-replay"), Path("/tmp/ch030-unadopted-probe")]
+          audits = [Path("/tmp/kicad-audit"), Path("/tmp/ch018-reviewed-replay"), Path("/tmp/ch029-reviewed-replay"), Path("/tmp/ch025-reviewed-replay"), Path("/tmp/ch030-unadopted-probe"), Path("/tmp/ch019-reviewed-replay")]
           forbidden_suffixes = {".gbr", ".gerber", ".drl", ".pos"}
           forbidden_names = {"placement.csv", "bom.csv", "cpl.csv"}
           exports = [
@@ -241,5 +249,9 @@ jobs:
             /tmp/ch030-unadopted-probe/drc-after.json
             /tmp/ch030-unadopted-probe/parity.json
             /tmp/ch030-unadopted-probe/result.json
+            /tmp/ch019-reviewed-replay/drc-before.json
+            /tmp/ch019-reviewed-replay/drc-after.json
+            /tmp/ch019-reviewed-replay/parity.json
+            /tmp/ch019-reviewed-replay/result.json
           if-no-files-found: error
           retention-days: 30

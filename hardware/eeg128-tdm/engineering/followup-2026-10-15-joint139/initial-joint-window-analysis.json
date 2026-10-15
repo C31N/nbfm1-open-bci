@@ -1,0 +1,305 @@
+{
+  "model_only": true,
+  "accepted": false,
+  "changes": {
+    "12b5eaa0-7024-450e-9764-282da7125d90": {
+      "before": "(segment\n\t\t(start 41.25 7.6)\n\t\t(end 41.25 8.2825)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 130)\n\t\t(uuid \"12b5eaa0-7024-450e-9764-282da7125d90\")\n\t)",
+      "after": ""
+    },
+    "77eb2911-9212-4f14-a94f-2fdf5e5ed73a": {
+      "before": "(segment\n\t\t(start 41.25 8.2825)\n\t\t(end 40.7797 8.7528)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 130)\n\t\t(uuid \"77eb2911-9212-4f14-a94f-2fdf5e5ed73a\")\n\t)",
+      "after": ""
+    },
+    "86c0fa97-a076-4421-8814-e667fa6e51c1": {
+      "before": "(segment\n\t\t(start 38.5302 10.9182)\n\t\t(end 39.0274 10.421)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 130)\n\t\t(uuid \"86c0fa97-a076-4421-8814-e667fa6e51c1\")\n\t)",
+      "after": ""
+    },
+    "8ea6a805-20d0-4de6-915f-c3ec5eec17ee": {
+      "before": "(segment\n\t\t(start 38.5302 11.5885)\n\t\t(end 38.5302 10.9182)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 130)\n\t\t(uuid \"8ea6a805-20d0-4de6-915f-c3ec5eec17ee\")\n\t)",
+      "after": ""
+    },
+    "d390329e-50f9-47cd-b8be-2320d613b32b": {
+      "before": "(segment\n\t\t(start 40.7797 8.7528)\n\t\t(end 40.6956 8.7528)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 130)\n\t\t(uuid \"d390329e-50f9-47cd-b8be-2320d613b32b\")\n\t)",
+      "after": ""
+    },
+    "1025e615-fb2d-45e1-92b7-9b9a89c01cee": {
+      "before": "(via\n\t\t(at 40.6956 8.7528)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"1025e615-fb2d-45e1-92b7-9b9a89c01cee\")\n\t)",
+      "after": ""
+    },
+    "600ba73b-8695-479e-9a60-9e230b8924c8": {
+      "before": "(via\n\t\t(at 38.5302 11.5885)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"600ba73b-8695-479e-9a60-9e230b8924c8\")\n\t)",
+      "after": ""
+    },
+    "d70db1e5-1d0a-4442-a745-5e67d023bb6b": {
+      "before": "(via\n\t\t(at 39.0274 10.421)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"d70db1e5-1d0a-4442-a745-5e67d023bb6b\")\n\t)",
+      "after": ""
+    },
+    "35dbda8d-27ae-4dfa-8fd4-b05f0d8df56c": {
+      "before": "(segment\n\t\t(start 37.583 27.349)\n\t\t(end 37.583 12.5357)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"35dbda8d-27ae-4dfa-8fd4-b05f0d8df56c\")\n\t)",
+      "after": ""
+    },
+    "3fdfbc7f-b458-432e-8291-ea0463431112": {
+      "before": "(segment\n\t\t(start 37.583 12.5357)\n\t\t(end 38.5302 11.5885)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"3fdfbc7f-b458-432e-8291-ea0463431112\")\n\t)",
+      "after": ""
+    },
+    "f5ca2d14-a982-4159-96ce-c19ee074a827": {
+      "before": "(segment\n\t\t(start 39.0274 10.421)\n\t\t(end 40.6956 8.7528)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 130)\n\t\t(uuid \"f5ca2d14-a982-4159-96ce-c19ee074a827\")\n\t)",
+      "after": ""
+    },
+    "23c3fd91-7881-48ea-ae85-9cdc6768a6a3": {
+      "before": "(segment\n\t\t(start 36.8665 14.4122)\n\t\t(end 40.9165 14.4122)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"23c3fd91-7881-48ea-ae85-9cdc6768a6a3\")\n\t)",
+      "after": ""
+    },
+    "248cccaf-c82c-416f-8e9f-a1da1a083ebc": {
+      "before": "(segment\n\t\t(start 41.75 8.254)\n\t\t(end 41.75 7.6)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"248cccaf-c82c-416f-8e9f-a1da1a083ebc\")\n\t)",
+      "after": ""
+    },
+    "80fd0258-fdb8-4ded-832e-9e00c0cbc927": {
+      "before": "(segment\n\t\t(start 43.0336 9.6707)\n\t\t(end 43.0336 9.1767)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"80fd0258-fdb8-4ded-832e-9e00c0cbc927\")\n\t)",
+      "after": ""
+    },
+    "85835784-fb4e-464e-8b2c-1685c3632af9": {
+      "before": "(segment\n\t\t(start 40.9165 14.4122)\n\t\t(end 41.95 13.3787)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"85835784-fb4e-464e-8b2c-1685c3632af9\")\n\t)",
+      "after": ""
+    },
+    "c3e06dfa-1ccd-4cd8-99fc-e67654535c1e": {
+      "before": "(segment\n\t\t(start 42.7077 8.8508)\n\t\t(end 42.3468 8.8508)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"c3e06dfa-1ccd-4cd8-99fc-e67654535c1e\")\n\t)",
+      "after": ""
+    },
+    "c9ec8d25-5abe-4f6a-891c-6eaf2aa5513d": {
+      "before": "(segment\n\t\t(start 41.95 13.3787)\n\t\t(end 41.95 10.7543)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"c9ec8d25-5abe-4f6a-891c-6eaf2aa5513d\")\n\t)",
+      "after": ""
+    },
+    "cfbca4e6-8b37-4c12-bdc0-ad2d9ca8835a": {
+      "before": "(segment\n\t\t(start 41.95 10.7543)\n\t\t(end 43.0336 9.6707)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"cfbca4e6-8b37-4c12-bdc0-ad2d9ca8835a\")\n\t)",
+      "after": ""
+    },
+    "f21422ce-657b-4561-85f5-0a5a117a4dbe": {
+      "before": "(segment\n\t\t(start 42.3468 8.8508)\n\t\t(end 41.75 8.254)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"f21422ce-657b-4561-85f5-0a5a117a4dbe\")\n\t)",
+      "after": ""
+    },
+    "ffdc8ac2-ceb5-43bd-bc98-3cc440b1a5b2": {
+      "before": "(segment\n\t\t(start 43.0336 9.1767)\n\t\t(end 42.7077 8.8508)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 134)\n\t\t(uuid \"ffdc8ac2-ceb5-43bd-bc98-3cc440b1a5b2\")\n\t)",
+      "after": ""
+    },
+    "86449542-2bf7-4249-81d0-cc9d0a0babfb": {
+      "before": "(via\n\t\t(at 36.8665 14.4122)\n\t\t(size 0.6)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 134)\n\t\t(uuid \"86449542-2bf7-4249-81d0-cc9d0a0babfb\")\n\t)",
+      "after": ""
+    },
+    "0824ed74-4dc3-4c54-9661-22fd54e62cd5": {
+      "before": "(segment\n\t\t(start 35.409 30.3055)\n\t\t(end 35.409 26.741)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 134)\n\t\t(uuid \"0824ed74-4dc3-4c54-9661-22fd54e62cd5\")\n\t)",
+      "after": ""
+    },
+    "15b9c881-837f-455a-a19d-5dc262a5b1fb": {
+      "before": "(segment\n\t\t(start 36.4173 30.8013)\n\t\t(end 35.9048 30.8013)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 134)\n\t\t(uuid \"15b9c881-837f-455a-a19d-5dc262a5b1fb\")\n\t)",
+      "after": ""
+    },
+    "553a1cf6-e3db-4d48-91b2-b5eccd2a2806": {
+      "before": "(segment\n\t\t(start 35.9048 30.8013)\n\t\t(end 35.409 30.3055)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 134)\n\t\t(uuid \"553a1cf6-e3db-4d48-91b2-b5eccd2a2806\")\n\t)",
+      "after": ""
+    },
+    "5eaf2c0f-1b4f-46d9-8ede-7f56f71f1027": {
+      "before": "(segment\n\t\t(start 36.8665 30.3521)\n\t\t(end 36.4173 30.8013)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 134)\n\t\t(uuid \"5eaf2c0f-1b4f-46d9-8ede-7f56f71f1027\")\n\t)",
+      "after": ""
+    },
+    "a2d92910-3738-4b15-807c-753c07c9c1a2": {
+      "before": "(segment\n\t\t(start 36.8665 14.4122)\n\t\t(end 36.8665 30.3521)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 134)\n\t\t(uuid \"a2d92910-3738-4b15-807c-753c07c9c1a2\")\n\t)",
+      "after": ""
+    }
+  },
+  "kept_source_copper": [
+    "3c6960b7-381d-4691-8a57-a8720a863ac7",
+    "5da1b790-e219-45fa-af88-05a563fb0467",
+    "6cb0c595-4845-4b95-94ad-a2cd32f11dfd",
+    "6cfb1789-5e57-4b04-bbeb-20d456cdfc04",
+    "f61122f8-d35f-428c-a7c4-15fec0110b2b"
+  ],
+  "targets": {
+    "CH017_N_ELECTRODE": {
+      "goal": [
+        41.25,
+        7.6
+      ],
+      "F_component_bounds": [
+        40.04807019967461,
+        5.325001,
+        48.0,
+        13.573926950697595
+      ],
+      "legal_via_area_mm2": 3.026229647703351,
+      "windows": [
+        {
+          "point": [
+            40.7085,
+            8.775938
+          ],
+          "area_mm2": 0.0005083823439864663,
+          "distance": 1.294624435828399,
+          "bounds": [
+            40.693800001,
+            8.750000001,
+            40.713399998999996,
+            8.785737877339912
+          ]
+        },
+        {
+          "point": [
+            40.308818,
+            9.889071
+          ],
+          "area_mm2": 0.005576869129482899,
+          "distance": 2.475009010117942,
+          "bounds": [
+            40.275000001,
+            9.82394772066081,
+            40.35773038668683,
+            9.966526643550317
+          ]
+        },
+        {
+          "point": [
+            45.819446,
+            6.014816
+          ],
+          "area_mm2": 3.020144396229881,
+          "distance": 4.836594365953381,
+          "bounds": [
+            43.40196540446938,
+            5.550001,
+            48.0,
+            6.461704907031972
+          ]
+        }
+      ]
+    },
+    "CH018_N_ELECTRODE": {
+      "goal": [
+        41.75,
+        7.6
+      ],
+      "F_component_bounds": [
+        40.04807019967461,
+        6.769732727771745,
+        43.10644928715772,
+        13.573926950697595
+      ],
+      "legal_via_area_mm2": 0.006085251473469365,
+      "windows": [
+        {
+          "point": [
+            40.7085,
+            8.775938
+          ],
+          "area_mm2": 0.0005083823439864663,
+          "distance": 1.5708444957550698,
+          "bounds": [
+            40.693800001,
+            8.750000001,
+            40.713399998999996,
+            8.785737877339912
+          ]
+        },
+        {
+          "point": [
+            40.308818,
+            9.889071
+          ],
+          "area_mm2": 0.005576869129482899,
+          "distance": 2.7049679480845965,
+          "bounds": [
+            40.275000001,
+            9.82394772066081,
+            40.35773038668683,
+            9.966526643550317
+          ]
+        }
+      ]
+    },
+    "CH019_N_ELECTRODE": {
+      "goal": [
+        42.25,
+        7.6
+      ],
+      "F_component_bounds": [
+        40.04807019967461,
+        6.924593919559609,
+        43.10644928715772,
+        13.573926950697595
+      ],
+      "legal_via_area_mm2": 0.006085251473469365,
+      "windows": [
+        {
+          "point": [
+            40.7085,
+            8.775938
+          ],
+          "area_mm2": 0.0005083823439864663,
+          "distance": 1.9388275915728037,
+          "bounds": [
+            40.693800001,
+            8.750000001,
+            40.713399998999996,
+            8.785737877339912
+          ]
+        },
+        {
+          "point": [
+            40.308818,
+            9.889071
+          ],
+          "area_mm2": 0.005576869129482899,
+          "distance": 3.0013386347036866,
+          "bounds": [
+            40.275000001,
+            9.82394772066081,
+            40.35773038668683,
+            9.966526643550317
+          ]
+        }
+      ]
+    },
+    "CH021_N_ELECTRODE": {
+      "goal": [
+        43.25,
+        7.6
+      ],
+      "F_component_bounds": [
+        40.04807019967461,
+        6.872160074431268,
+        43.375000001000004,
+        13.573926950697595
+      ],
+      "legal_via_area_mm2": 0.006085251473469365,
+      "windows": [
+        {
+          "point": [
+            40.7085,
+            8.775938
+          ],
+          "area_mm2": 0.0005083823439864663,
+          "distance": 2.800366481345611,
+          "bounds": [
+            40.693800001,
+            8.750000001,
+            40.713399998999996,
+            8.785737877339912
+          ]
+        },
+        {
+          "point": [
+            40.308818,
+            9.889071
+          ],
+          "area_mm2": 0.005576869129482899,
+          "distance": 3.726982371861314,
+          "bounds": [
+            40.275000001,
+            9.82394772066081,
+            40.35773038668683,
+            9.966526643550317
+          ]
+        }
+      ]
+    }
+  }
+}
