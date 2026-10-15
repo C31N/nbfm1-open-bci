@@ -1,0 +1,80 @@
+[
+  {
+    "report": "baseline-runtime-drc.json",
+    "violations": 0,
+    "warnings": 0,
+    "unconnected": 143
+  },
+  {
+    "report": "ch018n-initial-drc.json",
+    "violations": 0,
+    "warnings": 0,
+    "unconnected": 142
+  },
+  {
+    "report": "ch028-source-drc.json",
+    "violations": 0,
+    "warnings": 0,
+    "unconnected": 143
+  },
+  {
+    "report": "muxs0-north-drc.json",
+    "violations": 0,
+    "warnings": 0,
+    "unconnected": 143
+  },
+  {
+    "report": "muxs0-south-drc.json",
+    "violations": 0,
+    "warnings": 0,
+    "unconnected": 143
+  },
+  {
+    "report": "rejected-pair141-drc.json",
+    "violations": 0,
+    "warnings": 0,
+    "unconnected": 141
+  },
+  {
+    "report": "rejected-pair141-replay-drc.json",
+    "violations": 0,
+    "warnings": 0,
+    "unconnected": 141
+  },
+  {
+    "report": "rejected-rail-cut-drc.json",
+    "violations": 0,
+    "warnings": 0,
+    "unconnected": 144
+  },
+  {
+    "report": "rejected-short142-drc.json",
+    "violations": 0,
+    "warnings": 0,
+    "unconnected": 142
+  },
+  {
+    "report": "rejected-staged142-drc.json",
+    "violations": 0,
+    "warnings": 0,
+    "unconnected": 142
+  },
+  {
+    "report": "replay-after-drc.json",
+    "violations": 0,
+    "warnings": 0,
+    "unconnected": 142
+  },
+  {
+    "report": "replay-before-drc.json",
+    "violations": 0,
+    "warnings": 0,
+    "unconnected": 143
+  },
+  {
+    "report": "vcm-bridge-drc.json",
+    "violations": 0,
+    "warnings": 0,
+    "unconnected": 143
+  }
+]

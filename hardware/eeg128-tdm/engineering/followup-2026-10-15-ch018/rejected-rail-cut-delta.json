@@ -1,0 +1,14 @@
+{
+  "changes": {
+    "8fb1f581-15b7-4f2d-a04d-519d52e2a53b": {
+      "before": "(segment\n\t\t(start 30 36.4)\n\t\t(end 188.75 36.4)\n\t\t(width 0.25)\n\t\t(layer \"B.Cu\")\n\t\t(net 598)\n\t\t(uuid \"8fb1f581-15b7-4f2d-a04d-519d52e2a53b\")\n\t)",
+      "after": "(segment (start 30.0 36.4) (end 36.5 36.4) (width 0.25) (layer \"B.Cu\") (net 598) (uuid \"e20b3022-35f6-530c-9d57-5e1aa161594e\"))\n(segment (start 37.1 36.4) (end 188.75 36.4) (width 0.25) (layer \"B.Cu\") (net 598) (uuid \"d17f70f9-8dae-5b10-a305-6ad7435ad2f6\"))"
+    },
+    "9814eee5-3682-4ca7-b665-c4ac6a42029d": {
+      "before": "(segment\n\t\t(start 34.75 36.4)\n\t\t(end 50.75 36.4)\n\t\t(width 0.25)\n\t\t(layer \"B.Cu\")\n\t\t(net 598)\n\t\t(uuid \"9814eee5-3682-4ca7-b665-c4ac6a42029d\")\n\t)",
+      "after": "(segment (start 34.75 36.4) (end 36.5 36.4) (width 0.25) (layer \"B.Cu\") (net 598) (uuid \"44edb79c-4aaf-506f-af60-e8dfc01fe59c\"))\n(segment (start 37.1 36.4) (end 50.75 36.4) (width 0.25) (layer \"B.Cu\") (net 598) (uuid \"d2e41ad6-9b6d-5c9f-8800-863f7a5e8355\"))"
+    }
+  },
+  "diagnostic_only": true,
+  "VCM_R38_via_unchanged": true
+}

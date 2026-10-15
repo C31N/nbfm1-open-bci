@@ -1,0 +1,11 @@
+{
+  "net": "CH018_N_MUX",
+  "path": null,
+  "explicit_source_via": [
+    38.75,
+    26
+  ],
+  "source_own_pad_overlap": true,
+  "model_only": true,
+  "seconds": 8.099441193999837
+}

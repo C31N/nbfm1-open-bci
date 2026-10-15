@@ -1,6 +1,15 @@
 <!-- SPDX-License-Identifier: CERN-OHL-S-2.0 -->
 # Routing completion and manufacturing boundary — 2026-10-15
 
+**Verified continuation: 142 open connections.** CH018_N_MUX is closed by the
+reviewed CH019-N trunk exchange, with native 0 errors / 0 warnings / 0 parity
+findings and exactly zero additional filled-L3-power loss and gain. CH018_P_MUX
+remains open. The immutable 143 checkpoint below remains the replay input;
+the current engineering artifact and queue are identified in
+[`engineering/current-routing-status.json`](engineering/current-routing-status.json).
+See [`BLOCK2_SOURCE_FOLLOWUP_2026-10-15_CH018142.md`](engineering/BLOCK2_SOURCE_FOLLOWUP_2026-10-15_CH018142.md)
+for exact neighbor changes, rejected probes and the independent replay proof.
+
 ## Authoritative input
 
 Use `engineering/block2-electrode-closed143.zip`, SHA-256

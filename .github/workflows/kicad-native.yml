@@ -25,7 +25,7 @@ jobs:
         run: |
           sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
           sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely
           kicad-cli version
           kicad-cli version | grep -E '^8\.'
 
@@ -134,16 +134,24 @@ jobs:
               print("Primary pre-route geometry gate PASS; connectivity remains blocked")
           PY
 
+      - name: Test reviewed neighbor replay guards
+        run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch018_neighbor_replay.py -v
+
+      - name: Replay reviewed CH018-N engineering closure
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/replay_ch018_neighbors.py \
+            --output-dir /tmp/ch018-reviewed-replay
+
       - name: Confirm diagnostic audit contains no manufacturing exports
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
-          audit = Path("/tmp/kicad-audit")
+          audits = [Path("/tmp/kicad-audit"), Path("/tmp/ch018-reviewed-replay")]
           forbidden_suffixes = {".gbr", ".gerber", ".drl", ".pos"}
           forbidden_names = {"placement.csv", "bom.csv", "cpl.csv"}
           exports = [
-              path.name for path in audit.rglob("*")
+              str(path) for audit in audits for path in audit.rglob("*")
               if path.is_file() and (
                   path.suffix.lower() in forbidden_suffixes
                   or path.name.lower() in forbidden_names
@@ -190,5 +198,9 @@ jobs:
             /tmp/kicad-audit/erc-summary.json
             /tmp/kicad-audit/drc.json
             /tmp/kicad-audit/drc-summary.json
+            /tmp/ch018-reviewed-replay/drc-before.json
+            /tmp/ch018-reviewed-replay/drc-after.json
+            /tmp/ch018-reviewed-replay/parity.json
+            /tmp/ch018-reviewed-replay/result.json
           if-no-files-found: error
           retention-days: 30

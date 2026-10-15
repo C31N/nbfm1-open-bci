@@ -1,0 +1,11 @@
+{
+  "source_component_bounds": [
+    28.0,
+    25.446937966784397,
+    51.0,
+    62.0
+  ],
+  "source_component_area_mm2": 368.69376931434925,
+  "target_B_via_in_component": true,
+  "touches_window": true
+}

@@ -1,0 +1,14 @@
+{
+  "L3_power_loss_mm2": 0.0,
+  "L3_power_gain_mm2": 0.0,
+  "zone_outlines_unchanged": true,
+  "source_component_bounds": [
+    38.499999999,
+    25.446937966784397,
+    39.075000001,
+    26.603480509288243
+  ],
+  "source_component_area_mm2": 0.5865256978525999,
+  "touches_window": false,
+  "source_to_30_5": false
+}
