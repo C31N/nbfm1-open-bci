@@ -1,7 +1,7 @@
-808a7538b75a705b4b7ab4065695deafc1d2ad595471eb1ff0301c6149d95c2f  BLOCK2_FOLLOWUP_2026-10-13_SHA256SUMS
+2883101ac97f8c86a2ca2978a6c654e6f8c3b24de02cca79915e70b185b2bfbc  BLOCK2_FOLLOWUP_2026-10-13_SHA256SUMS
 b2c7b4c36dda342f7e6852c4ae134eb2112acc09ee5f36e2212db5f65f82cb33  BLOCK2_SOURCE_FOLLOWUP_2026-10-15.md
 26e30c4495d8e3eeca7b46ba5556d052285113a2420a1bee9b9a8d070a352146  BLOCK2_WORKING_BASELINE.json
-9bd09ee4afe7c1e666d4ada1e00995e5fa0c9162b69dafd25684bd1b916c9aeb  CHECKPOINT_SHA256SUMS
+a13d20774a5ce2c4c106ef63d22990a20af7b8aed09234c39b00013a8d03823d  CHECKPOINT_SHA256SUMS
 e8d60a9835aea686af2d34d9e0e31b3a948b8c7dd2caae81c2c24786e4a3a8e1  block2-electrode-closed143.zip
 65ddb7ec8cbfd261487c9a687e2e06393feea13e281c2be31a70412eb33a2898  followup-2026-10-15/144-143-ch027n-drc-after.json
 4600c95ac4454a428bd4e815219a4d4a6df338041d7b7ad51e361905c4179d97  followup-2026-10-15/144-143-ch027n-geometry.json
@@ -59,5 +59,5 @@ d768bf5a809ff0b59ca14f5367562e048a15ee5ab19e0c2f04e1b54458d0f22e  ../replay_mux1
 7cfb7190940b087c9a363f4fbe3dcc96f84ed8df8f6422f2ff7b1a2efe0e6229  ../test_mux147_replay.py
 158dfcb79ade0a0568395147ed9ebe94ede5f1fd96e1ec2dc1a5f7e5223e737e  ../test_routing_layer_constraints.py
 7d1d051cbfcf810cab2ea6d242d62aa444a98c75eeaedf7f61b0881f6b530414  ../../../.github/workflows/kicad-native.yml
-48fba4f1a3ca4626133edbc507d52123ed0d8a6f9edb7c0e7ce9e08737bf25a7  ../../../.github/workflows/autoroute-a1.yml
-99e5fa5955fe1c4b59ad695d0f415d07c19c619f3932bb23c69fdcb4189876b1  ../../../.github/workflows/autoroute-a1-converge.yml
+c4c999802c40ca1886c56ab7ef8a998b4af362b4c2e4a9ae5884abbfaaddf94b  ../../../.github/workflows/autoroute-a1.yml
+238a6edd12019b55bab2d98f79f32a7e7eabf8458ccb99efafdf14e55542a6a7  ../../../.github/workflows/autoroute-a1-converge.yml

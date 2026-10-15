@@ -21,15 +21,22 @@ class CausalConv1d(nn.Module):
         return self.conv(F.pad(x, (self.left_padding, 0)))
 
 
+class TimewiseLayerNorm(nn.LayerNorm):
+    """Normalize channels independently at each time; never use future samples."""
+
+    def forward(self, x: Tensor) -> Tensor:
+        return super().forward(x.transpose(1, 2)).transpose(1, 2)
+
+
 class FastPatchEncoder(nn.Module):
     def __init__(self, input_channels: int, d_model: int) -> None:
         super().__init__()
         self.net = nn.Sequential(
             CausalConv1d(input_channels, d_model, 17, stride=8, bias=False),
-            nn.GroupNorm(8, d_model),
+            TimewiseLayerNorm(d_model),
             nn.GELU(),
             CausalConv1d(d_model, d_model, 5, stride=2, bias=False),
-            nn.GroupNorm(8, d_model),
+            TimewiseLayerNorm(d_model),
             nn.GELU(),
         )
 

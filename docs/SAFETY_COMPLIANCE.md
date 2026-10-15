@@ -243,3 +243,27 @@ human_connected_use_authorized = false
 
 These values are mandatory until the physical release gates in
 `hardware/eeg128-tdm/RELEASE_STATUS.json` have been independently completed.
+
+## 12. Audit clarification — 2026-10-15
+
+The current 143-airwire engineering checkpoint is not fabrication-released or
+authorized for a human connection. Its clean geometric DRC is not a medical
+safety certificate. Battery-only acquisition means no charger, grounded debug
+probe, oscilloscope, host shield or other unintended conductive mains path.
+Connecting an ADuM3160 requires appropriately isolated power and complete
+system-level insulation/leakage/single-fault evaluation; a component's 2.5-kV
+rating is not a claim of two Means of Patient Protection for the headset.
+The permitted research architecture does not waive the human-use prohibition.
+
+There is no blanket FDA Class II/III exemption for this repository. A specific
+510(k) exemption depends on the applicable device classification and limitations;
+it does not waive all other controls. An IDE is a study-specific regulatory
+path, not a general marketing authorization. EU MDR applicability depends on
+actual intended purpose and use, not an open-source label. No maintainer notice
+can exclude non-waivable injury or statutory product-liability rights.
+
+The current official FDA exemption and IDE pages, EU MDR text and Analog Devices
+component references in section 10 remain the controlling reference set. This
+repository document is engineering/regulatory guidance, not individualized legal
+advice or a finding of IEC 60601 conformity. A manufacturer/integrator must obtain
+qualified regulatory, electrical-safety and legal review for the actual device.

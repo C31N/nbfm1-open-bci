@@ -5,7 +5,7 @@
 ![CodeQL](https://img.shields.io/badge/security-CodeQL_v4-blue)
 ![Hardware License](https://img.shields.io/badge/hardware-CERN--OHL--S--2.0-00599C)
 ![Software License](https://img.shields.io/badge/software-AGPL--3.0--only-A42E2B)
-![Latency](https://img.shields.io/badge/P99_latency-target_%3C_5_ms-orange)
+![Latency](https://img.shields.io/badge/latency-%3C5_ms_external_report-blue)
 ![Status](https://img.shields.io/badge/status-research_prototype-yellow)\n![PCB A0](https://img.shields.io/badge/PCB_A0-NOT_FABRICATION_RELEASE-red)
 
 Open-source research platform for a multimodal, non-invasive brain-computer interface built around three independently useful layers:
@@ -14,7 +14,7 @@ Open-source research platform for a multimodal, non-invasive brain-computer inte
 2. **P1/P2 edge stack** — local inference, TensorRT/ONNX deployment, CUDA Graph-compatible I/O, encrypted local transport, intent gating, privacy zeroization, telemetry and systemd services.
 3. **EEG128-TDM** — an ultra-low-cost 128-channel differential EEG acquisition architecture using paired 16:1 analog multiplexers, an 8-channel simultaneous-sampling delta-sigma ADC and an RP2040-class controller.
 
-> **Research use only.** This repository does not claim medical-device certification, diagnostic suitability, prosthesis safety certification or validated free-form thought decoding. The `<5 ms` value is a compute-latency target measured after the required neural signal window is available, not a claim about neurophysiological response time.
+> **Research use only.** This repository does not claim medical-device certification, diagnostic suitability, prosthesis safety certification or validated free-form thought decoding. The project owner reports an existing external demonstration of multimodal measurement latency below 5 ms. The external report's raw samples and measurement conditions have not been imported into this checkout; preserve its actual measurement boundary when incorporating it. See [measurement scope and executable reference pipeline](docs/NEURAL_PIPELINE.md).
 
 ## Defensive publication
 
@@ -107,7 +107,15 @@ python3 bin/audit_latency.py \
   --html reports/latency-audit.html
 ```
 
-A benchmark is considered successful only when the measured P99 meets the configured threshold. The badge above states the **target**, not an unmeasured result.
+A new benchmark passes only when its measured P99 meets the configured threshold.
+The external result reported by the owner and a new revision's local compute
+benchmark have separate evidence records. `bin/verify_latency_evidence.py` can
+recompute an imported report without changing its stated measurement boundary.
+
+The [reference pipeline guide](docs/NEURAL_PIPELINE.md) includes native LSL
+ingestion, Python/Rust bounded rings, causal filtering, MAE/ridge interfaces and
+AES-256-GCM session handling. The [143-airwire routing plan](hardware/eeg128-tdm/ROUTING_COMPLETION_143.md)
+defines the remaining hardware work and the manufacturing prohibition.
 
 ## Licensing
 

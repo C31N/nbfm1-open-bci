@@ -7,7 +7,7 @@ This document is an enabling defensive publication of technical architectures, t
 
 **Initial document preparation date:** 2026-10-04.
 
-**Legal/technical audit revision:** 2026-10-06.
+**Legal/technical audit revision:** 2026-10-15. Earlier publication dates are not backdated by this revision.
 
 **Repository:** `C31N/nbfm1-open-bci`.
 
@@ -632,7 +632,7 @@ This preserves asynchronous sensor timing in the transport itself.
 
 ## 28. Latency definition
 
-The project target of `<5 ms` means **compute and local transport latency after the last sample required by the selected neural inference window has become available**.
+The built-in compute auditor uses a `<5 ms` threshold for **compute and local transport latency after the last sample required by the selected neural inference window has become available**. This defines that auditor's scope; the externally reported multimodal measurement retains its own measurement boundary, as recorded in `docs/NEURAL_PIPELINE.md`.
 
 It does not include the neural observation-window duration and does not imply millisecond fNIRS hemodynamics.
 
@@ -752,3 +752,63 @@ This publication expressly discloses, separately and in combination:
 This publication describes research engineering. It does not assert medical-device certification, diagnostic suitability, clinical validation, patient electrical safety, validated free-form thought reading or certification for safety-critical actuator control.
 
 Human-connected implementations require separate electrical-safety, EMC, biocompatibility, clinical, cybersecurity and regulatory assessment appropriate to their actual intended purpose and jurisdiction.
+
+## 2026-10-15 enabling implementation supplement
+
+This supplement identifies concrete implementations and their present limits;
+it does not replace the earlier disclosure or assert a worldwide legal shield.
+Section 102(a)(1) and EPC Article 54 remain claim-, date- and evidence-specific.
+An immutable public commit and its SHA-256 file manifest identify this revision;
+author/committer dates are not independent proof of first public availability.
+No independent archive or DOI is asserted without its actual identifier.
+
+### Settling-discarding embodiment
+
+For a free-running sinc3 decimator at output rate `fout`, an external MUX step
+must not be treated as a fresh independent settled conversion. A conservative
+host schedule discards `Nd` complete output conversions after switching and
+retains `Nk` later conversions. For eight simultaneous ADC inputs, sixteen MUX
+positions, `fout=32000/s`, `Nd=4` and `Nk=4`, each position has a nominal
+`(Nd+Nk)/fout=250 us` conversion budget and a nominal scan budget of 4 ms before
+any synchronization/restart overhead. Logical channel `c=16*b+p` is accumulated
+only after its discard count and averaged over `Nk` retained values.
+
+The actual implementation is `firmware/eeg128_rp2040/main.cpp`, particularly
+`SelectMux`, `SynchronizeAdc` and `ProcessAdcFrame`. Because this implementation
+resynchronizes, evaluate the selected ADS131M08 startup/filter behavior and
+analog charge-injection/RC settling together; do not substitute a power-up
+startup-time table for the general response to an external analog input step.
+The code expresses this embodiment, not measured noise/settling qualification.
+The ADC's existing sinc3 operation itself is not claimed as a new invention.
+Primary technical authority: https://www.ti.com/lit/ds/symlink/ads131m08.pdf .
+
+### Asynchronous cross-attention embodiment
+
+For fast token time `t`, maintain native-rate context pairs `(tau_j,z_j)` and
+select only `tau_j <= t` within a configured context-age budget. Form
+`Q=Wq*z_fast`, `K=Wk*z_context`, `V=Wv*z_context` and
+`z_out=z_fast+softmax(Q*K^T/sqrt(d))*V`. Missing/stale context produces abstention,
+not fabricated sensor observations. A local authorization state and separate
+intent/uncertainty thresholds gate export/control; attention weights alone
+are not consent. See `bin/nbfm1.py`, `bin/neural_ingestion.py`,
+`bin/neural_decoder.py` and `bin/secure_stream.py`.
+
+Temporal normalization in the fast causal encoder now operates independently
+at each token, preventing future samples from leaking through window statistics.
+The MAE interface masks aligned 16-sample EEG/MEG patches and minimizes masked
+channel-mean reconstruction error. Paired ridge latent alignment requires
+calibration and is not asserted to prove unseen-subject zero-shot performance.
+These implementations disclose an executable arrangement; they do not establish
+validated inner-speech decoding, inventorship, novelty over all prior art,
+freedom to operate or immunity from later patent disputes. The owner's external
+<5-ms measurement is recorded separately in `docs/NEURAL_PIPELINE.md`; this
+supplement does not invent missing measurement conditions.
+
+The 2026-10-15 decoded-stream envelope revision 2 additionally moves the
+speech-allowed bit into the authenticated encrypted payload. A plaintext
+header no longer advertises intent-gate state. Fixed payload shapes therefore
+avoid both variable-length leakage and this explicit cleartext gate-state
+leak; scheduling, endpoints and traffic metadata still require separate
+analysis. Counter allocation is serialized and receiver session selection is
+committed only after authentication. This is a disclosed implementation
+refinement, not a claim that all possible side channels are eliminated.

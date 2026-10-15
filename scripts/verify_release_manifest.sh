@@ -31,3 +31,4 @@ if ! diff -u "$expected" "$actual"; then
 fi
 
 printf 'Release manifest verified: hashes and tracked-file coverage are complete.\\n'
+python3 "$ROOT/scripts/verify_all_release_manifests.py"

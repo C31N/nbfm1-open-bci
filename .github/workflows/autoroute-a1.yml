@@ -14,6 +14,7 @@ concurrency:
 
 jobs:
   route:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     timeout-minutes: 90
 
@@ -163,38 +164,8 @@ jobs:
           print(json.dumps(metrics, indent=2))
           PY
 
-      - name: Gate manufacturing exports on clean routing and explicit release
-        id: manufacturing_gate
-        run: |
-          python3 - <<'PYGATE'
-          import json
-          import os
-          from pathlib import Path
-
-          report = json.loads(Path("/tmp/a1/drc-after.json").read_text())
-          status = json.loads(Path("hardware/eeg128-tdm/RELEASE_STATUS.json").read_text())
-          valid_report = {"violations", "unconnected_items"}.issubset(report)
-          clean = valid_report and not report["violations"] and not report["unconnected_items"]
-          released = all(status.get(key) is True for key in (
-              "routing_completed", "fabrication_release", "drc_passed", "schematic_parity_passed"
-          ))
-          allowed = bool(clean and released)
-          with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
-              output.write("allowed=" + str(allowed).lower() + "\n")
-          print("Manufacturing export allowed:", allowed)
-          PYGATE
-
-      - name: Export routed placement
-        if: steps.manufacturing_gate.outputs.allowed == 'true'
-        run: |
-          kicad-cli pcb export pos \
-            --format csv \
-            --units mm \
-            --side both \
-            --smd-only \
-            --exclude-dnp \
-            --output /tmp/a1/CPL-routed.csv \
-            /tmp/a1/eeg128-tdm-A1-routed.kicad_pcb
+      - name: Keep routing diagnostics separate from manufacturing
+        run: echo "No manufacturing exports in routing experiments; use the reviewed release generator."
 
       - name: Upload A1 routing experiment
         uses: actions/upload-artifact@v6
@@ -208,6 +179,5 @@ jobs:
             /tmp/a1/drc-before.json
             /tmp/a1/drc-after.json
             /tmp/a1/route-metrics.json
-            /tmp/a1/CPL-routed.csv
           if-no-files-found: error
           retention-days: 14

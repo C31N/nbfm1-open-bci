@@ -13,6 +13,7 @@ def main() -> int:
         description="Deterministically refill all KiCad copper zones."
     )
     parser.add_argument("board")
+    parser.add_argument('--require-four-layer', action='store_true')
     args = parser.parse_args()
 
     path = Path(args.board).resolve()
@@ -22,6 +23,9 @@ def main() -> int:
         board = pcbnew.LoadBoard(str(path))
         if board is None:
             raise RuntimeError(f"cannot load {path}")
+        if args.require_four_layer and (not pcbnew.Version().startswith('8.')
+                                        or board.GetCopperLayerCount() != 4):
+            raise RuntimeError('Manufacturing requires KiCad 8 and exactly four copper layers')
         zone_count = board.GetAreaCount()
         pcbnew.ZONE_FILLER(board).Fill(board.Zones())
         if not pcbnew.SaveBoard(str(path), board):

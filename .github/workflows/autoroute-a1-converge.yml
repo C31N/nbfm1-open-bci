@@ -15,6 +15,7 @@ concurrency:
 
 jobs:
   converge:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     timeout-minutes: 120
 
@@ -215,49 +216,8 @@ jobs:
           print(json.dumps(result, indent=2))
           PY
 
-      - name: Gate manufacturing exports on clean routing and explicit release
-        id: manufacturing_gate
-        run: |
-          python3 - <<'PYGATE'
-          import json
-          import os
-          from pathlib import Path
-
-          report = json.loads(Path("/tmp/a1conv/drc-best.json").read_text())
-          status = json.loads(Path("hardware/eeg128-tdm/RELEASE_STATUS.json").read_text())
-          valid_report = {"violations", "unconnected_items"}.issubset(report)
-          clean = valid_report and not report["violations"] and not report["unconnected_items"]
-          released = all(status.get(key) is True for key in (
-              "routing_completed", "fabrication_release", "drc_passed", "schematic_parity_passed"
-          ))
-          allowed = bool(clean and released)
-          with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
-              output.write("allowed=" + str(allowed).lower() + "\n")
-          print("Manufacturing export allowed:", allowed)
-          PYGATE
-
-      - name: Export manufacturing review files
-        if: steps.manufacturing_gate.outputs.allowed == 'true'
-        run: |
-          kicad-cli pcb export pos \
-            --format csv \
-            --units mm \
-            --side both \
-            --smd-only \
-            --exclude-dnp \
-            --output /tmp/a1conv/CPL-A1.csv \
-            /tmp/a1conv/eeg128-tdm-A1-best.kicad_pcb
-          mkdir -p /tmp/a1conv/gerbers
-          kicad-cli pcb gerbers \
-            -l F.Cu,In1.Cu,In2.Cu,B.Cu,F.Mask,B.Mask,F.Silkscreen,B.Silkscreen,Edge.Cuts \
-            -o /tmp/a1conv/gerbers/ \
-            /tmp/a1conv/eeg128-tdm-A1-best.kicad_pcb
-          kicad-cli pcb drill \
-            --format excellon \
-            --generate-map \
-            --map-format gerberx2 \
-            -o /tmp/a1conv/gerbers/ \
-            /tmp/a1conv/eeg128-tdm-A1-best.kicad_pcb
+      - name: Keep routing diagnostics separate from manufacturing
+        run: echo "No manufacturing exports in routing experiments; use the reviewed release generator."
 
       - name: Publish board only on zero-error gate
         run: |
@@ -299,7 +259,5 @@ jobs:
             /tmp/a1conv/eeg128-tdm-A1-best.kicad_pcb
             /tmp/a1conv/drc-best.json
             /tmp/a1conv/final-gate.json
-            /tmp/a1conv/CPL-A1.csv
-            /tmp/a1conv/gerbers/
           if-no-files-found: error
           retention-days: 14

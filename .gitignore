@@ -62,3 +62,4 @@ Thumbs.db
 *.tar.gz
 *.zip
 PUBLICATION_SHA256SUMS.tmp
+software/neural-ring/target/

@@ -5,11 +5,21 @@ A local file or private repository is not public prior art merely because it has
 
 ## 1. Freeze the disclosure
 
+Synchronize NOTICE and CITATION to an existing, explicit source snapshot first.
+The managed notice stores the manifest hash from that snapshot; this avoids
+self-referential current-file hash cycles. It does not invent a DOI or a signed
+publication date. After this operation, stage new files before regenerating the
+current manifest so every new tracked file is covered.
+
 ```bash
 git status --short
+python3 scripts/update_notice_citation.py --revision HEAD
 ./scripts/vendor_licenses.sh
-./scripts/generate_release_manifest.sh
 git add -A
+./scripts/generate_release_manifest.sh
+git add PUBLICATION_SHA256SUMS
+python3 scripts/update_notice_citation.py --check
+./scripts/verify_release_manifest.sh
 git diff --cached --check
 ```
 

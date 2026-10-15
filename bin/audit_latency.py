@@ -44,6 +44,8 @@ def percentile(values: np.ndarray, q: float) -> float:
 
 def latency_stats(values: list[float]) -> LatencyStats:
     a = np.asarray(values, dtype=np.float64)
+    if a.ndim != 1 or not np.isfinite(a).all() or np.any(a < 0):
+        raise ValueError('Latency timestamps must produce finite nonnegative durations')
     if not a.size:
         return LatencyStats(0, math.nan, math.nan, math.nan, math.nan, math.nan, math.nan)
     return LatencyStats(

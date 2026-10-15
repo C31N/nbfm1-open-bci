@@ -1,0 +1,139 @@
+{
+  "date": "2026-10-15",
+  "scope": "Development source BOM/CPL; no manufacturing export or release",
+  "pcb_sha256": "497b588e580caf24766d5d60e9753def8dfe10ad3495b75faf5cd3fdd6276f24",
+  "files_sha256": {
+    "BOM.csv": "00c5a0c0ac4e19737011c78b7b54193a3c5f77292bb9f3e0ee3cd904415b39fc",
+    "CPL.csv": "d0041fea6d130d15094d98e5d0efd228adb06524521c373234922b16d0b04a8f"
+  },
+  "placements": 642,
+  "centroid_mismatches_in_CAD_frame": 0,
+  "rotation_mismatches_in_CAD_frame": 0,
+  "jlc_import_visual_signoff": false,
+  "component_bom_under_50_eur_verified": false,
+  "quote_status": "No complete current EUR production quote supplied; price/stock/assembly charges are not guaranteed",
+  "parts_rechecked": [
+    {
+      "mpn": "CD74HC4067M96",
+      "lcsc": "C496123",
+      "quantity": 16,
+      "footprint": "SOIC-24_7.5x15.4mm_P1.27mm",
+      "primary_listing": "https://www.lcsc.com/product-detail/C496123.html"
+    },
+    {
+      "mpn": "TLV9064IPWR",
+      "lcsc": "C779410",
+      "quantity": 4,
+      "footprint": "TSSOP-14_4.4x5mm_P0.65mm",
+      "primary_listing": "https://www.lcsc.com/product-detail/C779410.html"
+    },
+    {
+      "mpn": "ADS131M08IPBSR",
+      "lcsc": "C2862610",
+      "quantity": 1,
+      "footprint": "TQFP-32_5x5mm_P0.5mm",
+      "primary_listing": "https://www.lcsc.com/product-detail/C2862610.html"
+    },
+    {
+      "mpn": "RP2040",
+      "lcsc": "C2040",
+      "quantity": 1,
+      "footprint": "QFN-56-1EP_7x7mm_P0.4mm_EP3.2x3.2mm",
+      "primary_listing": "https://www.lcsc.com/product-detail/C2040.html"
+    },
+    {
+      "mpn": "RCS060310M0FKEA",
+      "lcsc": "C2092526",
+      "quantity": 256,
+      "footprint": "R_0603_1608Metric",
+      "primary_listing": "https://www.lcsc.com/product-detail/C2092526.html"
+    },
+    {
+      "mpn": "TC0325F1003T5F",
+      "lcsc": "C2989131",
+      "quantity": 256,
+      "footprint": "R_0603_1608Metric",
+      "primary_listing": "https://www.lcsc.com/product-detail/C2989131.html"
+    },
+    {
+      "mpn": "0603WAF1000T5E",
+      "lcsc": "C22775",
+      "quantity": 16,
+      "footprint": "R_0603_1608Metric",
+      "primary_listing": "https://www.lcsc.com/product-detail/C22775.html"
+    },
+    {
+      "mpn": "0603WAF1002T5E",
+      "lcsc": "C25804",
+      "quantity": 4,
+      "footprint": "R_0603_1608Metric",
+      "primary_listing": "https://www.lcsc.com/product-detail/C25804.html"
+    },
+    {
+      "mpn": "RC0603FR-0727RL",
+      "lcsc": "C137753",
+      "quantity": 2,
+      "footprint": "R_0603_1608Metric",
+      "primary_listing": "https://www.lcsc.com/product-detail/C137753.html"
+    },
+    {
+      "mpn": "RC0603FR-071ML",
+      "lcsc": "C105578",
+      "quantity": 2,
+      "footprint": "R_0603_1608Metric",
+      "primary_listing": "https://www.lcsc.com/product-detail/C105578.html"
+    },
+    {
+      "mpn": "RC0603FR-07470KL",
+      "lcsc": "C114622",
+      "quantity": 1,
+      "footprint": "R_0603_1608Metric",
+      "primary_listing": "https://www.lcsc.com/product-detail/C114622.html"
+    },
+    {
+      "mpn": "0603WAF5101T5E",
+      "lcsc": "C23186",
+      "quantity": 2,
+      "footprint": "R_0603_1608Metric",
+      "primary_listing": "https://www.lcsc.com/product-detail/C23186.html"
+    },
+    {
+      "mpn": "CL10A105KB8NNNC",
+      "lcsc": "C15849",
+      "quantity": 20,
+      "footprint": "C_0603_1608Metric",
+      "primary_listing": "https://www.lcsc.com/product-detail/C15849.html"
+    },
+    {
+      "mpn": "CC0603KRX7R9BB104",
+      "lcsc": "C14663",
+      "quantity": 40,
+      "footprint": "C_0603_1608Metric",
+      "primary_listing": "https://www.lcsc.com/product-detail/C14663.html"
+    },
+    {
+      "mpn": "CL10B224KO8SFNC",
+      "lcsc": "C3894271",
+      "quantity": 1,
+      "footprint": "C_0603_1608Metric",
+      "primary_listing": "https://www.lcsc.com/product-detail/C3894271.html"
+    },
+    {
+      "mpn": "0603B103K500NT",
+      "lcsc": "C57112",
+      "quantity": 1,
+      "footprint": "C_0603_1608Metric",
+      "primary_listing": "https://www.lcsc.com/product-detail/C57112.html"
+    },
+    {
+      "mpn": "CL10C150JB81PNC",
+      "lcsc": "C346207",
+      "quantity": 2,
+      "footprint": "C_0603_1608Metric",
+      "primary_listing": "https://www.lcsc.com/product-detail/C346207.html"
+    }
+  ],
+  "other_BOM_lines": "Existing COMPONENT_AUDIT.md; not represented as newly live-verified by this audit",
+  "routing_completed": false,
+  "fabrication_release": false
+}

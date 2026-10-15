@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import math
 import os
 import struct
+from threading import Lock
 from typing import Optional
 
 import numpy as np
@@ -13,8 +14,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
 ENVELOPE_MAGIC = b"BCS1"
-ENVELOPE_VERSION = 1
-FLAG_SPEECH_ALLOWED = 1 << 0
+ENVELOPE_VERSION = 2
 ENVELOPE_STRUCT = struct.Struct("<4sHHQQ16s12sI")
 PAYLOAD_HEADER_STRUCT = struct.Struct("<fB3x8fII")
 
@@ -67,6 +67,7 @@ class SecureFrameExporter:
         self.aead = AESGCM(session_key)
         self.gate = IntentGate(intent_threshold)
         self.sequence = 0
+        self.lock = Lock()
 
     def _next_nonce(self) -> bytes:
         if self.sequence >= (1 << 64):
@@ -89,16 +90,20 @@ class SecureFrameExporter:
         return header + speech.tobytes(order="C")
 
     def encrypt_frame(self, frame: DecoderFrame) -> bytes:
+        with self.lock:
+            return self._encrypt_frame(frame)
+
+    def _encrypt_frame(self, frame: DecoderFrame) -> bytes:
         result = self.gate.process(frame)
         plaintext = self._serialize_payload(result)
         nonce = self._next_nonce()
-        flags = FLAG_SPEECH_ALLOWED if result.speech_allowed else 0
+        sequence = self.sequence
+        self.sequence += 1
         envelope = ENVELOPE_STRUCT.pack(
-            ENVELOPE_MAGIC, ENVELOPE_VERSION, flags, self.sequence,
+            ENVELOPE_MAGIC, ENVELOPE_VERSION, 0, sequence,
             int(frame.timestamp_ns), self.session_id, nonce, len(plaintext)
         )
         ciphertext = self.aead.encrypt(nonce, plaintext, envelope)
-        self.sequence += 1
         return envelope + ciphertext
 
 @dataclass(frozen=True)
@@ -120,35 +125,42 @@ class SecureFrameDecoder:
         self.aead: Optional[AESGCM] = None
         self.stream_prefix: Optional[bytes] = None
         self.last_sequence = -1
+        self.lock = Lock()
 
-    def _select_session(self, session_id: bytes, nonce: bytes) -> None:
+    def _select_session(self, session_id: bytes, nonce: bytes) -> AESGCM:
         if self.session_id == session_id:
-            return
+            assert self.aead is not None
+            return self.aead
+        if self.session_id is not None:
+            raise ValueError('Session is pinned; establish a new authenticated receiver')
         session_key = HKDF(
             algorithm=hashes.SHA256(), length=32, salt=session_id,
             info=b"NBFM-1/local-export/v1"
         ).derive(self.master_key)
-        self.session_id = session_id
-        self.aead = AESGCM(session_key)
-        self.stream_prefix = nonce[:4]
-        self.last_sequence = -1
+        return AESGCM(session_key)
 
     def decode(self, packet: bytes) -> DecryptedFrame:
+        with self.lock:
+            return self._decode(packet)
+
+    def _decode(self, packet: bytes) -> DecryptedFrame:
         if len(packet) < ENVELOPE_STRUCT.size + 16:
             raise ValueError("frame too short")
         envelope = packet[:ENVELOPE_STRUCT.size]
         magic, version, flags, sequence, timestamp_ns, session_id, nonce, plaintext_len = ENVELOPE_STRUCT.unpack(envelope)
-        if magic != ENVELOPE_MAGIC or version != ENVELOPE_VERSION:
+        if magic != ENVELOPE_MAGIC or version != ENVELOPE_VERSION or flags != 0:
             raise ValueError("invalid secure frame")
         if len(packet) != ENVELOPE_STRUCT.size + plaintext_len + 16:
             raise ValueError("secure frame length mismatch")
-        self._select_session(session_id, nonce)
-        if nonce[:4] != self.stream_prefix or nonce[4:] != struct.pack(">Q", sequence):
+        aead = self._select_session(session_id, nonce)
+        if ((self.stream_prefix is not None and nonce[:4] != self.stream_prefix)
+                or nonce[4:] != struct.pack(">Q", sequence)):
             raise ValueError("nonce/sequence mismatch")
         if sequence <= self.last_sequence:
             raise ValueError("replayed/out-of-order frame")
-        assert self.aead is not None
-        plain = self.aead.decrypt(nonce, packet[ENVELOPE_STRUCT.size:], envelope)
+        plain = aead.decrypt(nonce, packet[ENVELOPE_STRUCT.size:], envelope)
+        if len(plain) < PAYLOAD_HEADER_STRUCT.size:
+            raise ValueError('Truncated decoder payload')
         fields = PAYLOAD_HEADER_STRUCT.unpack_from(plain, 0)
         p, speech_valid, *rest = fields
         motor_mean = np.array(rest[:4], dtype=np.float32)
@@ -160,7 +172,8 @@ class SecureFrameDecoder:
             raise ValueError("speech tensor length mismatch")
         speech = np.frombuffer(plain, dtype="<f4", count=count,
                                offset=PAYLOAD_HEADER_STRUCT.size).reshape(t_steps, vocab).copy()
-        allowed = bool(speech_valid) and bool(flags & FLAG_SPEECH_ALLOWED)
+        allowed = bool(speech_valid)
+        self.session_id, self.aead, self.stream_prefix = session_id, aead, nonce[:4]
         self.last_sequence = sequence
         return DecryptedFrame(sequence, timestamp_ns, float(p), allowed,
                               motor_mean, motor_log_std, speech)

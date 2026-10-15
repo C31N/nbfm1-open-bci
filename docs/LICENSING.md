@@ -155,3 +155,25 @@ source copying across boundary     -> legal review before merge
 CERN identifies CERN-OHL-S as its strongly reciprocal v2 variant:
 
 https://cern-ohl.web.cern.ch/
+
+## 11. 2026-10-15 extension audit
+
+The new `bin/neural_*`, `bin/sensor_crypto.py`, latency evidence tool,
+`scripts/update_notice_citation.py`, tests and `software/neural-ring/**` are
+host-side AGPL-3.0-only source. The Rust ring has no third-party Cargo
+dependencies. Hardware export/quote tools and routing documentation remain
+CERN-OHL-S-2.0 under `hardware/**`. No AGPL implementation was copied into the
+firmware or hardware tools. Communication uses documented byte/tensor interfaces.
+
+This is path-scoped multi-licensing, not an offer to choose either licence for
+any arbitrary file. Existing firmware remains under the project's selected
+CERN-OHL-S-2.0 treatment; this audit does not silently relicense contributors'
+work. CERN recommends selecting an appropriate licence for each hardware,
+firmware and software work: https://ohwr.org/licences/ .
+
+Python packages are installed as external dependencies rather than vendored or
+relicensed. Their own licence files, notices, binary dependencies and model
+weight terms must accompany applicable redistribution. REUSE verifies the
+repository's file metadata, not a legal opinion about every possible linked
+binary or patent. Full texts in `LICENSES/` and the actual reciprocal terms
+control; a clean `reuse lint` result does not prove global conflict immunity.

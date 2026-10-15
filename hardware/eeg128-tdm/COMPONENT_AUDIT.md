@@ -67,3 +67,30 @@ The **< EUR 50 component-BOM target remains a target, not a guaranteed purchase 
 - assembly surcharges for extended parts.
 
 A manufacturing release must use a dated JLCPCB/LCSC quote at the intended production quantity. PCB fabrication, stencil, assembly setup, feeder/extended-part charges, shipping, VAT, isolation hardware and the electrode cap are not included in the component-BOM target unless a release explicitly says otherwise.
+
+## 2026-10-15 source recheck
+
+`COMPONENT_VERIFICATION_2026-10-15.json` binds the unchanged BOM/CPL hashes and
+records 642 centroid/rotation matches in the 143er PCB's CAD frame. The four
+requested active identities (RP2040, ADS131M08IPBSR, CD74HC4067M96, TLV9064IPWR)
+and all 13 passive BOM line identities were rechecked against their primary
+LCSC listings. All fitted passives in this revision are 0603; no unreviewed
+0402 substitution was introduced. The existing 27-line BOM expands to 642
+placements. These checks do not constitute JLCPCB import/assembly signoff.
+
+`audit_bom_quote.py` evaluates a complete supplied EUR quote against the BOM,
+rejecting missing parts, MPN mismatch, stale/future dates, invalid price tiers
+or insufficient stock. It distinguishes component allocation from MOQ-rounded
+purchase cost. Its JSON input requires `date`, `currency="EUR"`, and `parts`
+indexed by LCSC ID; each part contains `mpn`, `unit_price_eur`, `multiple`,
+`minimum`, `price_tier_minimum` and `stock`. No fabricated quote is bundled.
+The <EUR 50 target has not been marked as a verified total without that quote.
+
+JLCPCB's official source-format references:
+https://jlcpcb.com/help/article/bill-of-materials-for-pcb-assembly and
+https://jlcpcb.com/help/article/pick-place-file-for-pcb-assembly . Final
+placement coordinates are regenerated from native KiCad output after release
+gates, including its Gerber-compatible coordinate frame, with an explicit
+JLC header/side/rotation conversion. Existing development coordinates are not
+blindly copied into a final order. Independent visual orientation review is
+still required.
