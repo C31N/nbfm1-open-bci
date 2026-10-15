@@ -1,6 +1,13 @@
 <!-- SPDX-License-Identifier: CERN-OHL-S-2.0 -->
 # Block 2: Power-sicherer 140er-Checkpoint, 2026-10-15
 
+**Korrektur der späteren Korridoranalyse:** Die drei aus der analytischen
+CH030-Entfernung abgeleiteten Via-Fenster sind kein belegter Korridor.
+Die Randmaske fehlte im direkten geometrischen Modell. Der akzeptierte
+140er-Checkpoint ist unverändert nativ gültig. Details und korrigierte Evidenz:
+[EDGE_SAFE140](BLOCK2_SOURCE_FOLLOWUP_2026-10-15_EDGE_SAFE140.md).
+
+
 CH025_P_ELECTRODE ist geschlossen. Der unabhängig wiederholte Replay von 141 auf
 140 offene Verbindungen liefert unter nativem KiCad 8.0.9 exakt 0 DRC-Fehler,
 0 Warnungen, 0 diagnostische Paritätsbefunde sowie 0.0 mm² L3-Power-Verlust und

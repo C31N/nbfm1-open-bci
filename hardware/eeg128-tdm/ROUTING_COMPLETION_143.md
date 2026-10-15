@@ -138,3 +138,11 @@ vollständiger F.Cu-Ersatzführung von CH026_P_ELECTRODE. 0 Fehler, 0 Warnungen,
 0 diagnostische Paritätsbefunde, exakt 0.0 mm² L3-Power-Verlust/-Zugewinn.
 CH018_P bleibt offen; keine Fertigungsfreigabe. Einzelheiten und Prüfevidenz:
 [POWER_SAFE140](engineering/BLOCK2_SOURCE_FOLLOWUP_2026-10-15_POWER_SAFE140.md).
+
+## Korridoranalyse nach 140: vollständiges Platinenrand-Gate
+
+Die CH030-Fenster aus der früheren direkten Zusammenhangsanalyse sind durch
+den korrigierten Edge.Cuts-Abgleich widerlegt. Der akzeptierte 140er-Stand
+bleibt unverändert; weder der lange L3-Prüfling mit zwei Randverletzungen noch
+der elektrisch saubere, aber nicht korridoröffnende B.Cu-Ersatz wird übernommen.
+Siehe [EDGE_SAFE140](engineering/BLOCK2_SOURCE_FOLLOWUP_2026-10-15_EDGE_SAFE140.md).

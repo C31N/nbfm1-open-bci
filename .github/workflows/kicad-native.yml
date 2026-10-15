@@ -134,6 +134,9 @@ jobs:
               print("Primary pre-route geometry gate PASS; connectivity remains blocked")
           PY
 
+      - name: Test board-outline routing domains and cutouts
+        run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_routing_layer_constraints.py -v
+
       - name: Test reviewed neighbor replay guards
         run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch018_neighbor_replay.py -v
 
@@ -158,12 +161,20 @@ jobs:
           /usr/bin/python3 hardware/eeg128-tdm/replay_ch025_electrode.py \
             --output-dir /tmp/ch025-reviewed-replay
 
+      - name: Test unadopted CH030 probe replay guards
+        run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch030_probe_replay.py -v
+
+      - name: Replay unadopted CH030 diagnostic without promoting the checkpoint
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/replay_ch030_probe.py \
+            --output-dir /tmp/ch030-unadopted-probe
+
       - name: Confirm diagnostic audit contains no manufacturing exports
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
-          audits = [Path("/tmp/kicad-audit"), Path("/tmp/ch018-reviewed-replay"), Path("/tmp/ch029-reviewed-replay"), Path("/tmp/ch025-reviewed-replay")]
+          audits = [Path("/tmp/kicad-audit"), Path("/tmp/ch018-reviewed-replay"), Path("/tmp/ch029-reviewed-replay"), Path("/tmp/ch025-reviewed-replay"), Path("/tmp/ch030-unadopted-probe")]
           forbidden_suffixes = {".gbr", ".gerber", ".drl", ".pos"}
           forbidden_names = {"placement.csv", "bom.csv", "cpl.csv"}
           exports = [
@@ -226,5 +237,9 @@ jobs:
             /tmp/ch025-reviewed-replay/drc-after.json
             /tmp/ch025-reviewed-replay/parity.json
             /tmp/ch025-reviewed-replay/result.json
+            /tmp/ch030-unadopted-probe/drc-before.json
+            /tmp/ch030-unadopted-probe/drc-after.json
+            /tmp/ch030-unadopted-probe/parity.json
+            /tmp/ch030-unadopted-probe/result.json
           if-no-files-found: error
           retention-days: 30

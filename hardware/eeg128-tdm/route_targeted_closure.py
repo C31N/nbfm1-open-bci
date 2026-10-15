@@ -26,7 +26,7 @@ import numpy as np
 import pcbnew
 from native_connectivity import regressed_nets
 from shapely import contains_xy, prepare
-from shapely.geometry import Point, LineString, box
+from shapely.geometry import Point, LineString, Polygon, box
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
@@ -175,6 +175,35 @@ def make_via(board: pcbnew.BOARD, point: Point2, net: int, diameter: float = .65
     board.Add(via)
 
 
+def routing_domain(board: pcbnew.BOARD, copper_radius: float,
+                   edge_clearance: float = .25) -> BaseGeometry:
+    """Copper-centre domain for the project's 0.25 mm Edge.Cuts rule.
+
+    Use closed native outlines, including cutouts, rather than an edge bounding
+    box. Direct geometric/component callers need the same protection as search.
+    Missing, open or invalid outlines fail closed; native DRC remains mandatory.
+    """
+    if (not math.isfinite(copper_radius) or copper_radius <= 0
+            or not math.isfinite(edge_clearance) or edge_clearance < .25):
+        raise ValueError('Invalid copper radius or project edge clearance')
+    polygons = pcbnew.SHAPE_POLY_SET()
+    if not board.GetBoardPolygonOutlines(polygons) or not polygons.OutlineCount():
+        raise ValueError('A closed board outline is required for routing')
+    shapes = []
+    for index in range(polygons.OutlineCount()):
+        chain = polygons.Outline(index)
+        outer = [xy(chain.CPoint(i)) for i in range(chain.PointCount())]
+        holes = []
+        for number in range(polygons.HoleCount(index)):
+            hole = polygons.Hole(index, number)
+            holes.append([xy(hole.CPoint(i)) for i in range(hole.PointCount())])
+        shape = Polygon(outer, holes)
+        if not shape.is_valid or shape.is_empty:
+            raise ValueError('Invalid board polygon; routing is blocked')
+        shapes.append(shape)
+    return unary_union(shapes).buffer(-(edge_clearance + copper_radius + .000001))
+
+
 def obstacles(board: pcbnew.BOARD, net: int, width: float, clearance: float, window: BaseGeometry,
               via_diameter: float = .65,
               layers: tuple[int, int] | None = None) -> tuple[list[BaseGeometry], BaseGeometry]:
@@ -241,7 +270,10 @@ def obstacles(board: pcbnew.BOARD, net: int, width: float, clearance: float, win
     # Apply the floating-point tolerance BEFORE union. At a legal zero-width
     # centreline corridor, touching inflated neighbours otherwise merge and
     # erase that centreline from the search model. Native DRC checks real copper.
-    return [unary_union(shapes) for shapes in by_layer], unary_union(via_obstacles)
+    trace_exterior = window.difference(routing_domain(board, width / 2))
+    via_exterior = window.difference(routing_domain(board, via_radius))
+    return [unary_union([*shapes, trace_exterior]) for shapes in by_layer], unary_union(
+        [*via_obstacles, via_exterior])
 
 
 def search(board: pcbnew.BOARD, start: Point2, goal: Point2, net: int, width: float,

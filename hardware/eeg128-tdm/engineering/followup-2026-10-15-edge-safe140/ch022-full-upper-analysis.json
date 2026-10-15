@@ -1,0 +1,170 @@
+{
+  "removed_upper_segments": 28,
+  "changes": {
+    "074dcade-c1f5-4190-9f02-15aa1c4341e6": {
+      "before": "(segment\n\t\t(start 31.855 19.779999)\n\t\t(end 31.855 21.729999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"074dcade-c1f5-4190-9f02-15aa1c4341e6\")\n\t)",
+      "after": ""
+    },
+    "1cb49849-089c-4db4-bd45-e27618420e1c": {
+      "before": "(segment\n\t\t(start 37.855 15.829999)\n\t\t(end 37.805 15.829999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"1cb49849-089c-4db4-bd45-e27618420e1c\")\n\t)",
+      "after": ""
+    },
+    "2b526b96-4aee-4425-a797-9e3e8af7e085": {
+      "before": "(segment\n\t\t(start 38.3 15.6)\n\t\t(end 38.205 15.679999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"2b526b96-4aee-4425-a797-9e3e8af7e085\")\n\t)",
+      "after": ""
+    },
+    "30f03a83-bec5-4b55-bc2a-a80a8cae4fcc": {
+      "before": "(segment\n\t\t(start 33.155 16.979999)\n\t\t(end 32.505 17.629999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"30f03a83-bec5-4b55-bc2a-a80a8cae4fcc\")\n\t)",
+      "after": ""
+    },
+    "373487c8-d625-4ae6-aa54-049dc682be50": {
+      "before": "(segment\n\t\t(start 32.455 17.629999)\n\t\t(end 32.205 17.879999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"373487c8-d625-4ae6-aa54-049dc682be50\")\n\t)",
+      "after": ""
+    },
+    "3db847cc-4099-42e4-9314-6cd259247f70": {
+      "before": "(segment\n\t\t(start 37.755 15.879999)\n\t\t(end 37.705 15.879999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"3db847cc-4099-42e4-9314-6cd259247f70\")\n\t)",
+      "after": ""
+    },
+    "4e25ee87-57fb-4a24-a8cb-593e822e680a": {
+      "before": "(segment\n\t\t(start 37.905 15.779999)\n\t\t(end 37.855 15.829999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"4e25ee87-57fb-4a24-a8cb-593e822e680a\")\n\t)",
+      "after": ""
+    },
+    "56192ff4-9237-4b82-9171-031d0db44abd": {
+      "before": "(segment\n\t\t(start 37.605 15.929999)\n\t\t(end 37.005 16.529999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"56192ff4-9237-4b82-9171-031d0db44abd\")\n\t)",
+      "after": ""
+    },
+    "65c28f3e-b2cd-43b7-8a73-d11965d751fd": {
+      "before": "(segment\n\t\t(start 31.855 21.729999)\n\t\t(end 31.805 21.779999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"65c28f3e-b2cd-43b7-8a73-d11965d751fd\")\n\t)",
+      "after": ""
+    },
+    "728510d0-9d23-4069-958c-ec040113937c": {
+      "before": "(segment\n\t\t(start 31.905 19.729999)\n\t\t(end 31.855 19.779999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"728510d0-9d23-4069-958c-ec040113937c\")\n\t)",
+      "after": ""
+    },
+    "72deebe3-ac5b-404e-a83c-5335bda098d1": {
+      "before": "(segment\n\t\t(start 33.255 16.929999)\n\t\t(end 33.205 16.979999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"72deebe3-ac5b-404e-a83c-5335bda098d1\")\n\t)",
+      "after": ""
+    },
+    "77b00223-131e-47a9-84a8-9c269b797fc9": {
+      "before": "(segment\n\t\t(start 32.155 19.429999)\n\t\t(end 31.905 19.679999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"77b00223-131e-47a9-84a8-9c269b797fc9\")\n\t)",
+      "after": ""
+    },
+    "7c77bb9a-5549-4653-9682-e30c9d5f24d0": {
+      "before": "(segment\n\t\t(start 32.205 17.929999)\n\t\t(end 32.155 17.979999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"7c77bb9a-5549-4653-9682-e30c9d5f24d0\")\n\t)",
+      "after": ""
+    },
+    "8a680794-7ae3-462c-9ac3-9f39d8462f4d": {
+      "before": "(segment\n\t\t(start 31.805 21.779999)\n\t\t(end 31.805 23.729999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"8a680794-7ae3-462c-9ac3-9f39d8462f4d\")\n\t)",
+      "after": ""
+    },
+    "9323770d-33a0-4db3-84cc-b383fd70e587": {
+      "before": "(segment\n\t\t(start 31.905 19.679999)\n\t\t(end 31.905 19.729999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"9323770d-33a0-4db3-84cc-b383fd70e587\")\n\t)",
+      "after": ""
+    },
+    "966ae2d1-c71e-423f-abd4-5c68e73e1b9c": {
+      "before": "(segment\n\t\t(start 37.705 15.879999)\n\t\t(end 37.655 15.929999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"966ae2d1-c71e-423f-abd4-5c68e73e1b9c\")\n\t)",
+      "after": ""
+    },
+    "b949b8d4-93a2-4d28-9d27-7c11d8427a9f": {
+      "before": "(segment\n\t\t(start 37.005 16.529999)\n\t\t(end 36.955 16.529999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"b949b8d4-93a2-4d28-9d27-7c11d8427a9f\")\n\t)",
+      "after": ""
+    },
+    "ba728330-0d0c-43ed-b122-6f51d64001b5": {
+      "before": "(segment\n\t\t(start 36.955 16.529999)\n\t\t(end 36.555 16.929999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"ba728330-0d0c-43ed-b122-6f51d64001b5\")\n\t)",
+      "after": ""
+    },
+    "c4eb2cb3-56c4-4cdc-b09e-6d7b6652681a": {
+      "before": "(segment\n\t\t(start 32.155 17.979999)\n\t\t(end 32.155 19.429999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"c4eb2cb3-56c4-4cdc-b09e-6d7b6652681a\")\n\t)",
+      "after": ""
+    },
+    "c61f097e-d5b8-4997-b1e0-670fd3d85951": {
+      "before": "(segment\n\t\t(start 33.205 16.979999)\n\t\t(end 33.155 16.979999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"c61f097e-d5b8-4997-b1e0-670fd3d85951\")\n\t)",
+      "after": ""
+    },
+    "c6c2cb7d-dd58-4dd3-a7e9-6b402f76ef3a": {
+      "before": "(segment\n\t\t(start 31.805 23.729999)\n\t\t(end 30.955 24.579999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"c6c2cb7d-dd58-4dd3-a7e9-6b402f76ef3a\")\n\t)",
+      "after": ""
+    },
+    "c9d002cc-2b5a-4691-9b57-138a14563887": {
+      "before": "(segment\n\t\t(start 38.205 15.679999)\n\t\t(end 38.105 15.779999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"c9d002cc-2b5a-4691-9b57-138a14563887\")\n\t)",
+      "after": ""
+    },
+    "cf864335-0969-40e3-a269-9c02a08bcd7d": {
+      "before": "(segment\n\t\t(start 37.655 15.929999)\n\t\t(end 37.605 15.929999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"cf864335-0969-40e3-a269-9c02a08bcd7d\")\n\t)",
+      "after": ""
+    },
+    "dd4dcb81-de6f-4a20-8ec8-1e34782e3c8d": {
+      "before": "(segment\n\t\t(start 32.205 17.879999)\n\t\t(end 32.205 17.929999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"dd4dcb81-de6f-4a20-8ec8-1e34782e3c8d\")\n\t)",
+      "after": ""
+    },
+    "e49d6930-8035-4b69-81ef-a62a6509d9f6": {
+      "before": "(segment\n\t\t(start 38.105 15.779999)\n\t\t(end 37.905 15.779999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"e49d6930-8035-4b69-81ef-a62a6509d9f6\")\n\t)",
+      "after": ""
+    },
+    "ef75b3f0-9976-4f43-81d9-e84dc7ef7a2d": {
+      "before": "(segment\n\t\t(start 36.555 16.929999)\n\t\t(end 33.255 16.929999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"ef75b3f0-9976-4f43-81d9-e84dc7ef7a2d\")\n\t)",
+      "after": ""
+    },
+    "f6808412-668c-4ef6-bf22-3f574a128dd6": {
+      "before": "(segment\n\t\t(start 37.805 15.829999)\n\t\t(end 37.755 15.879999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"f6808412-668c-4ef6-bf22-3f574a128dd6\")\n\t)",
+      "after": ""
+    },
+    "f6fbd0eb-0542-456f-9870-6492801d766b": {
+      "before": "(segment\n\t\t(start 32.505 17.629999)\n\t\t(end 32.455 17.629999)\n\t\t(width 0.15)\n\t\t(layer \"In2.Cu\")\n\t\t(net 151)\n\t\t(uuid \"f6fbd0eb-0542-456f-9870-6492801d766b\")\n\t)",
+      "after": ""
+    }
+  },
+  "results": [
+    {
+      "mode": "unchanged-C30",
+      "windows": [],
+      "area": 0.0,
+      "source_B_bounds": [
+        37.882999999,
+        11.935236972668076,
+        41.096599001,
+        31.42150932011318
+      ],
+      "trunk_L3_bounds": [
+        15.0,
+        5.325001,
+        41.650000001,
+        36.7
+      ]
+    },
+    {
+      "mode": "removed-C30",
+      "windows": [],
+      "area": 0.0,
+      "source_B_bounds": [
+        37.882999999,
+        11.349999999,
+        42.762200001,
+        31.42150932011318
+      ],
+      "trunk_L3_bounds": [
+        15.0,
+        5.325001,
+        41.650000001,
+        36.7
+      ]
+    },
+    {
+      "mode": "short-C30",
+      "windows": [],
+      "area": 0.0,
+      "source_B_bounds": [
+        37.882999999,
+        11.935236972668076,
+        39.72020368835867,
+        20.35329720364788
+      ],
+      "trunk_L3_bounds": [
+        15.0,
+        5.325001,
+        41.650000001,
+        36.7
+      ]
+    }
+  ]
+}

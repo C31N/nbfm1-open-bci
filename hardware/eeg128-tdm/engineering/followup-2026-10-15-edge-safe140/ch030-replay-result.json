@@ -1,0 +1,20 @@
+{
+  "violations": 0,
+  "warnings": 0,
+  "unconnected": 140,
+  "exact_reviewed_copper": true,
+  "footprints_unchanged": true,
+  "zone_outlines_unchanged": true,
+  "project_rules_unchanged": true,
+  "L3_power_loss_mm2": 0.0,
+  "L3_power_gain_mm2": 0.0,
+  "diagnostic_parity_findings": 0,
+  "closed_nets": [],
+  "regressed_nets": [],
+  "kicad_version": "8.0.9",
+  "pcb_sha256": "80003bdb106684903928fc27ab46440a2bbce90f5bcfc09bc1b1677ebd4cb23a",
+  "routing_completed": false,
+  "fabrication_release": false,
+  "accepted": false,
+  "disposition": "Diagnostic only: no verified corridor; baseline archive remains authoritative"
+}

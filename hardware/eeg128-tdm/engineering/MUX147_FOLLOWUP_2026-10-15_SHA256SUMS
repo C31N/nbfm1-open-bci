@@ -1,7 +1,7 @@
 2883101ac97f8c86a2ca2978a6c654e6f8c3b24de02cca79915e70b185b2bfbc  BLOCK2_FOLLOWUP_2026-10-13_SHA256SUMS
 b2c7b4c36dda342f7e6852c4ae134eb2112acc09ee5f36e2212db5f65f82cb33  BLOCK2_SOURCE_FOLLOWUP_2026-10-15.md
 26e30c4495d8e3eeca7b46ba5556d052285113a2420a1bee9b9a8d070a352146  BLOCK2_WORKING_BASELINE.json
-a13d20774a5ce2c4c106ef63d22990a20af7b8aed09234c39b00013a8d03823d  CHECKPOINT_SHA256SUMS
+33865afb01e79a6835b0692d03a9b02245653f24f057f432ddd734df726d5fb6  CHECKPOINT_SHA256SUMS
 e8d60a9835aea686af2d34d9e0e31b3a948b8c7dd2caae81c2c24786e4a3a8e1  block2-electrode-closed143.zip
 65ddb7ec8cbfd261487c9a687e2e06393feea13e281c2be31a70412eb33a2898  followup-2026-10-15/144-143-ch027n-drc-after.json
 4600c95ac4454a428bd4e815219a4d4a6df338041d7b7ad51e361905c4179d97  followup-2026-10-15/144-143-ch027n-geometry.json
@@ -54,10 +54,10 @@ e70923e40d6434f7a54ab4da9587b9e12aca63aeec0ac95b3a257c9b0467ded7  followup-2026-
 2b0888749fd6c1936005bcf88c05912e59f53da5fec1b6a6a85eb3d4264893c5  followup-2026-10-15/replay-chain.json
 08bf426c04ca100a13dee9919d84011454b50dec01894bfb775b8398c618b391  ../plan_mux147_l1l4.py
 d768bf5a809ff0b59ca14f5367562e048a15ee5ab19e0c2f04e1b54458d0f22e  ../replay_mux147_routes.py
-9e48d730eda6c70b273c3bb3215f142eea48c073ef05ccf0ed0e4aafe77737de  ../route_targeted_closure.py
+2df772fb20ae89b2cebe9431e7f8e1ef78ac110b8f77f30d3b27503c34883112  ../route_targeted_closure.py
 6ae68c5f302a58e60f345577719e78381c593aea61ce7cc16f63702fc5d90e94  ../search_block2_followup.py
 7cfb7190940b087c9a363f4fbe3dcc96f84ed8df8f6422f2ff7b1a2efe0e6229  ../test_mux147_replay.py
-158dfcb79ade0a0568395147ed9ebe94ede5f1fd96e1ec2dc1a5f7e5223e737e  ../test_routing_layer_constraints.py
-5c65c3f00bf945ef24ae406ad10d715ae5dbd5d16e4cc00602fc4b1999bd5f72  ../../../.github/workflows/kicad-native.yml
+2294525da5d0edc817b7d2e0b7ac6d38d596446c5163eec90a0998cf6d23e5b5  ../test_routing_layer_constraints.py
+c9e8bb453c425efff8d80dbf24def35899850f0b11c652a598c1f52c63250f2b  ../../../.github/workflows/kicad-native.yml
 c4c999802c40ca1886c56ab7ef8a998b4af362b4c2e4a9ae5884abbfaaddf94b  ../../../.github/workflows/autoroute-a1.yml
 238a6edd12019b55bab2d98f79f32a7e7eabf8458ccb99efafdf14e55542a6a7  ../../../.github/workflows/autoroute-a1-converge.yml

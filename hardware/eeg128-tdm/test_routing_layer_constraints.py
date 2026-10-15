@@ -4,7 +4,7 @@
 import unittest
 import pcbnew
 from shapely.geometry import Point, box, LineString
-from route_targeted_closure import obstacles, search, make_track, vector
+from route_targeted_closure import obstacles, search, make_track, vector, routing_domain
 
 
 class LayerConstraints(unittest.TestCase):
@@ -41,13 +41,48 @@ class LayerConstraints(unittest.TestCase):
         make_track(board, (1, 5), (4, 5), power, .15, pcbnew.F_Cu)
         layers, vias = obstacles(board, own, .15, .15, box(0, 0, 6, 7), .6,
                                  (pcbnew.B_Cu, pcbnew.In2_Cu))
-        self.assertTrue(layers[0].is_empty)
+        self.assertFalse(layers[0].contains(Point(2, 2)))
         self.assertTrue(vias.contains(Point(2, 1.3)))
         self.assertTrue(vias.contains(Point(2, 3.3)))
         self.assertTrue(vias.contains(Point(2, 5.56)))
         self.assertFalse(vias.contains(Point(2, 5.59)))
         _, default_vias = obstacles(board, own, .15, .15, box(0, 0, 6, 7), .6)
         self.assertTrue(default_vias.contains(Point(2, 3.3)))
+
+    def test_external_window_cannot_bypass_a_copper_fence(self) -> None:
+        board = self.board()
+        own = board.FindNet('CH000_P_MUX').GetNetCode()
+        other = board.FindNet('CH001_P_MUX').GetNetCode()
+        make_track(board, (10, .1), (10, 19.9), other, .15, pcbnew.F_Cu)
+        window = box(-2, -2, 22, 22)
+        layers, vias = obstacles(board, own, .15, .15, window, .6)
+        free = window.difference(layers[0])
+        component = next(g for g in getattr(free, 'geoms', [free])
+                         if g.covers(Point(3, 10)))
+        self.assertFalse(component.covers(Point(17, 10)))
+        self.assertTrue(layers[0].covers(Point(3, -.1)))
+        self.assertTrue(vias.covers(Point(3, -.1)))
+
+    def test_vias_and_tracks_respect_cutouts_and_their_own_edge_radius(self) -> None:
+        board = self.board()
+        edge = pcbnew.PCB_SHAPE(board)
+        edge.SetShape(pcbnew.SHAPE_T_RECT)
+        edge.SetStart(vector((8, 8))); edge.SetEnd(vector((12, 12)))
+        edge.SetWidth(pcbnew.FromMM(.1)); edge.SetLayer(pcbnew.Edge_Cuts)
+        board.Add(edge)
+        own = board.FindNet('CH000_P_MUX').GetNetCode()
+        layers, vias = obstacles(board, own, .15, .15, box(-1, -1, 21, 21), .6)
+        for shape in [*layers, vias]:
+            self.assertTrue(shape.covers(Point(10, 10)))
+        self.assertFalse(layers[0].covers(Point(.4, 5)))
+        self.assertTrue(vias.covers(Point(.4, 5)))
+        self.assertFalse(vias.covers(Point(.6, 5)))
+        self.assertFalse(layers[0].covers(Point(7.6, 10)))
+        self.assertTrue(vias.covers(Point(7.6, 10)))
+
+    def test_missing_outline_fails_closed(self) -> None:
+        with self.assertRaisesRegex(ValueError, 'closed board outline'):
+            routing_domain(pcbnew.BOARD(), .075)
 
     def test_routing_cost_avoids_a_plane_when_a_same_layer_detour_exists(self) -> None:
         board = self.board()

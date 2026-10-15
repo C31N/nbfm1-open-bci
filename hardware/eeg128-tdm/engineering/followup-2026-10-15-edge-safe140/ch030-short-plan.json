@@ -1,0 +1,64 @@
+{
+  "routes": [
+    {
+      "net": "CH030_P_ELECTRODE",
+      "label": "c30-joint-2-0",
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "path": [
+        [
+          1,
+          39.3158,
+          11.5863
+        ],
+        [
+          1,
+          40.417587,
+          12.776033
+        ],
+        [
+          1,
+          40.481515,
+          24.140856
+        ],
+        [
+          1,
+          40.824961,
+          27.029804
+        ],
+        [
+          1,
+          40.771514,
+          27.637252
+        ],
+        [
+          1,
+          40.8474,
+          27.6679
+        ]
+      ],
+      "mesh_triangles": 3016,
+      "planning_margin_mm": 0.0005,
+      "length_mm": 16.587472282057313
+    }
+  ],
+  "complete": true,
+  "planner": "GEOS constrained Delaunay navigation mesh; native DRC is authoritative",
+  "model_only": true,
+  "changes": {
+    "132a27aa-cfd0-4c0c-80f7-2957374618ad": {
+      "before": "(segment\n\t\t(start 40.5733 12.8438)\n\t\t(end 40.5733 27.3938)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 184)\n\t\t(uuid \"132a27aa-cfd0-4c0c-80f7-2957374618ad\")\n\t)",
+      "after": ""
+    },
+    "b7d56739-537f-471a-9fdd-553da14f256f": {
+      "before": "(segment\n\t\t(start 40.5733 27.3938)\n\t\t(end 40.8474 27.6679)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 184)\n\t\t(uuid \"b7d56739-537f-471a-9fdd-553da14f256f\")\n\t)",
+      "after": ""
+    },
+    "cca6724c-f479-48b7-9154-7b03c54d2e60": {
+      "before": "(segment\n\t\t(start 39.3158 11.5863)\n\t\t(end 40.5733 12.8438)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 184)\n\t\t(uuid \"cca6724c-f479-48b7-9154-7b03c54d2e60\")\n\t)",
+      "after": ""
+    }
+  }
+}

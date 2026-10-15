@@ -1,0 +1,89 @@
+{
+  "model_only": true,
+  "results": [
+    {
+      "removed_nets": [
+        "CH017_N_ELECTRODE"
+      ],
+      "removed_objects": 3,
+      "shared_area_mm2": 0.0,
+      "windows": [],
+      "incomplete_model": true
+    },
+    {
+      "removed_nets": [
+        "CH018_N_ELECTRODE"
+      ],
+      "removed_objects": 5,
+      "shared_area_mm2": 0.0,
+      "windows": [],
+      "incomplete_model": true
+    },
+    {
+      "removed_nets": [
+        "CH030_P_ELECTRODE"
+      ],
+      "removed_objects": 3,
+      "shared_area_mm2": 0.0,
+      "windows": [],
+      "incomplete_model": true
+    },
+    {
+      "removed_nets": [
+        "CH017_N_ELECTRODE",
+        "CH018_N_ELECTRODE"
+      ],
+      "removed_objects": 8,
+      "shared_area_mm2": 0.00025968284927918887,
+      "windows": [
+        {
+          "point": [
+            36.95,
+            16.367738488754014
+          ],
+          "area_mm2": 0.00025968284927918887
+        }
+      ],
+      "incomplete_model": true
+    },
+    {
+      "removed_nets": [
+        "CH017_N_ELECTRODE",
+        "CH030_P_ELECTRODE"
+      ],
+      "removed_objects": 6,
+      "shared_area_mm2": 0.0,
+      "windows": [],
+      "incomplete_model": true
+    },
+    {
+      "removed_nets": [
+        "CH018_N_ELECTRODE",
+        "CH030_P_ELECTRODE"
+      ],
+      "removed_objects": 8,
+      "shared_area_mm2": 0.0,
+      "windows": [],
+      "incomplete_model": true
+    },
+    {
+      "removed_nets": [
+        "CH017_N_ELECTRODE",
+        "CH018_N_ELECTRODE",
+        "CH030_P_ELECTRODE"
+      ],
+      "removed_objects": 11,
+      "shared_area_mm2": 0.00025968284927918887,
+      "windows": [
+        {
+          "point": [
+            36.95,
+            16.367738488754014
+          ],
+          "area_mm2": 0.00025968284927918887
+        }
+      ],
+      "incomplete_model": true
+    }
+  ]
+}

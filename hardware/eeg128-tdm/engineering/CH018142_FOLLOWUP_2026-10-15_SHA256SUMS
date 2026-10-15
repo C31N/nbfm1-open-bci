@@ -1,5 +1,5 @@
-5c65c3f00bf945ef24ae406ad10d715ae5dbd5d16e4cc00602fc4b1999bd5f72  ../../../.github/workflows/kicad-native.yml
-9c4d5f7eecd55e99d12b0c95e0f517042dcb6aa2c585fd898b851c7ae8951020  ../ROUTING_COMPLETION_143.md
+c9e8bb453c425efff8d80dbf24def35899850f0b11c652a598c1f52c63250f2b  ../../../.github/workflows/kicad-native.yml
+a2e8866fa6995b530a104ed93698fc7720e9e117731bb1ac65bd4bb8b4414ed7  ../ROUTING_COMPLETION_143.md
 c8da4432f9d9dcc12cb83c0ffa7b71ce95ee43560ec0ed0934b35383964c267f  ../replay_ch018_neighbors.py
 57457509874575bc17d7ad2350cbc0f7259fb5fd946c0c37a5d4444eafbdc892  ../test_ch018_neighbor_replay.py
 8c4415b7f59acd6b85da5927b72975758bc8622c2f3ae3e29f6eac9f9a39ed8b  BLOCK2_SOURCE_FOLLOWUP_2026-10-15_CH018142.md
