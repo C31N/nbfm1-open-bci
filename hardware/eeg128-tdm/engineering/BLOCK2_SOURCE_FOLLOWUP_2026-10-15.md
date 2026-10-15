@@ -119,7 +119,16 @@ done
 `BLOCK2_WORKING_BASELINE.json` verweist auf den neuen 143er-Arbeitsstand;
 die vorherigen 147er- und Recovery-Archive bleiben unverändert.
 **`routing_completed=false` und `fabrication_release=false` bleiben gesetzt.**
-Es wurden keine Gerber, NC-Drill-, Pick&Place- oder BOM-Ausgaben erzeugt.
+Die lokale Routing-Fortsetzung erzeugte keine Gerber, NC-Drill-,
+Pick&Place- oder BOM-Ausgaben. Nach der Veröffentlichung von `6fac6cb`
+erzeugte der bereits bestehende native CI-Smoke-Test allerdings automatisch
+`placement.csv` aus der primären PCB (Lauf `38704290646`). Das widersprach
+der Vorgabe, vor dem 0/0/0-Gate keine Fertigungsartefakte zu erzeugen.
+Dieser Export und sein Artefakt-Upload wurden aus dem nativen Workflow
+entfernt und durch eine Kontrolle auf unerwartete Fertigungsdateien ersetzt.
+Die historische CI-CSV ist kein Bestandteil des 143er-Archivs und keine
+Fertigungsfreigabe; ihre bereits erfolgte Erzeugung wird hier ausdrücklich
+als Prozessabweichung dokumentiert.
 Das 0/0/0-Gate ist bei 143 Luftlinien nicht erreicht. Die diagnostische
 Parität verwendet weiter den PCB-abgeleiteten Schaltplan und ersetzt weder
 einen unabhängigen Primärschaltplan-LVS noch Rückstrom-/Kopplungs-/Skew-

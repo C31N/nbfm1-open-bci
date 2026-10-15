@@ -134,11 +134,25 @@ jobs:
               print("Primary pre-route geometry gate PASS; connectivity remains blocked")
           PY
 
-      - name: Verify PCB placement export parses
+      - name: Confirm diagnostic audit contains no manufacturing exports
         run: |
-          kicad-cli pcb export pos             --format csv             --units mm             --side both             --smd-only             --exclude-dnp             --output /tmp/kicad-audit/placement.csv             hardware/eeg128-tdm/eeg128-tdm.kicad_pcb
-          test -s /tmp/kicad-audit/placement.csv
-          grep -q '"U21"' /tmp/kicad-audit/placement.csv || grep -q '^U21,' /tmp/kicad-audit/placement.csv
+          python3 - <<'PY'
+          from pathlib import Path
+
+          audit = Path("/tmp/kicad-audit")
+          forbidden_suffixes = {".gbr", ".gerber", ".drl", ".pos"}
+          forbidden_names = {"placement.csv", "bom.csv", "cpl.csv"}
+          exports = [
+              path.name for path in audit.rglob("*")
+              if path.is_file() and (
+                  path.suffix.lower() in forbidden_suffixes
+                  or path.name.lower() in forbidden_names
+              )
+          ]
+          if exports:
+              raise SystemExit("Unexpected manufacturing exports: " + ", ".join(exports))
+          print("Diagnostic audit only; manufacturing export is disabled")
+          PY
 
       - name: Confirm release remains fail closed
         run: |
@@ -176,6 +190,5 @@ jobs:
             /tmp/kicad-audit/erc-summary.json
             /tmp/kicad-audit/drc.json
             /tmp/kicad-audit/drc-summary.json
-            /tmp/kicad-audit/placement.csv
           if-no-files-found: error
           retention-days: 30
