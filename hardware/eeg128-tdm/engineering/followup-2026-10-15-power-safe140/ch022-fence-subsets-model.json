@@ -1,0 +1,176 @@
+{
+  "model_only": true,
+  "results": [
+    {
+      "removed_nets": [
+        "CH017_N_ELECTRODE"
+      ],
+      "removed_objects": 3,
+      "shared_area_mm2": 0.0,
+      "windows": [],
+      "incomplete_model": true
+    },
+    {
+      "removed_nets": [
+        "CH018_N_ELECTRODE"
+      ],
+      "removed_objects": 5,
+      "shared_area_mm2": 0.0,
+      "windows": [],
+      "incomplete_model": true
+    },
+    {
+      "removed_nets": [
+        "CH030_P_ELECTRODE"
+      ],
+      "removed_objects": 3,
+      "shared_area_mm2": 0.2252110033471615,
+      "windows": [
+        {
+          "point": [
+            40.29411753694529,
+            27.04474848364557
+          ],
+          "area_mm2": 0.05166390448891517
+        },
+        {
+          "point": [
+            42.4448,
+            22.207531059830043
+          ],
+          "area_mm2": 0.11593203847773806
+        },
+        {
+          "point": [
+            42.4270387649575,
+            19.761846590745066
+          ],
+          "area_mm2": 0.057615060380508246
+        }
+      ],
+      "incomplete_model": true
+    },
+    {
+      "removed_nets": [
+        "CH017_N_ELECTRODE",
+        "CH018_N_ELECTRODE"
+      ],
+      "removed_objects": 8,
+      "shared_area_mm2": 0.00025968284927918887,
+      "windows": [
+        {
+          "point": [
+            36.95,
+            16.367738488754014
+          ],
+          "area_mm2": 0.00025968284927918887
+        }
+      ],
+      "incomplete_model": true
+    },
+    {
+      "removed_nets": [
+        "CH017_N_ELECTRODE",
+        "CH030_P_ELECTRODE"
+      ],
+      "removed_objects": 6,
+      "shared_area_mm2": 0.22521100334716115,
+      "windows": [
+        {
+          "point": [
+            40.29411753694529,
+            27.04474848364557
+          ],
+          "area_mm2": 0.05166390448891518
+        },
+        {
+          "point": [
+            42.4448,
+            22.207531059830043
+          ],
+          "area_mm2": 0.11593203847773773
+        },
+        {
+          "point": [
+            42.4270387649575,
+            19.761846590745066
+          ],
+          "area_mm2": 0.057615060380508225
+        }
+      ],
+      "incomplete_model": true
+    },
+    {
+      "removed_nets": [
+        "CH018_N_ELECTRODE",
+        "CH030_P_ELECTRODE"
+      ],
+      "removed_objects": 8,
+      "shared_area_mm2": 0.22521100334716043,
+      "windows": [
+        {
+          "point": [
+            40.29411753694529,
+            27.04474848364557
+          ],
+          "area_mm2": 0.05166390448891518
+        },
+        {
+          "point": [
+            42.42703876495751,
+            19.761846590745066
+          ],
+          "area_mm2": 0.05761506038050785
+        },
+        {
+          "point": [
+            42.4448,
+            22.207531059830043
+          ],
+          "area_mm2": 0.1159320384777374
+        }
+      ],
+      "incomplete_model": true
+    },
+    {
+      "removed_nets": [
+        "CH017_N_ELECTRODE",
+        "CH018_N_ELECTRODE",
+        "CH030_P_ELECTRODE"
+      ],
+      "removed_objects": 11,
+      "shared_area_mm2": 0.22547068619643962,
+      "windows": [
+        {
+          "point": [
+            36.95,
+            16.367738488754014
+          ],
+          "area_mm2": 0.00025968284927918887
+        },
+        {
+          "point": [
+            40.29411753694529,
+            27.04474848364557
+          ],
+          "area_mm2": 0.051663904488914475
+        },
+        {
+          "point": [
+            42.4448,
+            22.207531059830043
+          ],
+          "area_mm2": 0.11593203847773773
+        },
+        {
+          "point": [
+            42.4270387649575,
+            19.761846590745066
+          ],
+          "area_mm2": 0.057615060380508246
+        }
+      ],
+      "incomplete_model": true
+    }
+  ]
+}

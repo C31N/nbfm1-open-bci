@@ -1,0 +1,215 @@
+{
+  "model_only": true,
+  "boundaries": [
+    {
+      "net": "CH030_P_ELECTRODE",
+      "uuid": "132a27aa-cfd0-4c0c-80f7-2957374618ad",
+      "via": false,
+      "start": [
+        40.5733,
+        12.8438
+      ],
+      "end": [
+        40.5733,
+        27.3938
+      ],
+      "boundary_overlap": 14.618130489462184
+    },
+    {
+      "net": "CH017_N_ELECTRODE",
+      "uuid": "35dbda8d-27ae-4dfa-8fd4-b05f0d8df56c",
+      "via": false,
+      "start": [
+        37.583,
+        27.349
+      ],
+      "end": [
+        37.583,
+        12.5357
+      ],
+      "boundary_overlap": 5.074876814677803
+    },
+    {
+      "net": "CH023_N_MUX",
+      "uuid": "ba4e7567-601c-48c6-b5dd-13e11151e9f6",
+      "via": true,
+      "start": [
+        38.3,
+        13.0
+      ],
+      "end": [
+        38.3,
+        13.0
+      ],
+      "boundary_overlap": 2.6152659719900733
+    },
+    {
+      "net": "CH021_N_MUX",
+      "uuid": "852e31f8-72a8-43da-bc04-9ccb77c0d0a2",
+      "via": true,
+      "start": [
+        38.3,
+        18.2
+      ],
+      "end": [
+        38.3,
+        18.2
+      ],
+      "boundary_overlap": 2.6152659719900604
+    },
+    {
+      "net": "CH028_P_MUX",
+      "uuid": "398a7f5a-41c0-5cbf-ab60-860d0b14bc85",
+      "via": false,
+      "start": [
+        41.396599,
+        27.631499
+      ],
+      "end": [
+        41.396599,
+        30.456499
+      ],
+      "boundary_overlap": 2.2050987505736757
+    },
+    {
+      "net": "CH028_P_MUX",
+      "uuid": "89a5c707-58a8-5f22-b618-0a601b16b859",
+      "via": false,
+      "start": [
+        41.396599,
+        30.456499
+      ],
+      "end": [
+        40.071599,
+        31.781499
+      ],
+      "boundary_overlap": 1.544493956755821
+    },
+    {
+      "net": "CH027_P_ELECTRODE",
+      "uuid": "b4678c2c-586d-472d-ad77-be80cfc5521b",
+      "via": true,
+      "start": [
+        38.15,
+        19.479999
+      ],
+      "end": [
+        38.15,
+        19.479999
+      ],
+      "boundary_overlap": 1.2589121241461267
+    },
+    {
+      "net": "CH030_P_ELECTRODE",
+      "uuid": "cca6724c-f479-48b7-9154-7b03c54d2e60",
+      "via": false,
+      "start": [
+        39.3158,
+        11.5863
+      ],
+      "end": [
+        40.5733,
+        12.8438
+      ],
+      "boundary_overlap": 1.226106359896396
+    },
+    {
+      "net": "CH030_P_ELECTRODE",
+      "uuid": "bddd0ee0-3c22-49d3-92fa-e5226f30e51f",
+      "via": true,
+      "start": [
+        40.8474,
+        27.6679
+      ],
+      "end": [
+        40.8474,
+        27.6679
+      ],
+      "boundary_overlap": 1.1838782966542916
+    },
+    {
+      "net": "CH017_N_ELECTRODE",
+      "uuid": "3fdfbc7f-b458-432e-8291-ea0463431112",
+      "via": false,
+      "start": [
+        37.583,
+        12.5357
+      ],
+      "end": [
+        38.5302,
+        11.5885
+      ],
+      "boundary_overlap": 0.7872758914920259
+    },
+    {
+      "net": "CH027_P_ELECTRODE",
+      "uuid": "eb777488-84ff-4a65-9912-59546aa95be1",
+      "via": false,
+      "start": [
+        38.15,
+        19.479999
+      ],
+      "end": [
+        38.75,
+        20.079999
+      ],
+      "boundary_overlap": 0.6449179766844061
+    },
+    {
+      "net": "CH017_N_ELECTRODE",
+      "uuid": "600ba73b-8695-479e-9a60-9e230b8924c8",
+      "via": true,
+      "start": [
+        38.5302,
+        11.5885
+      ],
+      "end": [
+        38.5302,
+        11.5885
+      ],
+      "boundary_overlap": 0.5400086712452398
+    },
+    {
+      "net": "CH030_P_ELECTRODE",
+      "uuid": "476e435b-6e12-43ec-bb87-2a5006c6382a",
+      "via": true,
+      "start": [
+        39.3158,
+        11.5863
+      ],
+      "end": [
+        39.3158,
+        11.5863
+      ],
+      "boundary_overlap": 0.5370395145428392
+    },
+    {
+      "net": "CH027_P_ELECTRODE",
+      "uuid": "bbf043bb-6730-4bf9-996c-91d674f59589",
+      "via": false,
+      "start": [
+        38.75,
+        20.079999
+      ],
+      "end": [
+        38.75,
+        21.779999
+      ],
+      "boundary_overlap": 0.5305347978706344
+    },
+    {
+      "net": "CH030_P_ELECTRODE",
+      "uuid": "b7d56739-537f-471a-9fdd-553da14f256f",
+      "via": false,
+      "start": [
+        40.5733,
+        27.3938
+      ],
+      "end": [
+        40.8474,
+        27.6679
+      ],
+      "boundary_overlap": 0.2113358307637675
+    }
+  ]
+}

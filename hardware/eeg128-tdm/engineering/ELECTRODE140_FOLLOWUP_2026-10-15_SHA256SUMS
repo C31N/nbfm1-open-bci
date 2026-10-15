@@ -5,7 +5,7 @@ b17b27a0b16c3a4d2e36a18062583a4346ba561b9c05c1f08a2365ec5ffaa356  ../test_ch025_
 5b4f06aacac55c4c85c954d54e5317865d23ddb044f6b3b2f3b16b8ffc0716c6  current-routing-status.json
 a69aadf1bdd2436aadd7b9ae80e2796f1b5937b816389b44a11582685b2699a1  block2-ch029-electrode-closed141.zip
 06817fef09feb864a8ef96a93e60034bb5aec7b8baecfe350ae0277a25a424b4  block2-ch025-electrode-closed140.zip
-e02e1fa8ffdd97293cdd8bf6b56bcd2224462dbf202c8334367c7f0ffd2be318  BLOCK2_SOURCE_FOLLOWUP_2026-10-15_POWER_SAFE140.md
+62d030a3d6adc7b743c569f228f3f46404db1e6c07afbe4dc1b94581ddd56bfa  BLOCK2_SOURCE_FOLLOWUP_2026-10-15_POWER_SAFE140.md
 1af5f6fab98d85e2247d9a3b788403c2af14c08b82e9a18313a9d3bae88d6e96  followup-2026-10-15-power-safe140/candidate-geometry.json
 3664442c29de2df49d1f1e69b371aa519a6ddbb557eef1b5096df89a41722af1  followup-2026-10-15-power-safe140/ch025e140-recipe.json
 9a427fb3abc800347db3cbae348b02279f6a0fb014f0efa7d0c4bdf0af63be99  followup-2026-10-15-power-safe140/closure-plan.json
@@ -14,3 +14,11 @@ e02e1fa8ffdd97293cdd8bf6b56bcd2224462dbf202c8334367c7f0ffd2be318  BLOCK2_SOURCE_
 02c3860a1fb525cc3ae1d9b801c9e1fb3d4bd8d5f4c5ea176de934f44622937b  followup-2026-10-15-power-safe140/replay-drc-before.json
 d202a182e7c92e04ef853d941827de5f62c0493585525d6aa187f56cd3142a0a  followup-2026-10-15-power-safe140/replay-parity.json
 4132fa40fa799cb7a64c7eeb81992e2c1ed10af7138ced1dce714ff4a7b91634  followup-2026-10-15-power-safe140/replay-result.json
+1c8ac63ccf0627c105aa6a77ea6159762631cdd19e054c9a36ebb9c5e00a7350  followup-2026-10-15-power-safe140/ch017n-probe-drc.json
+d7e5b8a594031d0b06ad5f85ba83213730be2a2958d2a8f6c7ed9a4427e99a06  followup-2026-10-15-power-safe140/ch017n-probe-geometry.json
+4ea716ecc559a58c977fbec27010ea9ef5310df85b6c483fa175d7128c86ba34  followup-2026-10-15-power-safe140/ch017n-probe-parity.json
+79ef8d7e38402cf1eddc4eaf03899784d3e0a9b69870e1c8f7f0cffb75233998  followup-2026-10-15-power-safe140/ch017n-probe-plan.json
+8464ade818dbdc5d37559db395007c956ade7aa064b253e4550523234a0530af  followup-2026-10-15-power-safe140/ch022-fence-subsets-model.json
+9d97cd01bfb057dacb6044ba12d5585a16325d1731124af310f5726cb52e4124  followup-2026-10-15-power-safe140/ch022-pocket-boundary-model.json
+f9e675f5fb62587667ce62cc70f11f04dcf1d90490c6228cd5b6fe157af427e8  followup-2026-10-15-power-safe140/ch022-variable-tap-model.json
+4608f50e06c7921233f1cf8889508c43ecccc459186d25b77a66af26b6aef9bd  followup-2026-10-15-power-safe140/ch030p-reserved-tap-rejected-plan.json

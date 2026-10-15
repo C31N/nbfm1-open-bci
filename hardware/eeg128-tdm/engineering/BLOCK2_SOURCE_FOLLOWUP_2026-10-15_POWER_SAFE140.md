@@ -73,3 +73,61 @@ MUX-Verbindungen sowie CH019_N_ELECTRODE und CH021_N_ELECTRODE offen.
 `routing_completed=false`, `fabrication_release=false`. Der primäre historische
 Pre-Route-Stand wird nicht ersetzt. Keine Gerber-, Drill-, CPL- oder BOM-Dateien
 wurden erzeugt. Dieser Stand ist ein Engineering-Checkpoint, keine Fertigungsfreigabe.
+
+## Zusätzliche CH018-P-Korridoranalyse nach Veröffentlichung des Checkpoints
+
+Der 140er-Checkpoint wurde als `a9dcedcdefb47a136862894a81ec46fe8a7c64d6`
+veröffentlicht. Alle drei Workflows sind erfolgreich: CI (38793755550),
+Native KiCad 8 Validation (38793755531), Materialize EDA Connectivity Schematic
+(38793755575). Die native CI bestätigt alle drei Replays bis 140 byteidentisch,
+15 Replay-Integritätsprüfungen und die Fertigungssperre. Der Neuro-Job bestätigt
+27 Python-Tests und zwei Rust-Tests.
+
+Ein zusätzlicher vollständiger Ersatz der beiden langen CH017-N-Elektroden-
+B.Cu-Segmente zwischen den vorhandenen Vias (37.583,27.349) und
+(38.5302,11.5885) wurde getrennt angewendet und nativ geprüft. Der gefundene
+16.150081-mm-Pfad bleibt vollständig auf B.Cu und benötigt keine neuen Vias.
+Das Prüf-PCB hat SHA-256
+`3db9417fe047a2eca5df3c960992f923b3ef0b6e51bbfab78f45e10fec78f5cf`.
+Es erreicht 0 Fehler / 0 Warnungen / 140 Luftlinien / 0 Paritätsbefunde und
+exakt 0.0 mm² Power-Verlust/-Zugewinn. Footprints, Regeln und Zonenaußenkonturen
+sind unverändert, kein Netz regressiert. Der Kandidat wird nicht übernommen:
+Er reduziert die Luftlinien nicht und weist noch keine vollständige CH018-
+Korridoröffnung nach. Der akzeptierte Stand bleibt das CH025-140er-Archiv.
+
+Die geometrische Vergleichsanalyse für die CH022-N-Quell-Anbindung verwendet
+das ausdrücklich unvollständige CH019-P-Trunktausch-Modell; insbesondere die
+CH027-N-Rückführung ist darin noch nicht wiederhergestellt. Sie ist daher keine
+elektrische oder native Freigabe. Mit erhaltenen Begrenzungen gibt es weder
+einen direkten Via-Tap auf dem erhaltenen CH022-L3-Trunk noch ein zulässiges
+Via-Fenster für einen L3-Stich aus der B.Cu-Quelltasche.
+
+Sieben kontrollierte Vergleichsmodelle entfernen ausschließlich zur Analyse
+die B.Cu-Segmente von CH017_N_ELECTRODE, CH018_N_ELECTRODE und/oder
+CH030_P_ELECTRODE. Die vorhandenen Vias bleiben erhalten. Die jeweils nicht
+wiederhergestellten Nachbarnetze machen diese Modelle unvollständig:
+
+| Analytisch entfernte B.Cu-Strecken | Gemeinsame zulässige Via-Fläche mm² | Fenster |
+| --- | ---: | ---: |
+| CH017 N | 0.0 | 0 |
+| CH018 N | 0.0 | 0 |
+| CH030 P | 0.2252110033471615 | 3 |
+| CH017 N + CH018 N | 0.00025968284927918887 | 1 |
+| CH017 N + CH030 P | 0.22521100334716115 | 3 |
+| CH018 N + CH030 P | 0.22521100334716043 | 3 |
+| Alle drei | 0.22547068619643962 | 4 |
+
+Damit ist CH030-P für die nächste vollständige Kupferumlegung ein konkreter
+Ansatzpunkt. Ein mögliches Fenster liegt um (40.294118,27.044748); es ist erst
+nach vollständiger Wiederherstellung von CH030-P und allen übrigen Nachbarnetzen
+als echter Korridor zu bewerten. Die exakten Analysewerte und der native
+CH017-N-Prüfplan sind als getrennte JSON-Evidenz manifestiert. Kein aus einem
+unvollständigen Modell abgeleiteter Via-Kandidat wird in den Checkpoint eingebracht.
+
+Der anschließende F.Cu/B.Cu-Suchlauf für einen vollständigen CH030-P-Ersatz
+zwischen den bestehenden Vias (39.3158,11.5863) und (40.8474,27.6679)
+reservierte das genannte CH022-Via-Fenster als Hindernis auf allen Lagen.
+Innerhalb des Suchbudgets (0.01-mm-Raster, maximal 1.8 Millionen Knoten,
+40 Sekunden Suchfrist) wurde kein vollständiger Ersatz gefunden. Das ist
+kein Unmöglichkeitsbeweis. Es wurde kein CH030-Mutations-PCB erzeugt; der
+fehlgeschlagene Plan ist ausdrücklich als unvollständiges Modell dokumentiert.
