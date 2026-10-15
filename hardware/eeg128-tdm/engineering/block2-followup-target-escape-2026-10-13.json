@@ -1,0 +1,16 @@
+{
+  "net": "CH018_N_MUX",
+  "source": [
+    41.135,
+    58.15
+  ],
+  "mode": "F.Cu escape with full L3 power exclusion for through via",
+  "margin_mm": 8,
+  "step_mm": 0.025,
+  "max_nodes": 250000,
+  "budget_seconds": 15,
+  "found": false,
+  "path": null,
+  "copper_applied": false,
+  "elapsed_seconds": 2.4604056970001693
+}

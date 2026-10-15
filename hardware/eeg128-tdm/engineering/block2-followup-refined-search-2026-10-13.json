@@ -1,0 +1,58 @@
+{
+  "baseline_sha256": "feb5eeedd8458e05fc9a7e3756b28b63555f81da3fd8720d63857706b2a798b7",
+  "baseline_refilled_sha256": "feb5eeedd8458e05fc9a7e3756b28b63555f81da3fd8720d63857706b2a798b7",
+  "channels": [
+    99,
+    102
+  ],
+  "trials": [
+    {
+      "channel": 99,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 12.0,
+      "paths": [
+        {
+          "net": "CH099_N_MUX",
+          "start_mm": [
+            153.25,
+            23.4
+          ],
+          "goal_mm": [
+            154.865,
+            58.15
+          ],
+          "found": true
+        },
+        {
+          "net": "CH099_P_MUX",
+          "start_mm": [
+            147.75,
+            23.4
+          ],
+          "goal_mm": [
+            154.865,
+            45.15
+          ],
+          "found": true
+        }
+      ],
+      "accepted": true,
+      "extra_power_margin_mm": 0.05,
+      "violations": 0,
+      "warnings": 0,
+      "unconnected": 147,
+      "power_loss_mm2": 0.0,
+      "parity_findings": 0,
+      "regressed_nets": []
+    }
+  ],
+  "accepted_board": "/workspace/scratch/7b0fca90a674/block2-refined-search/trial-000/eeg128-tdm.kicad_pcb",
+  "routing_completed": false,
+  "fabrication_release": false
+}

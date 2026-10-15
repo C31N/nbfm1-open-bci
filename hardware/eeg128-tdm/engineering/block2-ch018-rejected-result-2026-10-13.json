@@ -1,0 +1,15 @@
+{
+  "violations": 0,
+  "warnings": 0,
+  "unconnected": 148,
+  "net": "CH018_N_MUX",
+  "net_still_open": false,
+  "power_loss_mm2": 0.7923643017376161,
+  "regressed_nets": [],
+  "parity_findings": 0,
+  "pair_closed": false,
+  "accepted": false,
+  "reason": "Diagnostic unpaired N route; zero-power-loss gate is mandatory",
+  "rejected_pcb_sha256": "889fd45ddb240e3135d2f519b0118475a300a40e651d4bfca2773c91bc715a12",
+  "rejected_copper_retained": false
+}

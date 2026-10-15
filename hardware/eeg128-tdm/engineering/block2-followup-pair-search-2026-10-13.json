@@ -1,0 +1,1754 @@
+{
+  "baseline_sha256": "feb5eeedd8458e05fc9a7e3756b28b63555f81da3fd8720d63857706b2a798b7",
+  "baseline_refilled_sha256": "feb5eeedd8458e05fc9a7e3756b28b63555f81da3fd8720d63857706b2a798b7",
+  "channels": [
+    18,
+    20,
+    24,
+    33,
+    42,
+    51,
+    60,
+    72,
+    73,
+    88,
+    99,
+    102,
+    104,
+    114,
+    120
+  ],
+  "trials": [
+    {
+      "channel": 18,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH018_N_MUX",
+          "start_mm": [
+            38.25,
+            26.0
+          ],
+          "goal_mm": [
+            41.135,
+            58.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 18,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH018_P_MUX",
+          "start_mm": [
+            32.75,
+            26.0
+          ],
+          "goal_mm": [
+            41.135,
+            45.15
+          ],
+          "found": true
+        },
+        {
+          "net": "CH018_N_MUX",
+          "start_mm": [
+            38.25,
+            26.0
+          ],
+          "goal_mm": [
+            41.135,
+            58.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 18,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH018_N_MUX",
+          "start_mm": [
+            38.25,
+            26.0
+          ],
+          "goal_mm": [
+            41.135,
+            58.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 18,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH018_P_MUX",
+          "start_mm": [
+            32.75,
+            26.0
+          ],
+          "goal_mm": [
+            41.135,
+            45.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 20,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH020_N_MUX",
+          "start_mm": [
+            38.25,
+            20.8
+          ],
+          "goal_mm": [
+            38.595,
+            58.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 20,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH020_P_MUX",
+          "start_mm": [
+            32.75,
+            20.8
+          ],
+          "goal_mm": [
+            38.595,
+            45.15
+          ],
+          "found": true
+        },
+        {
+          "net": "CH020_N_MUX",
+          "start_mm": [
+            38.25,
+            20.8
+          ],
+          "goal_mm": [
+            38.595,
+            58.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 20,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH020_N_MUX",
+          "start_mm": [
+            38.25,
+            20.8
+          ],
+          "goal_mm": [
+            38.595,
+            58.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 20,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH020_P_MUX",
+          "start_mm": [
+            32.75,
+            20.8
+          ],
+          "goal_mm": [
+            38.595,
+            45.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 24,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH024_N_MUX",
+          "start_mm": [
+            48.25,
+            13.0
+          ],
+          "goal_mm": [
+            34.785,
+            48.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 24,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH024_P_MUX",
+          "start_mm": [
+            42.75,
+            13.0
+          ],
+          "goal_mm": [
+            34.785,
+            35.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 24,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH024_N_MUX",
+          "start_mm": [
+            48.25,
+            13.0
+          ],
+          "goal_mm": [
+            34.785,
+            48.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 24,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH024_P_MUX",
+          "start_mm": [
+            42.75,
+            13.0
+          ],
+          "goal_mm": [
+            34.785,
+            35.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 33,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH033_N_MUX",
+          "start_mm": [
+            61.25,
+            28.6
+          ],
+          "goal_mm": [
+            65.405,
+            58.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 33,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH033_P_MUX",
+          "start_mm": [
+            55.75,
+            28.6
+          ],
+          "goal_mm": [
+            65.405,
+            45.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 33,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH033_N_MUX",
+          "start_mm": [
+            61.25,
+            28.6
+          ],
+          "goal_mm": [
+            65.405,
+            58.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 33,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH033_P_MUX",
+          "start_mm": [
+            55.75,
+            28.6
+          ],
+          "goal_mm": [
+            65.405,
+            45.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 42,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH042_N_MUX",
+          "start_mm": [
+            71.25,
+            18.2
+          ],
+          "goal_mm": [
+            60.325,
+            48.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 42,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH042_P_MUX",
+          "start_mm": [
+            65.75,
+            18.2
+          ],
+          "goal_mm": [
+            60.325,
+            35.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 42,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH042_N_MUX",
+          "start_mm": [
+            71.25,
+            18.2
+          ],
+          "goal_mm": [
+            60.325,
+            48.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 42,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH042_P_MUX",
+          "start_mm": [
+            65.75,
+            18.2
+          ],
+          "goal_mm": [
+            60.325,
+            35.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 51,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH051_N_MUX",
+          "start_mm": [
+            84.25,
+            23.4
+          ],
+          "goal_mm": [
+            85.865,
+            58.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 51,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH051_P_MUX",
+          "start_mm": [
+            78.75,
+            23.4
+          ],
+          "goal_mm": [
+            85.865,
+            45.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 51,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH051_N_MUX",
+          "start_mm": [
+            84.25,
+            23.4
+          ],
+          "goal_mm": [
+            85.865,
+            58.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 51,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH051_P_MUX",
+          "start_mm": [
+            78.75,
+            23.4
+          ],
+          "goal_mm": [
+            85.865,
+            45.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 60,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH060_N_MUX",
+          "start_mm": [
+            94.25,
+            23.4
+          ],
+          "goal_mm": [
+            85.865,
+            48.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 60,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH060_P_MUX",
+          "start_mm": [
+            88.75,
+            23.4
+          ],
+          "goal_mm": [
+            85.865,
+            35.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 60,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH060_N_MUX",
+          "start_mm": [
+            94.25,
+            23.4
+          ],
+          "goal_mm": [
+            85.865,
+            48.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 60,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH060_P_MUX",
+          "start_mm": [
+            88.75,
+            23.4
+          ],
+          "goal_mm": [
+            85.865,
+            35.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 72,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH072_N_MUX",
+          "start_mm": [
+            117.25,
+            13.0
+          ],
+          "goal_mm": [
+            103.785,
+            48.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 72,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH072_P_MUX",
+          "start_mm": [
+            111.75,
+            13.0
+          ],
+          "goal_mm": [
+            103.785,
+            35.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 72,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH072_N_MUX",
+          "start_mm": [
+            117.25,
+            13.0
+          ],
+          "goal_mm": [
+            103.785,
+            48.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 72,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH072_P_MUX",
+          "start_mm": [
+            111.75,
+            13.0
+          ],
+          "goal_mm": [
+            103.785,
+            35.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 73,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH073_N_MUX",
+          "start_mm": [
+            117.25,
+            15.6
+          ],
+          "goal_mm": [
+            105.055,
+            48.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 73,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH073_P_MUX",
+          "start_mm": [
+            111.75,
+            15.6
+          ],
+          "goal_mm": [
+            105.055,
+            35.85
+          ],
+          "found": true
+        },
+        {
+          "net": "CH073_N_MUX",
+          "start_mm": [
+            117.25,
+            15.6
+          ],
+          "goal_mm": [
+            105.055,
+            48.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 73,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH073_N_MUX",
+          "start_mm": [
+            117.25,
+            15.6
+          ],
+          "goal_mm": [
+            105.055,
+            48.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 73,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH073_P_MUX",
+          "start_mm": [
+            111.75,
+            15.6
+          ],
+          "goal_mm": [
+            105.055,
+            35.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 88,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH088_N_MUX",
+          "start_mm": [
+            140.25,
+            13.0
+          ],
+          "goal_mm": [
+            126.785,
+            48.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 88,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH088_P_MUX",
+          "start_mm": [
+            134.75,
+            13.0
+          ],
+          "goal_mm": [
+            126.785,
+            35.85
+          ],
+          "found": true
+        },
+        {
+          "net": "CH088_N_MUX",
+          "start_mm": [
+            140.25,
+            13.0
+          ],
+          "goal_mm": [
+            126.785,
+            48.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 88,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH088_N_MUX",
+          "start_mm": [
+            140.25,
+            13.0
+          ],
+          "goal_mm": [
+            126.785,
+            48.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 88,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH088_P_MUX",
+          "start_mm": [
+            134.75,
+            13.0
+          ],
+          "goal_mm": [
+            126.785,
+            35.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 99,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH099_N_MUX",
+          "start_mm": [
+            153.25,
+            23.4
+          ],
+          "goal_mm": [
+            154.865,
+            58.15
+          ],
+          "found": true
+        },
+        {
+          "net": "CH099_P_MUX",
+          "start_mm": [
+            147.75,
+            23.4
+          ],
+          "goal_mm": [
+            154.865,
+            45.15
+          ],
+          "found": true
+        }
+      ],
+      "accepted": false,
+      "violations": 0,
+      "warnings": 0,
+      "unconnected": 147,
+      "power_loss_mm2": 7.72350000003563e-05,
+      "parity_findings": 0,
+      "regressed_nets": []
+    },
+    {
+      "channel": 99,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH099_P_MUX",
+          "start_mm": [
+            147.75,
+            23.4
+          ],
+          "goal_mm": [
+            154.865,
+            45.15
+          ],
+          "found": true
+        },
+        {
+          "net": "CH099_N_MUX",
+          "start_mm": [
+            153.25,
+            23.4
+          ],
+          "goal_mm": [
+            154.865,
+            58.15
+          ],
+          "found": true
+        }
+      ],
+      "accepted": false,
+      "violations": 0,
+      "warnings": 0,
+      "unconnected": 147,
+      "power_loss_mm2": 7.723500000037051e-05,
+      "parity_findings": 0,
+      "regressed_nets": []
+    },
+    {
+      "channel": 99,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH099_N_MUX",
+          "start_mm": [
+            153.25,
+            23.4
+          ],
+          "goal_mm": [
+            154.865,
+            58.15
+          ],
+          "found": true
+        },
+        {
+          "net": "CH099_P_MUX",
+          "start_mm": [
+            147.75,
+            23.4
+          ],
+          "goal_mm": [
+            154.865,
+            45.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 99,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH099_P_MUX",
+          "start_mm": [
+            147.75,
+            23.4
+          ],
+          "goal_mm": [
+            154.865,
+            45.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 102,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH102_N_MUX",
+          "start_mm": [
+            152.75,
+            15.6
+          ],
+          "goal_mm": [
+            151.055,
+            58.15
+          ],
+          "found": true
+        },
+        {
+          "net": "CH102_P_MUX",
+          "start_mm": [
+            147.75,
+            15.6
+          ],
+          "goal_mm": [
+            151.055,
+            45.15
+          ],
+          "found": true
+        }
+      ],
+      "accepted": false,
+      "violations": 0,
+      "warnings": 0,
+      "unconnected": 147,
+      "power_loss_mm2": 0.00758923781100021,
+      "parity_findings": 0,
+      "regressed_nets": []
+    },
+    {
+      "channel": 102,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH102_P_MUX",
+          "start_mm": [
+            147.75,
+            15.6
+          ],
+          "goal_mm": [
+            151.055,
+            45.15
+          ],
+          "found": true
+        },
+        {
+          "net": "CH102_N_MUX",
+          "start_mm": [
+            152.75,
+            15.6
+          ],
+          "goal_mm": [
+            151.055,
+            58.15
+          ],
+          "found": true
+        }
+      ],
+      "accepted": false,
+      "violations": 0,
+      "warnings": 0,
+      "unconnected": 147,
+      "power_loss_mm2": 0.00758923781100021,
+      "parity_findings": 0,
+      "regressed_nets": []
+    },
+    {
+      "channel": 102,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH102_N_MUX",
+          "start_mm": [
+            152.75,
+            15.6
+          ],
+          "goal_mm": [
+            151.055,
+            58.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 102,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH102_P_MUX",
+          "start_mm": [
+            147.75,
+            15.6
+          ],
+          "goal_mm": [
+            151.055,
+            45.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 104,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH104_N_MUX",
+          "start_mm": [
+            163.25,
+            13.0
+          ],
+          "goal_mm": [
+            149.785,
+            48.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 104,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH104_P_MUX",
+          "start_mm": [
+            157.75,
+            13.0
+          ],
+          "goal_mm": [
+            149.785,
+            35.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 104,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH104_N_MUX",
+          "start_mm": [
+            163.25,
+            13.0
+          ],
+          "goal_mm": [
+            149.785,
+            48.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 104,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH104_P_MUX",
+          "start_mm": [
+            157.75,
+            13.0
+          ],
+          "goal_mm": [
+            149.785,
+            35.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 114,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH114_N_MUX",
+          "start_mm": [
+            176.25,
+            26.0
+          ],
+          "goal_mm": [
+            179.135,
+            58.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 114,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH114_P_MUX",
+          "start_mm": [
+            170.75,
+            26.0
+          ],
+          "goal_mm": [
+            179.135,
+            45.15
+          ],
+          "found": true
+        },
+        {
+          "net": "CH114_N_MUX",
+          "start_mm": [
+            176.25,
+            26.0
+          ],
+          "goal_mm": [
+            179.135,
+            58.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 114,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH114_N_MUX",
+          "start_mm": [
+            176.25,
+            26.0
+          ],
+          "goal_mm": [
+            179.135,
+            58.15
+          ],
+          "found": true
+        },
+        {
+          "net": "CH114_P_MUX",
+          "start_mm": [
+            170.75,
+            26.0
+          ],
+          "goal_mm": [
+            179.135,
+            45.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 114,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH114_P_MUX",
+          "start_mm": [
+            170.75,
+            26.0
+          ],
+          "goal_mm": [
+            179.135,
+            45.15
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 120,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH120_N_MUX",
+          "start_mm": [
+            186.25,
+            13.0
+          ],
+          "goal_mm": [
+            172.785,
+            48.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 120,
+      "layers": [
+        "F.Cu",
+        "In2.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH120_P_MUX",
+          "start_mm": [
+            180.75,
+            13.0
+          ],
+          "goal_mm": [
+            172.785,
+            35.85
+          ],
+          "found": true
+        },
+        {
+          "net": "CH120_N_MUX",
+          "start_mm": [
+            186.25,
+            13.0
+          ],
+          "goal_mm": [
+            172.785,
+            48.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 120,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "NP",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH120_N_MUX",
+          "start_mm": [
+            186.25,
+            13.0
+          ],
+          "goal_mm": [
+            172.785,
+            48.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "channel": 120,
+      "layers": [
+        "F.Cu",
+        "B.Cu"
+      ],
+      "order": "PN",
+      "step_mm": 0.05,
+      "margin_mm": 12,
+      "path_seconds": 6.0,
+      "paths": [
+        {
+          "net": "CH120_P_MUX",
+          "start_mm": [
+            180.75,
+            13.0
+          ],
+          "goal_mm": [
+            172.785,
+            35.85
+          ],
+          "found": false
+        }
+      ],
+      "accepted": false
+    }
+  ],
+  "accepted_board": null,
+  "routing_completed": false,
+  "fabrication_release": false
+}

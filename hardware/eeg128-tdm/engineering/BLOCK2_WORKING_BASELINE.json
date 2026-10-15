@@ -1,0 +1,18 @@
+{
+  "approved_report": "BLOCK2_SOURCE_FOLLOWUP_2026-10-12.md",
+  "approval_date": "2026-10-13",
+  "source_commit": "7e5129f4618262bd002cf848c0970c8ac8661d71",
+  "working_archive": "block2-ch099-closed147.zip",
+  "archive_sha256": "5e579742d45bd449428ec77ea5658f63e79d52f98cae9a1d9c8062ccfc473ae0",
+  "pcb_sha256": "52122b691e649d3b7328672e3d6ef303618e1fbc263f3c486821e3a1b95542be",
+  "VCM_R38_via_mm": [
+    39.65,
+    26.0
+  ],
+  "unconnected": 147,
+  "routing_completed": false,
+  "fabrication_release": false,
+  "scope": "Approved engineering baseline for continued MUX pair searches; manufacturing checkpoint is unchanged.",
+  "closed_pair": 99,
+  "previous_working_archive": "block2-vcm-source-candidate.zip"
+}
