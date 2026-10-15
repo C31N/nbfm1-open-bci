@@ -1,0 +1,13 @@
+{
+  "declared_edits_match": true,
+  "other_existing_copper_unchanged": true,
+  "changed_existing_copper": 2,
+  "removed_existing_copper": 3,
+  "added_copper_objects": 30,
+  "added_L3_route_objects": 27,
+  "footprints_unchanged": true,
+  "project_rules_unchanged": true,
+  "minimum_new_L3_to_baseline_power_mm": 12.549165961570278,
+  "regressed_nets": [],
+  "pcb_sha256": "14b05365a49bcb03b20afbcf704dc0f2b93d16365d241d4577d07573d09b0ddb"
+}

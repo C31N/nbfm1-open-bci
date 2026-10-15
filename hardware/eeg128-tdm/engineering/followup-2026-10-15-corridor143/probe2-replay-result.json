@@ -1,0 +1,12 @@
+{
+  "pcb_sha256": "14b05365a49bcb03b20afbcf704dc0f2b93d16365d241d4577d07573d09b0ddb",
+  "expected_pcb_sha256": "14b05365a49bcb03b20afbcf704dc0f2b93d16365d241d4577d07573d09b0ddb",
+  "byte_identical": true,
+  "violations": 0,
+  "warnings": 0,
+  "unconnected": 143,
+  "diagnostic_parity_findings": 0,
+  "accepted_for_promotion": false,
+  "routing_completed": false,
+  "fabrication_release": false
+}

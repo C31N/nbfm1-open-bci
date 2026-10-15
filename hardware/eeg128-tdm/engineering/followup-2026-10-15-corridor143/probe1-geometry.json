@@ -1,0 +1,7 @@
+{
+  "L3_power_loss_mm2": 0.0,
+  "L3_power_gain_mm2": 0.0,
+  "zone_outlines_unchanged": true,
+  "accepted": false,
+  "reason": "Four DRC errors and closed local corridor"
+}

@@ -1,0 +1,166 @@
+[
+  {
+    "removed_nets": [
+      "CH019_N_MUX"
+    ],
+    "removed_uuids": [
+      "09eb94aa-b6f5-45bd-a31b-612c358eb4af",
+      "2d984bba-d103-43fe-9d07-b54e8dda5542",
+      "8c615bb0-f9ed-4ef7-973e-2f1a79cb650f"
+    ],
+    "bounds": [
+      37.882999999,
+      23.818076203945353,
+      39.075000001,
+      27.116761950354938
+    ],
+    "area": 2.2514183784757003,
+    "touches_window": false,
+    "model_only": true,
+    "baseline_sha256": "497b588e580caf24766d5d60e9753def8dfe10ad3495b75faf5cd3fdd6276f24"
+  },
+  {
+    "removed_nets": [
+      "CH019_N_MUX",
+      "CH025_P_MUX"
+    ],
+    "removed_uuids": [
+      "09eb94aa-b6f5-45bd-a31b-612c358eb4af",
+      "2d984bba-d103-43fe-9d07-b54e8dda5542",
+      "8c615bb0-f9ed-4ef7-973e-2f1a79cb650f",
+      "012efa50-8a41-4d07-88e0-03b33e21e82c",
+      "06a92eb8-76b6-4c8b-a1bb-5875182d71ec",
+      "66e93581-5998-4b3f-b957-7c8b83972d9b",
+      "7f148774-27c3-449e-9ac1-d80f353711b7",
+      "9d3f847e-fc07-4a15-b740-f09c1ed9174f",
+      "eff35042-6d2e-45f2-abf9-a91690f8adf2"
+    ],
+    "bounds": [
+      37.882999999,
+      22.223229714053037,
+      39.075000001,
+      27.116761950354938
+    ],
+    "area": 3.178643409519203,
+    "touches_window": false,
+    "model_only": true,
+    "baseline_sha256": "497b588e580caf24766d5d60e9753def8dfe10ad3495b75faf5cd3fdd6276f24"
+  },
+  {
+    "removed_nets": [
+      "CH019_N_MUX",
+      "CH025_P_MUX",
+      "CH028_P_MUX"
+    ],
+    "removed_uuids": [
+      "09eb94aa-b6f5-45bd-a31b-612c358eb4af",
+      "2d984bba-d103-43fe-9d07-b54e8dda5542",
+      "8c615bb0-f9ed-4ef7-973e-2f1a79cb650f",
+      "012efa50-8a41-4d07-88e0-03b33e21e82c",
+      "06a92eb8-76b6-4c8b-a1bb-5875182d71ec",
+      "66e93581-5998-4b3f-b957-7c8b83972d9b",
+      "7f148774-27c3-449e-9ac1-d80f353711b7",
+      "9d3f847e-fc07-4a15-b740-f09c1ed9174f",
+      "eff35042-6d2e-45f2-abf9-a91690f8adf2",
+      "b8a644d4-f0ce-4498-b7d7-7d3028fe55df"
+    ],
+    "bounds": [
+      37.882999999,
+      22.223229714053037,
+      39.075000001,
+      27.116761950354938
+    ],
+    "area": 3.178643409519203,
+    "touches_window": false,
+    "model_only": true,
+    "baseline_sha256": "497b588e580caf24766d5d60e9753def8dfe10ad3495b75faf5cd3fdd6276f24"
+  },
+  {
+    "removed_nets": [
+      "CH019_N_MUX",
+      "CH028_P_MUX"
+    ],
+    "removed_uuids": [
+      "09eb94aa-b6f5-45bd-a31b-612c358eb4af",
+      "2d984bba-d103-43fe-9d07-b54e8dda5542",
+      "8c615bb0-f9ed-4ef7-973e-2f1a79cb650f",
+      "b8a644d4-f0ce-4498-b7d7-7d3028fe55df"
+    ],
+    "bounds": [
+      37.882999999,
+      23.818076203945353,
+      39.075000001,
+      27.116761950354938
+    ],
+    "area": 2.251418378475701,
+    "touches_window": false,
+    "model_only": true,
+    "baseline_sha256": "497b588e580caf24766d5d60e9753def8dfe10ad3495b75faf5cd3fdd6276f24"
+  },
+  {
+    "removed_nets": [
+      "CH025_P_MUX"
+    ],
+    "removed_uuids": [
+      "012efa50-8a41-4d07-88e0-03b33e21e82c",
+      "06a92eb8-76b6-4c8b-a1bb-5875182d71ec",
+      "66e93581-5998-4b3f-b957-7c8b83972d9b",
+      "7f148774-27c3-449e-9ac1-d80f353711b7",
+      "9d3f847e-fc07-4a15-b740-f09c1ed9174f",
+      "eff35042-6d2e-45f2-abf9-a91690f8adf2"
+    ],
+    "bounds": [
+      38.499999999,
+      25.446937966784397,
+      39.075000001,
+      26.603480509288243
+    ],
+    "area": 0.5865256978525998,
+    "touches_window": false,
+    "model_only": true,
+    "baseline_sha256": "497b588e580caf24766d5d60e9753def8dfe10ad3495b75faf5cd3fdd6276f24"
+  },
+  {
+    "removed_nets": [
+      "CH025_P_MUX",
+      "CH028_P_MUX"
+    ],
+    "removed_uuids": [
+      "012efa50-8a41-4d07-88e0-03b33e21e82c",
+      "06a92eb8-76b6-4c8b-a1bb-5875182d71ec",
+      "66e93581-5998-4b3f-b957-7c8b83972d9b",
+      "7f148774-27c3-449e-9ac1-d80f353711b7",
+      "9d3f847e-fc07-4a15-b740-f09c1ed9174f",
+      "eff35042-6d2e-45f2-abf9-a91690f8adf2",
+      "b8a644d4-f0ce-4498-b7d7-7d3028fe55df"
+    ],
+    "bounds": [
+      38.499999999,
+      25.446937966784397,
+      39.075000001,
+      26.603480509288243
+    ],
+    "area": 0.5865256978525998,
+    "touches_window": false,
+    "model_only": true,
+    "baseline_sha256": "497b588e580caf24766d5d60e9753def8dfe10ad3495b75faf5cd3fdd6276f24"
+  },
+  {
+    "removed_nets": [
+      "CH028_P_MUX"
+    ],
+    "removed_uuids": [
+      "b8a644d4-f0ce-4498-b7d7-7d3028fe55df"
+    ],
+    "bounds": [
+      38.499999999,
+      25.446937966784397,
+      39.075000001,
+      26.603480509288243
+    ],
+    "area": 0.5865256978525998,
+    "touches_window": false,
+    "model_only": true,
+    "baseline_sha256": "497b588e580caf24766d5d60e9753def8dfe10ad3495b75faf5cd3fdd6276f24"
+  }
+]

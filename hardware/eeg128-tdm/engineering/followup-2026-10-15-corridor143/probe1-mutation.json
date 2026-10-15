@@ -1,0 +1,23 @@
+{
+  "baseline_pcb_sha256": "497b588e580caf24766d5d60e9753def8dfe10ad3495b75faf5cd3fdd6276f24",
+  "changes": {
+    "c5ec71d9-611f-481f-a96c-f712faa627c4": {
+      "before": "(via\n\t\t(at 38.755 24.999999)\n\t\t(size 0.65)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 165)\n\t\t(uuid \"c5ec71d9-611f-481f-a96c-f712faa627c4\")\n\t)",
+      "after": "(via\n\t\t(at 38.4 24.999999)\n\t\t(size 0.65)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 165)\n\t\t(uuid \"c5ec71d9-611f-481f-a96c-f712faa627c4\")\n\t)"
+    },
+    "bb7f7297-972f-4505-8dfe-f684123c0589": {
+      "before": "(segment\n\t\t(start 41.155 24.999999)\n\t\t(end 38.755 24.999999)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 165)\n\t\t(uuid \"bb7f7297-972f-4505-8dfe-f684123c0589\")\n\t)",
+      "after": "(segment\n\t\t(start 41.155 24.999999)\n\t\t(end 38.4 24.999999)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 165)\n\t\t(uuid \"bb7f7297-972f-4505-8dfe-f684123c0589\")\n\t)"
+    },
+    "012efa50-8a41-4d07-88e0-03b33e21e82c": {
+      "before": "(segment\n\t\t(start 38.755 24.999999)\n\t\t(end 38.755 22.999999)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 165)\n\t\t(uuid \"012efa50-8a41-4d07-88e0-03b33e21e82c\")\n\t)",
+      "after": "(segment\n\t\t(start 38.4 24.999999)\n\t\t(end 38.755 22.999999)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 165)\n\t\t(uuid \"012efa50-8a41-4d07-88e0-03b33e21e82c\")\n\t)"
+    },
+    "2d984bba-d103-43fe-9d07-b54e8dda5542": {
+      "before": "(segment\n\t\t(start 38.2 23.4)\n\t\t(end 38.2 26.629999)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 139)\n\t\t(uuid \"2d984bba-d103-43fe-9d07-b54e8dda5542\")\n\t)",
+      "after": "(segment (start 38.2 23.4) (end 37.65 23.95) (width 0.15) (layer \"B.Cu\") (net 139) (uuid \"531e4ac2-b684-5429-b596-7d351be19b92\"))\n(segment (start 37.65 23.95) (end 37.65 26.079999) (width 0.15) (layer \"B.Cu\") (net 139) (uuid \"c8f75936-e4c7-5d0b-9f92-738c9e829c52\"))\n(segment (start 37.65 26.079999) (end 38.2 26.629999) (width 0.15) (layer \"B.Cu\") (net 139) (uuid \"94e14757-d9e4-5e01-b509-550677c1b5b5\"))"
+    }
+  },
+  "routing_completed": false,
+  "fabrication_release": false
+}

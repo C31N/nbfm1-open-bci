@@ -12,10 +12,10 @@
   "unconnected": 143,
   "routing_completed": false,
   "fabrication_release": false,
-  "scope": "Engineering continuation from the user-confirmed 147-airwire checkpoint; routing and fabrication release remain false.",
+  "scope": "Engineering continuation from the user-confirmed 143-airwire checkpoint; routing and fabrication release remain false.",
   "closed_pair": 99,
   "previous_working_archive": "block2-ch099-closed147.zip",
-  "last_user_confirmed_unconnected": 147,
+  "last_user_confirmed_unconnected": 143,
   "last_user_confirmation_date": "2026-10-15",
   "continuation_report": "BLOCK2_SOURCE_FOLLOWUP_2026-10-15.md",
   "closed_since_147": [
@@ -23,5 +23,7 @@
     "CH023_N_ELECTRODE",
     "CH016_P_ELECTRODE",
     "CH027_N_ELECTRODE"
-  ]
+  ],
+  "latest_analysis_report": "BLOCK2_SOURCE_FOLLOWUP_2026-10-15_CORRIDOR143.md",
+  "latest_analysis_promoted": false
 }

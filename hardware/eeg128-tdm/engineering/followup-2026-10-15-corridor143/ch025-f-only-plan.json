@@ -1,0 +1,17 @@
+{
+  "baseline_pcb_sha256": "497b588e580caf24766d5d60e9753def8dfe10ad3495b75faf5cd3fdd6276f24",
+  "remove_copper": {
+    "c5ec71d9-611f-481f-a96c-f712faa627c4": "(via\n\t\t(at 38.755 24.999999)\n\t\t(size 0.65)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 165)\n\t\t(uuid \"c5ec71d9-611f-481f-a96c-f712faa627c4\")\n\t)",
+    "b43da1f6-581e-4e84-9151-62e7e7d747d7": "(via\n\t\t(at 38.155 22.399999)\n\t\t(size 0.65)\n\t\t(drill 0.3)\n\t\t(layers \"F.Cu\" \"B.Cu\")\n\t\t(net 165)\n\t\t(uuid \"b43da1f6-581e-4e84-9151-62e7e7d747d7\")\n\t)",
+    "bb7f7297-972f-4505-8dfe-f684123c0589": "(segment\n\t\t(start 41.155 24.999999)\n\t\t(end 38.755 24.999999)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 165)\n\t\t(uuid \"bb7f7297-972f-4505-8dfe-f684123c0589\")\n\t)",
+    "012efa50-8a41-4d07-88e0-03b33e21e82c": "(segment\n\t\t(start 38.755 24.999999)\n\t\t(end 38.755 22.999999)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 165)\n\t\t(uuid \"012efa50-8a41-4d07-88e0-03b33e21e82c\")\n\t)",
+    "9d3f847e-fc07-4a15-b740-f09c1ed9174f": "(segment\n\t\t(start 38.755 22.999999)\n\t\t(end 38.155 22.399999)\n\t\t(width 0.15)\n\t\t(layer \"B.Cu\")\n\t\t(net 165)\n\t\t(uuid \"9d3f847e-fc07-4a15-b740-f09c1ed9174f\")\n\t)"
+  },
+  "net": "CH025_P_MUX",
+  "path": null,
+  "secondary_layer": "B.Cu",
+  "step_mm": 0.025,
+  "margin_mm": 6,
+  "seconds": 30,
+  "model_only": true
+}
