@@ -1,0 +1,10 @@
+test_exact_replay_proposal_and_closed_release (test_139_escape_diagnostic.EscapeDiagnosticGuards.test_exact_replay_proposal_and_closed_release) ... ok
+test_inner_layer_addition_rejected (test_139_escape_diagnostic.EscapeDiagnosticGuards.test_inner_layer_addition_rejected) ... ok
+test_neighbor_net_change_rejected (test_139_escape_diagnostic.EscapeDiagnosticGuards.test_neighbor_net_change_rejected) ... ok
+test_unreviewed_via_rejected (test_139_escape_diagnostic.EscapeDiagnosticGuards.test_unreviewed_via_rejected) ... ok
+test_wrong_baseline_rejected (test_139_escape_diagnostic.EscapeDiagnosticGuards.test_wrong_baseline_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 1.386s
+
+OK

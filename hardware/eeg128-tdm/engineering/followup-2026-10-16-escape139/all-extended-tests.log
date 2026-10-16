@@ -1,0 +1,68 @@
+test_exact_replay_proposal_and_closed_release (test_139_escape_diagnostic.EscapeDiagnosticGuards.test_exact_replay_proposal_and_closed_release) ... ok
+test_inner_layer_addition_rejected (test_139_escape_diagnostic.EscapeDiagnosticGuards.test_inner_layer_addition_rejected) ... ok
+test_neighbor_net_change_rejected (test_139_escape_diagnostic.EscapeDiagnosticGuards.test_neighbor_net_change_rejected) ... ok
+test_unreviewed_via_rejected (test_139_escape_diagnostic.EscapeDiagnosticGuards.test_unreviewed_via_rejected) ... ok
+test_wrong_baseline_rejected (test_139_escape_diagnostic.EscapeDiagnosticGuards.test_wrong_baseline_rejected) ... ok
+test_exact_apply_matches_reviewed_hash (test_ch018_neighbor_replay.Ch018NeighborGuards.test_exact_apply_matches_reviewed_hash) ... ok
+test_incomplete_via_is_rejected_before_write (test_ch018_neighbor_replay.Ch018NeighborGuards.test_incomplete_via_is_rejected_before_write) ... ok
+test_l2_mutation_is_rejected_before_write (test_ch018_neighbor_replay.Ch018NeighborGuards.test_l2_mutation_is_rejected_before_write) ... ok
+test_recipe_digest_is_pinned (test_ch018_neighbor_replay.Ch018NeighborGuards.test_recipe_digest_is_pinned) ... ok
+test_wrong_baseline_fails_before_write (test_ch018_neighbor_replay.Ch018NeighborGuards.test_wrong_baseline_fails_before_write) ... ok
+test_exact_apply_matches_reviewed_hash (test_ch019_electrode_replay.JointElectrodeGuards.test_exact_apply_matches_reviewed_hash) ... ok
+test_incomplete_via_is_rejected_before_write (test_ch019_electrode_replay.JointElectrodeGuards.test_incomplete_via_is_rejected_before_write) ... ok
+test_l2_mutation_is_rejected_before_write (test_ch019_electrode_replay.JointElectrodeGuards.test_l2_mutation_is_rejected_before_write) ... ok
+test_recipe_digest_is_pinned (test_ch019_electrode_replay.JointElectrodeGuards.test_recipe_digest_is_pinned) ... ok
+test_wrong_baseline_fails_before_write (test_ch019_electrode_replay.JointElectrodeGuards.test_wrong_baseline_fails_before_write) ... ok
+test_exact_apply_matches_reviewed_hash (test_ch025_electrode_replay.Ch025ElectrodeGuards.test_exact_apply_matches_reviewed_hash) ... ok
+test_incomplete_via_is_rejected_before_write (test_ch025_electrode_replay.Ch025ElectrodeGuards.test_incomplete_via_is_rejected_before_write) ... ok
+test_l2_mutation_is_rejected_before_write (test_ch025_electrode_replay.Ch025ElectrodeGuards.test_l2_mutation_is_rejected_before_write) ... ok
+test_recipe_digest_is_pinned (test_ch025_electrode_replay.Ch025ElectrodeGuards.test_recipe_digest_is_pinned) ... ok
+test_wrong_baseline_fails_before_write (test_ch025_electrode_replay.Ch025ElectrodeGuards.test_wrong_baseline_fails_before_write) ... ok
+test_exact_apply_matches_reviewed_hash (test_ch029_electrode_replay.Ch029ElectrodeGuards.test_exact_apply_matches_reviewed_hash) ... ok
+test_incomplete_via_is_rejected_before_write (test_ch029_electrode_replay.Ch029ElectrodeGuards.test_incomplete_via_is_rejected_before_write) ... ok
+test_l2_mutation_is_rejected_before_write (test_ch029_electrode_replay.Ch029ElectrodeGuards.test_l2_mutation_is_rejected_before_write) ... ok
+test_recipe_digest_is_pinned (test_ch029_electrode_replay.Ch029ElectrodeGuards.test_recipe_digest_is_pinned) ... ok
+test_wrong_baseline_fails_before_write (test_ch029_electrode_replay.Ch029ElectrodeGuards.test_wrong_baseline_fails_before_write) ... ok
+test_exact_apply_matches_reviewed_hash (test_ch030_probe_replay.Ch030ProbeGuards.test_exact_apply_matches_reviewed_hash) ... ok
+test_foreign_net_is_rejected_before_write (test_ch030_probe_replay.Ch030ProbeGuards.test_foreign_net_is_rejected_before_write) ... ok
+test_l3_mutation_is_rejected_before_write (test_ch030_probe_replay.Ch030ProbeGuards.test_l3_mutation_is_rejected_before_write) ... ok
+test_modified_recipe_is_rejected (test_ch030_probe_replay.Ch030ProbeGuards.test_modified_recipe_is_rejected) ... ok
+test_wrong_baseline_fails_before_write (test_ch030_probe_replay.Ch030ProbeGuards.test_wrong_baseline_fails_before_write) ... ok
+test_both_exact_applies_match_reviewed_hashes (test_escape139_probes.PreparatoryEscapeGuards.test_both_exact_applies_match_reviewed_hashes) ... ok
+test_other_layer_rejected_before_write (test_escape139_probes.PreparatoryEscapeGuards.test_other_layer_rejected_before_write) ... ok
+test_recipe_digest_pinned (test_escape139_probes.PreparatoryEscapeGuards.test_recipe_digest_pinned) ... ok
+test_via_drop_rejected_before_write (test_escape139_probes.PreparatoryEscapeGuards.test_via_drop_rejected_before_write) ... ok
+test_wrong_baseline_rejected_before_write (test_escape139_probes.PreparatoryEscapeGuards.test_wrong_baseline_rejected_before_write) ... ok
+test_disconnected_planar_path_is_rejected (test_escape_mesh.MeshSafety.test_disconnected_planar_path_is_rejected) ... ok
+test_inner_track_cannot_cross_power_outline (test_escape_mesh.MeshSafety.test_inner_track_cannot_cross_power_outline) ... ok
+test_narrow_corridor_without_grid (test_escape_mesh.MeshSafety.test_narrow_corridor_without_grid) ... ok
+test_power_keepout_forbids_the_only_transition (test_escape_mesh.MeshSafety.test_power_keepout_forbids_the_only_transition) ... ok
+test_via_transitions_have_full_paths (test_escape_mesh.MeshSafety.test_via_transitions_have_full_paths) ... ok
+test_incomplete_via_and_l2_route_leave_baseline_bytes_unchanged (test_mux147_replay.Mux147ReplayGuards.test_incomplete_via_and_l2_route_leave_baseline_bytes_unchanged) ... 15:09:47: Debug: Adding duplicate image handler for 'PNG file'
+15:09:47: Debug: Adding duplicate image handler for 'JPEG file'
+15:09:47: Debug: Adding duplicate image handler for 'TIFF file'
+15:09:47: Debug: Adding duplicate image handler for 'GIF file'
+15:09:47: Debug: Adding duplicate image handler for 'PNM file'
+15:09:47: Debug: Adding duplicate image handler for 'PCX file'
+15:09:47: Debug: Adding duplicate image handler for 'IFF file'
+15:09:47: Debug: Adding duplicate image handler for 'Windows icon file'
+15:09:47: Debug: Adding duplicate image handler for 'Windows cursor file'
+15:09:47: Debug: Adding duplicate image handler for 'Windows animated cursor file'
+15:09:47: Debug: Adding duplicate image handler for 'TGA file'
+15:09:47: Debug: Adding duplicate image handler for 'XPM file'
+ok
+test_reviewed_recipe_and_unsafe_changes (test_recovery167_replay.RecoveryGuards.test_reviewed_recipe_and_unsafe_changes) ... ok
+test_external_window_cannot_bypass_a_copper_fence (test_routing_layer_constraints.LayerConstraints.test_external_window_cannot_bypass_a_copper_fence) ... ok
+test_missing_outline_fails_closed (test_routing_layer_constraints.LayerConstraints.test_missing_outline_fails_closed) ... ok
+test_pad_polygon_bound_contains_actual_roundrect_perimeters (test_routing_layer_constraints.LayerConstraints.test_pad_polygon_bound_contains_actual_roundrect_perimeters) ... ok
+test_rounded_pad_corner_is_usable_without_relaxing_clearance (test_routing_layer_constraints.LayerConstraints.test_rounded_pad_corner_is_usable_without_relaxing_clearance) ... ok
+test_routing_cost_avoids_a_plane_when_a_same_layer_detour_exists (test_routing_layer_constraints.LayerConstraints.test_routing_cost_avoids_a_plane_when_a_same_layer_detour_exists) ... ok
+test_through_vias_avoid_unselected_signal_and_power_layers (test_routing_layer_constraints.LayerConstraints.test_through_vias_avoid_unselected_signal_and_power_layers) ... ok
+test_via_keepout_blocks_layer_changes_without_blocking_traces (test_routing_layer_constraints.LayerConstraints.test_via_keepout_blocks_layer_changes_without_blocking_traces) ... ok
+test_vias_and_tracks_respect_cutouts_and_their_own_edge_radius (test_routing_layer_constraints.LayerConstraints.test_vias_and_tracks_respect_cutouts_and_their_own_edge_radius) ... ok
+
+----------------------------------------------------------------------
+Ran 50 tests in 21.934s
+
+OK
+14 unsafe recovery recipes rejected

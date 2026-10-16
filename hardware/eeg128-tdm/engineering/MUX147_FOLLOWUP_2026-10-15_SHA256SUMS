@@ -58,6 +58,6 @@ d768bf5a809ff0b59ca14f5367562e048a15ee5ab19e0c2f04e1b54458d0f22e  ../replay_mux1
 6ae68c5f302a58e60f345577719e78381c593aea61ce7cc16f63702fc5d90e94  ../search_block2_followup.py
 7cfb7190940b087c9a363f4fbe3dcc96f84ed8df8f6422f2ff7b1a2efe0e6229  ../test_mux147_replay.py
 3f86734e02bc5569804c51f1a0d48529b0d2481de48bee23bd17b46022e43e2a  ../test_routing_layer_constraints.py
-ddd534d4a8a8e21ddeb59d7ecad7b031b2d03a47ff7d773348291e0ca1b90391  ../../../.github/workflows/kicad-native.yml
+7cc3f9db7bbb721ad3dcd532d0c39a26d0fb76f50d8b00b49a1195e02cec17d0  ../../../.github/workflows/kicad-native.yml
 c4c999802c40ca1886c56ab7ef8a998b4af362b4c2e4a9ae5884abbfaaddf94b  ../../../.github/workflows/autoroute-a1.yml
 238a6edd12019b55bab2d98f79f32a7e7eabf8458ccb99efafdf14e55542a6a7  ../../../.github/workflows/autoroute-a1-converge.yml

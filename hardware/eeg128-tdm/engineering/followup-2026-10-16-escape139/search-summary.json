@@ -1,0 +1,315 @@
+{
+  "accepted": false,
+  "model_only": true,
+  "routing_completed": false,
+  "fabrication_release": false,
+  "baseline_pcb_sha256": "f2780989e2dee6233f207df1f420f7e89d8e855493eb6b1e7fb731d4a4dda1ea",
+  "runtime": {
+    "kicad": "8.0.9",
+    "shapely_mesh": "2.1.2",
+    "shapely_native_replay": "2.0.3"
+  },
+  "model_cases": [
+    {
+      "mode": "electrode",
+      "case": 1,
+      "complete": false,
+      "successful_net_paths": [
+        "CH021_N_ELECTRODE",
+        "CH027_P_ELECTRODE"
+      ],
+      "failed_net": "CH023_N_ELECTRODE",
+      "accepted": false
+    },
+    {
+      "mode": "electrode",
+      "case": 11,
+      "complete": false,
+      "successful_net_paths": [
+        "CH022_N_ELECTRODE"
+      ],
+      "failed_net": "CH021_N_ELECTRODE",
+      "accepted": false
+    },
+    {
+      "mode": "electrode",
+      "case": 12,
+      "complete": false,
+      "successful_net_paths": [
+        "CH021_N_ELECTRODE",
+        "CH027_P_ELECTRODE"
+      ],
+      "failed_net": "CH019_N_ELECTRODE",
+      "accepted": false
+    },
+    {
+      "mode": "electrode",
+      "case": 13,
+      "complete": false,
+      "successful_net_paths": [
+        "CH021_N_ELECTRODE",
+        "CH027_P_ELECTRODE"
+      ],
+      "failed_net": "CH019_N_ELECTRODE",
+      "accepted": false
+    },
+    {
+      "mode": "electrode",
+      "case": 17,
+      "complete": false,
+      "successful_net_paths": [
+        "CH019_N_ELECTRODE"
+      ],
+      "failed_net": "CH021_N_ELECTRODE",
+      "accepted": false
+    },
+    {
+      "mode": "electrode",
+      "case": 18,
+      "complete": false,
+      "successful_net_paths": [
+        "CH021_N_ELECTRODE"
+      ],
+      "failed_net": "CH026_P_ELECTRODE",
+      "accepted": false
+    },
+    {
+      "mode": "electrode",
+      "case": 19,
+      "complete": false,
+      "successful_net_paths": [
+        "CH021_N_ELECTRODE"
+      ],
+      "failed_net": "CH026_P_ELECTRODE",
+      "accepted": false
+    },
+    {
+      "mode": "electrode",
+      "case": 21,
+      "complete": false,
+      "successful_net_paths": [
+        "CH026_P_ELECTRODE"
+      ],
+      "failed_net": "CH021_N_ELECTRODE",
+      "accepted": false
+    },
+    {
+      "mode": "electrode",
+      "case": 23,
+      "complete": false,
+      "successful_net_paths": [],
+      "failed_net": "CH023_N_ELECTRODE",
+      "accepted": false
+    },
+    {
+      "mode": "electrode",
+      "case": 24,
+      "complete": false,
+      "successful_net_paths": [
+        "CH021_N_ELECTRODE"
+      ],
+      "failed_net": "CH026_P_ELECTRODE",
+      "accepted": false
+    },
+    {
+      "mode": "electrode",
+      "case": 25,
+      "complete": false,
+      "successful_net_paths": [
+        "CH021_N_ELECTRODE"
+      ],
+      "failed_net": "CH026_P_ELECTRODE",
+      "accepted": false
+    },
+    {
+      "mode": "electrode",
+      "case": 27,
+      "complete": false,
+      "successful_net_paths": [
+        "CH026_P_ELECTRODE"
+      ],
+      "failed_net": "CH021_N_ELECTRODE",
+      "accepted": false
+    },
+    {
+      "mode": "electrode",
+      "case": 29,
+      "complete": false,
+      "successful_net_paths": [
+        "CH022_N_ELECTRODE"
+      ],
+      "failed_net": "CH021_N_ELECTRODE",
+      "accepted": false
+    },
+    {
+      "mode": "electrode",
+      "case": 3,
+      "complete": false,
+      "successful_net_paths": [
+        "CH027_P_ELECTRODE",
+        "CH021_N_ELECTRODE"
+      ],
+      "failed_net": "CH023_N_ELECTRODE",
+      "accepted": false
+    },
+    {
+      "mode": "electrode",
+      "case": 30,
+      "complete": false,
+      "successful_net_paths": [
+        "CH021_N_ELECTRODE"
+      ],
+      "failed_net": "CH026_P_ELECTRODE",
+      "accepted": false
+    },
+    {
+      "mode": "electrode",
+      "case": 31,
+      "complete": false,
+      "successful_net_paths": [
+        "CH021_N_ELECTRODE"
+      ],
+      "failed_net": "CH026_P_ELECTRODE",
+      "accepted": false
+    },
+    {
+      "mode": "electrode",
+      "case": 33,
+      "complete": false,
+      "successful_net_paths": [
+        "CH026_P_ELECTRODE"
+      ],
+      "failed_net": "CH021_N_ELECTRODE",
+      "accepted": false
+    },
+    {
+      "mode": "electrode",
+      "case": 35,
+      "complete": false,
+      "successful_net_paths": [
+        "CH019_N_ELECTRODE"
+      ],
+      "failed_net": "CH021_N_ELECTRODE",
+      "accepted": false
+    },
+    {
+      "mode": "electrode",
+      "case": 5,
+      "complete": false,
+      "successful_net_paths": [],
+      "failed_net": "CH023_N_ELECTRODE",
+      "accepted": false
+    },
+    {
+      "mode": "electrode",
+      "case": 6,
+      "complete": false,
+      "successful_net_paths": [
+        "CH021_N_ELECTRODE",
+        "CH027_P_ELECTRODE"
+      ],
+      "failed_net": "CH022_N_ELECTRODE",
+      "accepted": false
+    },
+    {
+      "mode": "electrode",
+      "case": 7,
+      "complete": false,
+      "successful_net_paths": [
+        "CH021_N_ELECTRODE",
+        "CH027_P_ELECTRODE"
+      ],
+      "failed_net": "CH022_N_ELECTRODE",
+      "accepted": false
+    },
+    {
+      "mode": "electrode",
+      "case": 9,
+      "complete": false,
+      "successful_net_paths": [
+        "CH027_P_ELECTRODE",
+        "CH021_N_ELECTRODE"
+      ],
+      "failed_net": "CH022_N_ELECTRODE",
+      "accepted": false
+    },
+    {
+      "mode": "local-electrode",
+      "case": 0,
+      "complete": false,
+      "successful_net_paths": [
+        "CH021_N_ELECTRODE",
+        "CH027_P_ELECTRODE"
+      ],
+      "failed_net": "CH023_N_ELECTRODE",
+      "accepted": false
+    },
+    {
+      "mode": "local-electrode",
+      "case": 1,
+      "complete": false,
+      "successful_net_paths": [
+        "CH021_N_ELECTRODE",
+        "CH027_P_ELECTRODE"
+      ],
+      "failed_net": "CH023_N_ELECTRODE",
+      "accepted": false
+    },
+    {
+      "mode": "local-electrode",
+      "case": 8,
+      "complete": false,
+      "successful_net_paths": [
+        "CH023_N_ELECTRODE"
+      ],
+      "failed_net": "CH021_N_ELECTRODE",
+      "accepted": false
+    },
+    {
+      "mode": "reserved-electrode",
+      "case": 1,
+      "complete": false,
+      "successful_net_paths": [
+        "CH023_N_ELECTRODE",
+        "CH021_N_ELECTRODE",
+        "CH027_P_ELECTRODE"
+      ],
+      "failed_net": "CH023_N_ELECTRODE",
+      "accepted": false
+    },
+    {
+      "mode": "mux",
+      "case": 0,
+      "complete": false,
+      "successful_net_paths": [],
+      "failed_net": "CH018_P_MUX",
+      "accepted": false
+    },
+    {
+      "mode": "reserved-electrode",
+      "case": 3,
+      "complete": false,
+      "successful_net_paths": [
+        "CH023_N_ELECTRODE",
+        "CH021_N_ELECTRODE"
+      ],
+      "failed_net": "CH023_N_ELECTRODE",
+      "accepted": false
+    },
+    {
+      "mode": "reserved-electrode",
+      "case": 4,
+      "complete": false,
+      "successful_net_paths": [
+        "CH023_N_ELECTRODE",
+        "CH021_N_ELECTRODE"
+      ],
+      "failed_net": "CH023_N_ELECTRODE",
+      "accepted": false
+    }
+  ],
+  "model_case_count": 29,
+  "complete_joint_cases": 0,
+  "native_diagnostic": "s1-result.json",
+  "note": "Planning snapshots are exploratory and unaccepted; only the hash-pinned S1 diagnostic has byte-identical native PCB/ZIP replay."
+}

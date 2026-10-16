@@ -1,0 +1,9 @@
+test_disconnected_planar_path_is_rejected (test_escape_mesh.MeshSafety.test_disconnected_planar_path_is_rejected) ... ok
+test_narrow_corridor_without_grid (test_escape_mesh.MeshSafety.test_narrow_corridor_without_grid) ... ok
+test_power_keepout_forbids_the_only_transition (test_escape_mesh.MeshSafety.test_power_keepout_forbids_the_only_transition) ... ok
+test_via_transitions_have_full_paths (test_escape_mesh.MeshSafety.test_via_transitions_have_full_paths) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.008s
+
+OK

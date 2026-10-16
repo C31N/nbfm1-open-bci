@@ -1,0 +1,39 @@
+{
+  "changes": {
+    "2ac3aecb-9a62-4bc7-846a-75a782ad0474": {
+      "before": "(segment\n\t\t(start 24.2122 43.8401)\n\t\t(end 45.2809 43.8401)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 584)\n\t\t(uuid \"2ac3aecb-9a62-4bc7-846a-75a782ad0474\")\n\t)",
+      "after": ""
+    },
+    "2be13bbb-5c8b-457a-8d56-1fd7975b5586": {
+      "before": "(segment\n\t\t(start 45.2809 43.8401)\n\t\t(end 46.215 44.7742)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 584)\n\t\t(uuid \"2be13bbb-5c8b-457a-8d56-1fd7975b5586\")\n\t)",
+      "after": ""
+    },
+    "7feef6a7-ad8c-4e99-b6f1-4a863b9d9f6e": {
+      "before": "(segment\n\t\t(start 46.215 44.7742)\n\t\t(end 46.215 45.15)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 584)\n\t\t(uuid \"7feef6a7-ad8c-4e99-b6f1-4a863b9d9f6e\")\n\t)",
+      "after": ""
+    },
+    "8f5e8f5d-4ea6-4308-b438-632b4dd2387a": {
+      "before": "(segment\n\t\t(start 23.215 44.8373)\n\t\t(end 24.2122 43.8401)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 584)\n\t\t(uuid \"8f5e8f5d-4ea6-4308-b438-632b4dd2387a\")\n\t)",
+      "after": ""
+    },
+    "ddef0ce1-ae67-4b9f-9111-1086bd532429": {
+      "before": "(segment\n\t\t(start 23.215 45.15)\n\t\t(end 23.215 44.8373)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 584)\n\t\t(uuid \"ddef0ce1-ae67-4b9f-9111-1086bd532429\")\n\t)",
+      "after": ""
+    }
+  },
+  "additions": {
+    "138f419d-0a9d-40a4-b2e0-55f057e31af2": "(segment\n\t\t(start 25.983181 40.968037)\n\t\t(end 28.16361 43.028782)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 584)\n\t\t(uuid \"138f419d-0a9d-40a4-b2e0-55f057e31af2\")\n\t)",
+    "34c8ec41-d8bb-4af4-9a4c-0b6f3a3f42ef": "(segment\n\t\t(start 22.515 43.55)\n\t\t(end 25.983181 40.968037)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 584)\n\t\t(uuid \"34c8ec41-d8bb-4af4-9a4c-0b6f3a3f42ef\")\n\t)",
+    "4879a0f1-312a-48c6-a543-bd36e574ab99": "(segment\n\t\t(start 42.329022 40.609242)\n\t\t(end 46.115 43.55)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 584)\n\t\t(uuid \"4879a0f1-312a-48c6-a543-bd36e574ab99\")\n\t)",
+    "f2199d3b-40cd-4883-bf59-e3bb4fee43ec": "(segment\n\t\t(start 28.16361 43.028782)\n\t\t(end 42.329022 40.609242)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 584)\n\t\t(uuid \"f2199d3b-40cd-4883-bf59-e3bb4fee43ec\")\n\t)"
+  },
+  "baseline_sha256": "f2780989e2dee6233f207df1f420f7e89d8e855493eb6b1e7fb731d4a4dda1ea",
+  "accepted": false,
+  "routing_completed": false,
+  "fabrication_release": false,
+  "scope": "BLOCK2_MUX_S1_UNADOPTED_DIAGNOSTIC_139",
+  "baseline_archive_sha256": "f022d711bf860c6ec9383dae6f511c41189bf7348035d8d1e5e0e0ca6bcd6d1b",
+  "expected_pcb_sha256": "56b616fbca7bf5d9f14c75146a569fe23af904e7876800361a1e529f324c96de",
+  "expected_applied_sha256": "f8d6bf1135b695f7de5c246a0484d746b2dfebc76e1160ae1314502b1bdc47d8",
+  "expected_archive_sha256": "82da4d4838f9128a97f27860c91a1d6b81bbbbf4c3610ed7554afdde7183f33e"
+}

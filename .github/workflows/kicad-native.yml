@@ -179,6 +179,14 @@ jobs:
           /usr/bin/python3 hardware/eeg128-tdm/replay_escape139_probes.py \
             --case c26 --output-dir /tmp/escape139-c26-probe
 
+      - name: Test unadopted 139 escape diagnostic guards
+        run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_139_escape_diagnostic.py -v
+
+      - name: Replay unadopted 139 escape diagnostic
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/replay_139_escape_diagnostic.py \
+            --output-dir /tmp/escape139-unadopted-replay
+
       - name: Test unadopted CH030 probe replay guards
         run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch030_probe_replay.py -v
 
@@ -192,7 +200,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
-          audits = [Path("/tmp/kicad-audit"), Path("/tmp/ch018-reviewed-replay"), Path("/tmp/ch029-reviewed-replay"), Path("/tmp/ch025-reviewed-replay"), Path("/tmp/ch030-unadopted-probe"), Path("/tmp/ch019-reviewed-replay"), Path("/tmp/escape139-c22-probe"), Path("/tmp/escape139-c26-probe")]
+          audits = [Path("/tmp/kicad-audit"), Path("/tmp/ch018-reviewed-replay"), Path("/tmp/ch029-reviewed-replay"), Path("/tmp/ch025-reviewed-replay"), Path("/tmp/ch030-unadopted-probe"), Path("/tmp/ch019-reviewed-replay"), Path("/tmp/escape139-c22-probe"), Path("/tmp/escape139-c26-probe"), Path("/tmp/escape139-unadopted-replay")]
           forbidden_suffixes = {".gbr", ".gerber", ".drl", ".pos"}
           forbidden_names = {"placement.csv", "bom.csv", "cpl.csv"}
           exports = [
@@ -271,5 +279,10 @@ jobs:
             /tmp/escape139-c26-probe/drc-after.json
             /tmp/escape139-c26-probe/parity.json
             /tmp/escape139-c26-probe/result.json
+
+            /tmp/escape139-unadopted-replay/drc-before.json
+            /tmp/escape139-unadopted-replay/drc-after.json
+            /tmp/escape139-unadopted-replay/parity.json
+            /tmp/escape139-unadopted-replay/result.json
           if-no-files-found: error
           retention-days: 30

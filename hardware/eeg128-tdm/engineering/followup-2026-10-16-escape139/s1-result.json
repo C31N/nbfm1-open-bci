@@ -1,0 +1,21 @@
+{
+  "exact_reviewed_copper": true,
+  "footprints_unchanged": true,
+  "zone_outlines_unchanged": true,
+  "project_rules_unchanged": true,
+  "L3_power_loss_mm2": 0.0,
+  "L3_power_gain_mm2": 0.0,
+  "diagnostic_verified": true,
+  "accepted": false,
+  "violations": 0,
+  "warnings": 0,
+  "unconnected": 139,
+  "diagnostic_parity_findings": 0,
+  "regressed_nets": [],
+  "new_vias": 0,
+  "removed_vias": 0,
+  "pcb_sha256": "56b616fbca7bf5d9f14c75146a569fe23af904e7876800361a1e529f324c96de",
+  "archive_sha256": "82da4d4838f9128a97f27860c91a1d6b81bbbbf4c3610ed7554afdde7183f33e",
+  "routing_completed": false,
+  "fabrication_release": false
+}
