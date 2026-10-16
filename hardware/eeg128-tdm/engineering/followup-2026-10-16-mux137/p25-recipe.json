@@ -1,0 +1,62 @@
+{
+  "scope": "BLOCK2_MUX137_PREPARATION_P25",
+  "baseline_archive_sha256": "50e62977c202838640dfb00a6580f1e010c71503711e8a8fb85c7244a9d4a6f3",
+  "baseline_member_sha256": {
+    "eeg128-tdm.kicad_pcb": "8d25968ffff8564334a4ba21c45c25b58dece7b27e2ca77be6118eb28817b187",
+    "eeg128-tdm.kicad_pro": "3bb857f19a1de6b23841a13a881e6e3e61a77708e9063fdbbff9d519121795e0",
+    "eeg128-tdm.kicad_dru": "5b82bbcbf12c3c84da2be6bf13b4ab347a3de57e3226cab3c71c8523d4df3b10"
+  },
+  "changes": {
+    "01b9871f-8815-4287-a71e-fdd68f59007c": {
+      "before": "(segment\n\t\t(start 35.755 35.399999)\n\t\t(end 35.955 35.599999)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 165)\n\t\t(uuid \"01b9871f-8815-4287-a71e-fdd68f59007c\")\n\t)",
+      "after": ""
+    },
+    "18887d3e-63fc-4b6b-9cc6-41533e8bf085": {
+      "before": "(segment\n\t\t(start 35.655 35.199999)\n\t\t(end 35.755 35.299999)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 165)\n\t\t(uuid \"18887d3e-63fc-4b6b-9cc6-41533e8bf085\")\n\t)",
+      "after": ""
+    },
+    "2eecb68d-8be4-41f7-878a-c5e888dcd472": {
+      "before": "(segment\n\t\t(start 35.355 34.599999)\n\t\t(end 35.355 34.699999)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 165)\n\t\t(uuid \"2eecb68d-8be4-41f7-878a-c5e888dcd472\")\n\t)",
+      "after": ""
+    },
+    "3365e2fc-aa51-4abb-a091-3df84a750714": {
+      "before": "(segment\n\t\t(start 34.055 33.299999)\n\t\t(end 35.355 34.599999)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 165)\n\t\t(uuid \"3365e2fc-aa51-4abb-a091-3df84a750714\")\n\t)",
+      "after": ""
+    },
+    "3edb73d6-03a3-48de-b811-4d41a93ebf7e": {
+      "before": "(segment\n\t\t(start 35.555 34.999999)\n\t\t(end 35.655 35.099999)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 165)\n\t\t(uuid \"3edb73d6-03a3-48de-b811-4d41a93ebf7e\")\n\t)",
+      "after": ""
+    },
+    "47c88207-ffc4-481e-b8bd-8bb5ac322f07": {
+      "before": "(segment\n\t\t(start 35.355 34.699999)\n\t\t(end 35.555 34.899999)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 165)\n\t\t(uuid \"47c88207-ffc4-481e-b8bd-8bb5ac322f07\")\n\t)",
+      "after": ""
+    },
+    "69d1a0e9-aafa-4b35-b87a-0db05a1243a1": {
+      "before": "(segment\n\t\t(start 35.955 35.599999)\n\t\t(end 36.055 35.85)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 165)\n\t\t(uuid \"69d1a0e9-aafa-4b35-b87a-0db05a1243a1\")\n\t)",
+      "after": ""
+    },
+    "7de72946-9c73-4689-91eb-16e5844d6b71": {
+      "before": "(segment\n\t\t(start 35.655 35.099999)\n\t\t(end 35.655 35.199999)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 165)\n\t\t(uuid \"7de72946-9c73-4689-91eb-16e5844d6b71\")\n\t)",
+      "after": ""
+    },
+    "c8833984-7259-4719-971c-3be2379817f0": {
+      "before": "(segment\n\t\t(start 35.555 34.899999)\n\t\t(end 35.555 34.999999)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 165)\n\t\t(uuid \"c8833984-7259-4719-971c-3be2379817f0\")\n\t)",
+      "after": ""
+    },
+    "dbcffb5e-f2b2-44b5-94ad-2a55afe8e605": {
+      "before": "(segment\n\t\t(start 35.755 35.299999)\n\t\t(end 35.755 35.399999)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 165)\n\t\t(uuid \"dbcffb5e-f2b2-44b5-94ad-2a55afe8e605\")\n\t)",
+      "after": ""
+    }
+  },
+  "additions": {
+    "0ba3ef7f-07ab-4134-b409-72194ea87449": "(segment\n\t\t(start 34.055 33.299999)\n\t\t(end 34.158965 33.019447)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 165)\n\t\t(uuid \"0ba3ef7f-07ab-4134-b409-72194ea87449\")\n\t)",
+    "851ad359-5820-4640-8b36-3d5fa005034a": "(segment\n\t\t(start 35.386504 34.290167)\n\t\t(end 36.055 35.85)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 165)\n\t\t(uuid \"851ad359-5820-4640-8b36-3d5fa005034a\")\n\t)",
+    "b7a946c9-9f50-45f6-8379-5332bcbfcb5a": "(segment\n\t\t(start 34.158965 33.019447)\n\t\t(end 35.386504 34.290167)\n\t\t(width 0.15)\n\t\t(layer \"F.Cu\")\n\t\t(net 165)\n\t\t(uuid \"b7a946c9-9f50-45f6-8379-5332bcbfcb5a\")\n\t)"
+  },
+  "expected_applied_sha256": "171ef07a82320db9e5db85202aebe6aa3cfdde9245486931970653ef016ae525",
+  "expected_pcb_sha256": "1288c3eceb85f7660424c66a51613ed2231986852bd2f616eb042ef44ca36608",
+  "expected_archive_sha256": "b0f2de0a743ca9965fefa024830adb89be9af2ad7713f060efe89179c2e90b21",
+  "routing_completed": false,
+  "fabrication_release": false,
+  "accepted": false
+}

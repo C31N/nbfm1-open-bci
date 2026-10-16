@@ -22,7 +22,7 @@ d97166474c9dfe6d4aabd5c084b2d3cdec6fb594a054cae051eee29387c1cfa1  followup-2026-
 82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18  followup-2026-10-16-controls-header139/ruff.log
 04a85ef149af539aa4706dc2e248036b7fbc39c25ffde37b91a802147dc81fdf  followup-2026-10-16-controls-header139/search-summary.json
 91ddfc1fd54faa524dc5ea68c046fb5c2f0f4fc44f30a92068d2e5fb080ea8a0  followup-2026-10-16-controls-header139/zero-debt.log
-b99a12fe7ab963eb01de825552588520db14034eedd1a71bffbd2eb71ff51716  ../../../.github/workflows/kicad-native.yml
+7984e31687cbc07f43798f5314e3677447ce8c174715c3f728f5f9cb82864bcd  ../../../.github/workflows/kicad-native.yml
 f022d711bf860c6ec9383dae6f511c41189bf7348035d8d1e5e0e0ca6bcd6d1b  block2-ch019-electrode-closed139.zip
 e8f94af8409687e70f1f23eb8558645bda54021807d9fc7983fbd3d6bb357c99  current-routing-status.json
 922c11a4030121b61a2afaeb1013c9d11d5acfde3c1e2c642fbc4bb06d1ccee9  ../analyze_139_escape_blockers.py

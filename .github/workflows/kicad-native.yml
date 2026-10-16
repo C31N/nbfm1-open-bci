@@ -215,6 +215,21 @@ jobs:
           /usr/bin/python3 hardware/eeg128-tdm/replay_trunks139.py --case joint \
             --output-dir /tmp/joint-trunks137-unadopted-replay
 
+      - name: Test MUX137 followup replay guards
+        run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_mux137_followup.py -v
+
+      - name: Replay MUX137 S0 and CH025 preparatory diagnostics
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/replay_mux137_followup.py --case s0 \
+            --output-dir /tmp/mux137-s0-followup
+          /usr/bin/python3 hardware/eeg128-tdm/replay_mux137_followup.py --case p25 \
+            --output-dir /tmp/mux137-p25-followup
+
+      - name: Replay combined MUX137 preparatory diagnostic
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/replay_mux137_followup.py --case joint \
+            --output-dir /tmp/mux137-joint-followup
+
       - name: Test unadopted CH030 probe replay guards
         run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch030_probe_replay.py -v
 
@@ -228,7 +243,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
-          audits = [Path("/tmp/kicad-audit"), Path("/tmp/ch018-reviewed-replay"), Path("/tmp/ch029-reviewed-replay"), Path("/tmp/ch025-reviewed-replay"), Path("/tmp/ch030-unadopted-probe"), Path("/tmp/ch019-reviewed-replay"), Path("/tmp/escape139-c22-probe"), Path("/tmp/escape139-c26-probe"), Path("/tmp/escape139-unadopted-replay"), Path("/tmp/controls139-unadopted"), Path("/tmp/header139-unadopted"), Path("/tmp/ch018-pair-unadopted-replay"), Path("/tmp/ch021-trunk-unadopted-replay"), Path("/tmp/joint-trunks137-unadopted-replay")]
+          audits = [Path("/tmp/kicad-audit"), Path("/tmp/ch018-reviewed-replay"), Path("/tmp/ch029-reviewed-replay"), Path("/tmp/ch025-reviewed-replay"), Path("/tmp/ch030-unadopted-probe"), Path("/tmp/ch019-reviewed-replay"), Path("/tmp/escape139-c22-probe"), Path("/tmp/escape139-c26-probe"), Path("/tmp/escape139-unadopted-replay"), Path("/tmp/controls139-unadopted"), Path("/tmp/header139-unadopted"), Path("/tmp/ch018-pair-unadopted-replay"), Path("/tmp/ch021-trunk-unadopted-replay"), Path("/tmp/joint-trunks137-unadopted-replay"), Path("/tmp/mux137-s0-followup"), Path("/tmp/mux137-p25-followup"), Path("/tmp/mux137-joint-followup")]
           forbidden_suffixes = {".gbr", ".gerber", ".drl", ".pos"}
           forbidden_names = {"placement.csv", "bom.csv", "cpl.csv"}
           exports = [
@@ -332,5 +347,17 @@ jobs:
             /tmp/joint-trunks137-unadopted-replay/drc-after.json
             /tmp/joint-trunks137-unadopted-replay/parity.json
             /tmp/joint-trunks137-unadopted-replay/result.json
+            /tmp/mux137-s0-followup/drc-before.json
+            /tmp/mux137-s0-followup/drc-after.json
+            /tmp/mux137-s0-followup/parity.json
+            /tmp/mux137-s0-followup/result.json
+            /tmp/mux137-p25-followup/drc-before.json
+            /tmp/mux137-p25-followup/drc-after.json
+            /tmp/mux137-p25-followup/parity.json
+            /tmp/mux137-p25-followup/result.json
+            /tmp/mux137-joint-followup/drc-before.json
+            /tmp/mux137-joint-followup/drc-after.json
+            /tmp/mux137-joint-followup/parity.json
+            /tmp/mux137-joint-followup/result.json
           if-no-files-found: error
           retention-days: 30

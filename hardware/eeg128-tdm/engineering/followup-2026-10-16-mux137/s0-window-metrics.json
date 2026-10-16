@@ -1,0 +1,43 @@
+{
+  "before": {
+    "window": {
+      "bounds": [
+        34.82596406629771,
+        57.175699999,
+        59.0,
+        61.734900001
+      ],
+      "component_area_mm2": 36.19802805945347,
+      "legal_via_area_mm2": 0.0,
+      "windows": []
+    },
+    "length_mm": 348.4299543883386,
+    "vias": 13
+  },
+  "after": {
+    "window": {
+      "bounds": [
+        33.211542644746224,
+        52.35738302907943,
+        59.0,
+        61.734900001
+      ],
+      "component_area_mm2": 73.48181851743973,
+      "legal_via_area_mm2": 0.0,
+      "windows": []
+    },
+    "length_mm": 361.0717925096596,
+    "vias": 13
+  },
+  "case": "s0",
+  "analyzed_net": "CH020_N_MUX",
+  "changed_net": "MUX_S0",
+  "accepted": false,
+  "routing_completed": false,
+  "fabrication_release": false,
+  "delta_length_mm": 12.641838121320973,
+  "new_vias": 0,
+  "new_In2_tracks": 0,
+  "all_new_tracks_F_Cu": true,
+  "new_copper_inside_025_edge_domain": true
+}

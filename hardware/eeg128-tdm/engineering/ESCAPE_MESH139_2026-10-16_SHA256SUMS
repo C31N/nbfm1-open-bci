@@ -17,7 +17,7 @@ aae555649295f96969aab470354f6bf0859417d7cf57d05631174fe8ec411b3f  followup-2026-
 8eba2747ea231e522128fce919975e3f01c510451ae095065e56637f32cec195  followup-2026-10-16-escape139/s1-result.json
 fc02bab595b1090eb15a08978f463fb22a11a0e1997e3943c2651e52d92e22fd  followup-2026-10-16-escape139/s1-target-window.json
 f32ac46b2bc0daceee7c9dcaf8c902c06b0516d27c4e3a9274b31b20baa24c97  followup-2026-10-16-escape139/search-summary.json
-b99a12fe7ab963eb01de825552588520db14034eedd1a71bffbd2eb71ff51716  ../../../.github/workflows/kicad-native.yml
+7984e31687cbc07f43798f5314e3677447ce8c174715c3f728f5f9cb82864bcd  ../../../.github/workflows/kicad-native.yml
 f022d711bf860c6ec9383dae6f511c41189bf7348035d8d1e5e0e0ca6bcd6d1b  block2-ch019-electrode-closed139.zip
 e8f94af8409687e70f1f23eb8558645bda54021807d9fc7983fbd3d6bb357c99  current-routing-status.json
 d3f63603259f5d8fe41ab24a704ad430fe7345fba76eb452c2b467348b7a9b96  ../escape_mesh.py

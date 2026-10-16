@@ -1,0 +1,344 @@
+{
+  "accepted": false,
+  "model_only": true,
+  "results": [
+    {
+      "model_only": true,
+      "accepted": false,
+      "routing_completed": false,
+      "fabrication_release": false,
+      "removed_mux_neighbor": "none",
+      "removed_layer": "none",
+      "E22_restored": false,
+      "removed_mux_restored": false,
+      "region_mm": [
+        12.0,
+        0.5,
+        59.0,
+        69.0
+      ],
+      "power_exclusion_mm": 0.505,
+      "edge_clearance_mm": 0.25,
+      "component_counts": [
+        250,
+        155,
+        73
+      ],
+      "source_target_connected": false,
+      "reachable_components": 36,
+      "legal_via_patches": 101
+    },
+    {
+      "model_only": true,
+      "accepted": false,
+      "routing_completed": false,
+      "fabrication_release": false,
+      "removed_mux_neighbor": "CH017_N_MUX",
+      "removed_layer": "In2.Cu",
+      "E22_restored": false,
+      "removed_mux_restored": false,
+      "region_mm": [
+        12.0,
+        0.5,
+        59.0,
+        69.0
+      ],
+      "power_exclusion_mm": 0.505,
+      "edge_clearance_mm": 0.25,
+      "component_counts": [
+        250,
+        155,
+        71
+      ],
+      "source_target_connected": false,
+      "reachable_components": 36,
+      "legal_via_patches": 101
+    },
+    {
+      "model_only": true,
+      "accepted": false,
+      "routing_completed": false,
+      "fabrication_release": false,
+      "removed_mux_neighbor": "CH017_N_MUX",
+      "removed_layer": "B.Cu",
+      "E22_restored": false,
+      "removed_mux_restored": false,
+      "region_mm": [
+        12.0,
+        0.5,
+        59.0,
+        69.0
+      ],
+      "power_exclusion_mm": 0.505,
+      "edge_clearance_mm": 0.25,
+      "component_counts": [
+        250,
+        154,
+        73
+      ],
+      "source_target_connected": false,
+      "reachable_components": 36,
+      "legal_via_patches": 101
+    },
+    {
+      "model_only": true,
+      "accepted": false,
+      "routing_completed": false,
+      "fabrication_release": false,
+      "removed_mux_neighbor": "CH018_N_MUX",
+      "removed_layer": "In2.Cu",
+      "E22_restored": false,
+      "removed_mux_restored": false,
+      "region_mm": [
+        12.0,
+        0.5,
+        59.0,
+        69.0
+      ],
+      "power_exclusion_mm": 0.505,
+      "edge_clearance_mm": 0.25,
+      "component_counts": [
+        250,
+        155,
+        71
+      ],
+      "source_target_connected": true,
+      "reachable_components": 90,
+      "legal_via_patches": 102
+    },
+    {
+      "model_only": true,
+      "accepted": false,
+      "routing_completed": false,
+      "fabrication_release": false,
+      "removed_mux_neighbor": "CH018_N_MUX",
+      "removed_layer": "B.Cu",
+      "E22_restored": false,
+      "removed_mux_restored": false,
+      "region_mm": [
+        12.0,
+        0.5,
+        59.0,
+        69.0
+      ],
+      "power_exclusion_mm": 0.505,
+      "edge_clearance_mm": 0.25,
+      "component_counts": [
+        250,
+        155,
+        73
+      ],
+      "source_target_connected": false,
+      "reachable_components": 36,
+      "legal_via_patches": 101
+    },
+    {
+      "model_only": true,
+      "accepted": false,
+      "routing_completed": false,
+      "fabrication_release": false,
+      "removed_mux_neighbor": "CH019_P_MUX",
+      "removed_layer": "In2.Cu",
+      "E22_restored": false,
+      "removed_mux_restored": false,
+      "region_mm": [
+        12.0,
+        0.5,
+        59.0,
+        69.0
+      ],
+      "power_exclusion_mm": 0.505,
+      "edge_clearance_mm": 0.25,
+      "component_counts": [
+        250,
+        155,
+        67
+      ],
+      "source_target_connected": true,
+      "reachable_components": 88,
+      "legal_via_patches": 102
+    },
+    {
+      "model_only": true,
+      "accepted": false,
+      "routing_completed": false,
+      "fabrication_release": false,
+      "removed_mux_neighbor": "CH019_P_MUX",
+      "removed_layer": "B.Cu",
+      "E22_restored": false,
+      "removed_mux_restored": false,
+      "region_mm": [
+        12.0,
+        0.5,
+        59.0,
+        69.0
+      ],
+      "power_exclusion_mm": 0.505,
+      "edge_clearance_mm": 0.25,
+      "component_counts": [
+        250,
+        154,
+        73
+      ],
+      "source_target_connected": false,
+      "reachable_components": 36,
+      "legal_via_patches": 101
+    },
+    {
+      "model_only": true,
+      "accepted": false,
+      "routing_completed": false,
+      "fabrication_release": false,
+      "removed_mux_neighbor": "CH025_P_MUX",
+      "removed_layer": "In2.Cu",
+      "E22_restored": false,
+      "removed_mux_restored": false,
+      "region_mm": [
+        12.0,
+        0.5,
+        59.0,
+        69.0
+      ],
+      "power_exclusion_mm": 0.505,
+      "edge_clearance_mm": 0.25,
+      "component_counts": [
+        250,
+        155,
+        69
+      ],
+      "source_target_connected": false,
+      "reachable_components": 36,
+      "legal_via_patches": 102
+    },
+    {
+      "model_only": true,
+      "accepted": false,
+      "routing_completed": false,
+      "fabrication_release": false,
+      "removed_mux_neighbor": "CH025_P_MUX",
+      "removed_layer": "B.Cu",
+      "E22_restored": false,
+      "removed_mux_restored": false,
+      "region_mm": [
+        12.0,
+        0.5,
+        59.0,
+        69.0
+      ],
+      "power_exclusion_mm": 0.505,
+      "edge_clearance_mm": 0.25,
+      "component_counts": [
+        250,
+        147,
+        73
+      ],
+      "source_target_connected": false,
+      "reachable_components": 36,
+      "legal_via_patches": 103
+    },
+    {
+      "model_only": true,
+      "accepted": false,
+      "routing_completed": false,
+      "fabrication_release": false,
+      "removed_mux_neighbor": "CH025_N_MUX",
+      "removed_layer": "In2.Cu",
+      "E22_restored": false,
+      "removed_mux_restored": false,
+      "region_mm": [
+        12.0,
+        0.5,
+        59.0,
+        69.0
+      ],
+      "power_exclusion_mm": 0.505,
+      "edge_clearance_mm": 0.25,
+      "component_counts": [
+        250,
+        155,
+        66
+      ],
+      "source_target_connected": false,
+      "reachable_components": 32,
+      "legal_via_patches": 103
+    },
+    {
+      "model_only": true,
+      "accepted": false,
+      "routing_completed": false,
+      "fabrication_release": false,
+      "removed_mux_neighbor": "CH025_N_MUX",
+      "removed_layer": "B.Cu",
+      "E22_restored": false,
+      "removed_mux_restored": false,
+      "region_mm": [
+        12.0,
+        0.5,
+        59.0,
+        69.0
+      ],
+      "power_exclusion_mm": 0.505,
+      "edge_clearance_mm": 0.25,
+      "component_counts": [
+        250,
+        155,
+        73
+      ],
+      "source_target_connected": false,
+      "reachable_components": 36,
+      "legal_via_patches": 101
+    },
+    {
+      "model_only": true,
+      "accepted": false,
+      "routing_completed": false,
+      "fabrication_release": false,
+      "removed_mux_neighbor": "CH026_N_MUX",
+      "removed_layer": "In2.Cu",
+      "E22_restored": false,
+      "removed_mux_restored": false,
+      "region_mm": [
+        12.0,
+        0.5,
+        59.0,
+        69.0
+      ],
+      "power_exclusion_mm": 0.505,
+      "edge_clearance_mm": 0.25,
+      "component_counts": [
+        250,
+        155,
+        70
+      ],
+      "source_target_connected": false,
+      "reachable_components": 33,
+      "legal_via_patches": 100
+    },
+    {
+      "model_only": true,
+      "accepted": false,
+      "routing_completed": false,
+      "fabrication_release": false,
+      "removed_mux_neighbor": "CH026_N_MUX",
+      "removed_layer": "B.Cu",
+      "E22_restored": false,
+      "removed_mux_restored": false,
+      "region_mm": [
+        12.0,
+        0.5,
+        59.0,
+        69.0
+      ],
+      "power_exclusion_mm": 0.505,
+      "edge_clearance_mm": 0.25,
+      "component_counts": [
+        250,
+        152,
+        73
+      ],
+      "source_target_connected": false,
+      "reachable_components": 36,
+      "legal_via_patches": 101
+    }
+  ]
+}

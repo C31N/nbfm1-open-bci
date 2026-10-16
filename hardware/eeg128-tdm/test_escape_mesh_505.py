@@ -1,0 +1,82 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+"""Path safety contracts for the optional Shapely 2.1 proposal engine."""
+from __future__ import annotations
+
+import unittest
+import shapely
+from unittest.mock import patch
+from shapely.geometry import box, Polygon, LineString
+import pcbnew
+from escape_mesh_505 import mesh_route
+from shapely.geometry.base import BaseGeometry
+from route_targeted_closure import RoutingPath
+
+class Board:
+    def GetTracks(self) -> list[pcbnew.PCB_TRACK]:return []
+
+@unittest.skipUnless(hasattr(shapely,'constrained_delaunay_triangles'),'optional Shapely 2.1 mesh runtime required')
+class MeshSafety(unittest.TestCase):
+    def route(self, blocked: list[BaseGeometry], via: BaseGeometry, power: BaseGeometry,
+              allow: bool = True) -> RoutingPath | None:
+        with patch('escape_mesh_505.obstacles',return_value=(blocked,via)):
+            return mesh_route(Board(),(1,5),(9,5),1,(pcbnew.F_Cu,pcbnew.B_Cu),
+                              power,box(0,0,10,10),allow_vias=allow)
+
+    def test_narrow_corridor_without_grid(self) -> None:
+        obstacles=box(4,0,6,4.99).union(box(4,5.01,6,10))
+        path=self.route([obstacles,box(0,0,10,10)],Polygon(),Polygon(),False)
+        self.assertIsNotNone(path)
+        self.assertTrue(all(not LineString([a[1:],b[1:]]).intersects(obstacles)
+                            for a,b in zip(path,path[1:])))
+
+    def test_disconnected_planar_path_is_rejected(self) -> None:
+        wall=box(4,0,6,10)
+        self.assertIsNone(self.route([wall,Polygon()],Polygon(),Polygon(),False))
+
+    def test_via_transitions_have_full_paths(self) -> None:
+        wall=box(4,0,6,10)
+        path=self.route([wall,Polygon()],Polygon(),Polygon())
+        self.assertIsNotNone(path)
+        transitions=[a for a,b in zip(path,path[1:]) if a[0]!=b[0]]
+        self.assertEqual(len(transitions),2)
+        self.assertEqual(path[0],(0,1.,5.));self.assertEqual(path[-1],(0,9.,5.))
+
+    def test_power_keepout_forbids_the_only_transition(self) -> None:
+        wall=box(4,0,6,10)
+        self.assertIsNone(self.route([wall,Polygon()],Polygon(),box(0,0,10,10)))
+
+    def test_inner_track_cannot_cross_power_outline(self) -> None:
+        with patch('escape_mesh_505.obstacles',return_value=([Polygon(),Polygon()],Polygon())):
+            path=mesh_route(Board(),(1,5),(9,5),1,(pcbnew.B_Cu,pcbnew.In2_Cu),
+                            box(4,0,6,10),box(0,0,10,10),start_layer=1,goal_layer=1,
+                            allow_vias=False)
+        self.assertIsNone(path)
+
+    def test_strict_505_inner_track_exclusion(self) -> None:
+        power=box(4,4,6,6)
+        region=box(0,3.5,10,3.7)
+        with patch('escape_mesh_505.obstacles',return_value=([region,Polygon()],Polygon())):
+            path=mesh_route(Board(),(1,3.6),(9,3.6),1,(pcbnew.F_Cu,pcbnew.In2_Cu),
+                            power,region,start_layer=1,goal_layer=1,allow_vias=False)
+        self.assertIsNone(path)
+        self.assertGreater(region.difference(power.buffer(.280)).area,0)
+
+    def test_sparse_via_windows_require_all_three_layers(self) -> None:
+        region=box(0,0,10,10)
+        shapes={pcbnew.F_Cu:box(3,0,3.2,10).union(box(7,0,7.2,10)),
+                pcbnew.B_Cu:box(6,0,6.2,10),pcbnew.In2_Cu:box(4,0,4.2,10)}
+        legal=box(1.8,4.8,2.2,5.2).union(box(4.8,4.8,5.2,5.2)).union(box(7.8,4.8,8.2,5.2))
+        def mock_obstacles(*args: object) -> tuple[list[BaseGeometry], BaseGeometry]:
+            layers=args[-1]
+            return [shapes[layers[0]],shapes[layers[1]]],region.difference(legal)
+        with patch('escape_mesh_505.obstacles',side_effect=mock_obstacles):
+            for layers in [(pcbnew.F_Cu,pcbnew.B_Cu),(pcbnew.F_Cu,pcbnew.In2_Cu)]:
+                self.assertIsNone(mesh_route(Board(),(1,5),(9,5),1,layers,Polygon(),region))
+            path=mesh_route(Board(),(1,5),(9,5),1,
+                            (pcbnew.F_Cu,pcbnew.B_Cu,pcbnew.In2_Cu),Polygon(),region)
+        self.assertIsNotNone(path)
+        self.assertEqual({p[0] for p in path},{0,1,2})
+
+
+if __name__ == '__main__':
+    unittest.main()

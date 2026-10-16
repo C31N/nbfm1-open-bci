@@ -1,0 +1,65 @@
+{
+  "before": {
+    "window": {
+      "bounds": [
+        33.99354694483979,
+        34.21932170237969,
+        35.62705988313647,
+        36.99606362192614
+      ],
+      "component_area_mm2": 3.1496984023337946,
+      "legal_via_area_mm2": 0.0,
+      "windows": []
+    },
+    "length_mm": 36.996787449491485,
+    "vias": 7
+  },
+  "after": {
+    "window": {
+      "bounds": [
+        26.366701579365554,
+        31.756285222598944,
+        35.62705988313647,
+        37.03642385580828
+      ],
+      "component_area_mm2": 27.069226488406635,
+      "legal_via_area_mm2": 1.0570131440632835,
+      "windows": [
+        {
+          "point": [
+            28.4875,
+            34.7
+          ],
+          "area_mm2": 0.5912499951499981
+        },
+        {
+          "point": [
+            32.825,
+            33.635906769450926
+          ],
+          "area_mm2": 0.4598131143232866
+        },
+        {
+          "point": [
+            29.6925,
+            32.2899995
+          ],
+          "area_mm2": 0.005950034589998818
+        }
+      ]
+    },
+    "length_mm": 37.40356430746027,
+    "vias": 7
+  },
+  "case": "p25",
+  "analyzed_net": "CH024_P_MUX",
+  "changed_net": "CH025_P_MUX",
+  "accepted": false,
+  "routing_completed": false,
+  "fabrication_release": false,
+  "delta_length_mm": 0.4067768579687865,
+  "new_vias": 0,
+  "new_In2_tracks": 0,
+  "all_new_tracks_F_Cu": true,
+  "new_copper_inside_025_edge_domain": true
+}

@@ -1,0 +1,24 @@
+{
+  "source_validation": "PASS",
+  "revision": "A0",
+  "fabrication_release": false,
+  "human_connected_use_authorized": false,
+  "metrics": {
+    "schematic_instantiated_symbols": 642,
+    "schematic_wires": 2026,
+    "pcb_footprints": 642,
+    "pcb_segments": 785,
+    "pcb_vias": 322,
+    "pcb_zones": 4
+  },
+  "release_gate_failures": [
+    "routing_completed",
+    "copper_zones_completed",
+    "drc_passed",
+    "schematic_parity_passed",
+    "bom_cpl_crosscheck_passed",
+    "gerber_visual_review_passed",
+    "isolated_bench_bringup_passed",
+    "noise_settling_validation_passed"
+  ]
+}
