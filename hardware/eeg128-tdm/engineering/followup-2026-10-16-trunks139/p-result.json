@@ -1,0 +1,23 @@
+{
+  "violations": 0,
+  "warnings": 0,
+  "unconnected": 138,
+  "exact_reviewed_copper": true,
+  "footprints_unchanged": true,
+  "zone_outlines_unchanged": true,
+  "project_rules_unchanged": true,
+  "L3_power_loss_mm2": 0.0,
+  "L3_power_gain_mm2": 0.0,
+  "diagnostic_parity_findings": 0,
+  "case": "p",
+  "closed_nets": [
+    "CH018_P_MUX"
+  ],
+  "regressed_nets": [],
+  "kicad_version": "8.0.9",
+  "pcb_sha256": "079addd7c16830d8f79580d35255df8ea213017d716a38e883e2e3c20f194d34",
+  "archive_sha256": "957b2f612755c78d8642e1b8bdbc66204668b36aade4748a36d286140166e02b",
+  "routing_completed": false,
+  "fabrication_release": false,
+  "accepted": false
+}

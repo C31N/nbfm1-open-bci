@@ -1,0 +1,288 @@
+{
+  "accepted": false,
+  "new_vias": [
+    {
+      "uuid": "2bfabe0b-c286-40db-b708-5dc1f7a167ff",
+      "net": "CH018_P_MUX",
+      "point": [
+        49.415923,
+        24.733935
+      ],
+      "distance_to_power_outline_mm": 12.266065
+    },
+    {
+      "uuid": "495b1d94-6fbb-475c-8818-ef88c11fd281",
+      "net": "CH018_P_MUX",
+      "point": [
+        43.093735,
+        32.147509
+      ],
+      "distance_to_power_outline_mm": 4.8524910000000006
+    },
+    {
+      "uuid": "4fa21dcf-8f6d-4a1f-bf93-02e8e1a4df41",
+      "net": "CH018_P_MUX",
+      "point": [
+        46.841954,
+        34.399999
+      ],
+      "distance_to_power_outline_mm": 2.600000999999999
+    },
+    {
+      "uuid": "5ee98207-6aa7-4083-80a9-0ded4a9dfb20",
+      "net": "CH018_P_MUX",
+      "point": [
+        46.086467,
+        24.343313
+      ],
+      "distance_to_power_outline_mm": 12.656687000000002
+    },
+    {
+      "uuid": "ac720be9-c65e-4853-851d-b3b8906eed8a",
+      "net": "CH018_P_MUX",
+      "point": [
+        49.440043,
+        26.997056
+      ],
+      "distance_to_power_outline_mm": 10.002944
+    },
+    {
+      "uuid": "bf33b298-3ac2-47b0-9905-4bce8fed76c5",
+      "net": "CH018_P_MUX",
+      "point": [
+        40.347743,
+        33.975186
+      ],
+      "distance_to_power_outline_mm": 3.0248139999999992
+    },
+    {
+      "uuid": "e01f7292-ea08-46ad-99b3-0ccffd09d2f0",
+      "net": "CH018_P_MUX",
+      "point": [
+        32.2625,
+        35.646231
+      ],
+      "distance_to_power_outline_mm": 1.3537689999999998
+    },
+    {
+      "uuid": "e829c75d-2767-49e3-81f6-d6393bd01ee4",
+      "net": "CH018_P_MUX",
+      "point": [
+        46.54665,
+        22.020196
+      ],
+      "distance_to_power_outline_mm": 14.979804000000001
+    },
+    {
+      "uuid": "f6ab267a-e4b4-47c0-85f9-6920b9324a40",
+      "net": "CH018_P_MUX",
+      "point": [
+        34.050003,
+        34.378495
+      ],
+      "distance_to_power_outline_mm": 2.621504999999999
+    },
+    {
+      "uuid": "4df31b90-6356-4f17-bdeb-b4be4c41ecdb",
+      "net": "CH021_N_ELECTRODE",
+      "point": [
+        44.077095,
+        22.533169
+      ],
+      "distance_to_power_outline_mm": 14.466830999999999
+    },
+    {
+      "uuid": "5095327b-3785-4401-b3d9-a66ff6434281",
+      "net": "CH021_N_ELECTRODE",
+      "point": [
+        33.637364,
+        19.491039
+      ],
+      "distance_to_power_outline_mm": 17.508961
+    },
+    {
+      "uuid": "5cf11fda-a3ea-4b01-95c7-82b5ffd7f96c",
+      "net": "CH021_N_ELECTRODE",
+      "point": [
+        52.707002,
+        7.486252
+      ],
+      "distance_to_power_outline_mm": 29.513748000000003
+    },
+    {
+      "uuid": "9b49928b-5101-4ddd-8b33-bc4cd3f7eb77",
+      "net": "CH021_N_ELECTRODE",
+      "point": [
+        40.804639,
+        32.990398
+      ],
+      "distance_to_power_outline_mm": 4.009602000000001
+    },
+    {
+      "uuid": "9ce08ca4-b21a-475b-90dc-d9efe286b96f",
+      "net": "CH021_N_ELECTRODE",
+      "point": [
+        32.974997,
+        29.9
+      ],
+      "distance_to_power_outline_mm": 7.100000000000001
+    },
+    {
+      "uuid": "c2f6ac49-457f-4420-8b8c-99a4301488f9",
+      "net": "CH023_N_ELECTRODE",
+      "point": [
+        50.4762,
+        8.808369
+      ],
+      "distance_to_power_outline_mm": 28.191631
+    },
+    {
+      "uuid": "cb5a6a49-a56c-4768-8ecb-5050cf3e63c3",
+      "net": "CH023_N_ELECTRODE",
+      "point": [
+        41.524166,
+        6.452785
+      ],
+      "distance_to_power_outline_mm": 30.547214999999998
+    }
+  ],
+  "new_In2_tracks": [
+    {
+      "uuid": "30243610-2296-4f0c-a796-db57f32cbdc1",
+      "net": "CH017_N_MUX",
+      "distance_to_power_outline_mm": 4.365620999999997
+    },
+    {
+      "uuid": "70e162dd-6a53-433a-85a4-b6fd5d5ae4ac",
+      "net": "CH017_N_MUX",
+      "distance_to_power_outline_mm": 6.455608000000002
+    },
+    {
+      "uuid": "b45a116c-f9eb-4d05-9864-de828c5747cd",
+      "net": "CH017_N_MUX",
+      "distance_to_power_outline_mm": 0.6000000000000014
+    },
+    {
+      "uuid": "baaf6c3f-d070-43e4-b77d-54b61874c771",
+      "net": "CH017_N_MUX",
+      "distance_to_power_outline_mm": 7.581599000000001
+    },
+    {
+      "uuid": "bc2eb7f7-376c-4578-9f04-c76007ce56c1",
+      "net": "CH017_N_MUX",
+      "distance_to_power_outline_mm": 1.3918469999999985
+    },
+    {
+      "uuid": "eef97b9b-0710-4801-826e-efa48689ef0f",
+      "net": "CH017_N_MUX",
+      "distance_to_power_outline_mm": 0.5500010000000017
+    },
+    {
+      "uuid": "4c3bd879-eac9-43ef-8654-718ae595db3c",
+      "net": "CH018_P_MUX",
+      "distance_to_power_outline_mm": 12.266065
+    },
+    {
+      "uuid": "5da1681c-ae30-453f-9980-831fa0d62012",
+      "net": "CH018_P_MUX",
+      "distance_to_power_outline_mm": 2.621504999999999
+    },
+    {
+      "uuid": "6e89c6a6-525b-4f93-a24c-c00f3a0469b5",
+      "net": "CH018_P_MUX",
+      "distance_to_power_outline_mm": 14.887087000000001
+    },
+    {
+      "uuid": "9371ab7e-9203-435e-ba30-3178126b7a09",
+      "net": "CH018_P_MUX",
+      "distance_to_power_outline_mm": 3.0248139999999992
+    },
+    {
+      "uuid": "ab1ac4b3-1d91-464a-9c26-7025bd6e2f62",
+      "net": "CH018_P_MUX",
+      "distance_to_power_outline_mm": 2.600000999999999
+    },
+    {
+      "uuid": "abfebb65-1059-41a9-b876-0de63d24e3bd",
+      "net": "CH018_P_MUX",
+      "distance_to_power_outline_mm": 4.8524910000000006
+    },
+    {
+      "uuid": "20722dea-3253-440b-814c-c28a19208268",
+      "net": "CH021_N_ELECTRODE",
+      "distance_to_power_outline_mm": 15.721675999999999
+    },
+    {
+      "uuid": "63a9878e-6885-493f-9757-2539899c475d",
+      "net": "CH021_N_ELECTRODE",
+      "distance_to_power_outline_mm": 24.691466
+    },
+    {
+      "uuid": "89e9ba9a-e37e-4579-bc6c-7cda457d2374",
+      "net": "CH021_N_ELECTRODE",
+      "distance_to_power_outline_mm": 3.7062409999999986
+    },
+    {
+      "uuid": "a134058e-1183-44f4-8f7d-60bcc64412e7",
+      "net": "CH021_N_ELECTRODE",
+      "distance_to_power_outline_mm": 24.976646000000002
+    },
+    {
+      "uuid": "d0cf5001-b892-461c-9e5b-eca72e49b53a",
+      "net": "CH021_N_ELECTRODE",
+      "distance_to_power_outline_mm": 4.007458999999997
+    },
+    {
+      "uuid": "d964c3ef-2ead-4895-874c-797ddb5aef41",
+      "net": "CH021_N_ELECTRODE",
+      "distance_to_power_outline_mm": 4.506656999999997
+    },
+    {
+      "uuid": "ddfcee2f-8475-488c-8b39-0b9bd556a937",
+      "net": "CH021_N_ELECTRODE",
+      "distance_to_power_outline_mm": 3.7062409999999986
+    },
+    {
+      "uuid": "eda15d7d-c9e6-44f2-84f1-91a1db405b71",
+      "net": "CH021_N_ELECTRODE",
+      "distance_to_power_outline_mm": 17.716386
+    },
+    {
+      "uuid": "f29ea416-e627-426d-8b85-93b680267f09",
+      "net": "CH021_N_ELECTRODE",
+      "distance_to_power_outline_mm": 4.5656490000000005
+    },
+    {
+      "uuid": "fad087b1-b55a-4aae-a6d9-47d45ecbc447",
+      "net": "CH021_N_ELECTRODE",
+      "distance_to_power_outline_mm": 15.501919
+    },
+    {
+      "uuid": "fba9650b-1e7f-4b69-8f6b-e68d377cbc69",
+      "net": "CH021_N_ELECTRODE",
+      "distance_to_power_outline_mm": 4.5656490000000005
+    },
+    {
+      "uuid": "feb2bfb1-3e74-4279-a66b-2675ed591944",
+      "net": "CH021_N_ELECTRODE",
+      "distance_to_power_outline_mm": 14.466830999999999
+    },
+    {
+      "uuid": "609005a0-6ab9-4430-9b5c-0c7159512b45",
+      "net": "CH023_N_ELECTRODE",
+      "distance_to_power_outline_mm": 25.99795
+    },
+    {
+      "uuid": "6da8b5ad-ff8a-407f-8279-1b2dd97e078c",
+      "net": "CH023_N_ELECTRODE",
+      "distance_to_power_outline_mm": 26.257651
+    },
+    {
+      "uuid": "8907467a-e705-49e7-96b5-63aad9697ed1",
+      "net": "CH023_N_ELECTRODE",
+      "distance_to_power_outline_mm": 25.020001
+    }
+  ],
+  "new_vias_outside_full_power_outline": true,
+  "new_In2_outside_full_power_outline": true
+}

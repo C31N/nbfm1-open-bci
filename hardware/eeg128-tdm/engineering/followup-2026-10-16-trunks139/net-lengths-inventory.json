@@ -1,0 +1,519 @@
+{
+  "p": {
+    "unconnected": 138,
+    "open_mux": 74,
+    "open_electrode": 64,
+    "block2_open_nets": {
+      "CH020_N_MUX": 1,
+      "CH020_P_MUX": 1,
+      "CH021_N_ELECTRODE": 1,
+      "CH024_N_MUX": 1,
+      "CH024_P_MUX": 1,
+      "CH028_N_MUX": 1,
+      "CH029_N_MUX": 1,
+      "CH030_N_MUX": 1
+    },
+    "net_lengths": [
+      {
+        "net": "CH018_P_MUX",
+        "before": {
+          "length_mm": 0.5,
+          "vias": 0
+        },
+        "after": {
+          "length_mm": 65.65307070326938,
+          "vias": 9
+        },
+        "delta_length_mm": 65.15307070326938,
+        "unconnected": 0
+      },
+      {
+        "net": "CH018_N_MUX",
+        "before": {
+          "length_mm": 35.37214952529244,
+          "vias": 2
+        },
+        "after": {
+          "length_mm": 35.37214952529244,
+          "vias": 2
+        },
+        "delta_length_mm": 0.0,
+        "unconnected": 0
+      },
+      {
+        "net": "CH017_N_MUX",
+        "before": {
+          "length_mm": 33.456796289280895,
+          "vias": 4
+        },
+        "after": {
+          "length_mm": 35.94466170189903,
+          "vias": 4
+        },
+        "delta_length_mm": 2.4878654126181345,
+        "unconnected": 0
+      },
+      {
+        "net": "CH021_N_ELECTRODE",
+        "before": {
+          "length_mm": 0,
+          "vias": 0
+        },
+        "after": {
+          "length_mm": 0,
+          "vias": 0
+        },
+        "delta_length_mm": 0,
+        "unconnected": 1
+      },
+      {
+        "net": "CH023_N_ELECTRODE",
+        "before": {
+          "length_mm": 13.140257967224137,
+          "vias": 2
+        },
+        "after": {
+          "length_mm": 13.140257967224137,
+          "vias": 2
+        },
+        "delta_length_mm": 0.0,
+        "unconnected": 0
+      },
+      {
+        "net": "CH027_P_ELECTRODE",
+        "before": {
+          "length_mm": 26.647068495113427,
+          "vias": 4
+        },
+        "after": {
+          "length_mm": 26.647068495113427,
+          "vias": 4
+        },
+        "delta_length_mm": 0.0,
+        "unconnected": 0
+      },
+      {
+        "net": "MUX_S1",
+        "before": {
+          "length_mm": 344.93680457446925,
+          "vias": 16
+        },
+        "after": {
+          "length_mm": 394.6479416054705,
+          "vias": 16
+        },
+        "delta_length_mm": 49.71113703100127,
+        "unconnected": 0
+      },
+      {
+        "net": "MUX_S2",
+        "before": {
+          "length_mm": 395.4339718120756,
+          "vias": 22
+        },
+        "after": {
+          "length_mm": 373.2733181373142,
+          "vias": 22
+        },
+        "delta_length_mm": -22.160653674761363,
+        "unconnected": 0
+      },
+      {
+        "net": "MUX_S3",
+        "before": {
+          "length_mm": 359.34398564425163,
+          "vias": 16
+        },
+        "after": {
+          "length_mm": 363.9226603132092,
+          "vias": 16
+        },
+        "delta_length_mm": 4.578674668957547,
+        "unconnected": 0
+      },
+      {
+        "net": "MUX_EN",
+        "before": {
+          "length_mm": 418.2795346506725,
+          "vias": 31
+        },
+        "after": {
+          "length_mm": 418.3593708794606,
+          "vias": 31
+        },
+        "delta_length_mm": 0.07983622878811047,
+        "unconnected": 0
+      }
+    ],
+    "CH018_P_vias": [
+      [
+        49.415923,
+        24.733935
+      ],
+      [
+        43.093735,
+        32.147509
+      ],
+      [
+        46.841954,
+        34.399999
+      ],
+      [
+        46.086467,
+        24.343313
+      ],
+      [
+        49.440043,
+        26.997056
+      ],
+      [
+        40.347743,
+        33.975186
+      ],
+      [
+        32.2625,
+        35.646231
+      ],
+      [
+        46.54665,
+        22.020196
+      ],
+      [
+        34.050003,
+        34.378495
+      ]
+    ]
+  },
+  "n": {
+    "unconnected": 138,
+    "open_mux": 75,
+    "open_electrode": 63,
+    "block2_open_nets": {
+      "CH018_P_MUX": 1,
+      "CH020_N_MUX": 1,
+      "CH020_P_MUX": 1,
+      "CH024_N_MUX": 1,
+      "CH024_P_MUX": 1,
+      "CH028_N_MUX": 1,
+      "CH029_N_MUX": 1,
+      "CH030_N_MUX": 1
+    },
+    "net_lengths": [
+      {
+        "net": "CH018_P_MUX",
+        "before": {
+          "length_mm": 0.5,
+          "vias": 0
+        },
+        "after": {
+          "length_mm": 0.5,
+          "vias": 0
+        },
+        "delta_length_mm": 0.0,
+        "unconnected": 1
+      },
+      {
+        "net": "CH018_N_MUX",
+        "before": {
+          "length_mm": 35.37214952529244,
+          "vias": 2
+        },
+        "after": {
+          "length_mm": 35.37214952529244,
+          "vias": 2
+        },
+        "delta_length_mm": 0.0,
+        "unconnected": 0
+      },
+      {
+        "net": "CH017_N_MUX",
+        "before": {
+          "length_mm": 33.456796289280895,
+          "vias": 4
+        },
+        "after": {
+          "length_mm": 35.940103271706974,
+          "vias": 4
+        },
+        "delta_length_mm": 2.483306982426079,
+        "unconnected": 0
+      },
+      {
+        "net": "CH021_N_ELECTRODE",
+        "before": {
+          "length_mm": 0,
+          "vias": 0
+        },
+        "after": {
+          "length_mm": 68.88847954552568,
+          "vias": 5
+        },
+        "delta_length_mm": 68.88847954552568,
+        "unconnected": 0
+      },
+      {
+        "net": "CH023_N_ELECTRODE",
+        "before": {
+          "length_mm": 13.140257967224137,
+          "vias": 2
+        },
+        "after": {
+          "length_mm": 30.79060315667056,
+          "vias": 3
+        },
+        "delta_length_mm": 17.650345189446423,
+        "unconnected": 0
+      },
+      {
+        "net": "CH027_P_ELECTRODE",
+        "before": {
+          "length_mm": 26.647068495113427,
+          "vias": 4
+        },
+        "after": {
+          "length_mm": 37.658210447141855,
+          "vias": 4
+        },
+        "delta_length_mm": 11.011141952028428,
+        "unconnected": 0
+      },
+      {
+        "net": "MUX_S1",
+        "before": {
+          "length_mm": 344.93680457446925,
+          "vias": 16
+        },
+        "after": {
+          "length_mm": 344.93680457446925,
+          "vias": 16
+        },
+        "delta_length_mm": 0.0,
+        "unconnected": 0
+      },
+      {
+        "net": "MUX_S2",
+        "before": {
+          "length_mm": 395.4339718120756,
+          "vias": 22
+        },
+        "after": {
+          "length_mm": 395.4339718120756,
+          "vias": 22
+        },
+        "delta_length_mm": 0.0,
+        "unconnected": 0
+      },
+      {
+        "net": "MUX_S3",
+        "before": {
+          "length_mm": 359.34398564425163,
+          "vias": 16
+        },
+        "after": {
+          "length_mm": 359.34398564425163,
+          "vias": 16
+        },
+        "delta_length_mm": 0.0,
+        "unconnected": 0
+      },
+      {
+        "net": "MUX_EN",
+        "before": {
+          "length_mm": 418.2795346506725,
+          "vias": 31
+        },
+        "after": {
+          "length_mm": 418.2795346506725,
+          "vias": 31
+        },
+        "delta_length_mm": 0.0,
+        "unconnected": 0
+      }
+    ],
+    "CH018_P_vias": []
+  },
+  "joint": {
+    "unconnected": 137,
+    "open_mux": 74,
+    "open_electrode": 63,
+    "block2_open_nets": {
+      "CH020_N_MUX": 1,
+      "CH020_P_MUX": 1,
+      "CH024_N_MUX": 1,
+      "CH024_P_MUX": 1,
+      "CH028_N_MUX": 1,
+      "CH029_N_MUX": 1,
+      "CH030_N_MUX": 1
+    },
+    "net_lengths": [
+      {
+        "net": "CH018_P_MUX",
+        "before": {
+          "length_mm": 0.5,
+          "vias": 0
+        },
+        "after": {
+          "length_mm": 65.65307070326938,
+          "vias": 9
+        },
+        "delta_length_mm": 65.15307070326938,
+        "unconnected": 0
+      },
+      {
+        "net": "CH018_N_MUX",
+        "before": {
+          "length_mm": 35.37214952529244,
+          "vias": 2
+        },
+        "after": {
+          "length_mm": 35.37214952529244,
+          "vias": 2
+        },
+        "delta_length_mm": 0.0,
+        "unconnected": 0
+      },
+      {
+        "net": "CH017_N_MUX",
+        "before": {
+          "length_mm": 33.456796289280895,
+          "vias": 4
+        },
+        "after": {
+          "length_mm": 35.26321172237835,
+          "vias": 3
+        },
+        "delta_length_mm": 1.806415433097456,
+        "unconnected": 0
+      },
+      {
+        "net": "CH021_N_ELECTRODE",
+        "before": {
+          "length_mm": 0,
+          "vias": 0
+        },
+        "after": {
+          "length_mm": 69.2976096651638,
+          "vias": 5
+        },
+        "delta_length_mm": 69.2976096651638,
+        "unconnected": 0
+      },
+      {
+        "net": "CH023_N_ELECTRODE",
+        "before": {
+          "length_mm": 13.140257967224137,
+          "vias": 2
+        },
+        "after": {
+          "length_mm": 30.79060315667056,
+          "vias": 3
+        },
+        "delta_length_mm": 17.650345189446423,
+        "unconnected": 0
+      },
+      {
+        "net": "CH027_P_ELECTRODE",
+        "before": {
+          "length_mm": 26.647068495113427,
+          "vias": 4
+        },
+        "after": {
+          "length_mm": 37.658210447141855,
+          "vias": 4
+        },
+        "delta_length_mm": 11.011141952028428,
+        "unconnected": 0
+      },
+      {
+        "net": "MUX_S1",
+        "before": {
+          "length_mm": 344.93680457446925,
+          "vias": 16
+        },
+        "after": {
+          "length_mm": 394.6479416054705,
+          "vias": 16
+        },
+        "delta_length_mm": 49.71113703100127,
+        "unconnected": 0
+      },
+      {
+        "net": "MUX_S2",
+        "before": {
+          "length_mm": 395.4339718120756,
+          "vias": 22
+        },
+        "after": {
+          "length_mm": 373.2733181373142,
+          "vias": 22
+        },
+        "delta_length_mm": -22.160653674761363,
+        "unconnected": 0
+      },
+      {
+        "net": "MUX_S3",
+        "before": {
+          "length_mm": 359.34398564425163,
+          "vias": 16
+        },
+        "after": {
+          "length_mm": 363.9226603132092,
+          "vias": 16
+        },
+        "delta_length_mm": 4.578674668957547,
+        "unconnected": 0
+      },
+      {
+        "net": "MUX_EN",
+        "before": {
+          "length_mm": 418.2795346506725,
+          "vias": 31
+        },
+        "after": {
+          "length_mm": 418.3593708794606,
+          "vias": 31
+        },
+        "delta_length_mm": 0.07983622878811047,
+        "unconnected": 0
+      }
+    ],
+    "CH018_P_vias": [
+      [
+        49.415923,
+        24.733935
+      ],
+      [
+        43.093735,
+        32.147509
+      ],
+      [
+        46.841954,
+        34.399999
+      ],
+      [
+        46.086467,
+        24.343313
+      ],
+      [
+        49.440043,
+        26.997056
+      ],
+      [
+        40.347743,
+        33.975186
+      ],
+      [
+        32.2625,
+        35.646231
+      ],
+      [
+        46.54665,
+        22.020196
+      ],
+      [
+        34.050003,
+        34.378495
+      ]
+    ]
+  }
+}

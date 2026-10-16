@@ -1,0 +1,14 @@
+{
+  "accepted": false,
+  "routing_completed": false,
+  "fabrication_release": false,
+  "byte_identical_pcb_replay": true,
+  "violations": 0,
+  "warnings": 0,
+  "unconnected": 138,
+  "rejection": "Filled L3 power changed; no numerical tolerance is permitted",
+  "pcb_sha256": "a9baa08414abac6eb6f4e5294e5c35285bab2498352232ec42e568731cb9c618",
+  "archive_sha256": "acaa431d306599e65de8e130600b2bbbdaafb9f648d1cd7efa7db42a29f413cf",
+  "byte_identical_archive_replay": true,
+  "diagnostic_parity_findings": 0
+}
