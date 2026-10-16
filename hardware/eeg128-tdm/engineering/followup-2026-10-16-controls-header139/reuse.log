@@ -1,0 +1,16 @@
+/root/.local/lib/python3.12/site-packages/reuse/project.py:332: PendingDeprecationWarning: '.reuse/dep5' is deprecated. You are recommended to instead use REUSE.toml. Use `reuse convert-dep5` to convert.
+  warnings.warn(
+# SUMMARY
+
+* Bad licenses: 0
+* Deprecated licenses: 0
+* Licenses without file extension: 0
+* Missing licenses: 0
+* Unused licenses: 0
+* Used licenses: AGPL-3.0-only, CERN-OHL-S-2.0
+* Read errors: 0
+* Invalid SPDX License Expressions: 0
+* Files with copyright information: 597 / 597
+* Files with license information: 597 / 597
+
+Congratulations! Your project is compliant with version 3.3 of the REUSE Specification :-)

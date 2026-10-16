@@ -4,6 +4,8 @@
 
 Requires Shapely 2.1. No board writes, via-in-pad or clearance exceptions.
 """
+from __future__ import annotations
+
 import heapq
 import math
 from collections import defaultdict
@@ -12,16 +14,19 @@ import pcbnew
 from shapely.geometry import Point, LineString
 from shapely.ops import unary_union
 from shapely.strtree import STRtree
-from route_targeted_closure import obstacles, xy, make_track, make_via
+from shapely.geometry.base import BaseGeometry
+from route_targeted_closure import obstacles, xy, make_track, make_via, Point2, RoutingPath
 
 
-def polygons(shape):
+def polygons(shape: BaseGeometry) -> list[shapely.Polygon]:
     if shape.geom_type=='Polygon': return [shape]
     return [p for g in getattr(shape,'geoms',[]) for p in polygons(g)]
 
 
-def mesh_route(board, start, goal, net, layers, power, region, start_layer=0,
-               goal_layer=0, allow_vias=True, extra_obstacles=None):
+def mesh_route(board: pcbnew.BOARD, start: Point2, goal: Point2, net: int,
+               layers: tuple[int, int], power: BaseGeometry, region: BaseGeometry,
+               start_layer: int = 0, goal_layer: int = 0, allow_vias: bool = True,
+               extra_obstacles: list[BaseGeometry] | None = None) -> RoutingPath | None:
     """Propose a complete two-layer path, or return None. Vias use finite samples."""
     if not hasattr(shapely,'constrained_delaunay_triangles'):
         raise RuntimeError('Optional mesh proposals require Shapely 2.1 or later')
@@ -37,12 +42,12 @@ def mesh_route(board, start, goal, net, layers, power, region, start_layer=0,
     free=[region.difference(s).buffer(-.000005) for s in blocked]
     viafree=region.difference(unary_union([via,power.buffer(.505)] )).buffer(-.000005)
     coords=[]; adj=[]; lookup={}
-    def node(layer,pt):
+    def node(layer: int, pt: Point2) -> int:
         key=(layer,round(pt[0],9),round(pt[1],9))
         if key not in lookup:
             lookup[key]=len(coords);coords.append((layer,float(pt[0]),float(pt[1])));adj.append([])
         return lookup[key]
-    def edge(a,b,cost=None):
+    def edge(a: int, b: int, cost: float | None = None) -> None:
         if a==b:return
         c=math.dist(coords[a][1:],coords[b][1:]) if cost is None else cost
         adj[a].append((b,c));adj[b].append((a,c))
@@ -118,7 +123,8 @@ def mesh_route(board, start, goal, net, layers, power, region, start_layer=0,
     return result
 
 
-def add_mesh_path(board, path, net, layers):
+def add_mesh_path(board: pcbnew.BOARD, path: RoutingPath, net: int,
+                  layers: tuple[int, int]) -> None:
     """Apply a complete proposal while reusing existing through vias exactly."""
     path=[tuple(p) for p in path]
     if len(path)<2 or any(len(p)!=3 or p[0] not in (0,1)

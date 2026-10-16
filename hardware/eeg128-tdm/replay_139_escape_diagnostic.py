@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: CERN-OHL-S-2.0
 """Verify an unadopted S1 relocation; never change the accepted checkpoint."""
+from __future__ import annotations
+
 import argparse
 import hashlib
 import json
@@ -9,6 +11,7 @@ import shutil
 import subprocess
 import zipfile
 from pathlib import Path
+from typing import Any
 from merge_native_closure import copper
 from native_connectivity import regressed_nets
 from replay_block2_source_window import MEMBERS, reproducible_zip
@@ -20,10 +23,10 @@ RECIPE=ROOT/'engineering/followup-2026-10-16-escape139/mux-s1-recipe.json'
 RECIPE_SHA256='347a71e80f713325e93df653998ece69228ef86545ca70d79248d0faae126675'
 
 
-def digest(path):return hashlib.sha256(path.read_bytes()).hexdigest()
+def digest(path: Path) -> str:return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def reviewed_recipe():
+def reviewed_recipe() -> dict[str, Any]:
     if digest(RECIPE)!=RECIPE_SHA256:raise ValueError('Diagnostic recipe integrity failure')
     d=json.loads(RECIPE.read_text())
     if d['scope']!='BLOCK2_MUX_S1_UNADOPTED_DIAGNOSTIC_139' or any(
@@ -32,7 +35,7 @@ def reviewed_recipe():
     return d
 
 
-def apply(text,d):
+def apply(text: str, d: dict[str, Any]) -> str:
     if hashlib.sha256(text.encode()).hexdigest()!=d['baseline_sha256']:
         raise ValueError('Wrong 139 PCB')
     old=copper(text)
@@ -52,7 +55,7 @@ def apply(text,d):
     return text
 
 
-def main():
+def main() -> None:
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--output-dir',type=Path,required=True);a=p.parse_args();d=reviewed_recipe()
     archive=ROOT/'engineering/block2-ch019-electrode-closed139.zip'

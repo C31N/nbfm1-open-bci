@@ -5,6 +5,8 @@
 Each invocation is a separate KiCad process. Use Shapely 2.1.2 in an isolated
 Python environment with the native KiCad 8.0.9 pcbnew module available.
 """
+from __future__ import annotations
+
 import argparse
 import hashlib
 import itertools
@@ -14,12 +16,12 @@ import subprocess
 from pathlib import Path
 import pcbnew
 from shapely.geometry import box
-from route_targeted_closure import xy, make_via
+from route_targeted_closure import xy, make_via, Point2, RoutingPath
 from analyze_139_escape_blockers import BASE_SHA, protected_power
 from escape_mesh import mesh_route, add_mesh_path
 
 
-def main():
+def main() -> None:
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--board',type=Path,required=True)
     p.add_argument('--output-dir',type=Path,required=True)
@@ -89,7 +91,8 @@ def main():
     result={'mode':a.mode,'case':a.case,'baseline_pcb_sha256':BASE_SHA,
             'removed':[t.m_Uuid.AsString() for t in removed], 'paths':[],
             'accepted':False,'model_only':True,'routing_completed':False,'fabrication_release':False}
-    def run(name,start,goal,sl,gl,layer,allow=True):
+    def run(name: str, start: Point2, goal: Point2, sl: int, gl: int,
+            layer: int | tuple[int, int], allow: bool = True) -> RoutingPath | None:
         net=next(p.GetNetCode() for f in b.GetFootprints() for p in f.Pads() if p.GetNetname()==name)
         layers=layer if isinstance(layer,tuple) else (pcbnew.F_Cu,layer)
         path=mesh_route(b,start,goal,net,layers,power,region,start_layer=sl,goal_layer=gl,allow_vias=allow)

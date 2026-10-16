@@ -187,6 +187,16 @@ jobs:
           /usr/bin/python3 hardware/eeg128-tdm/replay_139_escape_diagnostic.py \
             --output-dir /tmp/escape139-unadopted-replay
 
+      - name: Test control-window and header-dogleg replay guards
+        run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_controls_header139.py -v
+
+      - name: Replay unadopted control window and header doglegs
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/replay_controls_header139.py \
+            --case controls --output-dir /tmp/controls139-unadopted
+          /usr/bin/python3 hardware/eeg128-tdm/replay_controls_header139.py \
+            --case header --output-dir /tmp/header139-unadopted
+
       - name: Test unadopted CH030 probe replay guards
         run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch030_probe_replay.py -v
 
@@ -200,7 +210,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
-          audits = [Path("/tmp/kicad-audit"), Path("/tmp/ch018-reviewed-replay"), Path("/tmp/ch029-reviewed-replay"), Path("/tmp/ch025-reviewed-replay"), Path("/tmp/ch030-unadopted-probe"), Path("/tmp/ch019-reviewed-replay"), Path("/tmp/escape139-c22-probe"), Path("/tmp/escape139-c26-probe"), Path("/tmp/escape139-unadopted-replay")]
+          audits = [Path("/tmp/kicad-audit"), Path("/tmp/ch018-reviewed-replay"), Path("/tmp/ch029-reviewed-replay"), Path("/tmp/ch025-reviewed-replay"), Path("/tmp/ch030-unadopted-probe"), Path("/tmp/ch019-reviewed-replay"), Path("/tmp/escape139-c22-probe"), Path("/tmp/escape139-c26-probe"), Path("/tmp/escape139-unadopted-replay"), Path("/tmp/controls139-unadopted"), Path("/tmp/header139-unadopted")]
           forbidden_suffixes = {".gbr", ".gerber", ".drl", ".pos"}
           forbidden_names = {"placement.csv", "bom.csv", "cpl.csv"}
           exports = [
@@ -284,5 +294,13 @@ jobs:
             /tmp/escape139-unadopted-replay/drc-after.json
             /tmp/escape139-unadopted-replay/parity.json
             /tmp/escape139-unadopted-replay/result.json
+            /tmp/controls139-unadopted/drc-before.json
+            /tmp/controls139-unadopted/drc-after.json
+            /tmp/controls139-unadopted/parity.json
+            /tmp/controls139-unadopted/result.json
+            /tmp/header139-unadopted/drc-before.json
+            /tmp/header139-unadopted/drc-after.json
+            /tmp/header139-unadopted/parity.json
+            /tmp/header139-unadopted/result.json
           if-no-files-found: error
           retention-days: 30

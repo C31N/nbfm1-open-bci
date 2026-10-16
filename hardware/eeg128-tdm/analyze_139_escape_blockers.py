@@ -1,19 +1,23 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: CERN-OHL-S-2.0
 """Read-only single-neighbor removal models; no candidate PCB or release promotion."""
+from __future__ import annotations
+
 import argparse
 import hashlib
 import json
 from pathlib import Path
+from typing import Any
+from shapely.geometry.base import BaseGeometry
 
 import pcbnew
 from shapely.geometry import Point, LineString, Polygon, box
 from shapely.ops import unary_union
-from route_targeted_closure import obstacles, xy
+from route_targeted_closure import obstacles, xy, Point2
 
 BASE_SHA = 'f2780989e2dee6233f207df1f420f7e89d8e855493eb6b1e7fb731d4a4dda1ea'
 
-def protected_power(board):
+def protected_power(board: pcbnew.BOARD) -> BaseGeometry:
     # Reserve complete L3 zone outlines, including existing fill voids. A via
     # must not exploit a pre-existing hole as permission to enter the plane.
     shapes=[]
@@ -25,11 +29,12 @@ def protected_power(board):
             shapes.append(Polygon([xy(c.CPoint(j)) for j in range(c.PointCount())]))
     return unary_union(shapes)
 
-def component(free, point):
+def component(free: BaseGeometry, point: Point2) -> BaseGeometry:
     parts = list(free.geoms) if hasattr(free, 'geoms') else [free]
     return next((g for g in parts if g.distance(Point(point)) < 1e-7), Point(point).buffer(0))
 
-def windows(board, net, point, region, power):
+def windows(board: pcbnew.BOARD, net: int, point: Point2, region: BaseGeometry,
+            power: BaseGeometry) -> tuple[BaseGeometry, dict[str, Any]]:
     shapes, via = obstacles(board, net, .15, .15, region, .60,
                             (pcbnew.F_Cu, pcbnew.B_Cu))
     comp = component(region.difference(shapes[0]), point)
@@ -40,7 +45,7 @@ def windows(board, net, point, region, power):
                  'windows': [{'point': list(g.representative_point().coords[0]), 'area_mm2':g.area}
                              for g in sorted(parts, key=lambda g:-g.area) if g.area > 1e-8]}
 
-def main():
+def main() -> None:
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--board',type=Path,required=True)
     p.add_argument('--output',type=Path,required=True)

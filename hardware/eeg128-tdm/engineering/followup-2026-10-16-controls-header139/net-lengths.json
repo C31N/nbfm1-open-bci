@@ -1,0 +1,54 @@
+{
+  "controls": [
+    {
+      "net": "MUX_S1",
+      "before_length_mm": 344.93680457446925,
+      "after_length_mm": 394.6479416054705,
+      "delta_length_mm": 49.71113703100127,
+      "before_vias": 16,
+      "after_vias": 16
+    },
+    {
+      "net": "MUX_S2",
+      "before_length_mm": 395.4339718120756,
+      "after_length_mm": 373.2733181373142,
+      "delta_length_mm": -22.160653674761363,
+      "before_vias": 22,
+      "after_vias": 22
+    },
+    {
+      "net": "MUX_S3",
+      "before_length_mm": 359.34398564425163,
+      "after_length_mm": 363.9226603132092,
+      "delta_length_mm": 4.578674668957547,
+      "before_vias": 16,
+      "after_vias": 16
+    },
+    {
+      "net": "MUX_EN",
+      "before_length_mm": 418.2795346506725,
+      "after_length_mm": 418.3593708794606,
+      "delta_length_mm": 0.07983622878811047,
+      "before_vias": 31,
+      "after_vias": 31
+    }
+  ],
+  "header": [
+    {
+      "net": "CH027_P_ELECTRODE",
+      "before_length_mm": 26.647068495113427,
+      "after_length_mm": 34.60300850668995,
+      "delta_length_mm": 7.955940011576526,
+      "before_vias": 4,
+      "after_vias": 4
+    },
+    {
+      "net": "CH023_N_ELECTRODE",
+      "before_length_mm": 13.140257967224137,
+      "after_length_mm": 31.452865553292064,
+      "delta_length_mm": 18.312607586067926,
+      "before_vias": 2,
+      "after_vias": 3
+    }
+  ]
+}

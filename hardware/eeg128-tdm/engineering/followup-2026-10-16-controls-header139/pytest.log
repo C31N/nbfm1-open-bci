@@ -1,0 +1,6 @@
+........s.............                                                   [100%]
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_lsl_loopback.py:11: could not import 'pylsl': No module named 'pylsl'
+SKIPPED [1] tests/test_neural_model.py:7: could not import 'torch': No module named 'torch'
+SKIPPED [1] tests/test_neural_streaming.py:20: Rust ring is exercised in the dedicated native CI job
+21 passed, 3 skipped in 2.20s

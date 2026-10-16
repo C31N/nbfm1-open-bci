@@ -1,0 +1,53 @@
+{
+  "exact_reviewed_copper": true,
+  "footprints_unchanged": true,
+  "zone_outlines_unchanged": true,
+  "project_rules_unchanged": true,
+  "L3_power_loss_mm2": 0.0,
+  "L3_power_gain_mm2": 0.0,
+  "case": "header",
+  "violations": 0,
+  "warnings": 0,
+  "unconnected": 139,
+  "diagnostic_parity_findings": 0,
+  "regressed_nets": [],
+  "diagnostic_verified": true,
+  "accepted": false,
+  "routing_completed": false,
+  "fabrication_release": false,
+  "target_window_model": {
+    "bounds": [
+      41.32731137611505,
+      5.325001,
+      57.0,
+      10.820390366149681
+    ],
+    "component_area_mm2": 20.019305034449992,
+    "legal_via_area_mm2": 9.236889302640623,
+    "windows": [
+      {
+        "point": [
+          52.70700184018432,
+          7.486252064676135
+        ],
+        "area_mm2": 7.229395277904585
+      },
+      {
+        "point": [
+          50.3061400007125,
+          7.469357891424499
+        ],
+        "area_mm2": 1.4185331233618268
+      },
+      {
+        "point": [
+          47.82087330633778,
+          5.651746314131083
+        ],
+        "area_mm2": 0.5889609013742113
+      }
+    ]
+  },
+  "pcb_sha256": "72fd1886f0ee24b9032dc6e286abea34fd164d283c114c61fd161ccc5e6a22d0",
+  "archive_sha256": "d97166474c9dfe6d4aabd5c084b2d3cdec6fb594a054cae051eee29387c1cfa1"
+}

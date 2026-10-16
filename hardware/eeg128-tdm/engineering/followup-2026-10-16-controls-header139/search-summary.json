@@ -1,0 +1,114 @@
+{
+  "baseline_archive_sha256": "f022d711bf860c6ec9383dae6f511c41189bf7348035d8d1e5e0e0ca6bcd6d1b",
+  "model_only": true,
+  "accepted": false,
+  "routing_completed": false,
+  "fabrication_release": false,
+  "model_case_count": 14,
+  "model_cases": [
+    {
+      "case": "c22-dogleg0",
+      "complete": false,
+      "accepted": false,
+      "found_paths": 4,
+      "first_failed_net": "CH021_N_ELECTRODE"
+    },
+    {
+      "case": "control-case0",
+      "complete": false,
+      "accepted": false,
+      "found_paths": 3,
+      "first_failed_net": "MUX_S2"
+    },
+    {
+      "case": "control-case6",
+      "complete": false,
+      "accepted": false,
+      "found_paths": 4,
+      "first_failed_net": "CH018_P_MUX"
+    },
+    {
+      "case": "control-leftheads2",
+      "complete": false,
+      "accepted": false,
+      "found_paths": 2,
+      "first_failed_net": "MUX_EN"
+    },
+    {
+      "case": "control-reserved0",
+      "complete": false,
+      "accepted": false,
+      "found_paths": 5,
+      "first_failed_net": "MUX_S3"
+    },
+    {
+      "case": "control-reserved2",
+      "complete": false,
+      "accepted": false,
+      "found_paths": 4,
+      "first_failed_net": "MUX_S3"
+    },
+    {
+      "case": "dogleg-case0",
+      "complete": false,
+      "accepted": false,
+      "found_paths": 2,
+      "first_failed_net": "CH027_P_ELECTRODE"
+    },
+    {
+      "case": "local27-case0",
+      "complete": false,
+      "accepted": false,
+      "found_paths": 1,
+      "first_failed_net": "CH027_P_ELECTRODE"
+    },
+    {
+      "case": "local27-fb-case1",
+      "complete": false,
+      "accepted": false,
+      "found_paths": 4,
+      "first_failed_net": "CH021_N_ELECTRODE"
+    },
+    {
+      "case": "p-close-in2",
+      "complete": false,
+      "accepted": false,
+      "found_paths": 0,
+      "first_failed_net": null
+    },
+    {
+      "case": "p-fixed0",
+      "complete": false,
+      "accepted": false,
+      "found_paths": 2,
+      "first_failed_net": "CH018_P_MUX"
+    },
+    {
+      "case": "p-wide0",
+      "complete": false,
+      "accepted": false,
+      "found_paths": 2,
+      "first_failed_net": "CH018_P_MUX"
+    },
+    {
+      "case": "source-reserved-fb0",
+      "complete": false,
+      "accepted": false,
+      "found_paths": 6,
+      "first_failed_net": "CH021_N_ELECTRODE"
+    },
+    {
+      "case": "source-reserved0",
+      "complete": false,
+      "accepted": false,
+      "found_paths": 4,
+      "first_failed_net": "CH027_P_ELECTRODE"
+    }
+  ],
+  "native_qualified_unadopted_cases": [
+    "controls",
+    "header"
+  ],
+  "newly_closed_airwires": 0,
+  "confirmed_checkpoint_unconnected": 139
+}
