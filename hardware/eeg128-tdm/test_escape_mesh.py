@@ -3,7 +3,7 @@
 import unittest
 import shapely
 from unittest.mock import patch
-from shapely.geometry import box, Polygon, LineString, Point
+from shapely.geometry import box, Polygon, LineString
 import pcbnew
 from escape_mesh import mesh_route
 

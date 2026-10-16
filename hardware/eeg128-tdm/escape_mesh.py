@@ -9,7 +9,7 @@ import math
 from collections import defaultdict
 import shapely
 import pcbnew
-from shapely.geometry import Point, LineString, box
+from shapely.geometry import Point, LineString
 from shapely.ops import unary_union
 from shapely.strtree import STRtree
 from route_targeted_closure import obstacles, xy, make_track, make_via
