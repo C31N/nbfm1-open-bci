@@ -48,6 +48,45 @@ jobs:
           assert all(not trial['accepted'] and not trial['all_neighbors_restituted']
                      for trial in report['trials'])
           PY
+      - name: Enable Shapely 2.1 for optional 3-layer modeling
+        run: |
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3-pip
+          sudo /usr/bin/python3 -m pip install --break-system-packages --upgrade 'shapely==2.1.2'
+          /usr/bin/python3 -c 'import shapely; assert hasattr(shapely, "constrained_delaunay_triangles")'
+
+      - name: Search complete CH024-P and neighbor paths (model only)
+        timeout-minutes: 15
+        continue-on-error: true
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_block2_joint136.py \
+            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
+            --output /tmp/block2-ch024p-path-proposals.json \
+            --case ch024p-ch018 --case ch024p-ch019
+          /usr/bin/python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('/tmp/block2-ch024p-path-proposals.json').read_text())
+          assert len(report['trials']) == 4
+          assert all(report[k] is False for k in (
+              'accepted', 'routing_completed', 'fabrication_release',
+              'pcb_written', 'manufacturing_artifacts_created',
+              'native_drc_verified', 'independent_byteidentical_replay_verified',
+          ))
+          for trial in report['trials']:
+              print(trial['name'], trial['routing_order'],
+                    'proposed', trial['successfully_proposed_nets'],
+                    'blocked_by', trial['failed_net'],
+                    'unrestored', not trial['all_neighbors_restituted'])
+          PY
+
+      - name: Upload exploratory CH024-P path proposals
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: block2-ch024p-model-only-paths
+          path: /tmp/block2-ch024p-path-proposals.json
+          if-no-files-found: ignore
+
       - name: Upload model-only JSON diagnostics
         if: always()
         uses: actions/upload-artifact@v4
