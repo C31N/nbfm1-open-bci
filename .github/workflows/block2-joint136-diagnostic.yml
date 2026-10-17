@@ -26,7 +26,7 @@ jobs:
           sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely
-          kicad-cli version | grep -E '^8\\.'
+          kicad-cli version | grep '^8'
       - name: Guard immutable fixture and route search order
         run: |
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_joint136_search.py -v

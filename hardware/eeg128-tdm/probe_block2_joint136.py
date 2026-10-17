@@ -16,6 +16,7 @@ import math
 import tempfile
 import zipfile
 from pathlib import Path
+from typing import Any, Callable, Iterator
 
 FIXTURE_SHA256 = 'a3e476707113761a4f042793f1711884635d740ee4871729f0afe2e4e37bf041'
 PCB_SHA256 = 'cac02064d9926676f6368536c4c104cb36295961333de6074e65fa1fa60a814c'
@@ -54,7 +55,7 @@ def validate_fixture(path: Path) -> bytes:
     return content
 
 
-def pad_pair(board, net_name, xy):
+def pad_pair(board: Any, net_name: str, xy: Callable[[Any], tuple[float, float]]) -> list[tuple[str, tuple[float, float], int]]:
     pads = [(footprint.GetReference(), pad) for footprint in board.GetFootprints()
             for pad in footprint.Pads() if pad.GetNetname() == net_name]
     if len(pads) != 2:
@@ -70,14 +71,14 @@ def pad_pair(board, net_name, xy):
             for ref, pad in pads]
 
 
-def route_order(targets, neighbors):
+def route_order(targets: tuple[str, ...], neighbors: tuple[str, ...]) -> Iterator[tuple[str, ...]]:
     """Try target-first and restitution-first; never rely on a lone freed target."""
     yield tuple(neighbors) + tuple(targets)
     if len(targets) == 1:
         yield tuple(targets) + tuple(neighbors)
 
 
-def prepare_board(board, removals):
+def prepare_board(board: Any, removals: tuple[str, ...]) -> int:
     removed = [t for t in board.GetTracks() if t.GetNetname() in removals]
     if set(t.GetNetname() for t in removed) != set(removals):
         raise ValueError('Missing required closed neighbor copper')
