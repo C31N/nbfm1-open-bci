@@ -51,7 +51,7 @@ jobs:
       - name: Enable Shapely 2.1 for optional 3-layer modeling
         run: |
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3-pip
-          sudo /usr/bin/python3 -m pip install --break-system-packages --upgrade 'shapely==2.1.2'
+          sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
           /usr/bin/python3 -c 'import shapely; assert hasattr(shapely, "constrained_delaunay_triangles")'
 
       - name: Search complete CH024-P and neighbor paths (model only)
