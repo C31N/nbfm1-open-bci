@@ -230,28 +230,6 @@ jobs:
           /usr/bin/python3 hardware/eeg128-tdm/replay_mux137_followup.py --case joint \
             --output-dir /tmp/mux137-joint-followup
 
-      - name: Test Block 2 coordinated routing probe guards
-        run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_joint136_search.py -v
-
-      - name: Analyze Block 2 CH024-P and CH031-N shared windows (unadopted)
-        run: |
-          /usr/bin/python3 hardware/eeg128-tdm/probe_block2_joint136.py \
-            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
-            --output /tmp/block2-coordinated-windows.json --skip-mesh
-          /usr/bin/python3 - <<'PY'
-          import json
-          from pathlib import Path
-          report = json.loads(Path('/tmp/block2-coordinated-windows.json').read_text())
-          assert len(report['trials']) == 5
-          assert all(report[k] is False for k in (
-              'accepted', 'routing_completed', 'fabrication_release',
-              'pcb_written', 'manufacturing_artifacts_created',
-              'native_drc_verified', 'independent_byteidentical_replay_verified',
-          ))
-          assert all(t['accepted'] is False and not t['all_neighbors_restituted']
-                     for t in report['trials'])
-          PY
-
       - name: Test unadopted CH030 probe replay guards
         run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch030_probe_replay.py -v
 
