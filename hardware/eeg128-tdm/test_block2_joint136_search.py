@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
 """Pure Python guard tests; no native KiCad or routing writes required."""
 import tempfile
+import sys
+from types import SimpleNamespace
 import unittest
 import zipfile
 from pathlib import Path
@@ -56,6 +58,27 @@ class ProbeSafety(unittest.TestCase):
         self.assertEqual(len(removed), 1)
         self.assertIs(removed[0], first)
         board.Remove.assert_called_once_with(first)
+
+    def test_three_pad_net_remains_a_three_terminal_obligation(self) -> None:
+        refs = [('R49', '1'), ('U3', '23'), ('J2', '99')]
+        footprints = []
+        for ref, number in refs:
+            pad = MagicMock()
+            pad.GetNetname.return_value = 'CH024_P_MUX'
+            pad.GetNumber.return_value = number
+            pad.IsOnLayer.return_value = True
+            pad.GetPosition.return_value = (1.0, 2.0)
+            pad.GetNetCode.return_value = 123
+            footprint = MagicMock()
+            footprint.GetReference.return_value = ref
+            footprint.Pads.return_value = [pad]
+            footprints.append(footprint)
+        board = MagicMock()
+        board.GetFootprints.return_value = footprints
+        with patch.dict(sys.modules, {'pcbnew': SimpleNamespace(F_Cu=0)}):
+            result = probe.pad_pair(board, 'CH024_P_MUX', lambda position: position)
+        self.assertEqual(len(result), 3)
+        self.assertEqual([row[0] for row in result], ['R49.1', 'U3.23', 'J2.99'])
 
     def test_no_release_permitted_in_source_probes(self) -> None:
         text = Path(probe.__file__).read_text()

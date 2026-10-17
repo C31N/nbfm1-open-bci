@@ -56,19 +56,21 @@ def validate_fixture(path: Path) -> bytes:
 
 
 def pad_pair(board: Any, net_name: str, xy: Callable[[Any], tuple[float, float]]) -> list[tuple[str, tuple[float, float], int]]:
+    """Return every required terminal, not merely the currently open airwire."""
     pads = [(footprint.GetReference(), pad) for footprint in board.GetFootprints()
             for pad in footprint.Pads() if pad.GetNetname() == net_name]
-    if len(pads) != 2:
-        raise ValueError(f'{net_name}: exactly two pads required, got {len(pads)}')
-    # Deliberately use native F.Cu pads; no inferred or invented via escapes.
+    if len(pads) < 2:
+        raise ValueError(f'{net_name}: at least two native pads required, got {len(pads)}')
     if any(not pad.IsOnLayer(__import__('pcbnew').F_Cu) for _, pad in pads):
-        raise ValueError(f'{net_name}: endpoint requires a non-F.Cu pad')
-    source = next(((ref, pad) for ref, pad in pads if ref.startswith('R') and pad.GetNumber() == '1'), None)
-    target = next(((ref, pad) for ref, pad in pads if ref.startswith('U')), None)
-    if source and target:
-        pads = [source, target]
+        raise ValueError(f'{net_name}: at least one terminal is not on F.Cu')
+    sources = [(ref, pad) for ref, pad in pads if ref.startswith('R') and pad.GetNumber() == '1']
+    if len(sources) != 1:
+        raise ValueError(f'{net_name}: ambiguous R.1 source ({len(sources)})')
+    source = sources[0]
+    others = sorted((item for item in pads if item != source),
+                    key=lambda item: (not item[0].startswith('U'), item[0], item[1].GetNumber()))
     return [(ref + '.' + pad.GetNumber(), xy(pad.GetPosition()), pad.GetNetCode())
-            for ref, pad in pads]
+            for ref, pad in [source, *others]]
 
 
 def route_order(targets: tuple[str, ...], neighbors: tuple[str, ...]) -> Iterator[tuple[str, ...]]:
@@ -128,28 +130,39 @@ def probe(archive: Path, cases: tuple[str, ...], include_mesh: bool) -> dict:
                         pts = pad_pair(board, net_name, xy)
                         code = pts[0][2]
                         trial['windows'][net_name] = {
-                            label: windows(board, code, point, region, power)[1]
-                            for label, (_, point, _) in zip(('source', 'target'), pts)
+                            'terminals': [
+                                {'pad': ref, 'point': point,
+                                 'legal_via_window': windows(board, code, point, region, power)[1]}
+                                for ref, point, _ in pts
+                            ],
                         }
                     if include_mesh:
                         for net_name in order:
                             try:
                                 pts = pad_pair(board, net_name, xy)
-                                if pts[0][2] != pts[1][2]:
-                                    raise ValueError('Net-code mismatch')
-                                proposal = mesh_route(
-                                    board, pts[0][1], pts[1][1], pts[0][2],
-                                    (pcbnew.F_Cu, pcbnew.B_Cu, pcbnew.In2_Cu),
-                                    power, region)
-                                if not proposal:
-                                    trial['failed_net'] = net_name
+                                if len({point[2] for point in pts}) != 1:
+                                    raise ValueError('Inconsistent terminal net codes')
+                                paths = []
+                                complete = True
+                                for pad, destination, _ in pts[1:]:
+                                    proposal = mesh_route(
+                                        board, pts[0][1], destination, pts[0][2],
+                                        (pcbnew.F_Cu, pcbnew.B_Cu, pcbnew.In2_Cu),
+                                        power, region)
+                                    if not proposal:
+                                        trial['failed_net'] = net_name
+                                        trial['failed_terminal'] = pad
+                                        complete = False
+                                        break
+                                    if any(not all(math.isfinite(v) for v in node[1:])
+                                           for node in proposal):
+                                        raise ValueError('Non-finite routing proposal')
+                                    paths.append({'terminal': pad, 'path': proposal})
+                                    add_mesh_path(board, proposal, pts[0][2],
+                                                  (pcbnew.F_Cu, pcbnew.B_Cu, pcbnew.In2_Cu))
+                                trial['proposed_paths'][net_name] = paths
+                                if not complete:
                                     break
-                                if any(not all(math.isfinite(p) for p in n[1:]) for n in proposal):
-                                    raise ValueError('Non-finite path output')
-                                trial['proposed_paths'][net_name] = proposal
-                                # Add in memory so later nets see the newly occupied copper.
-                                add_mesh_path(board, proposal, pts[0][2],
-                                              (pcbnew.F_Cu, pcbnew.B_Cu, pcbnew.In2_Cu))
                                 trial['successfully_proposed_nets'].append(net_name)
                             except (ValueError, RuntimeError) as error:
                                 trial['failed_net'] = net_name
