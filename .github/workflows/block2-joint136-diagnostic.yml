@@ -1,0 +1,57 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+name: Block 2 coordinated window diagnostic
+
+on:
+  push:
+    branches:
+      - codex/block2-joint136-safe-2026-10-18
+    paths:
+      - ".github/workflows/block2-joint136-diagnostic.yml"
+      - "hardware/eeg128-tdm/probe_block2_joint136.py"
+      - "hardware/eeg128-tdm/test_block2_joint136_search.py"
+      - "hardware/eeg128-tdm/engineering/BLOCK2_JOINT136_SEARCH_2026-10-18.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  read-only-windows:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native KiCad 8 bindings and geometry
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely
+          kicad-cli version | grep '^8'
+      - name: Guard immutable fixture and route search order
+        run: |
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_joint136_search.py -v
+      - name: Analyze only source and target via windows
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_block2_joint136.py \
+            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
+            --output /tmp/block2-coordinated-windows.json --skip-mesh
+          /usr/bin/python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('/tmp/block2-coordinated-windows.json').read_text())
+          assert len(report['trials']) == 5
+          assert all(report[k] is False for k in (
+              'accepted', 'routing_completed', 'fabrication_release',
+              'pcb_written', 'manufacturing_artifacts_created',
+              'native_drc_verified', 'independent_byteidentical_replay_verified',
+          ))
+          assert all(not trial['accepted'] and not trial['all_neighbors_restituted']
+                     for trial in report['trials'])
+          PY
+      - name: Upload model-only JSON diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: block2-joint136-window-diagnostic
+          path: /tmp/block2-coordinated-windows.json
+          if-no-files-found: ignore
