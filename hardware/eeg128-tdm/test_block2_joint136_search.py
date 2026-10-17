@@ -4,7 +4,7 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import probe_block2_joint136 as probe
 
@@ -45,6 +45,17 @@ class ProbeSafety(unittest.TestCase):
             with patch.object(probe, 'FIXTURE_SHA256', probe.sha256(path.read_bytes())):
                 with self.assertRaisesRegex(ValueError, 'diagnostic 137 PCB checksum'):
                     probe.validate_fixture(path)
+
+    def test_removed_tracks_stay_owned_until_explicit_restore(self) -> None:
+        first, second = MagicMock(), MagicMock()
+        first.GetNetname.return_value = 'CH022_N_ELECTRODE'
+        second.GetNetname.return_value = 'OTHER_NET'
+        board = MagicMock()
+        board.GetTracks.return_value = [first, second]
+        removed = probe.prepare_board(board, ('CH022_N_ELECTRODE',))
+        self.assertEqual(len(removed), 1)
+        self.assertIs(removed[0], first)
+        board.Remove.assert_called_once_with(first)
 
     def test_no_release_permitted_in_source_probes(self) -> None:
         text = Path(probe.__file__).read_text()

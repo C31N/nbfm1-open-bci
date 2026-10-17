@@ -78,13 +78,13 @@ def route_order(targets: tuple[str, ...], neighbors: tuple[str, ...]) -> Iterato
         yield tuple(targets) + tuple(neighbors)
 
 
-def prepare_board(board: Any, removals: tuple[str, ...]) -> int:
+def prepare_board(board: Any, removals: tuple[str, ...]) -> list[Any]:
     removed = [t for t in board.GetTracks() if t.GetNetname() in removals]
     if set(t.GetNetname() for t in removed) != set(removals):
         raise ValueError('Missing required closed neighbor copper')
     for track in removed:
         board.Remove(track)
-    return len(removed)
+    return removed
 
 
 def probe(archive: Path, cases: tuple[str, ...], include_mesh: bool) -> dict:
@@ -116,51 +116,55 @@ def probe(archive: Path, cases: tuple[str, ...], include_mesh: bool) -> dict:
             for order in route_order(targets, neighbors):
                 board = pcbnew.LoadBoard(str(source))
                 power = protected_power(board)
-                removed = prepare_board(board, neighbors)
-                trial = {
-                    'name': name, 'routing_order': list(order), 'removed_neighbor_copper': removed,
-                    'all_neighbors_restituted': False, 'accepted': False,
-                    'model_only': True, 'successfully_proposed_nets': [],
-                    'windows': {}, 'proposed_paths': {}, 'failed_net': None,
-                }
-                for net_name in targets:
-                    pts = pad_pair(board, net_name, xy)
-                    code = pts[0][2]
-                    trial['windows'][net_name] = {
-                        label: windows(board, code, point, region, power)[1]
-                        for label, (_, point, _) in zip(('source', 'target'), pts)
+                removed_tracks = prepare_board(board, neighbors)
+                try:
+                    trial = {
+                        'name': name, 'routing_order': list(order), 'removed_neighbor_copper': len(removed_tracks),
+                        'all_neighbors_restituted': False, 'accepted': False,
+                        'model_only': True, 'successfully_proposed_nets': [],
+                        'windows': {}, 'proposed_paths': {}, 'failed_net': None,
                     }
-                if include_mesh:
-                    for net_name in order:
-                        try:
-                            pts = pad_pair(board, net_name, xy)
-                            if pts[0][2] != pts[1][2]:
-                                raise ValueError('Net-code mismatch')
-                            proposal = mesh_route(
-                                board, pts[0][1], pts[1][1], pts[0][2],
-                                (pcbnew.F_Cu, pcbnew.B_Cu, pcbnew.In2_Cu),
-                                power, region)
-                            if not proposal:
+                    for net_name in targets:
+                        pts = pad_pair(board, net_name, xy)
+                        code = pts[0][2]
+                        trial['windows'][net_name] = {
+                            label: windows(board, code, point, region, power)[1]
+                            for label, (_, point, _) in zip(('source', 'target'), pts)
+                        }
+                    if include_mesh:
+                        for net_name in order:
+                            try:
+                                pts = pad_pair(board, net_name, xy)
+                                if pts[0][2] != pts[1][2]:
+                                    raise ValueError('Net-code mismatch')
+                                proposal = mesh_route(
+                                    board, pts[0][1], pts[1][1], pts[0][2],
+                                    (pcbnew.F_Cu, pcbnew.B_Cu, pcbnew.In2_Cu),
+                                    power, region)
+                                if not proposal:
+                                    trial['failed_net'] = net_name
+                                    break
+                                if any(not all(math.isfinite(p) for p in n[1:]) for n in proposal):
+                                    raise ValueError('Non-finite path output')
+                                trial['proposed_paths'][net_name] = proposal
+                                # Add in memory so later nets see the newly occupied copper.
+                                add_mesh_path(board, proposal, pts[0][2],
+                                              (pcbnew.F_Cu, pcbnew.B_Cu, pcbnew.In2_Cu))
+                                trial['successfully_proposed_nets'].append(net_name)
+                            except (ValueError, RuntimeError) as error:
                                 trial['failed_net'] = net_name
+                                trial['search_error'] = str(error)
                                 break
-                            if any(not all(math.isfinite(p) for p in n[1:]) for n in proposal):
-                                raise ValueError('Non-finite path output')
-                            trial['proposed_paths'][net_name] = proposal
-                            # Add in memory so later nets see the newly occupied copper.
-                            add_mesh_path(board, proposal, pts[0][2],
-                                          (pcbnew.F_Cu, pcbnew.B_Cu, pcbnew.In2_Cu))
-                            trial['successfully_proposed_nets'].append(net_name)
-                        except (ValueError, RuntimeError) as error:
-                            trial['failed_net'] = net_name
-                            trial['search_error'] = str(error)
-                            break
-                if set(neighbors).issubset(trial['successfully_proposed_nets']):
-                    trial['all_neighbors_geometrically_proposed'] = True
-                else:
-                    trial['all_neighbors_geometrically_proposed'] = False
-                # Even a geometrically complete plan is unverified without native
-                # refill, DRC, power-difference, connectivity and independent replay.
-                report['trials'].append(trial)
+                    if set(neighbors).issubset(trial['successfully_proposed_nets']):
+                        trial['all_neighbors_geometrically_proposed'] = True
+                    else:
+                        trial['all_neighbors_geometrically_proposed'] = False
+                    # Even a geometrically complete plan is unverified without native
+                    # refill, DRC, power-difference, connectivity and independent replay.
+                    report['trials'].append(trial)
+                finally:
+                    for track in removed_tracks:
+                        board.Add(track)
     if sha256(archive.read_bytes()) != FIXTURE_SHA256:
         raise ValueError('Pinned source archive changed during modeling')
     return report
