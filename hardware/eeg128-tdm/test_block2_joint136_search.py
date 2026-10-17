@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
 """Pure Python guard tests; no native KiCad or routing writes required."""
-import io
 import tempfile
 import unittest
 import zipfile

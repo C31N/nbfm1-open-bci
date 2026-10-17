@@ -78,7 +78,6 @@ def route_order(targets, neighbors):
 
 
 def prepare_board(board, removals):
-    import pcbnew
     removed = [t for t in board.GetTracks() if t.GetNetname() in removals]
     if set(t.GetNetname() for t in removed) != set(removals):
         raise ValueError('Missing required closed neighbor copper')
