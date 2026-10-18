@@ -77,7 +77,7 @@ def model(board_file: Path, report_file: Path, order: str,
             if path is None or len(path)<2: return False
             add_mesh_path(board,path,code,layers)
             return True
-        def do_ch022() -> bool:
+        def do_ch022_front() -> bool:
             electrodes={name:(pt,code) for name,pt,code in pads(board,'CH022_N_ELECTRODE')}
             if set(electrodes)!={'J2.23','R302.1'} or electrodes['J2.23'][0]!=J223:
                 raise ValueError('J2/CH022 identity mismatch')
@@ -95,6 +95,11 @@ def model(board_file: Path, report_file: Path, order: str,
             code=electrodes['R302.1'][1]
             add_mesh_path(board,[(0,*rvia),(1,*rvia)],code,layers)
 
+            result['CH022_R302_front_escape_proposed']=True
+            return True
+        def do_ch022_back() -> bool:
+            code=next(t[2] for t in pads(board,'CH022_N_ELECTRODE'))
+            rvia=tuple(result['R302_via'])
             ob,viaob=obstacles(board,code,.15,.15,region,.60,(pcbnew.F_Cu,pcbnew.B_Cu))
             jcomponent=component(region.difference(ob[0]).buffer(-.000005),J223)
             jlegal=(jcomponent.difference(unary_union([viaob,power.buffer(.505)]))
@@ -114,6 +119,8 @@ def model(board_file: Path, report_file: Path, order: str,
                 result['status']='CH022_BCu_two_via_bridge_blocked';return False
             result['CH022_geometrically_closed']=True
             return True
+        def do_ch022() -> bool:
+            return do_ch022_front() and do_ch022_back()
         def do_ch024_ch019() -> bool:
             ch024={n:x for n,x,_ in pads(board,'CH024_P_MUX')}
             if set(ch024)!={'R49.1','R305.2','U3.23'}:
@@ -130,7 +137,14 @@ def model(board_file: Path, report_file: Path, order: str,
                 result['status']='CH019_existing_BCu_bridge_blocked';return False
             result['CH019_existing_via_bridge_proposed']=True
             return True
-        ordered=(do_ch022,do_ch024_ch019) if order=='ch022-first' else (do_ch024_ch019,do_ch022)
+        if order=='interleaved':
+            # Reserve R302 F.Cu corridor with a real legal CH022 via,
+            # let CH024/CH019 claim U3 targets, only then finish the
+            # CH022 return to the unchanged J2.23 F.Cu island.
+            ordered=(do_ch022_front,do_ch024_ch019,do_ch022_back)
+        else:
+            ordered=(do_ch022,do_ch024_ch019) if order=='ch022-first' else (
+                do_ch024_ch019,do_ch022)
         for fn in ordered:
             if not fn():return result
 
@@ -186,7 +200,7 @@ def main() -> None:
     ap.add_argument('--archive',type=Path,required=True)
     ap.add_argument('--output',type=Path,required=True)
     ap.add_argument('--scope',choices=('one','pair'),required=True)
-    ap.add_argument('--order',choices=('ch022-first','ch024-first'),required=True)
+    ap.add_argument('--order',choices=('ch022-first','ch024-first','interleaved'),required=True)
     args=ap.parse_args()
     if args.output.exists() or args.output.suffix!='.json' or args.output.resolve().is_relative_to(ROOT):
         raise ValueError('Fresh external JSON required')
