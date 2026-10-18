@@ -144,3 +144,35 @@ neighbors are complete, DRC=0/0, no power gain/loss at exact
 0.0 mm², A2 0.25 mm and 0.505 mm L3 keepouts,
 native schematic parity, 70 guards and independent byte-identical
 replay. Gerber, NC-Drill, CPL and BOM exports are forbidden.
+
+## CH022-N pad-topology follow-up — exact 11-neighbor candidate
+
+GitHub Actions
+[39118605334](https://github.com/C31N/nbfm1-open-bci/actions/runs/39118605334)
+executed all three models on disposable KiCad 8 boards:
+
+| Variant | CH022 pad route | CH024 3-pad | CH019 existing-via bridge | Blocker |
+| --- | --- | --- | --- | --- |
+| CH022 pad-driven before CH024 | geometrically proposed | blocked | not attempted | U3.23 CH024 target |
+| CH022 pad-driven after both targets | blocked | proposed | proposed | R302.1 CH022 target |
+| CH022 after targets, discard obsolete CH019 In2 pieces | blocked | proposed | proposed | R302.1 CH022 target |
+
+The alternative pad-driven sequence therefore does **not**
+solve the joint-net restitution. The common unresolved geometry
+is the competition between the CH022_N_ELECTRODE connection to
+**R302.1** and the CH024_P_MUX approach at **U3.23**.
+These failures occur *before* complete restoration of the other
+displaced MUX/control tracks.
+
+Next investigation must selectively reconfigure the shared
+CH022/R302 approach with a guaranteed retained J2.23/source
+escape and plan the CH024 U3.23 ingress simultaneously,
+rather than reroute one of the nets through the other's only
+free resource. The 76.776 mm CH019 diagnostic remains
+long and unqualified for SI/length matching.
+
+No native candidate with full restoration exists; there are no
+qualified DRC numbers or byte-identical replay for promotion.
+Keep 139 confirmed and 137 diagnostic only.
+`accepted=false`, `routing_completed=false`,
+`fabrication_release=false`. No Gerber, Drill, CPL or BOM.
