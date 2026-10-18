@@ -1,0 +1,80 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+name: Block 2 coupled R302 U3 geometry
+
+on:
+  push:
+    branches:
+      - codex/block2-r302-u323-joint-2026-10-18
+    paths:
+      - ".github/workflows/block2-r302-u323-joint.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  protected-two-net-mesh:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - order: ch024-first
+            root: J2.23
+            radius: "0.35"
+          - order: ch024-first
+            root: J2.23
+            radius: "0.65"
+          - order: ch024-first
+            root: J2.23
+            radius: "0.95"
+          - order: ch022-first
+            root: R302.1
+            radius: "0.35"
+          - order: ch022-first
+            root: R302.1
+            radius: "0.65"
+          - order: ch022-first
+            root: R302.1
+            radius: "0.95"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native KiCad 8 plus pinned Shapely 2.1.2
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely python3-pip
+          sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
+          kicad-cli version | grep '^8'
+      - name: Verify immutable pads, escape protection and no release
+        run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_r302_joint.py -v
+      - name: Attempt joint CH022 plus CH024 plus CH019 guarded routing
+        timeout-minutes: 30
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_block2_r302_joint.py \
+            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
+            --joint-order ${{ matrix.order }} \
+            --ch022-root ${{ matrix.root }} \
+            --reserve-radius ${{ matrix.radius }} \
+            --output /tmp/block2-r302-${{ matrix.order }}-${{ matrix.radius }}.json
+          /usr/bin/python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          d=json.loads(Path('/tmp/block2-r302-'+os.environ['ROUTE_ORDER']+'-'+os.environ['RADIUS']+'.json').read_text())
+          assert all(d[k] is False for k in (
+              'accepted','routing_completed','fabrication_release',
+              'independent_replay_verified','native_qualification','manufacturing_files'))
+          assert d.get('status') != 'native_audit_only_unaccepted' or 'preserved_J2_23_copper_objects' in d
+          print(d['status'], d.get('failed_net'), d.get('failed_pad'), d.get('failed_neighbor'))
+          PY
+        env:
+          ROUTE_ORDER: ${{ matrix.order }}
+          RADIUS: ${{ matrix.radius }}
+      - name: Upload unaccepted geometric findings only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: block2-R302-U323-${{ matrix.order }}-${{ matrix.radius }}
+          path: /tmp/block2-r302-${{ matrix.order }}-${{ matrix.radius }}.json
+          if-no-files-found: ignore
