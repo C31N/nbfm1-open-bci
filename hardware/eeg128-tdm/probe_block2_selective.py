@@ -113,7 +113,7 @@ def track_record(track: Any) -> dict[str, Any]:
     from route_targeted_closure import xy
     return {'net': track.GetNetname(), 'uuid': track.m_Uuid.AsString(),
             'start': xy(track.GetStart()), 'end': xy(track.GetEnd()),
-            'layer': pcbnew.LayerName(track.GetLayer()),
+            'layer_id': int(track.GetLayer()),
             'width_mm': pcbnew.ToMM(track.GetWidth())}
 
 
