@@ -108,8 +108,9 @@ def model(board_file: Path, report_file: Path, order: str,
             result['J2_via']=jvia
             if not route('CH022_N_ELECTRODE',J223,jvia,0,0,True):
                 result['status']='CH022_J2_FCu_via_approach_blocked';return False
-            add_mesh_path(board,[(0,*jvia),(1,*jvia)],code,layers)
-            if not route('CH022_N_ELECTRODE',rvia,jvia,1,1):
+            # Landing is F.Cu-connected to J2; no redundant J2 through via.
+            # The prior extra via gave a native via_dangling warning.
+            if not route('CH022_N_ELECTRODE',rvia,jvia,1,0):
                 result['status']='CH022_BCu_two_via_bridge_blocked';return False
             result['CH022_geometrically_closed']=True
             return True
