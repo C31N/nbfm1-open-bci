@@ -139,17 +139,31 @@ def model(board_path: Path, output: Path, case: str,
             by_pad = {name: (pt, code) for name, pt, code in electrodes}
             if set(by_pad) != {'J2.23','R302.1'}:
                 raise ValueError('Unexpected CH022 pad topology')
+            from shapely.ops import unary_union
+            from route_targeted_closure import obstacles
+            from escape_mesh_505 import polygons
             candidates = {}
             for name in ('R302.1','J2.23'):
                 pt, code = by_pad[name]
-                _, metric = windows(board, code, pt, region, reserve)
-                result[name+'_legal_via_area_mm2'] = metric['legal_via_area_mm2']
-                if not metric['windows']:
+                component, _ = windows(board, code, pt, region, reserve)
+                _, via_obstacle = obstacles(
+                    board, code, .15, .15, region, .60, (pcbnew.F_Cu,pcbnew.B_Cu))
+                # Restrict the copper-connected via centers to <=3.5 mm
+                # from THEIR OWN pad; never reuse one global best patch.
+                local = (component.difference(
+                    unary_union([via_obstacle, reserve.buffer(.505)]))
+                    .intersection(Point(pt).buffer(3.5)).buffer(-.000005))
+                patches = [g for g in polygons(local) if g.area > 1e-8]
+                result[name+'_legal_via_area_mm2'] = round(local.area,8)
+                if not patches:
                     result['failed_net'] = 'CH022_N_ELECTRODE'
                     result['failed_pad'] = name
-                    result['status'] = 'ch022_no_connected_legal_via'
+                    result['status'] = 'ch022_no_connected_local_via'
                     return False
-                candidates[name] = tuple(metric['windows'][0]['point'])
+                patch = min(patches, key=lambda q: (q.distance(Point(pt)),-q.area))
+                candidates[name] = tuple(patch.representative_point().coords[0])
+            if Point(candidates['R302.1']).distance(Point(candidates['J2.23'])) < 1.0:
+                raise ValueError('Local CH022 via windows overlap unexpectedly')
             code = by_pad['R302.1'][1]
             # Escape R302 on F.Cu to first through-via, bridge on B.Cu
             # (optional legal additional transitions via mesh), and enter
@@ -159,6 +173,8 @@ def model(board_path: Path, output: Path, case: str,
             def apply(start: tuple[float, float], goal: tuple[float, float],
                       start_layer: int, goal_layer: int,
                       allow_vias: bool = True) -> bool:
+                result['forced_route_stage'] = (str(start_layer)+':'+str(start)
+                                                 +' -> '+str(goal_layer)+':'+str(goal))
                 path = mesh_route(board, start, goal, code, layers, reserve, region,
                                   start_layer=start_layer, goal_layer=goal_layer,
                                   allow_vias=allow_vias)
