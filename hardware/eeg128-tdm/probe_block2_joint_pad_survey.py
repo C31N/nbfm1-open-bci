@@ -51,7 +51,7 @@ def inventory(board: Any) -> dict[str, Any]:
         for label, coord, code in found_pads[net]:
             nearby = []
             for t in tracks:
-                if t.GetNetName() == net:
+                if t.GetNetname() == net:
                     continue
                 if isinstance(t, pcbnew.PCB_VIA):
                     shape = Point(xy(t.GetPosition()))
