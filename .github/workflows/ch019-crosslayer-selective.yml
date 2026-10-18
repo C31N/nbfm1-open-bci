@@ -1,0 +1,56 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+name: CH019-P selective F.Cu cross-layer return
+
+on:
+  push:
+    branches:
+      - codex/block2-ch019-bcu-obstacles-2026-10-18
+    paths:
+      - ".github/workflows/ch019-crosslayer-selective.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-model-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        case: [026-single, 026-trunk, 027-pair, 026-and-027, 026-027-en]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install KiCad 8 and Shapely 2.1.2
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely python3-pip
+          sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
+          kicad-cli version | grep '^8'
+      - name: Run immutable-net safeguard tests
+        run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch019_crosslayer_selective.py -v
+      - name: Test F.Cu selective release and 3-pad CH024 plus B.Cu CH019
+        timeout-minutes: 35
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_ch019_crosslayer_selective.py \
+            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
+            --case ${{ matrix.case }} --output /tmp/ch019-crosslayer-${{ matrix.case }}.json
+          /usr/bin/python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          report=json.loads(Path('/tmp/ch019-crosslayer-'+os.environ['CASE']+'.json').read_text())
+          assert all(report[key] is False for key in ('accepted', 'fabrication_release',
+                     'routing_completed','independent_replay_verified','native_qualification','manufacturing_files'))
+          print(report['status'],report.get('failed_neighbor'),report.get('failed_net'))
+          PY
+        env:
+          CASE: ${{ matrix.case }}
+      - name: Upload JSON only; never board or manufacturing outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ch019-crosslayer-${{ matrix.case }}
+          path: /tmp/ch019-crosslayer-${{ matrix.case }}.json
+          if-no-files-found: ignore
