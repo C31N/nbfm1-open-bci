@@ -1,0 +1,70 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+name: Block 2 CH022 forced legal via return
+
+on:
+  push:
+    branches:
+      - codex/block2-r302-u323-joint-2026-10-18
+    paths:
+      - ".github/workflows/block2-r302-forced-vias.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  forced-pad-via:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - order: ch022-first
+            radius: "0.35"
+          - order: ch022-first
+            radius: "0.65"
+          - order: ch024-first
+            radius: "0.35"
+          - order: ch024-first
+            radius: "0.65"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native KiCad 8 with Shapely 2.1
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely python3-pip
+          sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
+          kicad-cli version | grep '^8'
+      - name: Check original pad and no-release guards
+        run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_r302_joint.py -v
+      - name: Try legal CH022 via-window bridging without touching J2 escape
+        timeout-minutes: 30
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_block2_r302_joint.py \
+            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
+            --joint-order ${{ matrix.order }} \
+            --ch022-root R302.1 \
+            --reserve-radius ${{ matrix.radius }} \
+            --ch022-via-plan \
+            --output /tmp/block2-forced-${{ matrix.order }}-${{ matrix.radius }}.json
+          /usr/bin/python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          obj=json.loads(Path('/tmp/block2-forced-'+os.environ['ORDER']+'-'+os.environ['RADIUS']+'.json').read_text())
+          assert obj.get('forced_existing_pad_via_plan')
+          assert all(obj[k] is False for k in ('accepted','routing_completed','fabrication_release',
+                          'independent_replay_verified','native_qualification','manufacturing_files'))
+          print(obj['status'],obj.get('failed_pad'),obj.get('CH022_via_points'))
+          PY
+        env:
+          ORDER: ${{ matrix.order }}
+          RADIUS: ${{ matrix.radius }}
+      - name: Upload rejected or pending model JSON only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: block2-forced-vias-${{ matrix.order }}-${{ matrix.radius }}
+          path: /tmp/block2-forced-${{ matrix.order }}-${{ matrix.radius }}.json
+          if-no-files-found: ignore
