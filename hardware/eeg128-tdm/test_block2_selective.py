@@ -55,6 +55,15 @@ class SelectiveGuards(unittest.TestCase):
         self.assertIn('finally:', body)
         self.assertIn('for track in selected:', body)
 
+    def test_selective_routing_sequence_explicit(self) -> None:
+        import inspect
+        args = inspect.signature(mod.run_trial)
+        self.assertIn('order', args.parameters)
+        content = Path(mod.__file__).read_text()
+        self.assertIn("neighbors-first-reserved", content)
+        self.assertIn("restricted.difference(Point(start_point).buffer(.55))", content)
+        self.assertIn("restricted.difference(Point(end_point).buffer(.55))", content)
+
     def test_sha_determinism(self) -> None:
         self.assertEqual(mod.digest(b'abc'), hashlib.sha256(b'abc').hexdigest())
 

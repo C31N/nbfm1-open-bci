@@ -13,7 +13,6 @@ import hashlib
 import json
 import math
 from pathlib import Path
-import shutil
 import tempfile
 from typing import Any
 import zipfile
@@ -126,7 +125,7 @@ def restored_each(selected: list[Any], names: tuple[str, str]) -> bool:
 
 
 def run_trial(board_file: Path, guide_data: dict[str, Any], neighbor: str,
-              limit: int, output: Path) -> dict[str, Any]:
+              limit: int, output: Path, order: str) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import box
     from analyze_139_escape_blockers import protected_power
@@ -136,7 +135,7 @@ def run_trial(board_file: Path, guide_data: dict[str, Any], neighbor: str,
     from native_connectivity import regressed_nets
     from audit_block1_corridor_geometry import power_copper, outlines
 
-    trial: dict[str, Any] = {'neighbor': neighbor, 'max_cuts_per_net': limit,
+    trial: dict[str, Any] = {'neighbor': neighbor, 'max_cuts_per_net': limit, 'order': order,
                              'selected': [], 'status': 'not_tested', **OUTPUT_FLAGS}
     board = pcbnew.LoadBoard(str(board_file))
     original_board = pcbnew.LoadBoard(str(board_file))
@@ -155,25 +154,56 @@ def run_trial(board_file: Path, guide_data: dict[str, Any], neighbor: str,
         pads = pad_pair(board, 'CH024_P_MUX', xy)
         if [name for name, _, _ in pads] != ['R49.1', 'U3.23', 'R305.2']:
             raise ValueError('CH024 three terminal identities differ from frozen review')
-        for name, dest, _ in pads[1:]:
-            path = mesh_route(board, pads[0][1], dest, pads[0][2], layers, power, region)
-            if path is None:
-                trial['status'] = 'target_unreachable'
-                trial['failed_pad'] = name
+        from shapely.geometry import Point
+        from shapely.ops import unary_union
+        route_lanes = guide_geometry(guide_data, neighbor)
+
+        def connect_target() -> bool:
+            for name, dest, _ in pads[1:]:
+                path = mesh_route(board, pads[0][1], dest, pads[0][2], layers, power, region)
+                if path is None:
+                    trial['status'] = 'target_unreachable'
+                    trial['failed_pad'] = name
+                    return False
+                add_mesh_path(board, path, pads[0][2], layers)
+            trial['target_three_pads_proposed'] = True
+            return True
+
+        def reconnect_segments() -> bool:
+            for t in selected:
+                net = t.GetNetCode()
+                layer = 0 if t.GetLayer() == pcbnew.F_Cu else 2
+                start_point, end_point = xy(t.GetStart()), xy(t.GetEnd())
+                restrictions = None
+                if order == 'neighbors-first-reserved':
+                    restrictions = []
+                    for lane_index in range(len(layers)):
+                        guides = route_lanes.get(lane_index)
+                        if not guides:
+                            restrictions.append(Point(0, 0).buffer(0))
+                            continue
+                        restricted = unary_union(guides).buffer(.34)
+                        # The segment endpoints must remain reachable. This
+                        # local exemption never modifies the baseline copper.
+                        restricted = restricted.difference(Point(start_point).buffer(.55))
+                        restricted = restricted.difference(Point(end_point).buffer(.55))
+                        restrictions.append(restricted)
+                path = mesh_route(board, start_point, end_point, net,
+                                  layers, power, region, start_layer=layer,
+                                  goal_layer=layer, extra_obstacles=restrictions)
+                if path is None:
+                    trial['status'] = 'neighbor_segment_unrestored'
+                    trial['failed_uuid'] = t.m_Uuid.AsString()
+                    return False
+                add_mesh_path(board, path, net, layers)
+            trial['neighbors_geometrically_proposed'] = True
+            return True
+
+        tasks = (connect_target, reconnect_segments) if order == 'target-first' else (
+            reconnect_segments, connect_target)
+        for task in tasks:
+            if not task():
                 return trial
-            add_mesh_path(board, path, pads[0][2], layers)
-        trial['target_three_pads_proposed'] = True
-        for t in selected:
-            net = t.GetNetCode()
-            layer = 0 if t.GetLayer() == pcbnew.F_Cu else 2
-            path = mesh_route(board, xy(t.GetStart()), xy(t.GetEnd()), net,
-                              layers, power, region, start_layer=layer,
-                              goal_layer=layer)
-            if path is None:
-                trial['status'] = 'neighbor_segment_unrestored'
-                trial['failed_uuid'] = t.m_Uuid.AsString()
-                return trial
-            add_mesh_path(board, path, net, layers)
         trial['all_selective_segments_geometrically_proposed'] = True
         # Temporary trial only; never copy or commit to engineering source.
         pcbnew.SaveBoard(str(board_file), board)
@@ -207,6 +237,8 @@ def main() -> None:
     p.add_argument('--neighbor', choices=('CH018_N_MUX', 'CH019_P_MUX'),
                    action='append')
     p.add_argument('--budget', type=int, choices=(2, 4, 8), action='append')
+    p.add_argument('--order', choices=('target-first', 'neighbors-first-reserved'),
+                   default='target-first')
     args = p.parse_args()
     if args.output.suffix != '.json' or args.output.exists():
         raise ValueError('Use a new diagnostic JSON file')
@@ -232,10 +264,11 @@ def main() -> None:
                     (reference / name).write_bytes(buf)
                 try:
                     trial = run_trial(work / PCB, guides, neighbor, budget,
-                                      work / 'selective-result.json')
+                                      work / 'selective-result.json', args.order)
                 except (ValueError, RuntimeError) as exc:
                     trial = {'neighbor': neighbor, 'max_cuts_per_net': budget,
-                             'status': 'model_failed', 'reason': str(exc), **OUTPUT_FLAGS}
+                             'status': 'model_failed', 'reason': str(exc), 'order': args.order,
+                             **OUTPUT_FLAGS}
                 summary['trials'].append(trial)
                 args.output.write_text(json.dumps(summary, indent=2) + '\n')
                 print(neighbor, budget, trial['status'], flush=True)

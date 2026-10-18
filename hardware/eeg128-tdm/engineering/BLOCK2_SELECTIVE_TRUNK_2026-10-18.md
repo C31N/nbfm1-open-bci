@@ -41,3 +41,20 @@ F.Cu obstacle, rather than merely reserve holes.
 
 This is research diagnostics only. Mainline checkpoint and manufacturer
 release remain untouched.
+
+## First native model findings
+
+The initial 4-segment-per-net budget found two CH022-N F.Cu objects
+`a0a692e9-e4d4-4be1-b224-b0aa00b02815` and
+`e81c7523-9205-40fe-bcd4-374c112022ef`.
+CH018-N trial was blocked while routing CH024-P to U3.23.
+CH019-P trial geometrically reached the complete CH024-P three-pad
+network, but the remaining CH019-P segment
+`752f59d7-57f9-46ee-b7cc-b45beae0a553`
+(start 41.75/31.58, end 43.25/33.08 on In2.Cu)
+could not be restored. These are native KiCad-hosted model observations,
+not a DRC-approved full candidate.
+
+Follow-up experiments vary segment budget (4 or 8) and try both
+target-first and neighbors-first with guide-corridor reservations.
+The outer routed copper escapes remain immutable.

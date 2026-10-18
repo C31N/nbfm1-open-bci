@@ -21,6 +21,8 @@ jobs:
       fail-fast: false
       matrix:
         neighbor: [CH018_N_MUX, CH019_P_MUX]
+        budget: [4, 8]
+        order: [target-first, neighbors-first-reserved]
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -40,15 +42,16 @@ jobs:
         run: |
           /usr/bin/python3 hardware/eeg128-tdm/probe_block2_selective.py \
             --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
-            --output /tmp/selective-${{ matrix.neighbor }}.json \
+            --output /tmp/selective-${{ matrix.neighbor }}-${{ matrix.budget }}-${{ matrix.order }}.json \
             --neighbor ${{ matrix.neighbor }} \
-            --budget 4
+            --budget ${{ matrix.budget }} \
+            --order ${{ matrix.order }}
           /usr/bin/python3 - <<'PY'
           import json
           from pathlib import Path
           import os
           name = os.environ['TARGET_NEIGHBOR']
-          obj = json.loads(Path(f'/tmp/selective-{name}.json').read_text())
+          obj = json.loads(Path(f'/tmp/selective-{name}-{os.environ[\"TARGET_BUDGET\"]}-{os.environ[\"TARGET_ORDER\"]}.json').read_text())
           assert len(obj['trials']) == 1
           assert all(obj[k] is False for k in (
               'accepted', 'routing_completed', 'fabrication_release',
@@ -58,10 +61,12 @@ jobs:
           PY
         env:
           TARGET_NEIGHBOR: ${{ matrix.neighbor }}
+          TARGET_BUDGET: ${{ matrix.budget }}
+          TARGET_ORDER: ${{ matrix.order }}
       - name: Upload diagnostic only
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: block2-selective-${{ matrix.neighbor }}
-          path: /tmp/selective-${{ matrix.neighbor }}.json
+          name: block2-selective-${{ matrix.neighbor }}-${{ matrix.budget }}-${{ matrix.order }}
+          path: /tmp/selective-${{ matrix.neighbor }}-${{ matrix.budget }}-${{ matrix.order }}.json
           if-no-files-found: ignore
