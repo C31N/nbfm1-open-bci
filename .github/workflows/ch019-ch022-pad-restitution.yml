@@ -1,0 +1,60 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+name: CH022-N pad-based restitution after CH019 bridge
+
+on:
+  push:
+    branches:
+      - codex/block2-ch019-bcu-obstacles-2026-10-18
+    paths:
+      - ".github/workflows/ch019-ch022-pad-restitution.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pad-topology:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [ch022-pads-first, ch022-pads-last, ch022-pads-no-old-in2]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native KiCad 8 and Shapely 2.1.2
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely python3-pip
+          sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
+          kicad-cli version | grep '^8'
+      - name: Immutable copper and no-release guard checks
+        run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch019_crosslayer_selective.py -v
+      - name: CH022 electrode pad-topology and eleven-neighbor model
+        timeout-minutes: 35
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_ch019_crosslayer_selective.py \
+            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
+            --case exact-eleven-conflicts \
+            --restoration ${{ matrix.mode }} \
+            --output /tmp/ch022-${{ matrix.mode }}.json
+          /usr/bin/python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          d=json.loads(Path('/tmp/ch022-'+os.environ['MODE']+'.json').read_text())
+          assert all(d[k] is False for k in ('accepted','routing_completed',
+                     'fabrication_release','independent_replay_verified',
+                     'native_qualification','manufacturing_files'))
+          print(d['status'],d.get('failed_neighbor'),d.get('failed_uuid'),
+                d.get('failed_net'),d.get('failed_pad'))
+          PY
+        env:
+          MODE: ${{ matrix.mode }}
+      - name: Keep JSON diagnostic only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ch022-pads-${{ matrix.mode }}
+          path: /tmp/ch022-${{ matrix.mode }}.json
+          if-no-files-found: ignore
