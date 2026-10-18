@@ -8,7 +8,6 @@ No candidate is accepted. No Gerber/drill/placement/bill-of-material exports.
 from __future__ import annotations
 
 import argparse
-from collections import defaultdict
 import json
 from pathlib import Path
 import tempfile

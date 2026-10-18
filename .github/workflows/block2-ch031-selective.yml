@@ -1,0 +1,61 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+name: Block 2 local CH031-N corridor
+
+on:
+  push:
+    branches:
+      - codex/block2-selective-trunks-2026-10-18
+    paths:
+      - ".github/workflows/block2-ch031-selective.yml"
+      - "hardware/eeg128-tdm/probe_block2_ch031_selective.py"
+      - "hardware/eeg128-tdm/test_block2_ch031_selective.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  model:
+    strategy:
+      fail-fast: false
+      matrix:
+        budget: [2, 4, 8]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Native KiCad 8 and Shapely 2.1
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely python3-pip
+          sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
+          kicad-cli version | grep '^8'
+      - name: Run fail-closed controls
+        run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_ch031_selective.py -v
+      - name: Model local CH031-N segment detour and then CH020-P
+        timeout-minutes: 20
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_block2_ch031_selective.py \
+            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
+            --output /tmp/ch031-local-${{ matrix.budget }}.json \
+            --limit ${{ matrix.budget }}
+          /usr/bin/python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import os
+          data = json.loads(Path('/tmp/ch031-local-'+os.environ['BUDGET']+'.json').read_text())
+          assert all(data[k] is False for k in (
+              'accepted', 'routing_completed', 'fabrication_release',
+              'native_drc_qualified', 'replay_qualified', 'manufacturing_exports'))
+          print(data['status'])
+          PY
+        env:
+          BUDGET: ${{ matrix.budget }}
+      - name: Archive model-only JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: block2-local-ch031n-${{ matrix.budget }}
+          path: /tmp/ch031-local-${{ matrix.budget }}.json
+          if-no-files-found: ignore
