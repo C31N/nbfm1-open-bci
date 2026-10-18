@@ -68,10 +68,11 @@ CASES = {
 
 def model(board_path: Path, output: Path, case: str,
           joint_order: str = 'ch024-first', reserve_radius: float = .65,
-          ch022_root: str = 'J2.23') -> dict[str, Any]:
+          ch022_root: str = 'J2.23',
+          via_plan: bool = False) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import box, Point, LineString
-    from analyze_139_escape_blockers import protected_power
+    from analyze_139_escape_blockers import protected_power, windows
     from route_targeted_closure import xy, routing_domain, native_fresh
     from escape_mesh_505 import mesh_route, add_mesh_path
     from probe_ch019_trunk_return import pads
@@ -85,7 +86,8 @@ def model(board_path: Path, output: Path, case: str,
     layers = (pcbnew.F_Cu, pcbnew.B_Cu, pcbnew.In2_Cu)
     result = {**FLAGS, 'case': case, 'status': 'not_started',
               'selected_segment_uuid': [], 'joint_order': joint_order,
-              'radius_mm': reserve_radius, 'ch022_root': ch022_root}
+              'radius_mm': reserve_radius, 'ch022_root': ch022_root,
+              'forced_existing_pad_via_plan': via_plan}
     chosen = protected_selection(board, 'entire_trunk')
     lookup = {t.m_Uuid.AsString(): t for t in board.GetTracks()}
     extra = CASES[case]
@@ -130,6 +132,55 @@ def model(board_path: Path, output: Path, case: str,
     for t in chosen:
         board.Remove(t)
     try:
+        def connect_ch022_via_bridge() -> bool:
+            # Require a real F.Cu-connected legal via window at BOTH
+            # CH022 pads. Never via-in-pad or into the L3 plane outline.
+            electrodes = pads(board, 'CH022_N_ELECTRODE')
+            by_pad = {name: (pt, code) for name, pt, code in electrodes}
+            if set(by_pad) != {'J2.23','R302.1'}:
+                raise ValueError('Unexpected CH022 pad topology')
+            candidates = {}
+            for name in ('R302.1','J2.23'):
+                pt, code = by_pad[name]
+                _, metric = windows(board, code, pt, region, reserve)
+                result[name+'_legal_via_area_mm2'] = metric['legal_via_area_mm2']
+                if not metric['windows']:
+                    result['failed_net'] = 'CH022_N_ELECTRODE'
+                    result['failed_pad'] = name
+                    result['status'] = 'ch022_no_connected_legal_via'
+                    return False
+                candidates[name] = tuple(metric['windows'][0]['point'])
+            code = by_pad['R302.1'][1]
+            # Escape R302 on F.Cu to first through-via, bridge on B.Cu
+            # (optional legal additional transitions via mesh), and enter
+            # J2 existing F.Cu island from the second legal through-via.
+            rvia = candidates['R302.1']
+            jvia = candidates['J2.23']
+            def apply(start, goal, start_layer, goal_layer, allow_vias=True):
+                path = mesh_route(board, start, goal, code, layers, reserve, region,
+                                  start_layer=start_layer, goal_layer=goal_layer,
+                                  allow_vias=allow_vias)
+                if path is None:
+                    return False
+                add_mesh_path(board, path, code, layers)
+                return True
+            if not apply(by_pad['R302.1'][0], rvia, 0, 0, False):
+                result['status'] = 'ch022_R302_FCu_via_escape_blocked'
+                return False
+            # Rounding and native obstacle checks remain authoritative:
+            # the via centres originate from same-net connected windows.
+            add_mesh_path(board, [(0,*rvia),(1,*rvia)], code, layers)
+            if not apply(rvia, jvia, 1, 1):
+                result['status'] = 'ch022_BCu_return_blocked'
+                return False
+            add_mesh_path(board, [(1,*jvia),(0,*jvia)], code, layers)
+            if not apply(jvia, by_pad['J2.23'][0], 0, 0, False):
+                result['status'] = 'ch022_J2_FCu_reentry_blocked'
+                return False
+            result['CH022_N_ELECTRODE_geometry_proposed'] = True
+            result['CH022_via_points'] = {'R302.1': rvia, 'J2.23': jvia}
+            return True
+
         def connect(net: str, required: set[str] | None = None) -> bool:
             terminals = pads(board, net)
             if required is not None and {n for n, _, _ in terminals} != required:
@@ -155,7 +206,8 @@ def model(board_path: Path, output: Path, case: str,
             return True
 
         if joint_order == 'ch022-first':
-            if not connect('CH022_N_ELECTRODE', {'J2.23','R302.1'}):
+            if not (connect_ch022_via_bridge() if via_plan else
+                    connect('CH022_N_ELECTRODE', {'J2.23','R302.1'})):
                 result['status'] = 'ch022_route_blocked'
                 return result
             result['ch022_pad_reconnection_proposed'] = True
@@ -251,6 +303,8 @@ def main() -> None:
     parser.add_argument('--reserve-radius', type=float, choices=(.35,.65,.95),
                         required=True)
     parser.add_argument('--ch022-root', choices=('J2.23','R302.1'), required=True)
+    parser.add_argument('--ch022-via-plan', action='store_true',
+                        help='Require F.Cu pad island vias and B.Cu return')
     args = parser.parse_args()
     if args.output.exists() or args.output.suffix != '.json':
         raise ValueError('Only new JSON reports')
@@ -269,13 +323,15 @@ def main() -> None:
             (baseline / name).write_bytes(raw)
         try:
             output = model(work / PCB, work / 'crosslayer.json', 'exact-eleven-conflicts',
-                           args.joint_order, args.reserve_radius, args.ch022_root)
+                           args.joint_order, args.reserve_radius, args.ch022_root,
+                           args.ch022_via_plan)
         except Exception as exc:
             output = {**FLAGS, 'status': 'diagnostic_exception',
                       'error_type': type(exc).__name__, 'detail': str(exc),
                       'joint_order': args.joint_order,
                       'radius_mm': args.reserve_radius,
-                      'ch022_root': args.ch022_root}
+                      'ch022_root': args.ch022_root,
+                      'forced_existing_pad_via_plan': args.ch022_via_plan}
     if digest(args.archive.read_bytes()) != ZIP_SHA:
         raise ValueError('Source archive changed')
     args.output.write_text(json.dumps(output, indent=2) + '\n')
