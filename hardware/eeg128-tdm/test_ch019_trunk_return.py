@@ -39,6 +39,13 @@ class CH019ReturnGuards(unittest.TestCase):
         self.assertNotIn("'accepted': True", source)
         self.assertNotIn('kicad-cli pcb export', source)
 
+    def test_alternate_ic_first_sequence_is_explicit(self) -> None:
+        text = Path(mod.__file__).read_text()
+        self.assertIn("choices=('ch024-first', 'ch019-first')", text)
+        self.assertIn("choices=('R295.2', 'R39.1', 'U3.6')", text)
+        self.assertIn("sequence == 'ch019-first'", text)
+        self.assertIn("'ch019_root': ch019_root", text)
+
     def test_save_is_only_in_temporary_trial(self) -> None:
         source = Path(mod.__file__).read_text()
         self.assertIn('with tempfile.TemporaryDirectory', source)

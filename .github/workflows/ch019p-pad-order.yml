@@ -1,0 +1,68 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+name: CH019-P U3.6 first-return diagnostic
+
+on:
+  push:
+    branches:
+      - codex/ch019p-return-136-2026-10-18
+    paths:
+      - ".github/workflows/ch019p-pad-order.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fail-closed-pad-order:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - root: U3.6
+            sequence: ch024-first
+          - root: U3.6
+            sequence: ch019-first
+          - root: R39.1
+            sequence: ch019-first
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install KiCad 8 and fixed Shapely
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely python3-pip
+          sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
+          kicad-cli version | grep '^8'
+      - name: Verify diagnostic fail-closed safeguards
+        run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch019_trunk_return.py -v
+      - name: Attempt CH019-P alternate pad topology
+        timeout-minutes: 25
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_ch019_trunk_return.py \
+            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
+            --case entire_trunk --strategy pads \
+            --ch019-root ${{ matrix.root }} \
+            --sequence ${{ matrix.sequence }} \
+            --output /tmp/ch019-${{ matrix.sequence }}-${{ matrix.root }}.json
+          /usr/bin/python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          name = f'/tmp/ch019-{os.environ["SEQ"]}-{os.environ["ROOT"]}.json'
+          result = json.loads(Path(name).read_text())
+          assert all(result[k] is False for k in (
+              'accepted','routing_completed','fabrication_release',
+              'independent_replay_verified','native_qualification','manufacturing_files'))
+          print(result['status'], result.get('blocked_at'))
+          PY
+        env:
+          SEQ: ${{ matrix.sequence }}
+          ROOT: ${{ matrix.root }}
+      - name: Upload only nonrelease JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ch019-ordered-${{ matrix.sequence }}-${{ matrix.root }}
+          path: /tmp/ch019-${{ matrix.sequence }}-${{ matrix.root }}.json
+          if-no-files-found: ignore
