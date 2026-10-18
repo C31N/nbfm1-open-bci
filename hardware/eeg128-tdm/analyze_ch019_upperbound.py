@@ -9,7 +9,7 @@ VCM, CH018-N, pads, vias, power zones and original PCB bytes are immutable.
 from __future__ import annotations
 
 import argparse
-from collections import Counter, defaultdict
+from collections import defaultdict
 import json
 from pathlib import Path
 import tempfile
