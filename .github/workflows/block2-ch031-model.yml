@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+name: Block 2 shared CH031-N restoration
+
+on:
+  push:
+    branches:
+      - codex/block2-136-restitution-2026-10-18
+    paths:
+      - ".github/workflows/block2-ch031-model.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  geometry:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install KiCad 8 and Shapely 2.1
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely python3-pip
+          sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
+          kicad-cli version | grep '^8'
+          /usr/bin/python3 -c 'import shapely; assert hasattr(shapely, "constrained_delaunay_triangles")'
+      - name: Route CH031-N before the four shared targets (diagnostic only)
+        timeout-minutes: 25
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_block2_joint136.py \
+            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
+            --output /tmp/block2-shared-ch031-model.json \
+            --case shared-ch031
+          /usr/bin/python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('/tmp/block2-shared-ch031-model.json').read_text())
+          assert len(report['trials']) == 1
+          assert report['trials'][0]['routing_order'][0] == 'CH031_N_MUX'
+          assert not report['accepted'] and not report['fabrication_release']
+          assert not report['routing_completed'] and not report['pcb_written']
+          assert not report['native_drc_verified']
+          assert not report['independent_byteidentical_replay_verified']
+          assert not report['trials'][0]['all_neighbors_restituted']
+          PY
+      - name: Upload non-adopted shared CH031-N model
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: block2-ch031n-coordinated-model
+          path: /tmp/block2-shared-ch031-model.json
+          if-no-files-found: ignore
