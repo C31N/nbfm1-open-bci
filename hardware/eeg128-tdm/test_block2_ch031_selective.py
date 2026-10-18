@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 import unittest
-from unittest.mock import MagicMock
 
 import probe_block2_ch031_selective as mod
 

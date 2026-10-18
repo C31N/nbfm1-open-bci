@@ -49,6 +49,42 @@ def eligible_segments(board: Any, target: tuple[float, float],
     return [t for _, _, t in candidates[:limit]]
 
 
+def local_copper_inventory(board: Any, target: tuple[float, float]) -> dict[str, Any]:
+    """Report all nearby CH031 copper, including protected pad/via escapes."""
+    import pcbnew
+    from shapely.geometry import LineString, Point
+    from route_targeted_closure import xy
+    pads = [Point(xy(p.GetPosition())) for f in board.GetFootprints()
+            for p in f.Pads() if p.GetNetname() == 'CH031_N_MUX']
+    vias = [Point(xy(t.GetPosition())) for t in board.GetTracks()
+            if isinstance(t, pcbnew.PCB_VIA)
+            and t.GetNetname() == 'CH031_N_MUX']
+    target_pt = Point(target)
+    windows = [Point(p) for p in PATCHES]
+    rows: list[dict[str, Any]] = []
+    for t in board.GetTracks():
+        if t.GetNetname() != 'CH031_N_MUX':
+            continue
+        if isinstance(t, pcbnew.PCB_VIA):
+            shape = Point(xy(t.GetPosition()))
+            kind = 'via'
+        elif isinstance(t, pcbnew.PCB_ARC):
+            continue
+        else:
+            shape = LineString([xy(t.GetStart()), xy(t.GetEnd())])
+            kind = 'segment'
+        rows.append({
+            'uuid': t.m_Uuid.AsString(), 'layer': int(t.GetLayer()),
+            'type': kind, 'distance_U3_5_mm': shape.distance(target_pt),
+            'distance_patch_mm': min(shape.distance(w) for w in windows),
+            'nearest_CH031_pad_mm': min((shape.distance(v) for v in pads), default=None),
+            'nearest_CH031_via_mm': min((shape.distance(v) for v in vias), default=None),
+        })
+    rows.sort(key=lambda r: (r['distance_U3_5_mm'], r['uuid']))
+    return {'target_U3_5': list(target), 'ch031_copper_objects': len(rows),
+            'nearest': rows[:30]}
+
+
 def analyze(board_file: Path, limit: int) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import Point, box
@@ -68,6 +104,7 @@ def analyze(board_file: Path, limit: int) -> dict[str, Any]:
                    and p.GetNetname() == 'CH020_P_MUX'), None)
     if target is None:
         raise ValueError('Missing named CH020-P target U3.5')
+    result['local_inventory'] = local_copper_inventory(board, target)
     chosen = eligible_segments(board, target, limit)
     result['selected'] = [{'uuid': t.m_Uuid.AsString(),
                            'start': xy(t.GetStart()), 'end': xy(t.GetEnd())}
