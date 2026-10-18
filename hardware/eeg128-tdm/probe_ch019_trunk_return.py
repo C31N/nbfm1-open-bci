@@ -109,7 +109,8 @@ def explore(case: str, strategy: str, input_board: Path,
     result: dict[str, Any] = {**FLAGS, 'case': case, 'strategy': strategy,
                               'status': 'not_started',
                               'selected_uuids': [t.m_Uuid.AsString() for t in chosen]}
-    region = routing_domain(board, .30, .25)
+    from shapely.geometry import box
+    region = routing_domain(board, .30, .25).intersection(box(12, .5, 59, 69))
     power = protected_power(board)
     layers = (pcbnew.F_Cu, pcbnew.B_Cu, pcbnew.In2_Cu)
     old_pad_set = pads(board, 'CH019_P_MUX')
