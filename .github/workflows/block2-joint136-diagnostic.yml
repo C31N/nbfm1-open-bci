@@ -4,7 +4,7 @@ name: Block 2 coordinated window diagnostic
 on:
   push:
     branches:
-      - codex/block2-joint136-safe-2026-10-18
+      - codex/block2-136-restitution-2026-10-18
     paths:
       - ".github/workflows/block2-joint136-diagnostic.yml"
       - "hardware/eeg128-tdm/probe_block2_joint136.py"
@@ -55,18 +55,18 @@ jobs:
           /usr/bin/python3 -c 'import shapely; assert hasattr(shapely, "constrained_delaunay_triangles")'
 
       - name: Search complete CH024-P and neighbor paths (model only)
-        timeout-minutes: 15
+        timeout-minutes: 35
         continue-on-error: true
         run: |
           /usr/bin/python3 hardware/eeg128-tdm/probe_block2_joint136.py \
             --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
             --output /tmp/block2-ch024p-path-proposals.json \
-            --case ch024p-ch018 --case ch024p-ch019
+            --case ch024p-ch018 --case ch024p-ch019 --all-orders
           /usr/bin/python3 - <<'PY'
           import json
           from pathlib import Path
           report = json.loads(Path('/tmp/block2-ch024p-path-proposals.json').read_text())
-          assert len(report['trials']) == 4
+          assert len(report['trials']) == 12
           assert all(report[k] is False for k in (
               'accepted', 'routing_completed', 'fabrication_release',
               'pcb_written', 'manufacturing_artifacts_created',
@@ -83,7 +83,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: block2-ch024p-model-only-paths
+          name: block2-ch024p-full-order-diagnostic
           path: /tmp/block2-ch024p-path-proposals.json
           if-no-files-found: ignore
 

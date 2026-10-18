@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+from itertools import permutations
 import math
 import tempfile
 import zipfile
@@ -73,8 +74,11 @@ def pad_pair(board: Any, net_name: str, xy: Callable[[Any], tuple[float, float]]
             for ref, pad in [source, *others]]
 
 
-def route_order(targets: tuple[str, ...], neighbors: tuple[str, ...]) -> Iterator[tuple[str, ...]]:
+def route_order(targets: tuple[str, ...], neighbors: tuple[str, ...], full: bool = False) -> Iterator[tuple[str, ...]]:
     """Try target-first and restitution-first; never rely on a lone freed target."""
+    if full and len(targets) == 1 and len(neighbors) == 2:
+        yield from permutations((*targets, *neighbors))
+        return
     yield tuple(neighbors) + tuple(targets)
     if len(targets) == 1:
         yield tuple(targets) + tuple(neighbors)
@@ -89,7 +93,8 @@ def prepare_board(board: Any, removals: tuple[str, ...]) -> list[Any]:
     return removed
 
 
-def probe(archive: Path, cases: tuple[str, ...], include_mesh: bool) -> dict:
+def probe(archive: Path, cases: tuple[str, ...], include_mesh: bool,
+          full_orders: bool = False, save_progress: Path | None = None) -> dict:
     import pcbnew
     from shapely.geometry import box
     from analyze_139_escape_blockers import protected_power, windows
@@ -115,7 +120,7 @@ def probe(archive: Path, cases: tuple[str, ...], include_mesh: bool) -> dict:
         for name, neighbors, targets in TRIALS:
             if name not in cases:
                 continue
-            for order in route_order(targets, neighbors):
+            for order in route_order(targets, neighbors, full=full_orders):
                 board = pcbnew.LoadBoard(str(source))
                 power = protected_power(board)
                 removed_tracks = prepare_board(board, neighbors)
@@ -168,13 +173,15 @@ def probe(archive: Path, cases: tuple[str, ...], include_mesh: bool) -> dict:
                                 trial['failed_net'] = net_name
                                 trial['search_error'] = str(error)
                                 break
-                    if set(neighbors).issubset(trial['successfully_proposed_nets']):
+                    if set(neighbors + targets).issubset(trial['successfully_proposed_nets']):
                         trial['all_neighbors_geometrically_proposed'] = True
                     else:
                         trial['all_neighbors_geometrically_proposed'] = False
                     # Even a geometrically complete plan is unverified without native
                     # refill, DRC, power-difference, connectivity and independent replay.
                     report['trials'].append(trial)
+                    if save_progress is not None:
+                        save_progress.write_text(json.dumps(report, indent=2) + '\n')
                 finally:
                     for track in removed_tracks:
                         board.Add(track)
@@ -189,6 +196,8 @@ def main() -> None:
                         help='SHA-pinned joint-unadopted137.zip containing S0+CH025-P preparation')
     parser.add_argument('--output', type=Path, required=True, help='Diagnostic JSON only')
     parser.add_argument('--case', choices=[t[0] for t in TRIALS], action='append')
+    parser.add_argument('--all-orders', action='store_true',
+                        help='Try all six permutations for each CH024-P triple')
     parser.add_argument('--skip-mesh', action='store_true',
                         help='Run only source/target window mapping')
     args = parser.parse_args()
@@ -200,7 +209,8 @@ def main() -> None:
     if args.output.resolve() == args.archive.resolve():
         raise ValueError('Cannot overwrite pinned input')
     result = probe(args.archive, tuple(args.case or [t[0] for t in TRIALS]),
-                   not args.skip_mesh)
+                   not args.skip_mesh, full_orders=args.all_orders,
+                   save_progress=args.output)
     args.output.write_text(json.dumps(result, indent=2) + '\n')
     print(json.dumps({'trials': len(result['trials']), 'accepted': False,
                       'model_only': True, 'output': str(args.output)}))

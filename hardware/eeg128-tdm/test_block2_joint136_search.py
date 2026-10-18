@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
 """Pure Python guard tests; no native KiCad or routing writes required."""
 import tempfile
+from itertools import permutations
 import sys
 from types import SimpleNamespace
 import unittest
@@ -30,6 +31,21 @@ class ProbeSafety(unittest.TestCase):
         self.assertEqual(len(orders), 2)
         self.assertEqual(set(orders[0]), set(neighbors) | set(targets))
         self.assertEqual(set(orders[1]), set(neighbors) | set(targets))
+
+    def test_exhaustive_orders_only_for_ch024(self) -> None:
+        neighbors, targets = probe.TRIALS[0][1:]
+        orders = list(probe.route_order(targets, neighbors, full=True))
+        self.assertEqual(len(orders), 6)
+        self.assertEqual(set(orders), set(permutations((*targets, *neighbors))))
+        shared_neigh, shared_targets = probe.TRIALS[2][1:]
+        self.assertEqual(len(list(probe.route_order(shared_targets, shared_neigh, full=True))), 1)
+
+    def test_never_count_neighbors_without_target(self) -> None:
+        # A model may have restored only CH022_N and an In2 neighbor.
+        targets = {'CH024_P_MUX'}
+        neighbors = {'CH022_N_ELECTRODE', 'CH018_N_MUX'}
+        proposed = set(neighbors)
+        self.assertFalse((targets | neighbors).issubset(proposed))
 
     def test_reject_modified_fixture_before_archive_read(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
