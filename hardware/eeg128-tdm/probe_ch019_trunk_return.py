@@ -9,7 +9,6 @@ never set accepted=true and never write a board to the repository.
 from __future__ import annotations
 
 import argparse
-import itertools
 import json
 from pathlib import Path
 import tempfile
@@ -98,7 +97,6 @@ def via_windows(board: Any, point: tuple[float, float],
 def explore(case: str, strategy: str, input_board: Path,
             report_file: Path) -> dict[str, Any]:
     import pcbnew
-    from shapely.geometry import Point
     from analyze_139_escape_blockers import protected_power
     from route_targeted_closure import routing_domain, xy, native_fresh
     from escape_mesh_505 import add_mesh_path, mesh_route
