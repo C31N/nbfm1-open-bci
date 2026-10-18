@@ -1,0 +1,73 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+name: CH019-P In2 return-path geometry
+
+on:
+  push:
+    branches:
+      - codex/ch019p-return-136-2026-10-18
+    paths:
+      - ".github/workflows/ch019p-return-diagnostic.yml"
+      - "hardware/eeg128-tdm/probe_ch019_trunk_return.py"
+      - "hardware/eeg128-tdm/test_ch019_trunk_return.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  model-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - case: isolated
+            strategy: pads
+          - case: adjacent
+            strategy: pads
+          - case: entire_trunk
+            strategy: pads
+          - case: entire_trunk
+            strategy: old_endpoints
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install KiCad 8 and Shapely 2.1.2
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely python3-pip
+          sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
+          kicad-cli version | grep '^8'
+      - name: Verify immutable fixture and release guards
+        run: |
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch019_trunk_return.py -v
+      - name: Probe local In2.Cu return and legal via centers (never accepted)
+        timeout-minutes: 30
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_ch019_trunk_return.py \
+            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
+            --case ${{ matrix.case }} \
+            --strategy ${{ matrix.strategy }} \
+            --output /tmp/ch019-return-${{ matrix.case }}-${{ matrix.strategy }}.json
+          /usr/bin/python3 - <<'PY'
+          import json
+          from pathlib import Path
+          from os import environ
+          path = Path('/tmp/ch019-return-' + environ['CASE'] + '-' + environ['MODE'] + '.json')
+          data = json.loads(path.read_text())
+          assert all(data[k] is False for k in (
+              'accepted', 'routing_completed', 'fabrication_release',
+              'independent_replay_verified', 'native_qualification', 'manufacturing_files'))
+          print(data['status'], data.get('blocked_at'), data.get('blocked_endpoints'))
+          PY
+        env:
+          CASE: ${{ matrix.case }}
+          MODE: ${{ matrix.strategy }}
+      - name: Upload model-only JSON, no PCB or manufacturing files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ch019-return-${{ matrix.case }}-${{ matrix.strategy }}
+          path: /tmp/ch019-return-${{ matrix.case }}-${{ matrix.strategy }}.json
+          if-no-files-found: ignore
