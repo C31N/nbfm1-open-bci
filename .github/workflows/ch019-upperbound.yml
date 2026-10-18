@@ -46,7 +46,10 @@ jobs:
           assert all(d[n] is False for n in ('accepted','routing_completed',
                  'fabrication_release','independent_replay_verified',
                  'native_qualification','manufacturing_files'))
-          print(d['status'],d.get('relaxed_nets'))
+          if d['status'] == 'upper_bound_geometrically_proposed_but_unrestored':
+              assert 'conflicting_displaced_segments' in d
+              assert d['conflicting_segment_count'] > 0
+          print(d['status'],d.get('conflicting_segment_count'),d.get('relaxed_nets'))
           PY
         env:
           ORDER: ${{ matrix.ordering }}
