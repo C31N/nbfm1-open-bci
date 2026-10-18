@@ -38,6 +38,18 @@ CASES = {
     '026-and-027': {'CH026_P_MUX': UUID_GROUPS['CH026_P_MUX'],
                     'CH027_P_MUX': UUID_GROUPS['CH027_P_MUX']},
     '026-027-en': {**UUID_GROUPS},
+    'exact-eight-conflicts': {
+        'CH019_N_MUX': (
+            'cbef8349-505c-5ce2-812b-299cf1e09ca5',
+            '0832ca70-347c-5b2d-b8d9-c8fff7096f8a',
+        ),
+        'BANK1_P_MUX_OUT': (
+            '7d5653c6-8ba9-40b9-afd5-266ed0ef4353',
+        ),
+        'CH026_P_MUX': UUID_GROUPS['CH026_P_MUX'] + (
+            'd3abb5e2-a155-421a-8a73-4d1ef441d576',
+        ),
+    },
 }
 
 
@@ -64,7 +76,9 @@ def model(board_path: Path, output: Path, case: str) -> dict[str, Any]:
     for net, uuids in extra.items():
         for uid in uuids:
             t = lookup.get(uid)
-            if t is None or t.GetNetname() != net or t.GetLayer() != pcbnew.F_Cu:
+            expected_layer = (pcbnew.B_Cu if net in ('CH019_N_MUX', 'BANK1_P_MUX_OUT')
+                              else pcbnew.F_Cu)
+            if t is None or t.GetNetname() != net or t.GetLayer() != expected_layer:
                 raise ValueError('Exact protected F.Cu candidate mismatch: ' + uid)
             if isinstance(t, (pcbnew.PCB_ARC, pcbnew.PCB_VIA)):
                 raise ValueError('No via/arc can be relocated')
