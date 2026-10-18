@@ -14,7 +14,7 @@ class CrosslayerSafeguards(unittest.TestCase):
         self.assertNotIn("GetNetname() == 'CH018_N_MUX' and",content)
 
     def test_selective_plan_scoped(self) -> None:
-        self.assertEqual(len(m.CASES),6)
+        self.assertEqual(len(m.CASES),7)
         self.assertTrue(all(k in ('CH026_P_MUX','CH027_P_MUX','MUX_EN','CH019_N_MUX','BANK1_P_MUX_OUT')
                             for case in m.CASES.values() for k in case))
         self.assertEqual(len(m.UUID_GROUPS['CH026_P_MUX']),4)

@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        case: [026-single, 026-trunk, 027-pair, 026-and-027, 026-027-en, exact-eight-conflicts]
+        case: [026-single, 026-trunk, 027-pair, 026-and-027, 026-027-en, exact-eight-conflicts, exact-eleven-conflicts]
     steps:
       - uses: actions/checkout@v4
       - name: Install KiCad 8 and Shapely 2.1.2
