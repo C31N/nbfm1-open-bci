@@ -7,6 +7,8 @@ on:
       - codex/block2-ch026p-r302-escape-2026-10-18
     paths:
       - ".github/workflows/ch026-ch022-joint.yml"
+      - "hardware/eeg128-tdm/probe_ch026_ch022_joint.py"
+      - "hardware/eeg128-tdm/test_ch026_ch022_joint.py"
   workflow_dispatch:
 
 permissions:
