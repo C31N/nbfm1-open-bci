@@ -1,0 +1,57 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+name: Block 2 CH019 B.Cu obstacle inventory
+
+on:
+  push:
+    branches:
+      - codex/block2-ch019-bcu-obstacles-2026-10-18
+    paths:
+      - ".github/workflows/ch019-bcu-obstacle-inventory.yml"
+      - "hardware/eeg128-tdm/analyze_ch019_bcu_blockers.py"
+      - "hardware/eeg128-tdm/test_ch019_bcu_blockers.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  readonly-inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Native KiCad 8 and geometry stack
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely python3-pip
+          sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
+          kicad-cli version | grep '^8'
+      - name: Guard selected scope and keepout requirements
+        run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch019_bcu_blockers.py -v
+      - name: Identify B.Cu/F.Cu copper blockers (never modify checkpoint)
+        timeout-minutes: 22
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/analyze_ch019_bcu_blockers.py \
+            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
+            --output /tmp/ch019-bcu-copper-blockers.json
+          /usr/bin/python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('/tmp/ch019-bcu-copper-blockers.json').read_text())
+          assert all(result[k] is False for k in (
+              'accepted', 'routing_completed', 'fabrication_release',
+              'drc_qualified', 'replay_qualified', 'manufacturing_files'))
+          assert result['keepouts'] == {'L3_outline_mm': .505, 'edge_A2_mm': .25}
+          assert all(t['net'] not in ('CH018_N_MUX', 'CH022_N_ELECTRODE')
+                     for t in result['selectable_segments'])
+          print('baseline', result['baseline_free_space'])
+          print('groups', [(k, v['count']) for k, v in result['neighbor_grouping'].items()])
+          PY
+      - name: Upload diagnostic JSON, never PCB or production files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ch019-bcu-blockers-diagnostic
+          path: /tmp/ch019-bcu-copper-blockers.json
+          if-no-files-found: ignore
