@@ -32,7 +32,9 @@ class CoupledR302U323Guards(unittest.TestCase):
     def test_strict_forced_via_windows(self) -> None:
         text = Path(module.__file__).read_text()
         self.assertIn("windows(board, code, pt, region, reserve)", text)
-        self.assertIn("metric['windows'][0]['point']", text)
+        self.assertIn("intersection(Point(pt).buffer(3.5))", text)
+        self.assertIn("patch.representative_point()", text)
+        self.assertIn("Local CH022 via windows overlap unexpectedly", text)
         self.assertIn("add_mesh_path(board, [(0,*rvia),(1,*rvia)]", text)
         self.assertIn("add_mesh_path(board, [(1,*jvia),(0,*jvia)]", text)
         self.assertIn("allow_vias=allow_vias", text)
