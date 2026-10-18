@@ -13,6 +13,7 @@ from collections import defaultdict
 import json
 from pathlib import Path
 import tempfile
+from typing import Any
 
 PCB = 'eeg128-tdm.kicad_pcb'
 A = (39.915, 45.15)
@@ -27,7 +28,7 @@ FROZEN_INPUT_SHA = 'cac02064d9926676f6368536c4c104cb36295961333de6074e65fa1fa60a
 SCRIPT_DIR = Path(__file__).resolve().parent
 
 
-def analyze(board):
+def analyze(board: Any) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import Point, LineString, box
     from route_targeted_closure import xy, routing_domain, obstacles
@@ -60,7 +61,7 @@ def analyze(board):
         if isinstance(track, pcbnew.PCB_VIA):
             vias[track.GetNetname()].append(Point(xy(track.GetPosition())))
 
-    def free_metrics():
+    def free_metrics() -> dict[str, dict[str, Any]]:
         block, _ = obstacles(board, net, .15, .15, region, .60,
                              (pcbnew.F_Cu, pcbnew.B_Cu))
         summary = {}
@@ -182,7 +183,7 @@ def analyze(board):
     }
 
 
-def main():
+def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--archive', type=Path, required=True)
     p.add_argument('--output', type=Path, required=True)

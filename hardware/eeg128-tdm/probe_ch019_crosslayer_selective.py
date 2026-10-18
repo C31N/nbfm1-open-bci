@@ -10,6 +10,7 @@ import argparse
 import json
 from pathlib import Path
 import tempfile
+from typing import Any
 
 from probe_block2_selective import frozen_archive, digest, ZIP_SHA
 from probe_ch019_trunk_return import (FLAGS, PCB, protected_selection)
@@ -40,7 +41,7 @@ CASES = {
 }
 
 
-def model(board_path: Path, output: Path, case: str):
+def model(board_path: Path, output: Path, case: str) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import box
     from analyze_139_escape_blockers import protected_power
@@ -81,7 +82,7 @@ def model(board_path: Path, output: Path, case: str):
     for t in chosen:
         board.Remove(t)
     try:
-        def connect(net, required=None):
+        def connect(net: str, required: set[str] | None = None) -> bool:
             terminals = pads(board, net)
             if required is not None and {n for n, _, _ in terminals} != required:
                 raise ValueError('Unexpected ' + net + ' terminals')
@@ -166,7 +167,7 @@ def model(board_path: Path, output: Path, case: str):
             board.Add(t)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--archive', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
