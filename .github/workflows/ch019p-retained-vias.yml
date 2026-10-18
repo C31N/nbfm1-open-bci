@@ -1,0 +1,73 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+name: CH019-P retained-via B.Cu bridge
+
+on:
+  push:
+    branches:
+      - codex/ch019p-return-136-2026-10-18
+    paths:
+      - ".github/workflows/ch019p-retained-vias.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  existing-via-routes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - pair: direct
+            ordering: bridge-first
+            layer: B.Cu
+          - pair: direct
+            ordering: ch024-first
+            layer: B.Cu
+          - pair: alternate
+            ordering: bridge-first
+            layer: B.Cu
+          - pair: hybrid
+            ordering: bridge-first
+            layer: B.Cu
+    steps:
+      - uses: actions/checkout@v4
+      - name: Native KiCad 8 and Shapely 2.1.2
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely python3-pip
+          sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
+          kicad-cli version | grep '^8'
+      - name: Guard immutable nets, reroutes and no release
+        run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch019_existing_via_bridge.py -v
+      - name: Route between existing CH019 same-net vias (model only)
+        timeout-minutes: 25
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_ch019_existing_via_bridge.py \
+            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
+            --pair ${{ matrix.pair }} --ordering ${{ matrix.ordering }} \
+            --layer ${{ matrix.layer }} \
+            --output /tmp/ch019-vias-${{ matrix.pair }}-${{ matrix.ordering }}.json
+          /usr/bin/python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          path = Path('/tmp/ch019-vias-'+os.environ['PAIR']+'-'+os.environ['ORDER']+'.json')
+          value = json.loads(path.read_text())
+          assert all(value[k] is False for k in (
+              'accepted', 'routing_completed', 'fabrication_release',
+              'independent_replay_verified', 'native_qualification', 'manufacturing_files'))
+          print(value['status'], value.get('blocked_pad'))
+          PY
+        env:
+          PAIR: ${{ matrix.pair }}
+          ORDER: ${{ matrix.ordering }}
+      - name: Upload model-only JSON, never PCB production files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ch019-existing-vias-${{ matrix.pair }}-${{ matrix.ordering }}
+          path: /tmp/ch019-vias-${{ matrix.pair }}-${{ matrix.ordering }}.json
+          if-no-files-found: ignore
