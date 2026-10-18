@@ -143,6 +143,12 @@ def trial(board_path: Path, report_path: Path, scope: str, layers_mode: str
         p0,p1=power_copper(baseline),power_copper(current)
         result.update({
             'DRC_violations':len(after.get('violations',[])),
+            'DRC_violation_details': after.get('violations', []),
+            'DRC_baseline_violations': before.get('violations', []),
+            'DRC_unconnected_net_samples': [
+                str(v)[:300] for v in after.get('unconnected_items', [])
+                if 'CH022_N_ELECTRODE' in str(v) or
+                   'CH026_P_ELECTRODE' in str(v)][:10],
             'DRC_warning_count':sum(v.get('severity')=='warning' for v in after.get('violations',[])),
             'DRC_unconnected':len(after.get('unconnected_items',[])),
             'net_regressions':regressed_nets(before,after),
