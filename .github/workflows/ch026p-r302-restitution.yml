@@ -1,0 +1,67 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+name: CH026 electrode R302 selective restitution
+
+on:
+  push:
+    branches:
+      - codex/block2-ch026p-r302-escape-2026-10-18
+    paths:
+      - ".github/workflows/ch026p-r302-restitution.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  model:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 38
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - layers: FCu
+            radius: "0.55"
+          - layers: FCu
+            radius: "0.70"
+          - layers: 3layer
+            radius: "0.55"
+          - layers: 3layer
+            radius: "0.70"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Native KiCad 8 Shapely 2.1
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely python3-pip
+          sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
+          kicad-cli version | grep '^8'
+      - name: Fail-closed selective routing guards
+        run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch026p_r302_restitution.py -v
+      - name: Route CH026 electrode around reserved R302 via window
+        timeout-minutes: 25
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_ch026p_r302_restitution.py \
+            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
+            --layers ${{ matrix.layers }} --radius ${{ matrix.radius }} \
+            --output /tmp/ch026p-restitute-${{ matrix.layers }}-${{ matrix.radius }}.json
+          /usr/bin/python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          d=json.loads(Path('/tmp/ch026p-restitute-'+os.environ['LAYERS']+'-'+os.environ['RAD']+'.json').read_text())
+          assert all(d[k] is False for k in ('accepted','routing_completed',
+              'fabrication_release','native_qualification','manufacturing_files',
+              'independent_replay_verified'))
+          print(d['status'],d.get('legal_via_after_restitution_mm2'),d.get('DRC_violation_count'))
+          PY
+        env:
+          LAYERS: ${{ matrix.layers }}
+          RAD: ${{ matrix.radius }}
+      - name: Only nonrelease JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ch026p-restitute-${{ matrix.layers }}-${{ matrix.radius }}
+          path: /tmp/ch026p-restitute-${{ matrix.layers }}-${{ matrix.radius }}.json
+          if-no-files-found: ignore
