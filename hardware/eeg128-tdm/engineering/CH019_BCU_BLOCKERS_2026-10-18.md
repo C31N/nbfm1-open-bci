@@ -81,3 +81,66 @@ now probes whether even temporary relaxation of **all eligible
 pad-safe local signal copper** permits a CH019-P path under the same
 A2 and L3-power gates. Such a study never retains cut nets or
 constitutes a valid candidate.
+
+## Upper-bound existence and exact copper conflict minimization
+
+The native KiCad-hosted local upper-bound run
+[39117565729](https://github.com/C31N/nbfm1-open-bci/actions/runs/39117565729)
+found **the same** combined geometric CH019-P B.Cu/F.Cu and
+three-pad CH024-P path in both orders, with 36 signal tracks
+temporarily omitted (including the three original CH019-P In2
+trunk objects and two CH022-N F.Cu objects).
+Both VCM and CH018-N remained byte-for-byte unaffected in board
+geometry. This is only an upper bound: displaced signals were
+**not** restored, no native candidate DRC was qualified and
+accepted=false. The proposed CH019-P link length is about
+76.776 mm (too long to treat as SI-qualified without analysis).
+
+The refined same-input model
+[39117992075](https://github.com/C31N/nbfm1-open-bci/actions/runs/39117992075)
+identified 11 exact *foreign copper* conflicts for that fixed path:
+
+- CH022_N_ELECTRODE (F.Cu, two):
+  `a0a692e9-e4d4-4be1-b224-b0aa00b02815`,
+  `e81c7523-9205-40fe-bcd4-374c112022ef`.
+- BANK1_P_MUX_OUT (B.Cu, one):
+  `7d5653c6-8ba9-40b9-afd5-266ed0ef4353`.
+- CH019_N_MUX (B.Cu, two):
+  `0832ca70-347c-5b2d-b8d9-c8fff7096f8a`,
+  `cbef8349-505c-5ce2-812b-299cf1e09ca5`.
+- CH026_P_MUX (F.Cu, five):
+  `33bd3c0c-2cec-4190-a52a-baa0606f516c`,
+  `6549b817-a68e-45d5-96b9-7cbabd2eacf3`,
+  `82a1c65b-3d26-4d1f-be55-3962e9e1f1db`,
+  `8becd9ff-318f-4161-8602-37776971617d`,
+  `d3abb5e2-a155-421a-8a73-4d1ef441d576`.
+- MUX_EN (F.Cu, one):
+  `8b6baf5a-aa8f-4eea-9681-7cdc57183397`.
+
+Three removed CH019-P In2 segments remain a distinct restoration
+design concern. These 11 UUIDs describe only collisions against
+the **fixed upper-bound** CH024/CH019 geometrical proposal and
+cannot be assumed to be the globally minimal physical reroute.
+
+## Eleven-conflict selective outcome
+
+GitHub Actions
+[39118254794](https://github.com/C31N/nbfm1-open-bci/actions/runs/39118254794):
+the 11-conflict experiment geometrically proposes **both**
+all three CH024-P pads and the existing-via CH019-P multilayer
+bridge with unmodified VCM/CH018. A control releasing the
+eight CH019 bridge conflicts but leaving the MUX_EN CH024
+obstacle failed to route CH019.
+
+The 11-conflict experiment fails complete neighbor restitution:
+first unresolved `CH022_N_ELECTRODE` segment
+`a0a692e9-e4d4-4be1-b224-b0aa00b02815`.
+**No 136 checkpoint can be accepted.**
+
+Further diagnostic variants attempt pad-connected CH022 topology
+in different orders instead of mandating regeneration of its
+obsolete copper piece. These remain unadopted until all affected
+neighbors are complete, DRC=0/0, no power gain/loss at exact
+0.0 mm², A2 0.25 mm and 0.505 mm L3 keepouts,
+native schematic parity, 70 guards and independent byte-identical
+replay. Gerber, NC-Drill, CPL and BOM exports are forbidden.
