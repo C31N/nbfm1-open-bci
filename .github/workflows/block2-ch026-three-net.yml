@@ -28,6 +28,10 @@ jobs:
             order: ch022-first
           - scope: pair
             order: ch024-first
+          - scope: one
+            order: interleaved
+          - scope: pair
+            order: interleaved
     steps:
       - uses: actions/checkout@v4
       - name: KiCad 8 native and Shapely 2.1.2
