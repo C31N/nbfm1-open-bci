@@ -161,6 +161,12 @@ def model(board_path: Path, output: Path, case: str,
                                   start_layer=start_layer, goal_layer=goal_layer,
                                   allow_vias=allow_vias)
                 if path is None:
+                    result['failed_stage'] = 'missing_route'
+                    result['failed_stage_endpoints'] = [start, goal]
+                    return False
+                if len(path) < 2:
+                    result['failed_stage'] = 'degenerate_single_node_route'
+                    result['failed_stage_endpoints'] = [start, goal]
                     return False
                 add_mesh_path(board, path, code, layers)
                 return True
@@ -169,10 +175,12 @@ def model(board_path: Path, output: Path, case: str,
                 return False
             # Rounding and native obstacle checks remain authoritative:
             # the via centres originate from same-net connected windows.
+            result['forced_route_stage'] = 'via_R302.1'
             add_mesh_path(board, [(0,*rvia),(1,*rvia)], code, layers)
             if not apply(rvia, jvia, 1, 1):
                 result['status'] = 'ch022_BCu_return_blocked'
                 return False
+            result['forced_route_stage'] = 'via_J2.23'
             add_mesh_path(board, [(1,*jvia),(0,*jvia)], code, layers)
             if not apply(jvia, by_pad['J2.23'][0], 0, 0, False):
                 result['status'] = 'ch022_J2_FCu_reentry_blocked'
@@ -234,7 +242,8 @@ def model(board_path: Path, output: Path, case: str,
         result['ch019_via_bridge_proposed'] = True
 
         if joint_order == 'ch024-first':
-            if not connect('CH022_N_ELECTRODE', {'J2.23','R302.1'}):
+            if not (connect_ch022_via_bridge() if via_plan else
+                    connect('CH022_N_ELECTRODE', {'J2.23','R302.1'})):
                 result['status'] = 'ch022_route_blocked'
                 return result
             result['ch022_pad_reconnection_proposed'] = True
