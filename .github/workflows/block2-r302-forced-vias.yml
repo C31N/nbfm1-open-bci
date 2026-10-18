@@ -7,6 +7,8 @@ on:
       - codex/block2-r302-u323-joint-2026-10-18
     paths:
       - ".github/workflows/block2-r302-forced-vias.yml"
+      - "hardware/eeg128-tdm/probe_block2_r302_joint.py"
+      - "hardware/eeg128-tdm/test_block2_r302_joint.py"
   workflow_dispatch:
 
 permissions:
