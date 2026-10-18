@@ -113,15 +113,18 @@ def trial(board_path: Path, report_path: Path, scope: str, layers_mode: str
             result['status']='J2_to_second_FCu_via_blocked'
             return result
         add_mesh_path(board,jtrace,nc,layers)
-        add_mesh_path(board,[(0,*jvia),(1,*jvia)],nc,layers)
-        result['J2_FCu_to_new_via_proposed']=True
+        # No through-via at the J2-side free F.Cu landing: the old
+        # run 39158684739 proves this would create a via_dangling
+        # warning at (44.02605,9.208768). Terminate on F.Cu and
+        # permit a legal earlier B.Cu/In2-to-F.Cu transition instead.
+        result['J2_FCu_landing_proposed']=True
         bridge=mesh_route(board,via,jvia,nc,layers,power,region,
-                          start_layer=1,goal_layer=1)
+                          start_layer=1,goal_layer=0)
         if bridge is None or len(bridge)<2:
-            result['status']='CH022_two_new_vias_BCu_bridge_blocked'
+            result['status']='CH022_BCu_to_J2_FCu_landing_blocked'
             return result
         add_mesh_path(board,bridge,nc,layers)
-        result['CH022_connected_by_two_new_vias_proposed']=True
+        result['CH022_mixed_layer_return_proposed']=True
         result['CH022_BCu_path']=bridge
         code=chosen[0].GetNetCode()
         back=mesh_route(board,a,b,code,layers,power,region,
