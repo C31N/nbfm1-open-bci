@@ -156,7 +156,9 @@ def model(board_path: Path, output: Path, case: str,
             # J2 existing F.Cu island from the second legal through-via.
             rvia = candidates['R302.1']
             jvia = candidates['J2.23']
-            def apply(start, goal, start_layer, goal_layer, allow_vias=True):
+            def apply(start: tuple[float, float], goal: tuple[float, float],
+                      start_layer: int, goal_layer: int,
+                      allow_vias: bool = True) -> bool:
                 path = mesh_route(board, start, goal, code, layers, reserve, region,
                                   start_layer=start_layer, goal_layer=goal_layer,
                                   allow_vias=allow_vias)
