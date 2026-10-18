@@ -26,6 +26,9 @@ def trial(board_path: Path, report_path: Path, scope: str, layers_mode: str
           ) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import Point,LineString,box
+    from shapely.ops import unary_union
+    from route_targeted_closure import obstacles
+    from analyze_139_escape_blockers import component
     from route_targeted_closure import xy,routing_domain,native_fresh
     from analyze_139_escape_blockers import protected_power
     from escape_mesh_505 import mesh_route,add_mesh_path,polygons
@@ -86,20 +89,40 @@ def trial(board_path: Path, report_path: Path, scope: str, layers_mode: str
         # outside the strict full L3-power polygon buffer.
         add_mesh_path(board,[(0,*via),(1,*via)],nc,layers)
         result['new_via_proposed']=True
-        routes=[]
-        for other in sorted(original_ch022_vias,key=lambda x:Point(x).distance(Point(via))):
-            p=mesh_route(board,via,other,nc,layers,power,region,
-                         start_layer=1,goal_layer=1)
-            if p is not None and len(p)>1:
-                routes.append((other,p))
-                break
-        if not routes:
-            result['status']='CH022_BCu_to_existing_via_blocked'
+        # CH022_N_ELECTRODE has zero native vias in the pinned baseline:
+        # introduce a SECOND legal via in the untouched J2.23 F.Cu
+        # component, rather than assuming an existing return via.
+        blocked, via_obstacle = obstacles(board,nc,.15,.15,region,.60,
+                                          (pcbnew.F_Cu,pcbnew.B_Cu))
+        fcu = component(region.difference(blocked[0]).buffer(-.000005),J223)
+        jlegal = (fcu.difference(unary_union([via_obstacle,power.buffer(.505)]))
+                  .intersection(Point(J223).buffer(3.5)).buffer(-.000005))
+        result['J2_local_legal_via_mm2'] = round(jlegal.area,8)
+        jpatches = [p for p in polygons(jlegal) if p.area>1e-8]
+        if not jpatches:
+            result['status']='J2_FCu_component_no_legal_second_via'
             return result
-        dst,p=routes[0]
-        add_mesh_path(board,p,nc,layers)
-        result['CH022_connected_to_existing_via_proposed']=dst
-        result['CH022_BCu_path']=p
+        jpoint=max(jpatches,key=lambda v:v.area).representative_point()
+        jvia=(round(jpoint.x,6),round(jpoint.y,6))
+        result['planned_J2_new_via']=jvia
+        if Point(via).distance(Point(jvia))<=1.0:
+            raise ValueError('Both via coordinates unexpectedly identical')
+        jtrace=mesh_route(board,J223,jvia,nc,layers,power,region,
+                          start_layer=0,goal_layer=0,allow_vias=False)
+        if jtrace is None or len(jtrace)<2:
+            result['status']='J2_to_second_FCu_via_blocked'
+            return result
+        add_mesh_path(board,jtrace,nc,layers)
+        add_mesh_path(board,[(0,*jvia),(1,*jvia)],nc,layers)
+        result['J2_FCu_to_new_via_proposed']=True
+        bridge=mesh_route(board,via,jvia,nc,layers,power,region,
+                          start_layer=1,goal_layer=1)
+        if bridge is None or len(bridge)<2:
+            result['status']='CH022_two_new_vias_BCu_bridge_blocked'
+            return result
+        add_mesh_path(board,bridge,nc,layers)
+        result['CH022_connected_by_two_new_vias_proposed']=True
+        result['CH022_BCu_path']=bridge
         code=chosen[0].GetNetCode()
         back=mesh_route(board,a,b,code,layers,power,region,
                         allow_vias=layers_mode=='3layer')
