@@ -96,6 +96,14 @@ class ProbeSafety(unittest.TestCase):
         self.assertEqual(len(result), 3)
         self.assertEqual([row[0] for row in result], ['R49.1', 'U3.23', 'J2.99'])
 
+    def test_shared_reserved_vias_are_permitted_only_in_geometry_model(self) -> None:
+        reserves = probe.CH031_VIA_RESERVATIONS
+        self.assertEqual(reserves['none'], ())
+        self.assertEqual(len(reserves['top1']), 1)
+        self.assertEqual(len(reserves['top2']), 1)
+        self.assertEqual(len(reserves['both']), 2)
+        self.assertNotEqual(reserves['top1'][0], reserves['top2'][0])
+
     def test_no_release_permitted_in_source_probes(self) -> None:
         text = Path(probe.__file__).read_text()
         self.assertIn("'accepted': False", text)

@@ -34,6 +34,12 @@ POWER_EXCLUSION_MM = .505
 EDGE_CLEARANCE_MM = .25
 LAYERS = ('F.Cu', 'B.Cu', 'In2.Cu')
 REGION_MM = (12, .5, 59, 69)
+CH031_VIA_RESERVATIONS: dict[str, tuple[tuple[float, float], ...]] = {
+    'none': (),
+    'top1': ((48.1259, 33.8786),),
+    'top2': ((46.3236, 27.4653),),
+    'both': ((48.1259, 33.8786), (46.3236, 27.4653)),
+}
 
 
 def sha256(data: bytes) -> str:
@@ -94,13 +100,17 @@ def prepare_board(board: Any, removals: tuple[str, ...]) -> list[Any]:
 
 
 def probe(archive: Path, cases: tuple[str, ...], include_mesh: bool,
-          full_orders: bool = False, save_progress: Path | None = None) -> dict:
+          full_orders: bool = False, save_progress: Path | None = None,
+          reserve_shared: str = 'none') -> dict:
     import pcbnew
-    from shapely.geometry import box
+    from shapely.geometry import box, Point
+    from shapely.ops import unary_union
     from analyze_139_escape_blockers import protected_power, windows
     from route_targeted_closure import xy
     from escape_mesh_505 import mesh_route, add_mesh_path
 
+    if reserve_shared not in CH031_VIA_RESERVATIONS:
+        raise ValueError('Unknown shared-window reservation')
     fixture = validate_fixture(archive)
     region = box(*REGION_MM)
     report = {
@@ -112,7 +122,8 @@ def probe(archive: Path, cases: tuple[str, ...], include_mesh: bool,
         'baseline_pcb_sha256': PCB_SHA256,
         'L3_power_exclusion_mm': POWER_EXCLUSION_MM,
         'edge_clearance_mm': EDGE_CLEARANCE_MM,
-        'searched_layers': list(LAYERS), 'trials': [],
+        'searched_layers': list(LAYERS), 'reserve_shared': reserve_shared,
+        'trials': [],
     }
     with tempfile.TemporaryDirectory(prefix='block2-model-only-') as directory:
         source = Path(directory) / PCB_NAME
@@ -150,10 +161,19 @@ def probe(archive: Path, cases: tuple[str, ...], include_mesh: bool,
                                 paths = []
                                 complete = True
                                 for pad, destination, _ in pts[1:]:
+                                    # Reserve a previously legal target via patch while
+                                    # finding a distinct full CH031-N replacement.
+                                    # This is ONLY an in-memory obstacle for CH031-N.
+                                    extra = None
+                                    if name == 'shared-ch031' and net_name == 'CH031_N_MUX':
+                                        points = CH031_VIA_RESERVATIONS[reserve_shared]
+                                        if points:
+                                            keepout = unary_union([Point(p).buffer(.70) for p in points])
+                                            extra = [keepout, keepout, keepout]
                                     proposal = mesh_route(
                                         board, pts[0][1], destination, pts[0][2],
                                         (pcbnew.F_Cu, pcbnew.B_Cu, pcbnew.In2_Cu),
-                                        power, region)
+                                        power, region, extra_obstacles=extra)
                                     if not proposal:
                                         trial['failed_net'] = net_name
                                         trial['failed_terminal'] = pad
@@ -196,6 +216,8 @@ def main() -> None:
                         help='SHA-pinned joint-unadopted137.zip containing S0+CH025-P preparation')
     parser.add_argument('--output', type=Path, required=True, help='Diagnostic JSON only')
     parser.add_argument('--case', choices=[t[0] for t in TRIALS], action='append')
+    parser.add_argument('--reserve-shared', choices=sorted(CH031_VIA_RESERVATIONS),
+                        default='none', help='Reserve target via patches from CH031-N only')
     parser.add_argument('--all-orders', action='store_true',
                         help='Try all six permutations for each CH024-P triple')
     parser.add_argument('--skip-mesh', action='store_true',
@@ -210,7 +232,7 @@ def main() -> None:
         raise ValueError('Cannot overwrite pinned input')
     result = probe(args.archive, tuple(args.case or [t[0] for t in TRIALS]),
                    not args.skip_mesh, full_orders=args.all_orders,
-                   save_progress=args.output)
+                   save_progress=args.output, reserve_shared=args.reserve_shared)
     args.output.write_text(json.dumps(result, indent=2) + '\n')
     print(json.dumps({'trials': len(result['trials']), 'accepted': False,
                       'model_only': True, 'output': str(args.output)}))
