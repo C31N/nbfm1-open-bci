@@ -30,7 +30,6 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 def analyze(board):
     import pcbnew
     from shapely.geometry import Point, LineString, box
-    from shapely.ops import unary_union
     from route_targeted_closure import xy, routing_domain, obstacles
 
     endpoint = LineString([A, B])
