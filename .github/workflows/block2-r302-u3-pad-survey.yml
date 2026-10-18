@@ -1,0 +1,48 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+name: Block 2 R302 U3 pad native survey
+
+on:
+  push:
+    branches: [codex/block2-r302-u323-joint-2026-10-18]
+    paths:
+      - ".github/workflows/block2-r302-u3-pad-survey.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pinned-pad-survey:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native KiCad 8 and Shapely 2.1
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely python3-pip
+          sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
+          kicad-cli version | grep '^8'
+      - name: Survey original J2.23 and competing CH022 CH024 pad escapes
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_block2_joint_pad_survey.py \
+            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
+            --output /tmp/block2-joint-pad-survey.json
+          /usr/bin/python3 - <<'PY'
+          import json
+          from pathlib import Path
+          obj=json.loads(Path('/tmp/block2-joint-pad-survey.json').read_text())
+          assert all(obj[k] is False for k in (
+              'accepted','routing_completed','fabrication_release',
+              'independent_replay_verified','manufacturing_files'))
+          assert set(obj['critical_pad_coordinates']) == {
+              'J2.23','R302.1','U3.23','R49.1','R305.2'}
+          PY
+      - name: Upload nonrelease copper metrics only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: block2-r302-u323-original-pad-survey
+          path: /tmp/block2-joint-pad-survey.json
+          if-no-files-found: ignore
