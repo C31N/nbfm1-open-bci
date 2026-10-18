@@ -95,7 +95,7 @@ def via_windows(board: Any, point: tuple[float, float],
 
 
 def explore(case: str, strategy: str, input_board: Path,
-            report_file: Path) -> dict[str, Any]:
+            report_file: Path, sequence: str, ch019_root: str) -> dict[str, Any]:
     import pcbnew
     from analyze_139_escape_blockers import protected_power
     from route_targeted_closure import routing_domain, xy, native_fresh
@@ -107,8 +107,8 @@ def explore(case: str, strategy: str, input_board: Path,
     unchanged = pcbnew.LoadBoard(str(input_board))
     chosen = protected_selection(board, case)
     result: dict[str, Any] = {**FLAGS, 'case': case, 'strategy': strategy,
-                              'status': 'not_started',
-                              'selected_uuids': [t.m_Uuid.AsString() for t in chosen]}
+                              'status': 'not_started', 'sequence': sequence,
+                              'ch019_root': ch019_root, 'selected_uuids': [t.m_Uuid.AsString() for t in chosen]}
     from shapely.geometry import box
     region = routing_domain(board, .30, .25).intersection(box(12, .5, 59, 69))
     power = protected_power(board)
@@ -139,33 +139,47 @@ def explore(case: str, strategy: str, input_board: Path,
                 add_mesh_path(board, proposal, code, layers)
             return True
 
-        target = pads(board, 'CH024_P_MUX')
-        if {name for name, _, _ in target} != {'R49.1', 'U3.23', 'R305.2'}:
-            raise ValueError('Required three-pad CH024 target set has changed')
-        source = next(p for p in target if p[0] == 'R49.1')
-        target = [source] + [p for p in target if p is not source]
-        if not route_between('CH024_P_MUX', target):
-            result['status'] = 'ch024_target_blocked'
-            return result
-        result['ch024_all_three_geometrically_proposed'] = True
-        # The old endpoint-pair strategy is included as a control. The new
-        # strategy connects existing F.Cu pad components instead of forcing
-        # through-vias exactly onto former In2.Cu segment endpoints.
-        if strategy == 'old_endpoints':
-            for start, end, code in anchors:
-                path = mesh_route(board, start, end, code, layers, power,
-                                  region, start_layer=2, goal_layer=2)
-                if path is None:
-                    result['status'] = 'endpoint_pair_blocked'
-                    result['blocked_endpoints'] = [start, end]
-                    return result
-                add_mesh_path(board, path, code, layers)
-        else:
-            ch019 = pads(board, 'CH019_P_MUX')
-            if not route_between('CH019_P_MUX', ch019):
-                result['status'] = 'ch019_pad_to_pad_blocked'
+        def close_ch024() -> bool:
+            target = pads(board, 'CH024_P_MUX')
+            if {name for name, _, _ in target} != {'R49.1', 'U3.23', 'R305.2'}:
+                raise ValueError('Three-pad CH024 target set differs')
+            source_pad = next(p for p in target if p[0] == 'R49.1')
+            order = [source_pad] + [p for p in target if p != source_pad]
+            if not route_between('CH024_P_MUX', order):
+                result['status'] = 'ch024_target_blocked'
+                return False
+            result['ch024_all_three_geometrically_proposed'] = True
+            return True
+
+        def close_ch019() -> bool:
+            if strategy == 'old_endpoints':
+                for start, end, code in anchors:
+                    path = mesh_route(board, start, end, code, layers, power,
+                                      region, start_layer=2, goal_layer=2)
+                    if path is None:
+                        result['status'] = 'endpoint_pair_blocked'
+                        result['blocked_endpoints'] = [start, end]
+                        return False
+                    add_mesh_path(board, path, code, layers)
+            else:
+                ch019 = pads(board, 'CH019_P_MUX')
+                if ch019_root not in {name for name, _, _ in ch019}:
+                    raise ValueError('Unexpected CH019-P pad root')
+                root = next(p for p in ch019 if p[0] == ch019_root)
+                others = [p for p in ch019 if p != root]
+                # Start at the target IC escape when requested, before the
+                # new CH024-P path is allowed to occupy this approach.
+                if not route_between('CH019_P_MUX', [root, *others]):
+                    result['status'] = 'ch019_pad_to_pad_blocked'
+                    return False
+            result['ch019_geometrically_proposed'] = True
+            return True
+
+        order = ((close_ch019, close_ch024) if sequence == 'ch019-first'
+                 else (close_ch024, close_ch019))
+        for operation in order:
+            if not operation():
                 return result
-        result['ch019_geometrically_proposed'] = True
         ch022 = pads(board, 'CH022_N_ELECTRODE')
         if not route_between('CH022_N_ELECTRODE', ch022):
             result['status'] = 'ch022_electrode_blocked'
@@ -205,6 +219,10 @@ def main() -> None:
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--case', choices=tuple(COMBINATIONS), default='entire_trunk')
     parser.add_argument('--strategy', choices=('old_endpoints', 'pads'), default='pads')
+    parser.add_argument('--sequence', choices=('ch024-first', 'ch019-first'),
+                        default='ch024-first')
+    parser.add_argument('--ch019-root', choices=('R295.2', 'R39.1', 'U3.6'),
+                        default='R295.2')
     args = parser.parse_args()
     if args.output.suffix != '.json' or args.output.exists():
         raise ValueError('Create a fresh JSON diagnostic output')
@@ -213,7 +231,8 @@ def main() -> None:
     from probe_block2_selective import frozen_archive, digest, ZIP_SHA
     data = frozen_archive(args.archive)
     result: dict[str, Any] = {**FLAGS, 'case': args.case,
-                              'strategy': args.strategy, 'status': 'unstarted'}
+                              'strategy': args.strategy, 'sequence': args.sequence,
+                              'ch019_root': args.ch019_root, 'status': 'unstarted'}
     with tempfile.TemporaryDirectory(prefix='ch019-return-') as temp:
         work = Path(temp)
         for name, contents in data.items():
@@ -223,10 +242,12 @@ def main() -> None:
         for name, contents in data.items():
             (baseline / name).write_bytes(contents)
         try:
-            result = explore(args.case, args.strategy, work / PCB, work / 'ch019.json')
+            result = explore(args.case, args.strategy, work / PCB, work / 'ch019.json',
+                             args.sequence, args.ch019_root)
         except (RuntimeError, ValueError) as exc:
             result = {**FLAGS, 'case': args.case, 'strategy': args.strategy,
-                      'status': 'model_exception', 'reason': str(exc)}
+                      'status': 'model_exception', 'reason': str(exc),
+                      'sequence': args.sequence, 'ch019_root': args.ch019_root}
         args.output.write_text(json.dumps(result, indent=2) + '\n')
     if digest(args.archive.read_bytes()) != ZIP_SHA:
         raise ValueError('Frozen archive changed during diagnostic')
