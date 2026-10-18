@@ -24,6 +24,8 @@ jobs:
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely python3-pip
           sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
           kicad-cli version | grep '^8'
+      - name: Validate survey release guards
+        run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_joint_pad_survey.py -v
       - name: Survey original J2.23 and competing CH022 CH024 pad escapes
         run: |
           /usr/bin/python3 hardware/eeg128-tdm/probe_block2_joint_pad_survey.py \
