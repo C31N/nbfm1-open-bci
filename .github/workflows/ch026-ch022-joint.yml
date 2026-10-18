@@ -1,0 +1,65 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+name: Block2 CH026 electrode CH022 simultaneous return
+
+on:
+  push:
+    branches:
+      - codex/block2-ch026p-r302-escape-2026-10-18
+    paths:
+      - ".github/workflows/ch026-ch022-joint.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+jobs:
+  coupled:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - scope: one
+            layers: FCu
+          - scope: one
+            layers: 3layer
+          - scope: pair
+            layers: FCu
+          - scope: pair
+            layers: 3layer
+    steps:
+      - uses: actions/checkout@v4
+      - name: Native KiCad 8 Shapely 2.1
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely python3-pip
+          sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
+          kicad-cli version | grep '^8'
+      - name: Verify retained original J2 and immutable analog nets
+        run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch026_ch022_joint.py -v
+      - name: Probe simultaneous CH022 pad via and CH026 electrode restitution
+        timeout-minutes: 30
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_ch026_ch022_joint.py \
+            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
+            --scope ${{ matrix.scope }} --layers ${{ matrix.layers }} \
+            --output /tmp/ch026-ch022-${{ matrix.scope }}-${{ matrix.layers }}.json
+          /usr/bin/python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          o=json.loads(Path('/tmp/ch026-ch022-'+os.environ['SCOPE']+'-'+os.environ['LAYERS']+'.json').read_text())
+          assert all(o[k] is False for k in ('accepted','routing_completed',
+            'fabrication_release','native_qualification','manufacturing_files',
+            'independent_replay_verified'))
+          print(o['status'],o.get('DRC_violations'),o.get('power_loss_mm2'))
+          PY
+        env:
+          SCOPE: ${{ matrix.scope }}
+          LAYERS: ${{ matrix.layers }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ch026-ch022-${{ matrix.scope }}-${{ matrix.layers }}
+          path: /tmp/ch026-ch022-${{ matrix.scope }}-${{ matrix.layers }}.json
+          if-no-files-found: ignore
