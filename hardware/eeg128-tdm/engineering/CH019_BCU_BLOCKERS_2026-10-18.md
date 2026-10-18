@@ -54,3 +54,30 @@ zone contours, schematic parity, 70 hardware protection tests
 and independent byte-identical replay. The diagnostic always
 sets accepted=false/routing_completed=false/fabrication_release=false.
 No Gerber, Drill, CPL or BOM.
+
+## Five F.Cu unlock models: full results
+
+GitHub Actions run
+[39117189731](https://github.com/C31N/nbfm1-open-bci/actions/runs/39117189731)
+completed all five native-hosted *model-only* searches successfully.
+
+| Selective F.Cu removal | CH024-P three pads proposed | CH019-P retained-via 3-layer path |
+| --- | --- | --- |
+| CH026-P single segment | yes | blocked |
+| CH026-P four-segment trunk | yes | blocked |
+| CH027-P two-segment pair | yes | blocked |
+| CH026-P plus CH027-P | yes | blocked |
+| CH026-P plus CH027-P plus MUX_EN | yes | blocked |
+
+No geometrical CH019-P bridge was found. Hence none of these
+models reached neighbor restitution or native candidate DRC/replay.
+The test *job* conclusion `success` means the diagnostic ran,
+not that routing succeeded. No new 136 unconnected engineering
+checkpoint was formed.
+
+The long VCM reference tracks and all CH018-N copper were
+intentionally left intact. A separate strict upper-bound study
+now probes whether even temporary relaxation of **all eligible
+pad-safe local signal copper** permits a CH019-P path under the same
+A2 and L3-power gates. Such a study never retains cut nets or
+constitutes a valid candidate.
