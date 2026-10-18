@@ -66,7 +66,8 @@ CASES = {
 }
 
 
-def model(board_path: Path, output: Path, case: str) -> dict[str, Any]:
+def model(board_path: Path, output: Path, case: str,
+          restoration: str = 'segments') -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import box
     from analyze_139_escape_blockers import protected_power
@@ -82,7 +83,7 @@ def model(board_path: Path, output: Path, case: str) -> dict[str, Any]:
     region = routing_domain(board, .30, .25).intersection(box(12, .5, 59, 69))
     layers = (pcbnew.F_Cu, pcbnew.B_Cu, pcbnew.In2_Cu)
     result = {**FLAGS, 'case': case, 'status': 'not_started',
-              'selected_segment_uuid': []}
+              'selected_segment_uuid': [], 'restoration': restoration}
     chosen = protected_selection(board, 'entire_trunk')
     lookup = {t.m_Uuid.AsString(): t for t in board.GetTracks()}
     extra = CASES[case]
@@ -125,6 +126,12 @@ def model(board_path: Path, output: Path, case: str) -> dict[str, Any]:
                 add_mesh_path(board, path, source[2], layers)
             return True
 
+        if restoration == 'ch022-pads-first':
+            if not connect('CH022_N_ELECTRODE'):
+                result['status'] = 'ch022_pad_reconnection_blocked'
+                return result
+            result['ch022_pad_reconnection_proposed'] = True
+
         if not connect('CH024_P_MUX', {'R49.1', 'U3.23', 'R305.2'}):
             result['status'] = 'ch024_geometry_blocked'
             return result
@@ -147,9 +154,22 @@ def model(board_path: Path, output: Path, case: str) -> dict[str, Any]:
         add_mesh_path(board, path, net, layers)
         result['ch019_via_bridge_proposed'] = True
 
+        if restoration in ('ch022-pads-last', 'ch022-pads-no-old-in2'):
+            if not connect('CH022_N_ELECTRODE'):
+                result['status'] = 'ch022_pad_reconnection_blocked'
+                return result
+            result['ch022_pad_reconnection_proposed'] = True
+
         # Restore all selectively removed copper objects via their original
         # individual endpoints, including CH022-N. No permanent neighbor cuts.
+        skipped_segments = []
         for segment in chosen:
+            if restoration != 'segments' and segment.GetNetname() == 'CH022_N_ELECTRODE':
+                skipped_segments.append(segment.m_Uuid.AsString())
+                continue
+            if restoration == 'ch022-pads-no-old-in2' and segment.GetNetname() == 'CH019_P_MUX':
+                skipped_segments.append(segment.m_Uuid.AsString())
+                continue
             layer = 0 if segment.GetLayer() == pcbnew.F_Cu else 2
             route = mesh_route(board, xy(segment.GetStart()),
                                xy(segment.GetEnd()), segment.GetNetCode(),
@@ -161,7 +181,8 @@ def model(board_path: Path, output: Path, case: str) -> dict[str, Any]:
                 result['status'] = 'neighbor_unrestored'
                 return result
             add_mesh_path(board, route, segment.GetNetCode(), layers)
-        result['all_selected_segments_proposed'] = True
+        result['all_selected_segments_proposed'] = len(skipped_segments) == 0
+        result['superseded_old_segment_uuids'] = skipped_segments
         current_ch018 = [(t.m_Uuid.AsString(), xy(t.GetStart()),
                          xy(t.GetEnd()), t.GetLayer()) for t in board.GetTracks()
                          if t.GetNetname() == 'CH018_N_MUX']
@@ -199,6 +220,9 @@ def main() -> None:
     parser.add_argument('--archive', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--case', choices=tuple(CASES), required=True)
+    parser.add_argument('--restoration', choices=('segments', 'ch022-pads-first',
+                            'ch022-pads-last', 'ch022-pads-no-old-in2'),
+                        default='segments')
     args = parser.parse_args()
     if args.output.exists() or args.output.suffix != '.json':
         raise ValueError('Only new JSON reports')
@@ -216,10 +240,11 @@ def main() -> None:
         for name, raw in fixture.items():
             (baseline / name).write_bytes(raw)
         try:
-            output = model(work / PCB, work / 'crosslayer.json', args.case)
+            output = model(work / PCB, work / 'crosslayer.json', args.case, args.restoration)
         except Exception as exc:
             output = {**FLAGS, 'case': args.case, 'status': 'diagnostic_exception',
-                      'error_type': type(exc).__name__, 'detail': str(exc)}
+                      'error_type': type(exc).__name__, 'detail': str(exc),
+                      'restoration': args.restoration}
     if digest(args.archive.read_bytes()) != ZIP_SHA:
         raise ValueError('Source archive changed')
     args.output.write_text(json.dumps(output, indent=2) + '\n')
