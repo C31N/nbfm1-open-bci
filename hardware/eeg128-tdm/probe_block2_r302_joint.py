@@ -279,7 +279,8 @@ def main() -> None:
     if digest(args.archive.read_bytes()) != ZIP_SHA:
         raise ValueError('Source archive changed')
     args.output.write_text(json.dumps(output, indent=2) + '\n')
-    print(args.case, output['status'], flush=True)
+    print(args.joint_order, args.reserve_radius, args.ch022_root,
+          output['status'], output.get('failed_net'), output.get('failed_pad'), flush=True)
 
 
 if __name__ == '__main__':
