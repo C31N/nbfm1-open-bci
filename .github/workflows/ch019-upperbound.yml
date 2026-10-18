@@ -1,0 +1,59 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+name: CH019-P local signal upper-bound model
+
+on:
+  push:
+    branches:
+      - codex/block2-ch019-bcu-obstacles-2026-10-18
+    paths:
+      - ".github/workflows/ch019-upperbound.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  readonly-upper-bound:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        ordering: [bridge-first, ch024-first]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install KiCad 8 and Shapely 2.1.2
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely python3-pip
+          sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
+          kicad-cli version | grep '^8'
+      - name: Run fail-closed upper-bound safety tests
+        run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch019_upperbound.py -v
+      - name: Temporarily clear only pad-safe signal segments and test geometry
+        timeout-minutes: 23
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/analyze_ch019_upperbound.py \
+            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
+            --ordering ${{ matrix.ordering }} \
+            --output /tmp/ch019-upper-${{ matrix.ordering }}.json
+          /usr/bin/python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          d=json.loads(Path('/tmp/ch019-upper-'+os.environ['ORDER']+'.json').read_text())
+          assert d['upper_bound_only'] and not d['full_neighbor_restitution']
+          assert all(d[n] is False for n in ('accepted','routing_completed',
+                 'fabrication_release','independent_replay_verified',
+                 'native_qualification','manufacturing_files'))
+          print(d['status'],d.get('relaxed_nets'))
+          PY
+        env:
+          ORDER: ${{ matrix.ordering }}
+      - name: Retain geometry-only JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ch019-upperbound-${{ matrix.ordering }}
+          path: /tmp/ch019-upper-${{ matrix.ordering }}.json
+          if-no-files-found: ignore
