@@ -1,0 +1,52 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+name: CH019-P native pad via survey
+
+on:
+  push:
+    branches:
+      - codex/ch019p-return-136-2026-10-18
+    paths:
+      - ".github/workflows/ch019p-pad-windows.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  read-only-pad-window:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install KiCad 8 and Shapely 2.1.2
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely python3-pip
+          sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
+          kicad-cli version | grep '^8'
+      - name: Map CH019-P pad-access windows without PCB writes
+        timeout-minutes: 22
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/analyze_ch019_pad_windows.py \
+            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
+            --output /tmp/ch019-pad-window-survey.json
+          /usr/bin/python3 - <<'PY'
+          import json
+          from pathlib import Path
+          obj = json.loads(Path('/tmp/ch019-pad-window-survey.json').read_text())
+          assert all(obj[k] is False for k in (
+              'accepted', 'routing_completed', 'fabrication_release',
+              'independent_replay_verified', 'native_qualification', 'manufacturing_files'
+          ))
+          expected = {'R295.2', 'R39.1', 'U3.6'}
+          for key in ('baseline', 'five_segments_selectively_removed'):
+              assert set(obj['states'][key]['pads']) == expected
+          PY
+      - name: Upload geometric metrics only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ch019-pad-windows-readonly
+          path: /tmp/ch019-pad-window-survey.json
+          if-no-files-found: ignore
