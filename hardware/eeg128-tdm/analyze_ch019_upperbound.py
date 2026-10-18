@@ -26,7 +26,7 @@ def evaluate(board: Any, ordering: str) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import Point, LineString, box
     from analyze_139_escape_blockers import protected_power
-    from route_targeted_closure import xy, routing_domain, obstacles
+    from route_targeted_closure import xy, routing_domain
     from escape_mesh_505 import mesh_route, add_mesh_path
 
     result: dict[str, Any] = {**FLAGS, 'ordering': ordering,
