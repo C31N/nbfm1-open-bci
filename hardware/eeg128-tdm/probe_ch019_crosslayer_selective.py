@@ -50,6 +50,19 @@ CASES = {
             'd3abb5e2-a155-421a-8a73-4d1ef441d576',
         ),
     },
+    'exact-eleven-conflicts': {
+        'CH019_N_MUX': (
+            'cbef8349-505c-5ce2-812b-299cf1e09ca5',
+            '0832ca70-347c-5b2d-b8d9-c8fff7096f8a',
+        ),
+        'BANK1_P_MUX_OUT': (
+            '7d5653c6-8ba9-40b9-afd5-266ed0ef4353',
+        ),
+        'CH026_P_MUX': UUID_GROUPS['CH026_P_MUX'] + (
+            'd3abb5e2-a155-421a-8a73-4d1ef441d576',
+        ),
+        'MUX_EN': UUID_GROUPS['MUX_EN'],
+    },
 }
 
 
