@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+name: Block 2 CH026 electrode R302 FCu windows
+
+on:
+  push:
+    branches:
+      - codex/block2-ch026p-r302-escape-2026-10-18
+    paths:
+      - ".github/workflows/ch026p-r302-escape.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pinned-native-r302:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native KiCad 8 + pinned Shapely 2.1
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely python3-pip
+          sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
+          kicad-cli version | grep '^8'
+      - name: Verify fail-closed diagnostic requirements
+        run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch026p_r302_escape.py -v
+      - name: Measure CH026_P_ELECTRODE copper impact near R302.1
+        timeout-minutes: 22
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_ch026p_r302_escape.py \
+            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
+            --output /tmp/ch026-p-electrode-R302-windows.json
+          /usr/bin/python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('/tmp/ch026-p-electrode-R302-windows.json').read_text())
+          assert r['target_net']=='CH026_P_ELECTRODE'
+          assert all(r[k] is False for k in ('accepted','routing_completed',
+                       'fabrication_release','native_qualification','manufacturing_files'))
+          assert r['protected_J2_23_copper'] > 0
+          print('selected=',len(r['selectable_segments']),
+                'positive=',len(r['positive_candidates']),
+                'baseline=',r['baseline']['local_legal_via_mm2'])
+          PY
+      - name: Retain metrics only – no PCB and no fabrication
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ch026p-r302-native-windows
+          path: /tmp/ch026-p-electrode-R302-windows.json
+          if-no-files-found: ignore
