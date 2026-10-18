@@ -82,7 +82,7 @@ def model(board_file: Path, report_file: Path, order: str,
             if set(electrodes)!={'J2.23','R302.1'} or electrodes['J2.23'][0]!=J223:
                 raise ValueError('J2/CH022 identity mismatch')
             rlegal=local_via_window(board,power,region)
-            patches=polygons(rlegal)
+            patches=[g for g in polygons(rlegal) if g.area>1e-8]
             result['R302_local_via_window_mm2']=round(rlegal.area,8)
             if not patches:
                 result['status']='R302_window_absent_after_all_neighbor_cuts'
@@ -118,10 +118,12 @@ def model(board_file: Path, report_file: Path, order: str,
             ch024={n:x for n,x,_ in pads(board,'CH024_P_MUX')}
             if set(ch024)!={'R49.1','R305.2','U3.23'}:
                 raise ValueError('Three-pad CH024 net changed')
-            if not route('CH024_P_MUX',ch024['R49.1'],ch024['R305.2']):
-                result['status']='CH024_half_mm_branch_blocked';return False
+            # Route U3.23 first, as in the native-qualified diagnostic
+            # full CH024-P three-pad proposal; add 0.5-mm R305 branch later.
             if not route('CH024_P_MUX',ch024['R49.1'],ch024['U3.23']):
                 result['status']='CH024_U3_23_trunk_blocked';return False
+            if not route('CH024_P_MUX',ch024['R49.1'],ch024['R305.2']):
+                result['status']='CH024_half_mm_branch_blocked';return False
             result['CH024_three_pad_geometry_proposed']=True
             va,vb=VIA_ENDS['direct']
             if not route('CH019_P_MUX',va,vb,1,1):
