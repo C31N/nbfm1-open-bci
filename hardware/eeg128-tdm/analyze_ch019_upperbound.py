@@ -29,6 +29,7 @@ def evaluate(board: Any, ordering: str) -> dict[str, Any]:
     from route_targeted_closure import xy, routing_domain
     from escape_mesh_505 import mesh_route, add_mesh_path
 
+    proposed_paths: list[tuple[str, list[tuple[int, float, float]]]] = []
     result: dict[str, Any] = {**FLAGS, 'ordering': ordering,
                               'status': 'not_started',
                               'upper_bound_only': True,
@@ -94,6 +95,7 @@ def evaluate(board: Any, ordering: str) -> dict[str, Any]:
                     result['failed_pad'] = name
                     return False
                 add_mesh_path(board, route, src[2], layers)
+                proposed_paths.append(('CH024_P_MUX', route))
             result['CH024_three_pads_geometrically_proposed'] = True
             return True
 
@@ -106,6 +108,7 @@ def evaluate(board: Any, ordering: str) -> dict[str, Any]:
             if path is not None:
                 result['bridge_waypoints'] = path
                 add_mesh_path(board, path, net, layers)
+                proposed_paths.append(('CH019_P_MUX', path))
                 return True
             return False
 
@@ -115,6 +118,45 @@ def evaluate(board: Any, ordering: str) -> dict[str, Any]:
             if not fn():
                 result['status'] = 'upper_bound_geometry_blocked'
                 return result
+        # Determine the exact subset of temporarily removed copper which
+        # intersects the successful geometry. This is a geometric conflict
+        # inventory, not yet a legal neighbor-rerouted solution.
+        conflicts = []
+        for old in chosen:
+            if old.GetLayer() not in (pcbnew.F_Cu, pcbnew.B_Cu):
+                continue
+            candidate_shape = LineString([xy(old.GetStart()), xy(old.GetEnd())])
+            other_width = pcbnew.ToMM(old.GetWidth())
+            hits = []
+            for routed_net, guide in proposed_paths:
+                if old.GetNetname() == routed_net:
+                    continue
+                for first, second in zip(guide, guide[1:]):
+                    if first[0] == second[0]:
+                        on_layer = layers[first[0]]
+                        if old.GetLayer() != on_layer:
+                            continue
+                        segment = LineString([first[1:], second[1:]])
+                        if candidate_shape.distance(segment) <= other_width / 2 + .075 + .15 + 1e-6:
+                            hits.append(routed_net + ':trace')
+                    elif first[1:] == second[1:]:
+                        # A new through-via intersects both routing layers.
+                        if candidate_shape.distance(Point(first[1:])) <= other_width / 2 + .30 + .15 + 1e-6:
+                            hits.append(routed_net + ':via')
+            if hits:
+                conflicts.append({
+                    'net': old.GetNetname(),
+                    'uuid': old.m_Uuid.AsString(),
+                    'layer': board.GetLayerName(old.GetLayer()),
+                    'from': list(xy(old.GetStart())),
+                    'to': list(xy(old.GetEnd())),
+                    'interference_with': sorted(set(hits)),
+                })
+        result['conflicting_displaced_segments'] = conflicts
+        result['conflicting_segment_count'] = len(conflicts)
+        result['nonconflicting_displaced_segments'] = (
+            len(chosen) - len(conflicts) -
+            sum(t.GetLayer() == pcbnew.In2_Cu for t in chosen))
         result['status'] = 'upper_bound_geometrically_proposed_but_unrestored'
         return result
     finally:
