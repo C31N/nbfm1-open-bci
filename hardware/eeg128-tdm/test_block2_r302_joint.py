@@ -29,6 +29,14 @@ class CoupledR302U323Guards(unittest.TestCase):
         self.assertIn("'U3.23'", text)
         self.assertIn("'R305.2'", text)
 
+    def test_strict_forced_via_windows(self) -> None:
+        text = Path(module.__file__).read_text()
+        self.assertIn("windows(board, code, pt, region, reserve)", text)
+        self.assertIn("metric['windows'][0]['point']", text)
+        self.assertIn("add_mesh_path(board, [(0,*rvia),(1,*rvia)]", text)
+        self.assertIn("add_mesh_path(board, [(1,*jvia),(0,*jvia)]", text)
+        self.assertIn("allow_vias=allow_vias", text)
+
     def test_no_production_export_or_release(self) -> None:
         text = Path(module.__file__).read_text()
         self.assertIn("TemporaryDirectory", text)
