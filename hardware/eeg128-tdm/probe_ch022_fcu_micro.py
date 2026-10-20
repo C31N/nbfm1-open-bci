@@ -255,5 +255,8 @@ def try_micro(board: Any, start: tuple[float, float],
                     board.Add(item)
                 if _copper_signature(board, GUARDED_NETS) != protected_before:
                     raise RuntimeError('Micro trial rollback changed protected copper')
+    from probe_ch025_interior_virtual import evaluate as interior_evaluate
+    interior_report = interior_evaluate(board, start, end, code, region, power)
+    report['ch025_interior_FCu_topology'] = interior_report
     report['status'] = 'micro_variants_exhausted_without_restitution'
     return False, report
