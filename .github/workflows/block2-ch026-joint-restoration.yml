@@ -1,0 +1,80 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+name: Block 2 CH026 selective restitution and joint closure
+
+on:
+  push:
+    branches:
+      - codex/block2-ch026p-r302-escape-2026-10-19
+    paths:
+      - ".github/workflows/block2-ch026-joint-restoration.yml"
+      - "hardware/eeg128-tdm/probe_block2_r302_joint.py"
+      - "hardware/eeg128-tdm/test_ch026_r302_joint.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pinned-selective-mesh:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - order: ch022-first
+            radius: "0.35"
+          - order: ch022-first
+            radius: "0.65"
+          - order: ch024-first
+            radius: "0.35"
+          - order: ch024-first
+            radius: "0.65"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native KiCad 8.0.9 and Shapely
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely python3-pip
+          sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
+          test "$(kicad-cli version)" = "8.0.9"
+      - name: Protect CH026 pad/vias and all release gates
+        run: |
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch026_r302_joint.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_r302_joint.py -v
+      - name: Model CH026 local relocation and CH022/CH024/CH019 joint closure
+        timeout-minutes: 32
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_block2_r302_joint.py \
+            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
+            --joint-order ${{ matrix.order }} \
+            --ch022-root R302.1 \
+            --reserve-radius ${{ matrix.radius }} \
+            --ch022-via-plan \
+            --ch026-escape-cut \
+            --output /tmp/ch026-r302-joint-${{ matrix.order }}-${{ matrix.radius }}.json
+          /usr/bin/python3 - <<'PY'
+          import os,json
+          from pathlib import Path
+          doc=json.loads(Path('/tmp/ch026-r302-joint-'+os.environ['ORDER']+'-'+os.environ['RADIUS']+'.json').read_text())
+          assert doc['ch026_escape_cut'] is True
+          assert all(doc[key] is False for key in ('accepted','routing_completed',
+                    'fabrication_release','independent_replay_verified',
+                    'native_qualification','manufacturing_files'))
+          print('model-status',doc['status'])
+          print('via-windows',doc.get('R302.1_legal_via_area_mm2'),
+                doc.get('J2.23_legal_via_area_mm2'))
+          print('failed-stage',doc.get('failed_stage'),doc.get('failed_net'),
+                doc.get('failed_neighbor'),doc.get('failed_uuid'))
+          PY
+        env:
+          ORDER: ${{ matrix.order }}
+          RADIUS: ${{ matrix.radius }}
+      - name: Archive diagnostic JSON only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ch026-r302-joint-${{ matrix.order }}-${{ matrix.radius }}
+          path: /tmp/ch026-r302-joint-${{ matrix.order }}-${{ matrix.radius }}.json
+          if-no-files-found: ignore
