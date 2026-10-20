@@ -134,6 +134,52 @@ def propose(board: Any, start: tuple[float, float],
     report['downstream_via_centres_FCu_source_reachable'] = [
         list(pt) for pt in after if front_source is not None
         and front_source.covers(Point(pt))]
+    # Identify the exact F.Cu bottleneck should a source-side existing-via
+    # detour fail. This is an inventory, NEVER authorization to move copper.
+    from shapely.ops import nearest_points
+    nearest = []
+    for pt in after:
+        if front_source is None:
+            continue
+        target_part = next(
+            (p for p in front_parts if p.covers(Point(pt))), None)
+        if target_part is None or target_part == front_source:
+            continue
+        gap = front_source.distance(target_part)
+        first, last = nearest_points(front_source, target_part)
+        nearest.append((gap, pt, (first.x, first.y),
+                        (last.x, last.y)))
+    if nearest:
+        gap, pt, pa, pb = min(nearest, key=lambda rec: (rec[0], rec[1]))
+        corridor = LineString([pa, pb]).buffer(.70)
+        nearby = []
+        from route_targeted_closure import xy
+        for track in board.GetTracks():
+            if track.GetNetCode() == net:
+                continue
+            if isinstance(track, pcbnew.PCB_VIA):
+                shape = Point(xy(track.GetPosition()))
+                layer = 'THROUGH'
+            elif track.GetLayer() == pcbnew.F_Cu and not isinstance(
+                    track, pcbnew.PCB_ARC):
+                shape = LineString([xy(track.GetStart()), xy(track.GetEnd())])
+                layer = 'F.Cu'
+            else:
+                continue
+            if shape.intersects(corridor):
+                nearby.append({
+                    'uuid': track.m_Uuid.AsString(),
+                    'net': track.GetNetname(),
+                    'layer': layer,
+                    'distance_mm': round(shape.distance(LineString([pa, pb])), 6),
+                })
+        nearby.sort(key=lambda item: (item['distance_mm'], item['net'],
+                                      item['uuid']))
+        report['closest_FCu_gap'] = {
+            'target_via_mm': list(pt), 'gap_mm': round(gap, 6),
+            'source_edge_mm': list(pa), 'target_edge_mm': list(pb),
+            'foreign_blocker_UUIDs': nearby[:30],
+        }
     report['via_centres_before'] = [list(pt) for pt in before]
     report['via_centres_after'] = [list(pt) for pt in after]
 
@@ -150,8 +196,18 @@ def propose(board: Any, start: tuple[float, float],
             start_layer=layer, goal_layer=layer, allow_vias=False)
         return result if result and len(result) >= 2 else None
 
-    initial = {pt: leg(start, pt, 1) for pt in before}
-    final = {pt: leg(pt, end, 1) for pt in after}
+    # Do not invoke the expensive native mesh when the source and target
+    # lie in provably disconnected free-copper components.
+    initial = {
+        pt: (leg(start, pt, 1) if source_part is not None
+             and source_part.covers(Point(pt)) else None)
+        for pt in before}
+    bcu_end_part = next(
+        (p for p in bcu_components if p.covers(Point(end))), None)
+    final = {
+        pt: (leg(pt, end, 1) if bcu_end_part is not None
+             and bcu_end_part.covers(Point(pt)) else None)
+        for pt in after}
     report['first_leg_usable'] = sum(path is not None for path in initial.values())
     report['last_leg_usable'] = sum(path is not None for path in final.values())
     report['status'] = 'staged_front_crossing_blocked'
