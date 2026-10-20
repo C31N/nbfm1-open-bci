@@ -17,6 +17,8 @@ class CH022FCuMicroGuards(unittest.TestCase):
             'f489590a-6746-48d2-bd2f-091103b220a3',
         ))
         self.assertNotIn('CH024_N_ELECTRODE', micro.GUARDED_NETS)
+        self.assertNotIn('CH025_N_ELECTRODE', micro.GUARDED_NETS)
+        self.assertEqual(micro.PINNED_CH025N, '156ba77d-5f3e-4c18-88ee-0f2763e31dfd')
         for name in ('CH017_N_ELECTRODE', 'CH026_P_ELECTRODE',
                      'CH024_P_MUX', 'CH019_P_MUX', 'VCM', 'AGND',
                      'CH028_P_ELECTRODE', 'CH030_N_ELECTRODE',
@@ -29,12 +31,14 @@ class CH022FCuMicroGuards(unittest.TestCase):
         for guard in ('pad_distance >= 1.0', 'via_distance >= .65',
                       'pinned segment identity/layer mismatch',
                       'protected_before', 'accepted_geometry = False',
-                      'CH024N_restitution_blocked',
+                      'displaced_electrode_restitution_blocked',
                       '_copper_signature(board, GUARDED_NETS)',
                       'finally:', 'board.Remove(item)', 'board.Add(item)',
                       'len(restored) != len(subset)',
                       'source.covers(Point(pt))', 'power.buffer(.505)',
-                      'CH022 identity changed'):
+                      'CH022 identity changed', 'residual_FCu_gap',
+                      'nearby_blocker_uuids', 'pad_or_via_escape_protected',
+                      'for subset in variants:', 'CH025N_restituted'):
             self.assertIn(guard, text)
         for guard in ('ch022_fcu_micro_analysis',
                       'args.ch022_fcu_micro',

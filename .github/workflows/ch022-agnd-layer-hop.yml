@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
-name: CH022 CH024N guarded FCu micro restitution probe
+name: CH022 CH024N and tertiary CH025N FCu diagnostic
 
 on:
   push:
-    branches: [codex/ch022-fcu-gap-micro-2026-10-20]
+    branches: [codex/ch022-fcu-tertiary-2026-10-20]
     paths:
       - ".github/workflows/ch022-agnd-layer-hop.yml"
       - "hardware/eeg128-tdm/probe_ch022_agnd_hop.py"

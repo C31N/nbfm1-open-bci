@@ -550,7 +550,7 @@ def model(board_path: Path, output: Path, case: str,
         remaining = airwire_counts(after)
         critical = ('CH017_N_ELECTRODE', 'CH022_N_ELECTRODE',
                     'CH026_P_ELECTRODE', 'CH024_P_MUX', 'CH019_P_MUX',
-                    'CH024_N_ELECTRODE')
+                    'CH024_N_ELECTRODE', 'CH025_N_ELECTRODE')
         result['critical_native_unconnected'] = {
             name: remaining[name] for name in critical}
         result['candidate_136_eligible_for_independent_replay'] = (
