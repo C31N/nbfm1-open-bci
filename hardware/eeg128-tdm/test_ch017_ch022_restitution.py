@@ -26,7 +26,7 @@ class CH017NRestitutionGuards(unittest.TestCase):
         for required in ("ch017_native_continuity_ok", "native_fresh(",
                          "ch017_native_restitution_failed",
                          "ch017_airwires_before", "ch017_airwires_after",
-                         "current <= previous and not errors"):
+                         "previous == 0 and current == 0 and not errors"):
             self.assertIn(required, source)
 
     def test_unchanged_released_gates(self) -> None:
