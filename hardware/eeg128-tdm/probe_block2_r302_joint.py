@@ -74,7 +74,8 @@ def model(board_path: Path, output: Path, case: str,
           ch026_restore_early: bool = False,
           ch022_bcu_inventory: bool = False,
           ch017_local_restore: bool = False,
-          ch022_agnd_hop: bool = False) -> dict[str, Any]:
+          ch022_agnd_hop: bool = False,
+          ch022_fcu_micro: bool = False) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import box, Point, LineString
     from analyze_139_escape_blockers import protected_power, windows
@@ -97,7 +98,10 @@ def model(board_path: Path, output: Path, case: str,
               'ch026_restore_early': ch026_restore_early,
               'ch017_local_restore': ch017_local_restore,
               'ch022_agnd_hop': ch022_agnd_hop,
+              'ch022_fcu_micro': ch022_fcu_micro,
               'ch017_segment_uuids': [], 'ch017_native_continuity_ok': False}
+    if ch022_fcu_micro and not ch022_agnd_hop:
+        raise ValueError('Micro rerouting requires protected AGND hop mode')
     if ch022_agnd_hop and not (ch017_local_restore and via_plan
                                 and ch026_escape_cut and ch026_restore_early):
         raise ValueError('AGND hop needs pinned restored CH017/CH026 and seeded CH022 vias')
@@ -226,13 +230,20 @@ def model(board_path: Path, output: Path, case: str,
                     bridge, hop_report = propose(
                         board, rvia, jvia, code, layers, reserve, region)
                     result['ch022_agnd_hop_analysis'] = hop_report
-                if bridge is None or len(bridge) < 2:
+                micro_complete = False
+                if (bridge is None or len(bridge) < 2) and ch022_fcu_micro:
+                    from probe_ch022_fcu_micro import try_micro
+                    micro_complete, micro_report = try_micro(
+                        board, rvia, jvia, code, layers, reserve, region)
+                    result['ch022_fcu_micro_analysis'] = micro_report
+                if (bridge is None or len(bridge) < 2) and not micro_complete:
                     if ch022_bcu_inventory:
                         from analyze_ch022_bcu_blockers import survey
                         result['bcu_obstacle_inventory'] = survey(board, rvia, jvia)
                     result['status'] = 'ch022_seeded_BCu_bridge_blocked'
                     return False
-                add_mesh_path(board, bridge, code, layers)
+                if not micro_complete:
+                    add_mesh_path(board, bridge, code, layers)
                 result['CH022_N_ELECTRODE_geometry_proposed'] = True
                 result['CH022_via_points'] = {'R302.1': rvia, 'J2.23': jvia}
                 result['ch022_interleaved_BCu_proposed'] = True
@@ -538,7 +549,8 @@ def model(board_path: Path, output: Path, case: str,
         from native_connectivity import airwire_counts
         remaining = airwire_counts(after)
         critical = ('CH017_N_ELECTRODE', 'CH022_N_ELECTRODE',
-                    'CH026_P_ELECTRODE', 'CH024_P_MUX', 'CH019_P_MUX')
+                    'CH026_P_ELECTRODE', 'CH024_P_MUX', 'CH019_P_MUX',
+                    'CH024_N_ELECTRODE')
         result['critical_native_unconnected'] = {
             name: remaining[name] for name in critical}
         result['candidate_136_eligible_for_independent_replay'] = (
@@ -565,6 +577,8 @@ def main() -> None:
     parser.add_argument('--reserve-radius', type=float, choices=(.35,.65,.95),
                         required=True)
     parser.add_argument('--ch022-root', choices=('J2.23','R302.1'), required=True)
+    parser.add_argument('--ch022-fcu-micro', action='store_true',
+                        help='Temporarily displace pinned CH024_N FCu links and fully restore')
     parser.add_argument('--ch022-agnd-hop', action='store_true',
                         help='Force strict F.Cu crossing of AGND with 2 legal new vias')
     parser.add_argument('--ch017-local-restore', action='store_true',
@@ -598,7 +612,8 @@ def main() -> None:
                            args.joint_order, args.reserve_radius, args.ch022_root,
                            args.ch022_via_plan, args.ch026_escape_cut,
                            args.ch026_restore_early, args.ch022_bcu_inventory,
-                           args.ch017_local_restore, args.ch022_agnd_hop)
+                           args.ch017_local_restore, args.ch022_agnd_hop,
+                           args.ch022_fcu_micro)
         except Exception as exc:
             output = {**FLAGS, 'status': 'diagnostic_exception',
                       'error_type': type(exc).__name__, 'detail': str(exc),
@@ -610,7 +625,8 @@ def main() -> None:
                       'ch026_restore_early': args.ch026_restore_early,
                       'ch022_bcu_inventory': args.ch022_bcu_inventory,
                       'ch017_local_restore': args.ch017_local_restore,
-                      'ch022_agnd_hop': args.ch022_agnd_hop}
+                      'ch022_agnd_hop': args.ch022_agnd_hop,
+                      'ch022_fcu_micro': args.ch022_fcu_micro}
     if digest(args.archive.read_bytes()) != ZIP_SHA:
         raise ValueError('Source archive changed')
     args.output.write_text(json.dumps(output, indent=2) + '\n')
