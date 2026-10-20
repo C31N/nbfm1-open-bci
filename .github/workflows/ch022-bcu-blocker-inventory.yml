@@ -7,6 +7,9 @@ on:
       - codex/ch022-bcu-local-blockers-2026-10-20
     paths:
       - ".github/workflows/ch022-bcu-blocker-inventory.yml"
+      - "hardware/eeg128-tdm/probe_block2_r302_joint.py"
+      - "hardware/eeg128-tdm/analyze_ch022_bcu_blockers.py"
+      - "hardware/eeg128-tdm/test_ch022_bcu_blockers.py"
   workflow_dispatch:
 
 permissions:
