@@ -1,0 +1,68 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+name: CH022 native BCu blocker inventory
+
+on:
+  push:
+    branches:
+      - codex/ch022-bcu-local-blockers-2026-10-20
+    paths:
+      - ".github/workflows/ch022-bcu-blocker-inventory.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-blocker-inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        radius: ["0.35", "0.95"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install KiCad 8.0.9 and geometry tools
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely python3-pip
+          sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
+          test "$(kicad-cli version)" = "8.0.9"
+      - name: Validate guarded native research
+        run: |
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch022_bcu_blockers.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch026_r302_joint.py -v
+      - name: Identify true CH022 BCu corridor blockers on seeded joint geometry
+        timeout-minutes: 35
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_block2_r302_joint.py \
+            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
+            --joint-order interleave --ch022-root R302.1 \
+            --reserve-radius ${{ matrix.radius }} --ch022-via-plan \
+            --ch026-escape-cut --ch026-restore-early --ch022-bcu-inventory \
+            --output /tmp/ch022-bcu-inventory-${{ matrix.radius }}.json
+          /usr/bin/python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          d=json.loads(Path('/tmp/ch022-bcu-inventory-'+os.environ['RADIUS']+'.json').read_text())
+          for k in ('accepted','routing_completed','fabrication_release',
+                    'native_qualification','independent_replay_verified','manufacturing_files'):
+              assert d[k] is False, k
+          if 'bcu_obstacle_inventory' in d:
+              x=d['bcu_obstacle_inventory']
+              print('B.Cu movable',x['movable_count'],'protected',x['protected_count'])
+              assert all(t['net'] not in ('CH024_P_MUX','CH019_P_MUX','CH026_P_ELECTRODE',
+                           'CH018_N_MUX','VCM') for t in x['all_nearby_bcu_objects']
+                           if t['locally_movable'])
+          print('status',d['status'])
+          PY
+        env:
+          RADIUS: ${{ matrix.radius }}
+      - name: Retain JSON diagnosis, no PCB or exports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ch022-bcu-inventory-${{ matrix.radius }}
+          path: /tmp/ch022-bcu-inventory-${{ matrix.radius }}.json
+          if-no-files-found: ignore
