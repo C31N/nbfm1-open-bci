@@ -1,12 +1,14 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
-name: CH022 guarded AGND FCu hop probe
+name: CH022 CH024N guarded FCu micro restitution probe
 
 on:
   push:
-    branches: [codex/ch022-agnd-layer-hop-2026-10-20]
+    branches: [codex/ch022-fcu-gap-micro-2026-10-20]
     paths:
       - ".github/workflows/ch022-agnd-layer-hop.yml"
       - "hardware/eeg128-tdm/probe_ch022_agnd_hop.py"
+      - "hardware/eeg128-tdm/probe_ch022_fcu_micro.py"
+      - "hardware/eeg128-tdm/test_ch022_fcu_micro.py"
       - "hardware/eeg128-tdm/probe_block2_r302_joint.py"
       - "hardware/eeg128-tdm/test_ch022_agnd_hop.py"
   workflow_dispatch:
@@ -34,9 +36,10 @@ jobs:
       - name: Test fail-closed guards before board experiment
         run: |
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch022_agnd_hop.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch022_fcu_micro.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch017_ch022_restitution.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch026_r302_joint.py -v
-      - name: Search staged BCu FCu BCu crossing with native CH017 restitution
+      - name: Test UUID-pinned CH024N restitution then staged CH022 FCu crossing
         timeout-minutes: 60
         run: |
           /usr/bin/python3 hardware/eeg128-tdm/probe_block2_r302_joint.py \
@@ -44,17 +47,21 @@ jobs:
             --joint-order interleave --ch022-root R302.1 \
             --reserve-radius ${{ matrix.radius }} \
             --ch022-via-plan --ch026-escape-cut --ch026-restore-early \
-            --ch017-local-restore --ch022-bcu-inventory --ch022-agnd-hop \
-            --output /tmp/ch022-agnd-hop-${{ matrix.radius }}.json
+            --ch017-local-restore --ch022-bcu-inventory --ch022-agnd-hop --ch022-fcu-micro \
+            --output /tmp/ch022-fcu-micro-${{ matrix.radius }}.json
           /usr/bin/python3 - <<'PY'
           import json
           import os
           from pathlib import Path
-          d=json.loads(Path('/tmp/ch022-agnd-hop-'+os.environ['RADIUS']+'.json').read_text())
+          d=json.loads(Path('/tmp/ch022-fcu-micro-'+os.environ['RADIUS']+'.json').read_text())
           for key in ('accepted','routing_completed','fabrication_release',
                       'native_qualification','independent_replay_verified',
                       'manufacturing_files'):
               assert d.get(key) is False, key
+          assert d.get('status') != 'diagnostic_exception', d.get('detail')
+          assert d.get('ch017_native_continuity_ok') is True, 'CH017 must remain natively connected'
+          if d.get('status') == 'ch022_interleaved_BCu_blocked':
+              assert 'ch022_fcu_micro_analysis' in d, 'Missing protected FCu analysis'
           if d.get('status') == 'native_audit_only_unaccepted':
               assert d['ch017_native_continuity_ok'] is True
               assert d['L3_loss_mm2'] == 0.0
@@ -65,6 +72,7 @@ jobs:
               assert all(v == 0 for v in d['critical_native_unconnected'].values())
           print('DIAGNOSTIC_ONLY',d.get('status'),'hop',d.get('ch022_agnd_hop_analysis',{}).get('status'),
                 'CH017_ok',d.get('ch017_native_continuity_ok'),
+                'micro',d.get('ch022_fcu_micro_analysis',{}).get('status'),
                 'airwires',d.get('drc_unconnected'),
                 '136_replay_candidate',d.get('candidate_136_eligible_for_independent_replay'),
                 flush=True)
@@ -75,6 +83,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ch022-agnd-hop-${{ matrix.radius }}
-          path: /tmp/ch022-agnd-hop-${{ matrix.radius }}.json
+          name: ch022-fcu-micro-${{ matrix.radius }}
+          path: /tmp/ch022-fcu-micro-${{ matrix.radius }}.json
           if-no-files-found: ignore
