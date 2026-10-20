@@ -15,7 +15,7 @@ def inspect(board: Any, rvia: tuple[float, float],
             power: Any, region: Any) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import Point, LineString, box
-    from shapely.ops import unary_union
+    from shapely.ops import unary_union, nearest_points
     from route_targeted_closure import xy, obstacles
     from escape_mesh_505 import polygons
 
@@ -46,6 +46,16 @@ def inspect(board: Any, rvia: tuple[float, float],
                for x in (rvia, jvia)]
         comp_gap = (comps[ids[0]].distance(comps[ids[1]])
                     if ids[0] is not None and ids[1] is not None else None)
+        if layer_name == 'F.Cu' and all(i is not None for i in ids) and ids[0] != ids[1]:
+            first, last = nearest_points(comps[ids[0]], comps[ids[1]])
+            mid = ((first.x+last.x)/2, (first.y+last.y)/2)
+            out['closest_FCu_gap'] = {
+                'R302_region_edge_xy': [round(first.x,6),round(first.y,6)],
+                'J2_region_edge_xy': [round(last.x,6),round(last.y,6)],
+                'gap_midpoint_xy': [round(mid[0],6),round(mid[1],6)],
+                'foreign_FCu_segments_near_gap': [],
+                'foreign_FCu_pads_near_gap': [],
+            }
         out['blocked_layer_summary'][layer_name] = {
             'R302_endpoint_legal': ids[0] is not None,
             'J2_endpoint_legal': ids[1] is not None,
@@ -132,6 +142,44 @@ def inspect(board: Any, rvia: tuple[float, float],
                     'on_BCu': bool(pad.IsOnLayer(pcbnew.B_Cu)),
                     'on_In2': bool(pad.IsOnLayer(pcbnew.In2_Cu)),
                 })
+    if 'closest_FCu_gap' in out:
+        mid = Point(out['closest_FCu_gap']['gap_midpoint_xy'])
+        for t in board.GetTracks():
+            if t.GetNetCode() == code:
+                continue
+            if isinstance(t, pcbnew.PCB_VIA):
+                shape = Point(xy(t.GetPosition()))
+                layer_names = ['F.Cu', 'B.Cu']
+            elif isinstance(t, pcbnew.PCB_ARC) or t.GetLayer() != pcbnew.F_Cu:
+                continue
+            else:
+                shape = LineString([xy(t.GetStart()), xy(t.GetEnd())])
+                layer_names = ['F.Cu']
+            if shape.distance(mid) > 1.0:
+                continue
+            out['closest_FCu_gap']['foreign_FCu_segments_near_gap'].append({
+                'uuid': t.m_Uuid.AsString(),
+                'net': t.GetNetname(),
+                'layers': layer_names,
+                'distance_to_gap_midpoint_mm': round(shape.distance(mid),6),
+                'from': list(xy(t.GetStart())),
+                'to': list(xy(t.GetEnd())),
+            })
+        for fp in board.GetFootprints():
+            for pad in fp.Pads():
+                if pad.GetNetCode() == code or not pad.IsOnLayer(pcbnew.F_Cu):
+                    continue
+                point=Point(xy(pad.GetPosition()))
+                if point.distance(mid) > 1.0:
+                    continue
+                out['closest_FCu_gap']['foreign_FCu_pads_near_gap'].append({
+                    'pad': fp.GetReference()+'.'+pad.GetNumber(),
+                    'net': pad.GetNetname(),
+                    'xy': list(xy(pad.GetPosition())),
+                    'distance_mm': round(point.distance(mid),6),
+                })
+        out['closest_FCu_gap']['foreign_FCu_segments_near_gap'].sort(
+            key=lambda z:(z['distance_to_gap_midpoint_mm'],z['net'],z['uuid']))
     out['nearby_foreign_tracks'].sort(
         key=lambda x:(x['distance_to_straight_ch022_mm'],x['net'],x['uuid']))
     out['nearby_foreign_pads'].sort(
