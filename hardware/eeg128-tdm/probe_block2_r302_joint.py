@@ -154,7 +154,26 @@ def model(board_path: Path, output: Path, case: str,
     for t in chosen:
         board.Remove(t)
     try:
-        def connect_ch022_via_bridge() -> bool:
+        seeded_ch022: dict[str, Any] = {}
+
+        def connect_ch022_via_bridge(stage: str = 'all') -> bool:
+            if stage == 'finish':
+                if set(seeded_ch022) != {'rvia', 'jvia', 'code'}:
+                    raise RuntimeError('Incomplete CH022 preseed state')
+                rvia = seeded_ch022['rvia']
+                jvia = seeded_ch022['jvia']
+                code = seeded_ch022['code']
+                bridge = mesh_route(board, rvia, jvia, code, layers,
+                                    reserve, region, start_layer=1, goal_layer=1)
+                if bridge is None or len(bridge) < 2:
+                    result['status'] = 'ch022_seeded_BCu_bridge_blocked'
+                    return False
+                add_mesh_path(board, bridge, code, layers)
+                result['CH022_N_ELECTRODE_geometry_proposed'] = True
+                result['CH022_via_points'] = {'R302.1': rvia, 'J2.23': jvia}
+                result['ch022_interleaved_BCu_proposed'] = True
+                return True
+
             # Require a real F.Cu-connected legal via window at BOTH
             # CH022 pads. Never via-in-pad or into the L3 plane outline.
             electrodes = pads(board, 'CH022_N_ELECTRODE')
@@ -217,6 +236,18 @@ def model(board_path: Path, output: Path, case: str,
             # the via centres originate from same-net connected windows.
             result['forced_route_stage'] = 'via_R302.1'
             add_mesh_path(board, [(0,*rvia),(1,*rvia)], code, layers)
+            if stage == 'seed':
+                # Fix both endpoint vias and their F.Cu escapes *before*
+                # CH024-P is added, but delay only the intervening B.Cu
+                # trunk until CH024-P and CH019-P have been routed.
+                add_mesh_path(board, [(1,*jvia),(0,*jvia)], code, layers)
+                if not apply(jvia, by_pad['J2.23'][0], 0, 0, False):
+                    result['status'] = 'ch022_seeded_J2_escape_blocked'
+                    return False
+                seeded_ch022.update({'rvia': rvia, 'jvia': jvia, 'code': code})
+                result['ch022_FCu_escapes_and_vias_seeded'] = True
+                result['CH022_via_points'] = {'R302.1': rvia, 'J2.23': jvia}
+                return True
             if not apply(rvia, jvia, 1, 1):
                 result['status'] = 'ch022_BCu_return_blocked'
                 return False
@@ -253,6 +284,12 @@ def model(board_path: Path, output: Path, case: str,
             result[net+'_geometry_proposed'] = True
             return True
 
+        if joint_order == 'interleave':
+            if not via_plan or not ch026_escape_cut:
+                raise ValueError('Interleaving requires CH026 removal and legal via plan')
+            if not connect_ch022_via_bridge('seed'):
+                result['status'] = 'ch022_escape_preseed_failed'
+                return result
         if joint_order == 'ch022-first':
             if not (connect_ch022_via_bridge() if via_plan else
                     connect('CH022_N_ELECTRODE', {'J2.23','R302.1'})):
@@ -280,6 +317,12 @@ def model(board_path: Path, output: Path, case: str,
             return result
         add_mesh_path(board, path, net, layers)
         result['ch019_via_bridge_proposed'] = True
+
+        if joint_order == 'interleave':
+            if not connect_ch022_via_bridge('finish'):
+                result['status'] = 'ch022_interleaved_BCu_blocked'
+                return result
+            result['ch022_pad_reconnection_proposed'] = True
 
         if joint_order == 'ch024-first':
             if not (connect_ch022_via_bridge() if via_plan else
@@ -347,7 +390,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--archive', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
-    parser.add_argument('--joint-order', choices=('ch022-first','ch024-first'),
+    parser.add_argument('--joint-order', choices=('ch022-first','ch024-first','interleave'),
                         required=True)
     parser.add_argument('--reserve-radius', type=float, choices=(.35,.65,.95),
                         required=True)
