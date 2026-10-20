@@ -70,7 +70,8 @@ def model(board_path: Path, output: Path, case: str,
           joint_order: str = 'ch024-first', reserve_radius: float = .65,
           ch022_root: str = 'J2.23',
           via_plan: bool = False,
-          ch026_escape_cut: bool = False) -> dict[str, Any]:
+          ch026_escape_cut: bool = False,
+          ch026_restore_early: bool = False) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import box, Point, LineString
     from analyze_139_escape_blockers import protected_power, windows
@@ -89,7 +90,8 @@ def model(board_path: Path, output: Path, case: str,
               'selected_segment_uuid': [], 'joint_order': joint_order,
               'radius_mm': reserve_radius, 'ch022_root': ch022_root,
               'forced_existing_pad_via_plan': via_plan,
-              'ch026_escape_cut': ch026_escape_cut}
+              'ch026_escape_cut': ch026_escape_cut,
+              'ch026_restore_early': ch026_restore_early}
     chosen = protected_selection(board, 'entire_trunk')
     lookup = {t.m_Uuid.AsString(): t for t in board.GetTracks()}
     extra = CASES[case]
@@ -290,6 +292,25 @@ def model(board_path: Path, output: Path, case: str,
             if not connect_ch022_via_bridge('seed'):
                 result['status'] = 'ch022_escape_preseed_failed'
                 return result
+        if ch026_restore_early:
+            if not joint_order.startswith('interleave') or not ch026_escape_cut:
+                raise ValueError('Early CH026 restitution requires preseed and pinned cut')
+            blocker = next((t for t in chosen if
+                            t.m_Uuid.AsString() ==
+                            'e3c4e6fe-fce1-48bf-a3e0-bef9b53a8faa'), None)
+            if blocker is None or blocker.GetNetname() != 'CH026_P_ELECTRODE':
+                raise ValueError('Missing original CH026-P blocker reference')
+            alternative = mesh_route(board, xy(blocker.GetStart()),
+                                     xy(blocker.GetEnd()), blocker.GetNetCode(),
+                                     layers, reserve, region,
+                                     start_layer=0, goal_layer=0)
+            if alternative is None or len(alternative) < 2:
+                result['status'] = 'ch026_early_segment_restitution_blocked'
+                result['failed_neighbor'] = blocker.GetNetname()
+                result['failed_uuid'] = blocker.m_Uuid.AsString()
+                return result
+            add_mesh_path(board, alternative, blocker.GetNetCode(), layers)
+            result['ch026_early_segment_restored_geometrically'] = True
         if joint_order == 'ch022-first':
             if not (connect_ch022_via_bridge() if via_plan else
                     connect('CH022_N_ELECTRODE', {'J2.23','R302.1'})):
@@ -339,6 +360,9 @@ def model(board_path: Path, output: Path, case: str,
 
         skipped_segments = []
         for segment in chosen:
+            if (ch026_restore_early and segment.m_Uuid.AsString() ==
+                    'e3c4e6fe-fce1-48bf-a3e0-bef9b53a8faa'):
+                continue  # This component was already restored before CH024.
             # Pad-connected CH022 and existing-via CH019 replace old
             # piece-by-piece copper; native connectivity is mandatory.
             if segment.GetNetname() in ('CH022_N_ELECTRODE','CH019_P_MUX'):
@@ -401,6 +425,8 @@ def main() -> None:
     parser.add_argument('--reserve-radius', type=float, choices=(.35,.65,.95),
                         required=True)
     parser.add_argument('--ch022-root', choices=('J2.23','R302.1'), required=True)
+    parser.add_argument('--ch026-restore-early', action='store_true',
+                        help='Test CH026 segment restitution directly after CH022 via-seed')
     parser.add_argument('--ch026-escape-cut', action='store_true',
                         help='Selectively reroute pinned CH026-P FCu blocker')
     parser.add_argument('--ch022-via-plan', action='store_true',
@@ -424,7 +450,8 @@ def main() -> None:
         try:
             output = model(work / PCB, work / 'crosslayer.json', 'exact-eleven-conflicts',
                            args.joint_order, args.reserve_radius, args.ch022_root,
-                           args.ch022_via_plan, args.ch026_escape_cut)
+                           args.ch022_via_plan, args.ch026_escape_cut,
+                           args.ch026_restore_early)
         except Exception as exc:
             output = {**FLAGS, 'status': 'diagnostic_exception',
                       'error_type': type(exc).__name__, 'detail': str(exc),
@@ -432,7 +459,8 @@ def main() -> None:
                       'radius_mm': args.reserve_radius,
                       'ch022_root': args.ch022_root,
                       'forced_existing_pad_via_plan': args.ch022_via_plan,
-                      'ch026_escape_cut': args.ch026_escape_cut}
+                      'ch026_escape_cut': args.ch026_escape_cut,
+                      'ch026_restore_early': args.ch026_restore_early}
     if digest(args.archive.read_bytes()) != ZIP_SHA:
         raise ValueError('Source archive changed')
     args.output.write_text(json.dumps(output, indent=2) + '\n')
