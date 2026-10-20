@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+name: Block 2 CH026 early local restitution diagnostic
+
+on:
+  push:
+    branches:
+      - codex/block2-ch026p-r302-escape-2026-10-19
+    paths:
+      - ".github/workflows/block2-ch026-early-restoration.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  early-restoration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        radius: ["0.35", "0.95"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: KiCad 8.0.9 and pinned Shapely
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely python3-pip
+          sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
+          test "$(kicad-cli version)" = "8.0.9"
+      - name: Verify release interlocks and escape guards
+        run: |
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch026_r302_joint.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_r302_joint.py -v
+      - name: Try CH026-P reroute after CH022 via preseed and before CH024-P
+        timeout-minutes: 32
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_block2_r302_joint.py \
+            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
+            --joint-order interleave \
+            --ch022-root R302.1 --reserve-radius ${{ matrix.radius }} \
+            --ch022-via-plan --ch026-escape-cut --ch026-restore-early \
+            --output /tmp/ch026-early-${{ matrix.radius }}.json
+          /usr/bin/python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          d=json.loads(Path('/tmp/ch026-early-'+os.environ['RADIUS']+'.json').read_text())
+          assert d['ch026_escape_cut'] and d['ch026_restore_early']
+          assert all(d[k] is False for k in ('accepted','routing_completed','fabrication_release',
+                 'native_qualification','independent_replay_verified','manufacturing_files'))
+          print('status',d['status'],'CH026-restored',d.get('ch026_early_segment_restored_geometrically'),
+                'blocker',d.get('failed_uuid'))
+          PY
+        env:
+          RADIUS: ${{ matrix.radius }}
+      - name: Upload JSON only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ch026-early-${{ matrix.radius }}
+          path: /tmp/ch026-early-${{ matrix.radius }}.json
+          if-no-files-found: ignore
