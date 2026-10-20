@@ -20,6 +20,15 @@ class R302SelectiveRestitution(unittest.TestCase):
         self.assertIn("current_j2 != untouched_j2",body)
         self.assertIn("current_ch018 != original_ch018 or current_vcm != original_vcm",body)
 
+    def test_interleave_stages_and_via_guards(self) -> None:
+        source=Path(m.__file__).read_text()
+        self.assertIn("ch022_FCu_escapes_and_vias_seeded",source)
+        self.assertIn("ch022_interleaved_BCu_proposed",source)
+        self.assertIn("Interleaving requires CH026 removal and legal via plan",source)
+        self.assertIn("Incomplete CH022 preseed state",source)
+        self.assertIn("add_mesh_path(board, [(0,*rvia),(1,*rvia)]",source)
+        self.assertIn("add_mesh_path(board, [(1,*jvia),(0,*jvia)]",source)
+
     def test_restitution_fail_closed(self) -> None:
         body=Path(m.__file__).read_text()
         self.assertIn("result['status'] = 'neighbor_unrestored'",body)
