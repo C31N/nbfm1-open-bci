@@ -14,6 +14,8 @@ class NativeCH022BlockedCorridor(unittest.TestCase):
         self.assertIn("separated_component_gap_mm", body)
         self.assertIn("new_via_bands", body)
         self.assertIn("front_blockers", body)
+        self.assertIn("closest_FCu_gap", body)
+        self.assertIn("foreign_FCu_segments_near_gap", body)
 
     def test_only_read_blockers_after_failed_route(self) -> None:
         body=Path(probe.__file__).read_text()
