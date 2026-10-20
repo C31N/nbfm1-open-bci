@@ -73,7 +73,8 @@ def model(board_path: Path, output: Path, case: str,
           ch026_escape_cut: bool = False,
           ch026_restore_early: bool = False,
           ch022_bcu_inventory: bool = False,
-          ch017_local_restore: bool = False) -> dict[str, Any]:
+          ch017_local_restore: bool = False,
+          ch022_agnd_hop: bool = False) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import box, Point, LineString
     from analyze_139_escape_blockers import protected_power, windows
@@ -95,7 +96,11 @@ def model(board_path: Path, output: Path, case: str,
               'ch026_escape_cut': ch026_escape_cut,
               'ch026_restore_early': ch026_restore_early,
               'ch017_local_restore': ch017_local_restore,
+              'ch022_agnd_hop': ch022_agnd_hop,
               'ch017_segment_uuids': [], 'ch017_native_continuity_ok': False}
+    if ch022_agnd_hop and not (ch017_local_restore and via_plan
+                                and ch026_escape_cut and ch026_restore_early):
+        raise ValueError('AGND hop needs pinned restored CH017/CH026 and seeded CH022 vias')
     chosen = protected_selection(board, 'entire_trunk')
     lookup = {t.m_Uuid.AsString(): t for t in board.GetTracks()}
     extra = CASES[case]
@@ -176,6 +181,14 @@ def model(board_path: Path, output: Path, case: str,
     original_vcm = [(t.m_Uuid.AsString(), xy(t.GetStart()), xy(t.GetEnd()),
                      t.GetLayer())
                     for t in board.GetTracks() if t.GetNetname() == 'VCM']
+    immutable_nets = {'AGND', 'CH028_P_ELECTRODE', 'CH028_N_ELECTRODE',
+                      'CH030_P_ELECTRODE', 'CH030_N_ELECTRODE',
+                      'CH031_P_ELECTRODE', 'CH031_N_ELECTRODE'}
+    immutable_tracks = {
+        t.m_Uuid.AsString(): (t.GetNetname(), xy(t.GetStart()),
+                              xy(t.GetEnd()), t.GetLayer())
+        for t in board.GetTracks() if t.GetNetname() in immutable_nets
+    }
     # Fail closed if an existing CH022 F.Cu pad escape at J2.23 would
     # be cut; keep all J2-adjacent copper byte-identical.
     joint_pads = {name: pt for net in ('CH022_N_ELECTRODE', 'CH024_P_MUX')
@@ -208,6 +221,11 @@ def model(board_path: Path, output: Path, case: str,
                 code = seeded_ch022['code']
                 bridge = mesh_route(board, rvia, jvia, code, layers,
                                     reserve, region, start_layer=1, goal_layer=1)
+                if (bridge is None or len(bridge) < 2) and ch022_agnd_hop:
+                    from probe_ch022_agnd_hop import propose
+                    bridge, hop_report = propose(
+                        board, rvia, jvia, code, layers, reserve, region)
+                    result['ch022_agnd_hop_analysis'] = hop_report
                 if bridge is None or len(bridge) < 2:
                     if ch022_bcu_inventory:
                         from analyze_ch022_bcu_blockers import survey
@@ -486,6 +504,13 @@ def model(board_path: Path, output: Path, case: str,
                        if t.GetNetname() == 'VCM']
         if current_ch018 != original_ch018 or current_vcm != original_vcm:
             raise RuntimeError('Protected CH018-N/VCM copper mutated')
+        current_immutable = {
+            t.m_Uuid.AsString(): (t.GetNetname(), xy(t.GetStart()),
+                                  xy(t.GetEnd()), t.GetLayer())
+            for t in board.GetTracks() if t.GetNetname() in immutable_nets
+        }
+        if current_immutable != immutable_tracks:
+            raise RuntimeError('Protected AGND/CH028/CH030/CH031 copper mutated')
         pcbnew.SaveBoard(str(board_path), board)
         before = native_fresh(output.parent / 'baseline' / PCB,
                               output.with_suffix('.before.json'))
@@ -503,6 +528,20 @@ def model(board_path: Path, output: Path, case: str,
             'L3_gain_mm2': p1.difference(p0).area,
             'zone_outlines_unchanged': outlines(base) == outlines(observed),
         })
+        from native_connectivity import airwire_counts
+        remaining = airwire_counts(after)
+        critical = ('CH017_N_ELECTRODE', 'CH022_N_ELECTRODE',
+                    'CH026_P_ELECTRODE', 'CH024_P_MUX', 'CH019_P_MUX')
+        result['critical_native_unconnected'] = {
+            name: remaining[name] for name in critical}
+        result['candidate_136_eligible_for_independent_replay'] = (
+            result['drc_violations'] == 0 and result['drc_warnings'] == 0
+            and result['drc_unconnected'] == 136
+            and not result['regressed_nets']
+            and all(remaining[name] == 0 for name in critical)
+            and result['L3_loss_mm2'] == 0.0
+            and result['L3_gain_mm2'] == 0.0
+            and result['zone_outlines_unchanged'])
         result['status'] = 'native_audit_only_unaccepted'
         return result
     finally:
@@ -519,6 +558,8 @@ def main() -> None:
     parser.add_argument('--reserve-radius', type=float, choices=(.35,.65,.95),
                         required=True)
     parser.add_argument('--ch022-root', choices=('J2.23','R302.1'), required=True)
+    parser.add_argument('--ch022-agnd-hop', action='store_true',
+                        help='Force strict F.Cu crossing of AGND with 2 legal new vias')
     parser.add_argument('--ch017-local-restore', action='store_true',
                         help='Route both pinned CH017_N BCu segments before CH022; reject native regressions')
     parser.add_argument('--ch022-bcu-inventory', action='store_true',
@@ -550,7 +591,7 @@ def main() -> None:
                            args.joint_order, args.reserve_radius, args.ch022_root,
                            args.ch022_via_plan, args.ch026_escape_cut,
                            args.ch026_restore_early, args.ch022_bcu_inventory,
-                           args.ch017_local_restore)
+                           args.ch017_local_restore, args.ch022_agnd_hop)
         except Exception as exc:
             output = {**FLAGS, 'status': 'diagnostic_exception',
                       'error_type': type(exc).__name__, 'detail': str(exc),
@@ -561,7 +602,8 @@ def main() -> None:
                       'ch026_escape_cut': args.ch026_escape_cut,
                       'ch026_restore_early': args.ch026_restore_early,
                       'ch022_bcu_inventory': args.ch022_bcu_inventory,
-                      'ch017_local_restore': args.ch017_local_restore}
+                      'ch017_local_restore': args.ch017_local_restore,
+                      'ch022_agnd_hop': args.ch022_agnd_hop}
     if digest(args.archive.read_bytes()) != ZIP_SHA:
         raise ValueError('Source archive changed')
     args.output.write_text(json.dumps(output, indent=2) + '\n')
