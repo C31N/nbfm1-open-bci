@@ -1,0 +1,64 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+name: CH022 native BCu and In2 obstacle survey
+
+on:
+  push:
+    branches: [codex/ch022-bcu-final-closure-2026-10-20]
+    paths:
+      - ".github/workflows/ch022-bcu-obstacle-survey.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-geometry-report:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        corridor: ["0.0", "2.0"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Native KiCad 8.0.9 and Shapely geometry stack
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely python3-pip
+          sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
+          test "$(kicad-cli version)" = "8.0.9"
+      - name: Verify CH022 BCu fail-closed safety invariants
+        run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch022_bcu_corridor.py -v
+      - name: Explain residual BCu/In2 geometry after complete CH024 and CH019 proposals
+        timeout-minutes: 36
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_block2_r302_joint.py \
+            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
+            --joint-order interleave --ch022-root R302.1 \
+            --reserve-radius 0.65 --ch022-via-plan \
+            --ch026-escape-cut --ch026-restore-early \
+            --bcu-corridor-cut ${{ matrix.corridor }} --audit-bridge-blockers \
+            --output /tmp/ch022-obstacles-${{ matrix.corridor }}.json
+          /usr/bin/python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          p=Path('/tmp/ch022-obstacles-'+os.environ['CUT']+'.json')
+          d=json.loads(p.read_text())
+          assert all(d[k] is False for k in ('accepted','routing_completed',
+                 'fabrication_release','native_qualification',
+                 'independent_replay_verified','manufacturing_files'))
+          if d['status']=='ch022_interleaved_BCu_blocked':
+              assert 'bridge_copper_blockers' in d
+          print('status',d['status'],'nearby',
+                len(d.get('bridge_copper_blockers',{}).get('nearby_foreign_tracks',[])))
+          PY
+        env:
+          CUT: ${{ matrix.corridor }}
+      - name: Upload immutable diagnostics, no PCB exports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ch022-bcu-obstacle-report-${{ matrix.corridor }}
+          path: /tmp/ch022-obstacles-${{ matrix.corridor }}.json
+          if-no-files-found: ignore
