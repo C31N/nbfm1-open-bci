@@ -1,0 +1,69 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+name: CH022 BCu guarded corridor clearance
+
+on:
+  push:
+    branches: [codex/ch022-bcu-final-closure-2026-10-20]
+    paths:
+      - ".github/workflows/ch022-bcu-corridor-clearance.yml"
+      - "hardware/eeg128-tdm/test_ch022_bcu_corridor.py"
+      - "hardware/eeg128-tdm/probe_block2_r302_joint.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  safe-interior-trunk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        corridor: ["0.0", "0.6", "1.2", "2.0"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Native KiCad 8.0.9 and Shapely
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely python3-pip
+          sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
+          test "$(kicad-cli version)" = "8.0.9"
+      - name: No-release, J2, CH018, VCM and BCu protection tests
+        run: |
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch022_bcu_corridor.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch026_r302_joint.py -v
+      - name: Evaluate CH022 BCu with only guarded interior neighbor removals
+        timeout-minutes: 36
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_block2_r302_joint.py \
+            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
+            --joint-order interleave --ch022-root R302.1 \
+            --reserve-radius 0.65 \
+            --ch022-via-plan --ch026-escape-cut --ch026-restore-early \
+            --bcu-corridor-cut ${{ matrix.corridor }} \
+            --output /tmp/ch022-bcu-safe-${{ matrix.corridor }}.json
+          /usr/bin/python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          data=json.loads(Path('/tmp/ch022-bcu-safe-'+os.environ['CUT']+'.json').read_text())
+          assert all(data[x] is False for x in (
+              'accepted','routing_completed','fabrication_release',
+              'independent_replay_verified','native_qualification','manufacturing_files'))
+          print('status', data['status'],'cut',data.get('bcu_corridor_cut_mm'),
+                'count',len(data.get('bcu_candidate_segments',[])),
+                'CH022',data.get('ch022_interleaved_BCu_proposed'),
+                'neighbor',data.get('failed_neighbor'),
+                'DRC',data.get('drc_violations'),flush=True)
+          PY
+        env:
+          CUT: ${{ matrix.corridor }}
+      - name: Save only model JSON (no PCB or fabrication outputs)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ch022-bcu-guarded-${{ matrix.corridor }}
+          path: /tmp/ch022-bcu-safe-${{ matrix.corridor }}.json
+          if-no-files-found: ignore
