@@ -14,13 +14,12 @@ def inspect(board: Any, rvia: tuple[float, float],
             jvia: tuple[float, float], code: int,
             power: Any, region: Any) -> dict[str, Any]:
     import pcbnew
-    from shapely.geometry import Point, LineString, box
+    from shapely.geometry import Point, LineString
     from shapely.ops import unary_union
     from route_targeted_closure import xy, obstacles
     from escape_mesh_505 import polygons
 
     line = LineString([rvia, jvia])
-    net_name = 'CH022_N_ELECTRODE'
     layers = (pcbnew.B_Cu, pcbnew.In2_Cu)
     layer_shapes, via_obstacle = obstacles(
         board, code, .15, .15, region, .60, layers)
