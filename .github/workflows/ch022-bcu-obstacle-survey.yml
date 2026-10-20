@@ -6,6 +6,7 @@ on:
     branches: [codex/ch022-bcu-final-closure-2026-10-20]
     paths:
       - ".github/workflows/ch022-bcu-obstacle-survey.yml"
+      - "hardware/eeg128-tdm/analyze_ch022_bcu_blockers.py"
   workflow_dispatch:
 
 permissions:
@@ -18,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        corridor: ["0.0", "2.0"]
+        corridor: ["0.0"]
     steps:
       - uses: actions/checkout@v4
       - name: Native KiCad 8.0.9 and Shapely geometry stack
