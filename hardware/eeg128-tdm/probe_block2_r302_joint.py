@@ -284,7 +284,7 @@ def model(board_path: Path, output: Path, case: str,
             result[net+'_geometry_proposed'] = True
             return True
 
-        if joint_order == 'interleave':
+        if joint_order.startswith('interleave'):
             if not via_plan or not ch026_escape_cut:
                 raise ValueError('Interleaving requires CH026 removal and legal via plan')
             if not connect_ch022_via_bridge('seed'):
@@ -300,6 +300,12 @@ def model(board_path: Path, output: Path, case: str,
             result['status'] = 'ch024_geometry_blocked'
             return result
         result['ch024_three_pads_proposed'] = True
+
+        if joint_order == 'interleave-before-ch019':
+            if not connect_ch022_via_bridge('finish'):
+                result['status'] = 'ch022_interleaved_BCu_blocked'
+                return result
+            result['ch022_pad_reconnection_proposed'] = True
 
         # Existing through-vias only at the endpoints, no new via at U3.6.
         va, vb = VIA_ENDS['direct']
@@ -390,7 +396,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--archive', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
-    parser.add_argument('--joint-order', choices=('ch022-first','ch024-first','interleave'),
+    parser.add_argument('--joint-order', choices=('ch022-first','ch024-first','interleave','interleave-before-ch019'),
                         required=True)
     parser.add_argument('--reserve-radius', type=float, choices=(.35,.65,.95),
                         required=True)
