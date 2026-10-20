@@ -71,7 +71,8 @@ def model(board_path: Path, output: Path, case: str,
           ch022_root: str = 'J2.23',
           via_plan: bool = False,
           ch026_escape_cut: bool = False,
-          ch026_restore_early: bool = False) -> dict[str, Any]:
+          ch026_restore_early: bool = False,
+          bcu_corridor_cut: float = 0.) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import box, Point, LineString
     from analyze_139_escape_blockers import protected_power, windows
@@ -91,7 +92,9 @@ def model(board_path: Path, output: Path, case: str,
               'radius_mm': reserve_radius, 'ch022_root': ch022_root,
               'forced_existing_pad_via_plan': via_plan,
               'ch026_escape_cut': ch026_escape_cut,
-              'ch026_restore_early': ch026_restore_early}
+              'ch026_restore_early': ch026_restore_early,
+              'bcu_corridor_cut_mm': bcu_corridor_cut,
+              'bcu_candidate_segments': []}
     chosen = protected_selection(board, 'entire_trunk')
     lookup = {t.m_Uuid.AsString(): t for t in board.GetTracks()}
     extra = CASES[case]
@@ -125,6 +128,57 @@ def model(board_path: Path, output: Path, case: str,
             raise RuntimeError('CH026 pad/via escape guard violated')
         chosen.append(track)
         result['CH026_escape_cut_uuid'] = cut_uuid
+    # Select only genuine B.Cu interior segments near the verified
+    # CH022 via-to-via line. Never remove pad/via escapes or touch VCM,
+    # CH018-N, CH026-P, CH019-P, CH024-P or the J2.23 electrode net.
+    # Removed neighbors MUST be restored later; an incomplete model
+    # remains accepted=false without ever updating the source PCB.
+    if bcu_corridor_cut:
+        if not ch026_escape_cut or not ch026_restore_early or bcu_corridor_cut > 2.5:
+            raise ValueError('BCu corridor exploration requires protected CH026 early restitution')
+        from shapely.geometry import LineString as RouteLine, Point as RoutePoint
+        from route_targeted_closure import xy as route_xy
+        from collections import defaultdict
+        via_line = RouteLine([(38.6868645, 16.9487341),
+                              (44.0260496, 9.2087679)])
+        pad_cache: dict[str, list[Any]] = defaultdict(list)
+        via_cache: dict[str, list[Any]] = defaultdict(list)
+        for fp in board.GetFootprints():
+            for pad in fp.Pads():
+                pad_cache[pad.GetNetname()].append(RoutePoint(route_xy(pad.GetPosition())))
+        for t in board.GetTracks():
+            if isinstance(t, pcbnew.PCB_VIA):
+                via_cache[t.GetNetname()].append(RoutePoint(route_xy(t.GetPosition())))
+        protected_nets = {'CH022_N_ELECTRODE', 'CH026_P_ELECTRODE',
+                          'CH024_P_MUX', 'CH019_P_MUX', 'CH018_N_MUX',
+                          'VCM', 'AGND', '3V3A', '3V3D'}
+        cuts = []
+        for track in board.GetTracks():
+            if track.GetLayer() != pcbnew.B_Cu or isinstance(
+                    track, (pcbnew.PCB_VIA, pcbnew.PCB_ARC)):
+                continue
+            name = track.GetNetname()
+            if not name or name in protected_nets:
+                continue
+            line = RouteLine([route_xy(track.GetStart()), route_xy(track.GetEnd())])
+            if line.distance(via_line) > bcu_corridor_cut:
+                continue
+            if any(line.distance(p) < 1.0 for p in pad_cache[name]):
+                continue
+            if any(line.distance(v) < .65 for v in via_cache[name]):
+                continue
+            cuts.append(track)
+        cuts.sort(key=lambda t: (via_line.distance(RouteLine(
+            [route_xy(t.GetStart()), route_xy(t.GetEnd())])),
+            t.GetNetname(), t.m_Uuid.AsString()))
+        for track in cuts:
+            chosen.append(track)
+            result['bcu_candidate_segments'].append({
+                'uuid': track.m_Uuid.AsString(),
+                'net': track.GetNetname(),
+                'from': route_xy(track.GetStart()),
+                'to': route_xy(track.GetEnd()),
+            })
     # Strict scope and unique object identity before any mutation.
     if len({t.m_Uuid.AsString() for t in chosen}) != len(chosen):
         raise ValueError('Duplicate selected SWIG track')
@@ -425,6 +479,8 @@ def main() -> None:
     parser.add_argument('--reserve-radius', type=float, choices=(.35,.65,.95),
                         required=True)
     parser.add_argument('--ch022-root', choices=('J2.23','R302.1'), required=True)
+    parser.add_argument('--bcu-corridor-cut', type=float, choices=(0.,.60,1.20,2.00),
+                        default=0., help='Guarded B.Cu-only neighboring interior cut in mm')
     parser.add_argument('--ch026-restore-early', action='store_true',
                         help='Test CH026 segment restitution directly after CH022 via-seed')
     parser.add_argument('--ch026-escape-cut', action='store_true',
@@ -451,7 +507,7 @@ def main() -> None:
             output = model(work / PCB, work / 'crosslayer.json', 'exact-eleven-conflicts',
                            args.joint_order, args.reserve_radius, args.ch022_root,
                            args.ch022_via_plan, args.ch026_escape_cut,
-                           args.ch026_restore_early)
+                           args.ch026_restore_early, args.bcu_corridor_cut)
         except Exception as exc:
             output = {**FLAGS, 'status': 'diagnostic_exception',
                       'error_type': type(exc).__name__, 'detail': str(exc),
@@ -460,7 +516,8 @@ def main() -> None:
                       'ch022_root': args.ch022_root,
                       'forced_existing_pad_via_plan': args.ch022_via_plan,
                       'ch026_escape_cut': args.ch026_escape_cut,
-                      'ch026_restore_early': args.ch026_restore_early}
+                      'ch026_restore_early': args.ch026_restore_early,
+                      'bcu_corridor_cut_mm': args.bcu_corridor_cut}
     if digest(args.archive.read_bytes()) != ZIP_SHA:
         raise ValueError('Source archive changed')
     args.output.write_text(json.dumps(output, indent=2) + '\n')
