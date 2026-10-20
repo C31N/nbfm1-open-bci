@@ -1,0 +1,65 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+name: Block 2 CH022 BCu midpoint ordering
+
+on:
+  push:
+    branches:
+      - codex/block2-ch026p-r302-escape-2026-10-19
+    paths:
+      - ".github/workflows/block2-ch026-midpoint-order.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  midpoint-order:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        radius: ["0.35", "0.95"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native KiCad 8.0.9 and Shapely
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely python3-pip
+          sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
+          test "$(kicad-cli version)" = "8.0.9"
+      - name: Verify protected original pad and release guards
+        run: |
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch026_r302_joint.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_r302_joint.py -v
+      - name: Place CH022 BCu midpoint before CH019 bridge
+        timeout-minutes: 32
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_block2_r302_joint.py \
+            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
+            --joint-order interleave-before-ch019 \
+            --ch022-root R302.1 --reserve-radius ${{ matrix.radius }} \
+            --ch022-via-plan --ch026-escape-cut \
+            --output /tmp/ch022-midpoint-${{ matrix.radius }}.json
+          /usr/bin/python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          doc=json.loads(Path('/tmp/ch022-midpoint-'+os.environ['RADIUS']+'.json').read_text())
+          assert doc['joint_order']=='interleave-before-ch019'
+          assert doc['ch026_escape_cut'] is True
+          assert all(doc[k] is False for k in ('accepted','routing_completed','fabrication_release',
+                  'native_qualification','independent_replay_verified','manufacturing_files'))
+          print('phase result',doc['status'],'CH022',doc.get('ch022_interleaved_BCu_proposed'),
+                'CH019',doc.get('ch019_via_bridge_proposed'),
+                'neighbor',doc.get('failed_neighbor'))
+          PY
+        env:
+          RADIUS: ${{ matrix.radius }}
+      - name: Upload diagnostic JSON only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ch022-midpoint-${{ matrix.radius }}
+          path: /tmp/ch022-midpoint-${{ matrix.radius }}.json
+          if-no-files-found: ignore
