@@ -53,6 +53,20 @@ class CH022AgndHopGuards(unittest.TestCase):
         self.assertIn('args.ch022_agnd_hop', probe)
         self.assertIn('ch017_local_restore and via_plan', probe)
 
+    def test_upstream_component_and_existing_source_via_are_checked(self) -> None:
+        source = Path(hop.__file__).read_text()
+        parent = Path(joint.__file__).read_text()
+        for signal in ('upstream_reachable_via_area_mm2',
+                       'upstream_via_centres_BCu_reachable',
+                       'source_FCu_component_exists',
+                       'source_existing_via_FCu_fallback_attempts',
+                       'retained_source_via_verified',
+                       'upstream_BCu_access_blocked'):
+            self.assertIn(signal, source)
+        self.assertIn('tuple(round(v, 6)', parent)
+        self.assertIn('local.contains(Point(snapped))', parent)
+        self.assertIn("candidates[name] = snapped", parent)
+
     def test_no_checkpoint_promotion_in_diagnostic(self) -> None:
         source = Path(joint.__file__).read_text()
         self.assertIn("result['status'] = 'native_audit_only_unaccepted'", source)
