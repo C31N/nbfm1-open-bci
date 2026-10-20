@@ -65,7 +65,7 @@ def propose(board: Any, start: tuple[float, float],
     Only KiCad DRC/zone-fill/parity/replay can qualify a resulting PCB.
     """
     import pcbnew
-    from shapely.geometry import LineString, Point, box
+    from shapely.geometry import LineString, box
     from shapely.ops import unary_union
     from route_targeted_closure import obstacles
     from escape_mesh_505 import mesh_route
