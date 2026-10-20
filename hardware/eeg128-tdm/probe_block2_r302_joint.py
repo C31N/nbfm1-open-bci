@@ -69,7 +69,8 @@ CASES = {
 def model(board_path: Path, output: Path, case: str,
           joint_order: str = 'ch024-first', reserve_radius: float = .65,
           ch022_root: str = 'J2.23',
-          via_plan: bool = False) -> dict[str, Any]:
+          via_plan: bool = False,
+          ch026_escape_cut: bool = False) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import box, Point, LineString
     from analyze_139_escape_blockers import protected_power, windows
@@ -87,7 +88,8 @@ def model(board_path: Path, output: Path, case: str,
     result = {**FLAGS, 'case': case, 'status': 'not_started',
               'selected_segment_uuid': [], 'joint_order': joint_order,
               'radius_mm': reserve_radius, 'ch022_root': ch022_root,
-              'forced_existing_pad_via_plan': via_plan}
+              'forced_existing_pad_via_plan': via_plan,
+              'ch026_escape_cut': ch026_escape_cut}
     chosen = protected_selection(board, 'entire_trunk')
     lookup = {t.m_Uuid.AsString(): t for t in board.GetTracks()}
     extra = CASES[case]
@@ -101,6 +103,26 @@ def model(board_path: Path, output: Path, case: str,
             if isinstance(t, (pcbnew.PCB_ARC, pcbnew.PCB_VIA)):
                 raise ValueError('No via/arc can be relocated')
             chosen.append(t)
+    if ch026_escape_cut:
+        from shapely.geometry import Point as SafePoint, LineString as SafeLine
+        from route_targeted_closure import xy as location
+        cut_uuid = 'e3c4e6fe-fce1-48bf-a3e0-bef9b53a8faa'
+        track = lookup.get(cut_uuid)
+        if (track is None or track.GetNetname() != 'CH026_P_ELECTRODE'
+                or track.GetLayer() != pcbnew.F_Cu
+                or isinstance(track, (pcbnew.PCB_VIA, pcbnew.PCB_ARC))):
+            raise ValueError('Pinned CH026-P F.Cu escape identity changed')
+        line = SafeLine([location(track.GetStart()), location(track.GetEnd())])
+        protect_pads = [SafePoint(pt) for _, pt, _ in pads(board, 'CH026_P_ELECTRODE')]
+        protect_vias = [SafePoint(location(t.GetPosition()))
+                        for t in board.GetTracks()
+                        if isinstance(t, pcbnew.PCB_VIA)
+                        and t.GetNetname() == 'CH026_P_ELECTRODE']
+        if (any(line.distance(p) < 1.0 for p in protect_pads)
+                or any(line.distance(v) < .65 for v in protect_vias)):
+            raise RuntimeError('CH026 pad/via escape guard violated')
+        chosen.append(track)
+        result['CH026_escape_cut_uuid'] = cut_uuid
     # Strict scope and unique object identity before any mutation.
     if len({t.m_Uuid.AsString() for t in chosen}) != len(chosen):
         raise ValueError('Duplicate selected SWIG track')
@@ -330,6 +352,8 @@ def main() -> None:
     parser.add_argument('--reserve-radius', type=float, choices=(.35,.65,.95),
                         required=True)
     parser.add_argument('--ch022-root', choices=('J2.23','R302.1'), required=True)
+    parser.add_argument('--ch026-escape-cut', action='store_true',
+                        help='Selectively reroute pinned CH026-P FCu blocker')
     parser.add_argument('--ch022-via-plan', action='store_true',
                         help='Require F.Cu pad island vias and B.Cu return')
     args = parser.parse_args()
@@ -351,14 +375,15 @@ def main() -> None:
         try:
             output = model(work / PCB, work / 'crosslayer.json', 'exact-eleven-conflicts',
                            args.joint_order, args.reserve_radius, args.ch022_root,
-                           args.ch022_via_plan)
+                           args.ch022_via_plan, args.ch026_escape_cut)
         except Exception as exc:
             output = {**FLAGS, 'status': 'diagnostic_exception',
                       'error_type': type(exc).__name__, 'detail': str(exc),
                       'joint_order': args.joint_order,
                       'radius_mm': args.reserve_radius,
                       'ch022_root': args.ch022_root,
-                      'forced_existing_pad_via_plan': args.ch022_via_plan}
+                      'forced_existing_pad_via_plan': args.ch022_via_plan,
+                      'ch026_escape_cut': args.ch026_escape_cut}
     if digest(args.archive.read_bytes()) != ZIP_SHA:
         raise ValueError('Source archive changed')
     args.output.write_text(json.dumps(output, indent=2) + '\n')
