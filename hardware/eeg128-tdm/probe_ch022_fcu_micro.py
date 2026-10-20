@@ -107,9 +107,12 @@ def try_micro(board: Any, start: tuple[float, float],
         raise ValueError('CH022 identity changed')
     protected_before = _copper_signature(board, GUARDED_NETS)
     eligible, inventory = _safe_candidates(board)
+    from analyze_ch025_via_guard import survey as ch025_via_survey
+    ch025_guard = ch025_via_survey(board)
     report: dict[str, Any] = {
         **FLAGS, 'status': 'no_eligible_CH024N_micro_displacement',
         'pinned_segment_inventory': inventory, 'trials': [],
+        'ch025_via_stub_analysis': ch025_guard,
         'protected_nets': sorted(GUARDED_NETS),
         'power_keepout_mm': .505, 'edge_clearance_mm': .25,
     }

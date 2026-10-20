@@ -1,13 +1,14 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
-name: CH022 CH024N and tertiary CH025N FCu diagnostic
+name: CH022 CH025N read-only via-contact protection probe
 
 on:
   push:
-    branches: [codex/ch022-fcu-tertiary-2026-10-20]
+    branches: [codex/ch025-via-guarded-geometry-2026-10-20]
     paths:
       - ".github/workflows/ch022-agnd-layer-hop.yml"
       - "hardware/eeg128-tdm/probe_ch022_agnd_hop.py"
       - "hardware/eeg128-tdm/probe_ch022_fcu_micro.py"
+      - "hardware/eeg128-tdm/analyze_ch025_via_guard.py"
       - "hardware/eeg128-tdm/test_ch022_fcu_micro.py"
       - "hardware/eeg128-tdm/probe_block2_r302_joint.py"
       - "hardware/eeg128-tdm/test_ch022_agnd_hop.py"

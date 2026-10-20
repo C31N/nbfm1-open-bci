@@ -46,6 +46,21 @@ class CH022FCuMicroGuards(unittest.TestCase):
                       'ch017_native_continuity_ok'):
             self.assertIn(guard, parent)
 
+    def test_ch025_via_contact_is_never_removed(self) -> None:
+        from analyze_ch025_via_guard import free_intervals, PINNED, FLAGS
+        self.assertEqual(PINNED, micro.PINNED_CH025N)
+        self.assertFalse(FLAGS['accepted'])
+        self.assertFalse(FLAGS['fabrication_release'])
+        self.assertEqual(
+            free_intervals((0., 0.), (1., 0.),
+                           [(0., 0.), (1., 0.)], []), [])
+        allowed = free_intervals((0., 0.), (1., 0.), [(0., 0.)], [])
+        self.assertEqual(len(allowed), 1)
+        self.assertGreaterEqual(allowed[0]['start_mm'][0], .65)
+        self.assertLessEqual(allowed[0]['end_mm'][0], .85)
+        self.assertIn('ch025_via_stub_analysis',
+                      Path(micro.__file__).read_text())
+
     def test_no_manufacturing_or_release_promotion(self) -> None:
         for key in ('accepted', 'routing_completed', 'fabrication_release',
                     'native_qualification', 'independent_replay_verified',
