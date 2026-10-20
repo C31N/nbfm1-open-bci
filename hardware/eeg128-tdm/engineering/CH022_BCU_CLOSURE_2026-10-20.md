@@ -72,3 +72,39 @@ job success alone never represents a valid 136 candidate.
 All candidates remain `accepted=false`,
 `routing_completed=false`, `fabrication_release=false`.
 No production files or primary board edits.
+
+## Native residual B.Cu/In2 copper-barrier evidence
+
+[Actions 39449538473](https://github.com/C31N/nbfm1-open-bci/actions/runs/39449538473)
+completed both 0.0 mm and 2.0 mm B.Cu-selection models and
+saved per-net UUID copper inventories from the blocked complete
+CH024-P/CH019-P geometry.
+
+- B.Cu via-anchor free regions do **not** connect; gap
+  `2.396210 mm`, unchanged by the two CH017-N temporary cuts.
+- In2.Cu free regions do **not** connect under the complete
+  0.505 mm power-outline guard; gap `2.237707 mm`.
+- Native inventory confirms a board-wide AGND B.Cu track
+  UUID `20fed9e0-4919-489f-9b11-33dab311a133`
+  from (5.8,11.0) to (194.2,11.0) mm, directly
+  intersecting the straight CH022 via-to-via corridor.
+  **It is not eligible for displacement or a gap cut.**
+- Unchanged analog VCM B.Cu tracks
+  `3f39ff0c-4c8e-445d-8e0d-ea5f28918940` and
+  `45c65a13-251f-4cbd-b03c-81e52f7f8ff6`
+  at X=39.45 mm, plus CH028-P, CH030-P and CH031-P
+  electrode tracks, further constrain entry regions.
+- Nearby In2 copper includes CH025-P, CH029-P and CH020-N
+  electrodes; it cannot be crossed in violation of
+  the L3 power outline.
+
+The *next viable hypothesis* is an F.Cu crossing of the AGND
+B.Cu barrier with only legal new-via centers on both sides,
+or coordinated fully restituted signal rerouting. Existing
+native evidence does not yet demonstrate a legal complete
+three-layer CH022 route.
+
+**Acceptance remains blocked.** No new candidate has passed
+zero-native-DRC, zero-connectivity-regression, exact 0.0 mm²
+L3 gain/loss, schematic parity and byte-identical independent
+replay jointly; no 136 checkpoint is claimed or committed.
