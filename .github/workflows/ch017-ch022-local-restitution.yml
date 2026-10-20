@@ -1,0 +1,75 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+name: CH017 native restoration and CH022 protected closure probe
+
+on:
+  push:
+    branches: [codex/ch017-ch022-guarded-restitution-2026-10-20]
+    paths:
+      - ".github/workflows/ch017-ch022-local-restitution.yml"
+      - "hardware/eeg128-tdm/probe_block2_r302_joint.py"
+      - "hardware/eeg128-tdm/test_ch017_ch022_restitution.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ch017-native-before-ch022:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        radius: ["0.35", "0.65"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned KiCad 8.0.9 and Shapely
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely python3-pip
+          sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
+          test "$(kicad-cli version)" = "8.0.9"
+      - name: Check fail-closed model guards and Python syntax
+        run: |
+          /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_r302_joint.py
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch017_ch022_restitution.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch026_r302_joint.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch022_bcu_blockers.py -v
+      - name: CH017_N exact two-segment restoration then CH022 seeded path
+        timeout-minutes: 52
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_block2_r302_joint.py \
+            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
+            --joint-order interleave --ch022-root R302.1 \
+            --reserve-radius ${{ matrix.radius }} \
+            --ch022-via-plan --ch026-escape-cut --ch026-restore-early \
+            --ch022-bcu-inventory --ch017-local-restore \
+            --output /tmp/ch017-ch022-guarded-${{ matrix.radius }}.json
+          /usr/bin/python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          p = Path('/tmp/ch017-ch022-guarded-' + os.environ['RADIUS'] + '.json')
+          d = json.loads(p.read_text())
+          assert all(d.get(k) is False for k in (
+              'accepted', 'routing_completed', 'fabrication_release',
+              'native_qualification', 'independent_replay_verified',
+              'manufacturing_files')), 'No release state may be promoted'
+          print('CH017/CH022:', d['status'], 'CH017 native integrity:',
+                d.get('ch017_native_continuity_ok'),
+                'CH017 restored geometry:', bool(d.get('ch017_new_routes')),
+                'CH022 geometry:', d.get('ch022_interleaved_BCu_proposed'),
+                'DRC:', d.get('drc_violations'),
+                'L3 loss:', d.get('L3_loss_mm2'),
+                'L3 gain:', d.get('L3_gain_mm2'), flush=True)
+          PY
+        env:
+          RADIUS: ${{ matrix.radius }}
+      - name: Keep JSON diagnosis only, never PCB or manufacturing exports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ch017-ch022-guarded-${{ matrix.radius }}
+          path: /tmp/ch017-ch022-guarded-${{ matrix.radius }}.json
+          if-no-files-found: ignore
