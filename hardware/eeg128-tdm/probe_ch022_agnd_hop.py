@@ -66,8 +66,8 @@ def propose(board: Any, start: tuple[float, float],
     """
     import pcbnew
     from shapely.geometry import LineString, Point, box
-    from shapely.ops import unary_union
-    from route_targeted_closure import obstacles
+    from shapely.ops import unary_union, nearest_points
+    from route_targeted_closure import obstacles, xy
     from escape_mesh_505 import mesh_route, polygons
 
     if (layers != (pcbnew.F_Cu, pcbnew.B_Cu, pcbnew.In2_Cu)
@@ -136,7 +136,6 @@ def propose(board: Any, start: tuple[float, float],
         and front_source.covers(Point(pt))]
     # Identify the exact F.Cu bottleneck should a source-side existing-via
     # detour fail. This is an inventory, NEVER authorization to move copper.
-    from shapely.ops import nearest_points
     nearest = []
     for pt in after:
         if front_source is None:
@@ -153,7 +152,6 @@ def propose(board: Any, start: tuple[float, float],
         gap, pt, pa, pb = min(nearest, key=lambda rec: (rec[0], rec[1]))
         corridor = LineString([pa, pb]).buffer(.70)
         nearby = []
-        from route_targeted_closure import xy
         for track in board.GetTracks():
             if track.GetNetCode() == net:
                 continue
@@ -241,10 +239,8 @@ def propose(board: Any, start: tuple[float, float],
     # A retained same-net source via is an alternate legal transition:
     # B.Cu(source via) -> F.Cu -> B.Cu(new via downstream) -> B.Cu(end).
     # No extra via is necessary on the source side if F.Cu is connected.
-    import pcbnew as _pcbnew
-    from route_targeted_closure import xy
     existing = {xy(v.GetPosition()) for v in board.GetTracks()
-                if isinstance(v, _pcbnew.PCB_VIA) and v.GetNetCode() == net}
+                if isinstance(v, pcbnew.PCB_VIA) and v.GetNetCode() == net}
     source_via_present = start in existing
     report['retained_source_via_verified'] = source_via_present
     report['source_existing_via_FCu_fallback_attempts'] = 0
