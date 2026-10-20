@@ -266,7 +266,14 @@ def model(board_path: Path, output: Path, case: str,
                     result['status'] = 'ch022_no_connected_local_via'
                     return False
                 patch = min(patches, key=lambda q: (q.distance(Point(pt)),-q.area))
-                candidates[name] = tuple(patch.representative_point().coords[0])
+                # pcbnew snaps via centres to integer nanometres. Carry
+                # that same six-decimal coordinate through every route and
+                # exact same-net-via lookup; never create overlapping vias.
+                snapped = tuple(round(v, 6) for v in
+                                patch.representative_point().coords[0])
+                if not local.contains(Point(snapped)):
+                    raise RuntimeError('CH022 via snap escaped legal window')
+                candidates[name] = snapped
             if Point(candidates['R302.1']).distance(Point(candidates['J2.23'])) < 1.0:
                 raise ValueError('Local CH022 via windows overlap unexpectedly')
             code = by_pad['R302.1'][1]
