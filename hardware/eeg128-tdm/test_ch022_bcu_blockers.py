@@ -12,6 +12,8 @@ class NativeCH022BlockedCorridor(unittest.TestCase):
         self.assertIn("(pcbnew.B_Cu, pcbnew.In2_Cu)", body)
         self.assertIn("power.buffer(.505)", body)
         self.assertIn("separated_component_gap_mm", body)
+        self.assertIn("new_via_bands", body)
+        self.assertIn("front_blockers", body)
 
     def test_only_read_blockers_after_failed_route(self) -> None:
         body=Path(probe.__file__).read_text()
