@@ -401,7 +401,7 @@ def model(board_path: Path, output: Path, case: str,
             result['ch017_airwires_after'] = current
             result['ch017_native_violations'] = len(errors)
             result['ch017_native_continuity_ok'] = (
-                current <= previous and not errors)
+                previous == 0 and current == 0 and not errors)
             if not result['ch017_native_continuity_ok']:
                 result['status'] = 'ch017_native_restitution_failed'
                 return result
