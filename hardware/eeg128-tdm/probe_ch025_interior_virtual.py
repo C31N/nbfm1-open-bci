@@ -29,6 +29,44 @@ def inner_endpoints(window: dict[str, Any], shrink_mm: float = .012
             (round(b[0] - shrink_mm, 6), round(b[1], 6)))
 
 
+def same_net_cut_contacts(
+        cut_start: tuple[float, float], cut_end: tuple[float, float],
+        segments: list[tuple[str, tuple[float, float], tuple[float, float]]]
+        ) -> list[dict[str, Any]]:
+    """Read-only inventory of same-net joins or overlaps at a proposed cut.
+
+    ANY touching foreign segment is a blocking condition. A collinear trace
+    is not silently treated as redundant: native connectivity and full DRC
+    would be required before changing such topology.
+    """
+    from shapely.geometry import LineString
+    from shapely.ops import nearest_points
+
+    cut = LineString([cut_start, cut_end])
+    if cut.length < .000001:
+        raise ValueError('Degenerate CH025_N cut')
+    conflicts = []
+    for uid, start, end in sorted(segments, key=lambda x: x[0]):
+        segment = LineString([start, end])
+        dist = cut.distance(segment)
+        if dist >= .000005:
+            continue
+        a, b = nearest_points(cut, segment)
+        overlap = cut.intersection(segment)
+        conflicts.append({
+            'uuid': uid, 'track_start_mm': list(start),
+            'track_end_mm': list(end),
+            'closest_cut_point_mm': [round(a.x, 6), round(a.y, 6)],
+            'closest_other_point_mm': [round(b.x, 6), round(b.y, 6)],
+            'distance_mm': round(dist, 7),
+            'overlap_mm': round(overlap.length, 7),
+            'junction_type': ('collinear_overlap' if overlap.length > .000005
+                              else 'same_net_point_contact'),
+            'safety_decision': 'BLOCK_INTERIOR_MUTATION',
+        })
+    return conflicts
+
+
 def evaluate(board: Any, start: tuple[float, float],
              end: tuple[float, float], code: int, region: Any,
              reserve: Any) -> dict[str, Any]:
@@ -60,6 +98,9 @@ def evaluate(board: Any, start: tuple[float, float],
         'power_keepout_mm': .505, 'edge_clearance_mm': .25,
     }
     if len(ch024) != 2 or not cut_report['interior_cut_windows']:
+        report['status'] = ('CH024_N_pinned_pair_not_movable' if len(ch024) != 2
+                            else 'CH025_N_no_via_safe_interior_window')
+        report['all_trials_rolled_back'] = True
         return report
     before_protected = _copper_signature(board, GUARDED_NETS)
     old = [*ch024, target]
@@ -72,6 +113,7 @@ def evaluate(board: Any, start: tuple[float, float],
                   'interior_cut_end_mm': list(right),
                   'CH025_contact_stubs_preserved': False,
                   'CH022_FCu_connected': False}
+        record['mutation_attempted'] = False
         report['trials'].append(record)
         cut = LineString([left, right])
         vias = [xy(t.GetPosition()) for t in board.GetTracks()
@@ -83,13 +125,22 @@ def evaluate(board: Any, start: tuple[float, float],
             raise RuntimeError('CH025 via contact would be cut')
         if any(cut.distance(Point(p)) < 1.0 for p in pads):
             raise RuntimeError('CH025 pad contact would be cut')
-        for t in board.GetTracks():
-            if (t is target or t.GetNetname() != target.GetNetname()
-                    or isinstance(t, pcbnew.PCB_VIA)
-                    or t.GetLayer() != pcbnew.F_Cu):
-                continue
-            if LineString([xy(t.GetStart()), xy(t.GetEnd())]).distance(cut) < .000005:
-                raise RuntimeError('CH025 interior has same-net branch junction')
+        neighbours = [
+            (t.m_Uuid.AsString(), xy(t.GetStart()), xy(t.GetEnd()))
+            for t in board.GetTracks()
+            if (t is not target and t.GetNetname() == target.GetNetname()
+                and not isinstance(t, pcbnew.PCB_VIA)
+                and t.GetLayer() == pcbnew.F_Cu)
+        ]
+        contacts = same_net_cut_contacts(left, right, neighbours)
+        record['same_net_contact_blockers'] = contacts
+        if contacts:
+            record['status'] = 'CH025_interior_branch_or_overlap_protected'
+            record['original_copper_untouched'] = True
+            # This isn't a routing crash: the pinned topological guard works.
+            # No segment, pad, via, VCM or L3 plane has been altered.
+            continue
+        record['mutation_attempted'] = True
         for t in old:
             board.Remove(t)
         try:
@@ -153,4 +204,12 @@ def evaluate(board: Any, start: tuple[float, float],
             if {t.m_Uuid.AsString() for t in board.GetTracks()} != original_ids:
                 raise RuntimeError('Rollback changed board track UUID inventory')
     report['all_trials_rolled_back'] = True
+    if report['trials'] and all(
+            x.get('status') == 'CH025_interior_branch_or_overlap_protected'
+            for x in report['trials']):
+        report['status'] = 'CH025_interior_same_net_contact_guard'
+        report['unique_blocker_uuids'] = sorted({
+            x['uuid'] for trial in report['trials']
+            for x in trial['same_net_contact_blockers']
+        })
     return report

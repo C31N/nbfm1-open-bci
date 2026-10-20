@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
-name: CH022 CH025N guarded interior-cut FCu topology probe
+name: CH022 CH025N joint contact inventory and FCu topology probe
 
 on:
   push:
-    branches: [codex/ch025-interior-cut-136-probe-2026-10-20]
+    branches: [codex/ch025-interior-junction-guard-2026-10-21]
     paths:
       - ".github/workflows/ch022-agnd-layer-hop.yml"
       - "hardware/eeg128-tdm/probe_ch022_agnd_hop.py"
@@ -68,8 +68,17 @@ jobs:
               assert 'ch022_fcu_micro_analysis' in d, 'Missing protected FCu analysis'
               inner = d['ch022_fcu_micro_analysis']['ch025_interior_FCu_topology']
               assert inner.get('all_trials_rolled_back') is True, inner
-              assert all(t.get('CH025_contact_stubs_preserved') is True
-                         for t in inner.get('trials', [])), inner
+              assert all(
+                  (not t.get('mutation_attempted')
+                   or t.get('CH025_contact_stubs_preserved') is True)
+                  for t in inner.get('trials', [])), inner
+              if inner.get('status') == 'CH025_interior_same_net_contact_guard':
+                  assert inner.get('unique_blocker_uuids'), inner
+                  assert all(not t.get('mutation_attempted')
+                             for t in inner['trials']), inner
+              print('CH025_JUNCTION_INVENTORY', inner.get('status'),
+                    inner.get('unique_blocker_uuids'),
+                    flush=True)
           if d.get('status') == 'native_audit_only_unaccepted':
               assert d['ch017_native_continuity_ok'] is True
               assert d['L3_loss_mm2'] == 0.0
