@@ -1,0 +1,55 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+name: Block 2 CH026-P R302 native escape inventory
+
+on:
+  push:
+    branches:
+      - codex/block2-ch026p-r302-escape-2026-10-19
+    paths:
+      - ".github/workflows/block2-ch026-r302-diagnostic.yml"
+      - "hardware/eeg128-tdm/analyze_ch026_r302_escape.py"
+      - "hardware/eeg128-tdm/test_ch026_r302_escape.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-readonly:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Native KiCad 8 and pinned Shapely
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely python3-pip
+          sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
+          kicad-cli version | grep '^8'
+      - name: Guard exact PCB identity and no release
+        run: |
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch026_r302_escape.py -v
+      - name: Native CH026-P near-R302 selective copper survey
+        timeout-minutes: 20
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/analyze_ch026_r302_escape.py \
+            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
+            --output /tmp/ch026-r302-selective-readonly.json
+          /usr/bin/python3 - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('/tmp/ch026-r302-selective-readonly.json').read_text())
+          assert all(d[k] is False for k in ('accepted','routing_completed','fabrication_release','manufacturing_exports'))
+          assert d['pad']=='R302.1'
+          print('baseline',d['original'],'segments',len(d['CH026_P_ELECTRODE_segments']))
+          for segment in d['CH026_P_ELECTRODE_segments']:
+              print(segment)
+          PY
+      - name: Upload JSON only (never board or manufacturing files)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ch026-r302-selective-readonly
+          path: /tmp/ch026-r302-selective-readonly.json
+          if-no-files-found: ignore
