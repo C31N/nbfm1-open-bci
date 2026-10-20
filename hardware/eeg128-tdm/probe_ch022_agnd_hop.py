@@ -65,10 +65,10 @@ def propose(board: Any, start: tuple[float, float],
     Only KiCad DRC/zone-fill/parity/replay can qualify a resulting PCB.
     """
     import pcbnew
-    from shapely.geometry import LineString, box
+    from shapely.geometry import LineString, Point, box
     from shapely.ops import unary_union
     from route_targeted_closure import obstacles
-    from escape_mesh_505 import mesh_route
+    from escape_mesh_505 import mesh_route, polygons
 
     if (layers != (pcbnew.F_Cu, pcbnew.B_Cu, pcbnew.In2_Cu)
             or not 1 <= max_sites <= 8):
@@ -107,13 +107,38 @@ def propose(board: Any, start: tuple[float, float],
         'front_crossings_usable': 0,
         'proposal_only': True,
     }
+    # Classify the B.Cu component containing the upper retained CH022 via.
+    # Geometric via centres outside this component cannot be reached by the
+    # upstream B.Cu leg, even if there is ample global free area.
+    bcu_free = region.difference(shapes[1]).buffer(-.000005)
+    bcu_components = polygons(bcu_free)
+    source_part = next(
+        (p for p in bcu_components if p.covers(Point(start))), None)
+    reachable = (bands['before_AGND'].intersection(source_part)
+                 if source_part is not None else
+                 bands['before_AGND'].intersection(Point(start).buffer(0)))
+    report['upstream_source_BCu_component_exists'] = source_part is not None
+    report['upstream_reachable_via_area_mm2'] = round(reachable.area, 7)
+    report['upstream_geometric_unreachable_area_mm2'] = round(
+        bands['before_AGND'].difference(reachable).area, 7)
+    front_free = region.difference(shapes[0]).buffer(-.000005)
+    front_parts = polygons(front_free)
+    front_source = next(
+        (p for p in front_parts if p.covers(Point(start))), None)
+    report['source_FCu_component_exists'] = front_source is not None
     before = _samples(bands['before_AGND'], direct, start, max_sites)
     after = _samples(bands['after_AGND'], direct, end, max_sites)
+    report['upstream_via_centres_BCu_reachable'] = [
+        list(pt) for pt in before if source_part is not None
+        and source_part.covers(Point(pt))]
+    report['downstream_via_centres_FCu_source_reachable'] = [
+        list(pt) for pt in after if front_source is not None
+        and front_source.covers(Point(pt))]
     report['via_centres_before'] = [list(pt) for pt in before]
     report['via_centres_after'] = [list(pt) for pt in after]
 
-    if not before or not after:
-        report['status'] = 'no_paired_legal_via_centres'
+    if not after:
+        report['status'] = 'no_downstream_legal_via_centres'
         return None, report
 
     # Stage the three legs without any additional vias. This forces the
@@ -157,4 +182,36 @@ def propose(board: Any, start: tuple[float, float],
             report['chosen_centres'] = [list(a), list(b)]
             report['route_vertices'] = len(combined)
             return combined, report
+    # A retained same-net source via is an alternate legal transition:
+    # B.Cu(source via) -> F.Cu -> B.Cu(new via downstream) -> B.Cu(end).
+    # No extra via is necessary on the source side if F.Cu is connected.
+    import pcbnew as _pcbnew
+    from route_targeted_closure import xy
+    existing = {xy(v.GetPosition()) for v in board.GetTracks()
+                if isinstance(v, _pcbnew.PCB_VIA) and v.GetNetCode() == net}
+    source_via_present = start in existing
+    report['retained_source_via_verified'] = source_via_present
+    report['source_existing_via_FCu_fallback_attempts'] = 0
+    if source_via_present and front_source is not None:
+        for b in after:
+            if final[b] is None or not front_source.covers(Point(b)):
+                continue
+            report['source_existing_via_FCu_fallback_attempts'] += 1
+            crossing = leg(start, b, 0)
+            if crossing is None:
+                continue
+            combined = [(1, *start), (0, *start), *crossing[1:],
+                        (1, *b), *final[b][1:]]
+            if (combined[0] != (1, *start)
+                    or combined[-1] != (1, *end)):
+                raise RuntimeError('Invalid existing-source-via fallback')
+            if any(p[1:] != q[1:] for p, q in zip(combined, combined[1:])
+                   if p[0] != q[0]):
+                raise RuntimeError('Fallback has an unmatched layer transition')
+            report['status'] = 'existing_source_via_FCu_hop_proposed_unqualified'
+            report['chosen_centres'] = [list(start), list(b)]
+            report['route_vertices'] = len(combined)
+            return combined, report
+    if report['first_leg_usable'] == 0:
+        report['status'] = 'upstream_BCu_access_blocked'
     return None, report
