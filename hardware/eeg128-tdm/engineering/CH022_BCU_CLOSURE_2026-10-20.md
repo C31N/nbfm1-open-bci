@@ -28,3 +28,47 @@ archive replay before any 136 checkpoint adoption.
 
 No manufacturing exports of any kind; always accepted=false,
 routing_completed=false, fabrication_release=false in these probes.
+
+## Protected B.Cu straight-corridor experiments (native KiCad)
+
+Run [39448180473](https://github.com/C31N/nbfm1-open-bci/actions/runs/39448180473)
+executed KiCad 8.0.9 with corridor selections 0.0, 0.6,
+1.2, and 2.0 mm. All four jobs completed successfully **as
+diagnostics**, but every outcome was
+`ch022_interleaved_BCu_blocked`. Existing CH026-P early
+restitution, CH024-P three-pad geometry and CH019-P retained-via
+bridge remain proposed, but none achieved CH022 end-to-end copper.
+
+| Corridor | Interior B.Cu signal segments removed | Result |
+| --- | --- | --- |
+| 0.0 mm | 0 | CH022 B.Cu path blocked |
+| 0.6 mm | 0 | CH022 B.Cu path blocked |
+| 1.2 mm | 2 | CH022 B.Cu path blocked |
+| 2.0 mm | 2 | CH022 B.Cu path blocked |
+
+The only additional pad/via-safe B.Cu candidates are from
+`CH017_N_ELECTRODE`:
+- `d04ea811-0e34-5d4f-8320-88b489821ec6`:
+  (37.547194,16.955987) → (37.867747,18.785154) mm.
+- `4aa24dbb-0a8d-5bc6-afe9-6f73d285e716`:
+  (37.584236,20.819041) → (37.547194,16.955987) mm.
+
+Neither segment has been permanently moved. The removable-neighbor
+model retains the entire CH018-N, CH026-P, CH024-P, CH019-P, VCM,
+CH022-N and J2.23 escape copper. Any displacement requires full
+CH017-N restitution; this was not reached because the CH022
+bridge failed beforehand.
+
+## B.Cu and In2.Cu source-of-blockage diagnostic
+
+A read-only native investigation separately measures B.Cu/In2
+free-component connectivity, effective minimum gap, available legal
+new-via centers and all relevant foreign-track UUIDs within 3 mm
+of the direct CH022 via-to-via path. It compares the untouched
+trunk against the two-segment CH017-N release. Only the complete
+native JSON report can authorize a concrete next rerouting target;
+job success alone never represents a valid 136 candidate.
+
+All candidates remain `accepted=false`,
+`routing_completed=false`, `fabrication_release=false`.
+No production files or primary board edits.
