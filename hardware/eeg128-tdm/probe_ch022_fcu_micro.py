@@ -57,7 +57,7 @@ def _safe_candidates(board: Any) -> tuple[list[Any], list[dict[str, Any]]]:
         if (t is None or t.GetNetname() != net
                 or t.GetLayer() != pcbnew.F_Cu
                 or isinstance(t, (pcbnew.PCB_VIA, pcbnew.PCB_ARC))):
-            raise ValueError('Pinned segment identity/layer mismatch: ' + uid)
+            raise ValueError('CH024/025_N pinned segment identity/layer mismatch: ' + uid)
         pads = [Point(xy(p.GetPosition()))
                 for fp in board.GetFootprints() for p in fp.Pads()
                 if p.GetNetname() == net]
@@ -126,131 +126,131 @@ def try_micro(board: Any, start: tuple[float, float],
         variants.extend((*subset, ch025[0]) for count in (1, 2)
                         for subset in combinations(ch024, count))
     for subset in variants:
-            ids = [t.m_Uuid.AsString() for t in subset]
-            record: dict[str, Any] = {
-                'candidate_uuids': ids, 'geometric_front_connected': False,
-                'route_proposed': False, 'CH024N_restituted': False,
-            }
-            report['trials'].append(record)
-            before_ids = {t.m_Uuid.AsString() for t in board.GetTracks()}
-            accepted_geometry = False
-            for t in subset:
-                board.Remove(t)
-            try:
-                # Fast component connectivity test BEFORE any costly routing.
-                blocked, via_obstacle = obstacles(
-                    board, code, .15, .15, region, .60,
-                    (pcbnew.F_Cu, pcbnew.B_Cu))
-                front = region.difference(blocked[0]).buffer(-.000005)
-                source = next((p for p in polygons(front)
-                               if p.covers(Point(start))), None)
-                legal = region.difference(unary_union([
-                    via_obstacle, power.buffer(.505),
-                    blocked[0], blocked[1]])).buffer(-.002)
-                band = legal.intersection(box(*DOWNSTREAM)).intersection(
-                    LineString([start, end]).buffer(6.0))
-                sites = _samples(band, LineString([start, end]), end, 4)
-                viable = [pt for pt in sites if source is not None
-                          and source.covers(Point(pt))]
-                record['downstream_via_sites'] = [list(v) for v in sites]
-                record['reachable_via_sites'] = [list(v) for v in viable]
-                record['geometric_front_connected'] = bool(viable)
-                # Surface the *residual* F.Cu barrier after each rollback-safe
-                # displacement. VCM remains a read-only, protected blocker.
-                components = polygons(front)
-                gaps = []
-                if source is not None:
-                    for pt in sites:
-                        target = next((comp for comp in components
-                                       if comp.covers(Point(pt))), None)
-                        if target is None or target == source:
-                            continue
-                        pa, pb = nearest_points(source, target)
-                        gaps.append((pa.distance(pb), pt, pa, pb))
-                if gaps:
-                    dist, pt, pa, pb = min(gaps, key=lambda row: row[:2])
-                    gapline = LineString([pa, pb])
-                    nearby = []
-                    for track in board.GetTracks():
-                        if track.GetNetCode() == code:
-                            continue
-                        if isinstance(track, pcbnew.PCB_VIA):
-                            shape = Point(xy(track.GetPosition()))
-                            layer = 'THROUGH'
-                        elif (track.GetLayer() == pcbnew.F_Cu
-                              and not isinstance(track, pcbnew.PCB_ARC)):
-                            shape = LineString([xy(track.GetStart()),
-                                                xy(track.GetEnd())])
-                            layer = 'F.Cu'
-                        else:
-                            continue
-                        distance = shape.distance(gapline)
-                        if distance <= .7:
-                            nearby.append({
-                                'net': track.GetNetname(),
-                                'uuid': track.m_Uuid.AsString(),
-                                'layer': layer, 'distance_mm': round(distance, 7),
-                            })
-                    nearby.sort(key=lambda item: (item['distance_mm'],
-                                                  item['net'], item['uuid']))
-                    record['residual_FCu_gap'] = {
-                        'distance_mm': round(dist, 7),
-                        'downstream_via_mm': list(pt),
-                        'source_edge_mm': [pa.x, pa.y],
-                        'target_edge_mm': [pb.x, pb.y],
-                        'nearby_blocker_uuids': nearby[:24],
-                    }
-                if not viable:
-                    record['status'] = 'FCu_still_separated'
-                    continue
-                route, hop_report = propose(
-                    board, start, end, code, layers, power, region)
-                record['hop_status'] = hop_report.get('status')
-                if route is None:
-                    record['status'] = 'no_complete_AGND_hop'
-                    continue
-                add_mesh_path(board, route, code, layers)
-                record['route_proposed'] = True
-                # Restore each displaced CH024_N/CH025_N interior link.
-                restored = []
+        ids = [t.m_Uuid.AsString() for t in subset]
+        record: dict[str, Any] = {
+            'candidate_uuids': ids, 'geometric_front_connected': False,
+            'route_proposed': False, 'CH024N_restituted': False,
+        }
+        report['trials'].append(record)
+        before_ids = {t.m_Uuid.AsString() for t in board.GetTracks()}
+        accepted_geometry = False
+        for t in subset:
+            board.Remove(t)
+        try:
+            # Fast component connectivity test BEFORE any costly routing.
+            blocked, via_obstacle = obstacles(
+                board, code, .15, .15, region, .60,
+                (pcbnew.F_Cu, pcbnew.B_Cu))
+            front = region.difference(blocked[0]).buffer(-.000005)
+            source = next((p for p in polygons(front)
+                           if p.covers(Point(start))), None)
+            legal = region.difference(unary_union([
+                via_obstacle, power.buffer(.505),
+                blocked[0], blocked[1]])).buffer(-.002)
+            band = legal.intersection(box(*DOWNSTREAM)).intersection(
+                LineString([start, end]).buffer(6.0))
+            sites = _samples(band, LineString([start, end]), end, 4)
+            viable = [pt for pt in sites if source is not None
+                      and source.covers(Point(pt))]
+            record['downstream_via_sites'] = [list(v) for v in sites]
+            record['reachable_via_sites'] = [list(v) for v in viable]
+            record['geometric_front_connected'] = bool(viable)
+            # Surface the *residual* F.Cu barrier after each rollback-safe
+            # displacement. VCM remains a read-only, protected blocker.
+            components = polygons(front)
+            gaps = []
+            if source is not None:
+                for pt in sites:
+                    target = next((comp for comp in components
+                                   if comp.covers(Point(pt))), None)
+                    if target is None or target == source:
+                        continue
+                    pa, pb = nearest_points(source, target)
+                    gaps.append((pa.distance(pb), pt, pa, pb))
+            if gaps:
+                dist, pt, pa, pb = min(gaps, key=lambda row: row[:2])
+                gapline = LineString([pa, pb])
+                nearby = []
+                for track in board.GetTracks():
+                    if track.GetNetCode() == code:
+                        continue
+                    if isinstance(track, pcbnew.PCB_VIA):
+                        shape = Point(xy(track.GetPosition()))
+                        layer = 'THROUGH'
+                    elif (track.GetLayer() == pcbnew.F_Cu
+                          and not isinstance(track, pcbnew.PCB_ARC)):
+                        shape = LineString([xy(track.GetStart()),
+                                            xy(track.GetEnd())])
+                        layer = 'F.Cu'
+                    else:
+                        continue
+                    distance = shape.distance(gapline)
+                    if distance <= .7:
+                        nearby.append({
+                            'net': track.GetNetname(),
+                            'uuid': track.m_Uuid.AsString(),
+                            'layer': layer, 'distance_mm': round(distance, 7),
+                        })
+                nearby.sort(key=lambda item: (item['distance_mm'],
+                                              item['net'], item['uuid']))
+                record['residual_FCu_gap'] = {
+                    'distance_mm': round(dist, 7),
+                    'downstream_via_mm': list(pt),
+                    'source_edge_mm': [pa.x, pa.y],
+                    'target_edge_mm': [pb.x, pb.y],
+                    'nearby_blocker_uuids': nearby[:24],
+                }
+            if not viable:
+                record['status'] = 'FCu_still_separated'
+                continue
+            route, hop_report = propose(
+                board, start, end, code, layers, power, region)
+            record['hop_status'] = hop_report.get('status')
+            if route is None:
+                record['status'] = 'no_complete_AGND_hop'
+                continue
+            add_mesh_path(board, route, code, layers)
+            record['route_proposed'] = True
+            # Restore each displaced CH024_N/CH025_N interior link.
+            restored = []
+            for item in subset:
+                a, b = xy(item.GetStart()), xy(item.GetEnd())
+                # Keep restitution close to the original corridor.
+                local = region.intersection(
+                    LineString([a, b]).buffer(5.0))
+                alt = mesh_route(
+                    board, a, b, item.GetNetCode(), layers, power, local,
+                    start_layer=0, goal_layer=0)
+                if alt is None or len(alt) < 2:
+                    record['failed_restitution_uuid'] = item.m_Uuid.AsString()
+                    break
+                add_mesh_path(board, alt, item.GetNetCode(), layers)
+                restored.append(item.m_Uuid.AsString())
+            if len(restored) != len(subset):
+                record['status'] = 'displaced_electrode_restitution_blocked'
+                continue
+            record['CH024N_restituted'] = True
+            record['CH025N_restituted'] = True
+            if _copper_signature(board, GUARDED_NETS) != protected_before:
+                record['status'] = 'protected_geometry_changed'
+                continue
+            record['status'] = 'full_geometry_proposal_needs_native_qualification'
+            report['status'] = record['status']
+            report['chosen_micro_uuids'] = ids
+            accepted_geometry = True
+            return True, report
+        except (RuntimeError, ValueError, KeyError) as exc:
+            record['status'] = 'diagnostic_exception'
+            record['error'] = type(exc).__name__ + ': ' + str(exc)
+        finally:
+            if not accepted_geometry:
+                # Restore ALL newly added trial tracks and original items.
+                for item in list(board.GetTracks()):
+                    if item.m_Uuid.AsString() not in before_ids:
+                        board.Remove(item)
                 for item in subset:
-                    a, b = xy(item.GetStart()), xy(item.GetEnd())
-                    # Keep restitution close to the original corridor.
-                    local = region.intersection(
-                        LineString([a, b]).buffer(5.0))
-                    alt = mesh_route(
-                        board, a, b, item.GetNetCode(), layers, power, local,
-                        start_layer=0, goal_layer=0)
-                    if alt is None or len(alt) < 2:
-                        record['failed_restitution_uuid'] = item.m_Uuid.AsString()
-                        break
-                    add_mesh_path(board, alt, item.GetNetCode(), layers)
-                    restored.append(item.m_Uuid.AsString())
-                if len(restored) != len(subset):
-                    record['status'] = 'displaced_electrode_restitution_blocked'
-                    continue
-                record['CH024N_restituted'] = True
-                record['CH025N_restituted'] = True
+                    board.Add(item)
                 if _copper_signature(board, GUARDED_NETS) != protected_before:
-                    record['status'] = 'protected_geometry_changed'
-                    continue
-                record['status'] = 'full_geometry_proposal_needs_native_qualification'
-                report['status'] = record['status']
-                report['chosen_micro_uuids'] = ids
-                accepted_geometry = True
-                return True, report
-            except (RuntimeError, ValueError, KeyError) as exc:
-                record['status'] = 'diagnostic_exception'
-                record['error'] = type(exc).__name__ + ': ' + str(exc)
-            finally:
-                if not accepted_geometry:
-                    # Restore ALL newly added trial tracks and original items.
-                    for item in list(board.GetTracks()):
-                        if item.m_Uuid.AsString() not in before_ids:
-                            board.Remove(item)
-                    for item in subset:
-                        board.Add(item)
-                    if _copper_signature(board, GUARDED_NETS) != protected_before:
-                        raise RuntimeError('Micro trial rollback changed protected copper')
+                    raise RuntimeError('Micro trial rollback changed protected copper')
     report['status'] = 'micro_variants_exhausted_without_restitution'
     return False, report
