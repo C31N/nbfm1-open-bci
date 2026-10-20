@@ -94,7 +94,10 @@ def try_micro(board: Any, start: tuple[float, float],
 
     if layers != (pcbnew.F_Cu, pcbnew.B_Cu, pcbnew.In2_Cu):
         raise ValueError('Pinned CH022 layer order changed')
-    if board.GetNetsByName().get('CH022_N_ELECTRODE').GetNetCode() != code:
+    known_codes = {p.GetNetCode() for fp in board.GetFootprints()
+                   for p in fp.Pads()
+                   if p.GetNetname() == 'CH022_N_ELECTRODE'}
+    if known_codes != {code}:
         raise ValueError('CH022 identity changed')
     protected_before = _copper_signature(board, GUARDED_NETS)
     eligible, inventory = _safe_candidates(board)
