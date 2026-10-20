@@ -72,7 +72,8 @@ def model(board_path: Path, output: Path, case: str,
           via_plan: bool = False,
           ch026_escape_cut: bool = False,
           ch026_restore_early: bool = False,
-          bcu_corridor_cut: float = 0.) -> dict[str, Any]:
+          bcu_corridor_cut: float = 0.,
+          audit_bridge_blockers: bool = False) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import box, Point, LineString
     from analyze_139_escape_blockers import protected_power, windows
@@ -223,6 +224,10 @@ def model(board_path: Path, output: Path, case: str,
                                     reserve, region, start_layer=1, goal_layer=1)
                 if bridge is None or len(bridge) < 2:
                     result['status'] = 'ch022_seeded_BCu_bridge_blocked'
+                    if audit_bridge_blockers:
+                        from analyze_ch022_bcu_blockers import inspect
+                        result['bridge_copper_blockers'] = inspect(
+                            board, rvia, jvia, code, reserve, region)
                     return False
                 add_mesh_path(board, bridge, code, layers)
                 result['CH022_N_ELECTRODE_geometry_proposed'] = True
@@ -479,6 +484,8 @@ def main() -> None:
     parser.add_argument('--reserve-radius', type=float, choices=(.35,.65,.95),
                         required=True)
     parser.add_argument('--ch022-root', choices=('J2.23','R302.1'), required=True)
+    parser.add_argument('--audit-bridge-blockers', action='store_true',
+                        help='Read-only BCu/In2 connectivity inventory after failed CH022 bridge')
     parser.add_argument('--bcu-corridor-cut', type=float, choices=(0.,.60,1.20,2.00),
                         default=0., help='Guarded B.Cu-only neighboring interior cut in mm')
     parser.add_argument('--ch026-restore-early', action='store_true',
@@ -507,7 +514,8 @@ def main() -> None:
             output = model(work / PCB, work / 'crosslayer.json', 'exact-eleven-conflicts',
                            args.joint_order, args.reserve_radius, args.ch022_root,
                            args.ch022_via_plan, args.ch026_escape_cut,
-                           args.ch026_restore_early, args.bcu_corridor_cut)
+                           args.ch026_restore_early, args.bcu_corridor_cut,
+                           args.audit_bridge_blockers)
         except Exception as exc:
             output = {**FLAGS, 'status': 'diagnostic_exception',
                       'error_type': type(exc).__name__, 'detail': str(exc),
@@ -517,7 +525,8 @@ def main() -> None:
                       'forced_existing_pad_via_plan': args.ch022_via_plan,
                       'ch026_escape_cut': args.ch026_escape_cut,
                       'ch026_restore_early': args.ch026_restore_early,
-                      'bcu_corridor_cut_mm': args.bcu_corridor_cut}
+                      'bcu_corridor_cut_mm': args.bcu_corridor_cut,
+                      'audit_bridge_blockers': args.audit_bridge_blockers}
     if digest(args.archive.read_bytes()) != ZIP_SHA:
         raise ValueError('Source archive changed')
     args.output.write_text(json.dumps(output, indent=2) + '\n')
