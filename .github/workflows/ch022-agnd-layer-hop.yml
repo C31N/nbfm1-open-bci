@@ -1,0 +1,80 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+name: CH022 guarded AGND FCu hop probe
+
+on:
+  push:
+    branches: [codex/ch022-agnd-layer-hop-2026-10-20]
+    paths:
+      - ".github/workflows/ch022-agnd-layer-hop.yml"
+      - "hardware/eeg128-tdm/probe_ch022_agnd_hop.py"
+      - "hardware/eeg128-tdm/probe_block2_r302_joint.py"
+      - "hardware/eeg128-tdm/test_ch022_agnd_hop.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-ch022-agnd-crossing:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 70
+    strategy:
+      fail-fast: false
+      matrix:
+        radius: ["0.35", "0.65"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install exact KiCad 8.0.9 and Shapely
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely python3-pip
+          sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
+          test "$(kicad-cli version)" = "8.0.9"
+      - name: Test fail-closed guards before board experiment
+        run: |
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch022_agnd_hop.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch017_ch022_restitution.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch026_r302_joint.py -v
+      - name: Search staged BCu FCu BCu crossing with native CH017 restitution
+        timeout-minutes: 60
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_block2_r302_joint.py \
+            --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
+            --joint-order interleave --ch022-root R302.1 \
+            --reserve-radius ${{ matrix.radius }} \
+            --ch022-via-plan --ch026-escape-cut --ch026-restore-early \
+            --ch017-local-restore --ch022-bcu-inventory --ch022-agnd-hop \
+            --output /tmp/ch022-agnd-hop-${{ matrix.radius }}.json
+          /usr/bin/python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          d=json.loads(Path('/tmp/ch022-agnd-hop-'+os.environ['RADIUS']+'.json').read_text())
+          for key in ('accepted','routing_completed','fabrication_release',
+                      'native_qualification','independent_replay_verified',
+                      'manufacturing_files'):
+              assert d.get(key) is False, key
+          if d.get('status') == 'native_audit_only_unaccepted':
+              assert d['ch017_native_continuity_ok'] is True
+              assert d['L3_loss_mm2'] == 0.0
+              assert d['L3_gain_mm2'] == 0.0
+              assert d['zone_outlines_unchanged'] is True
+              assert not d['regressed_nets'], d['regressed_nets']
+              assert d['drc_violations'] == 0 and d['drc_warnings'] == 0
+              assert all(v == 0 for v in d['critical_native_unconnected'].values())
+          print('DIAGNOSTIC_ONLY',d.get('status'),'hop',d.get('ch022_agnd_hop_analysis',{}).get('status'),
+                'CH017_ok',d.get('ch017_native_continuity_ok'),
+                'airwires',d.get('drc_unconnected'),
+                '136_replay_candidate',d.get('candidate_136_eligible_for_independent_replay'),
+                flush=True)
+          PY
+        env:
+          RADIUS: ${{ matrix.radius }}
+      - name: Retain JSON only; absolutely no PCB or manufacturing exports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ch022-agnd-hop-${{ matrix.radius }}
+          path: /tmp/ch022-agnd-hop-${{ matrix.radius }}.json
+          if-no-files-found: ignore
