@@ -29,7 +29,9 @@ jobs:
           sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
           test "$(kicad-cli version)" = "8.0.9"
       - name: Verify CH022 BCu fail-closed safety invariants
-        run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch022_bcu_corridor.py -v
+        run: |
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch022_bcu_corridor.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch022_bcu_blockers.py -v
       - name: Explain residual BCu/In2 geometry after complete CH024 and CH019 proposals
         timeout-minutes: 36
         run: |
