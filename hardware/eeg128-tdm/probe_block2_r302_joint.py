@@ -72,7 +72,8 @@ def model(board_path: Path, output: Path, case: str,
           via_plan: bool = False,
           ch026_escape_cut: bool = False,
           ch026_restore_early: bool = False,
-          ch022_bcu_inventory: bool = False) -> dict[str, Any]:
+          ch022_bcu_inventory: bool = False,
+          ch017_local_restore: bool = False) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import box, Point, LineString
     from analyze_139_escape_blockers import protected_power, windows
@@ -92,7 +93,9 @@ def model(board_path: Path, output: Path, case: str,
               'radius_mm': reserve_radius, 'ch022_root': ch022_root,
               'forced_existing_pad_via_plan': via_plan,
               'ch026_escape_cut': ch026_escape_cut,
-              'ch026_restore_early': ch026_restore_early}
+              'ch026_restore_early': ch026_restore_early,
+              'ch017_local_restore': ch017_local_restore,
+              'ch017_segment_uuids': [], 'ch017_native_continuity_ok': False}
     chosen = protected_selection(board, 'entire_trunk')
     lookup = {t.m_Uuid.AsString(): t for t in board.GetTracks()}
     extra = CASES[case]
@@ -126,6 +129,43 @@ def model(board_path: Path, output: Path, case: str,
             raise RuntimeError('CH026 pad/via escape guard violated')
         chosen.append(track)
         result['CH026_escape_cut_uuid'] = cut_uuid
+    # Only these two SHA-pinned CH017_N B.Cu interior links may be moved.
+    # All adjoining copper, AGND, VCM, protected electrode nets and via
+    # terminals are immutable; the route must be fully restituted *before*
+    # any attempted CH022 B.Cu bridge.
+    ch017_segments = []
+    if ch017_local_restore:
+        from shapely.geometry import LineString as CH017Line, Point as CH017Point
+        from collections import Counter
+        expected = (
+            'd04ea811-0e34-5d4f-8320-88b489821ec6',
+            '4aa24dbb-0a8d-5bc6-afe9-6f73d285e716',
+        )
+        for uid in expected:
+            t = lookup.get(uid)
+            if (t is None or t.GetNetname() != 'CH017_N_ELECTRODE'
+                    or t.GetLayer() != pcbnew.B_Cu
+                    or isinstance(t, (pcbnew.PCB_VIA, pcbnew.PCB_ARC))):
+                raise ValueError('Pinned CH017_N segment identity changed: ' + uid)
+            line = CH017Line([xy(t.GetStart()), xy(t.GetEnd())])
+            pad_centers = [CH017Point(xy(p.GetPosition()))
+                           for fp in board.GetFootprints() for p in fp.Pads()
+                           if p.GetNetname() == 'CH017_N_ELECTRODE']
+            via_centers = [CH017Point(xy(v.GetPosition()))
+                           for v in board.GetTracks() if isinstance(v, pcbnew.PCB_VIA)
+                           and v.GetNetname() == 'CH017_N_ELECTRODE']
+            if (any(line.distance(p) < 1.0 for p in pad_centers)
+                    or any(line.distance(v) < .65 for v in via_centers)):
+                raise ValueError('CH017_N pad/via escape cannot be displaced: ' + uid)
+            ch017_segments.append(t)
+        counts = Counter(xy(t.GetStart()) for t in ch017_segments)
+        counts.update(xy(t.GetEnd()) for t in ch017_segments)
+        ch017_pivots = [pt for pt, count in counts.items() if count == 2]
+        ch017_ends = sorted([pt for pt, count in counts.items() if count == 1])
+        if len(ch017_pivots) != 1 or len(ch017_ends) != 2:
+            raise ValueError('CH017_N candidate is no longer an exact two-link chain')
+        chosen.extend(ch017_segments)
+        result['ch017_segment_uuids'] = list(expected)
     # Strict scope and unique object identity before any mutation.
     if len({t.m_Uuid.AsString() for t in chosen}) != len(chosen):
         raise ValueError('Duplicate selected SWIG track')
@@ -315,6 +355,56 @@ def model(board_path: Path, output: Path, case: str,
                 return result
             add_mesh_path(board, alternative, blocker.GetNetCode(), layers)
             result['ch026_early_segment_restored_geometrically'] = True
+        if ch017_local_restore:
+            # Restore CH017 immediately: leaving it disconnected while CH022
+            # crosses its old copper would be a false-positive closure.
+            from shapely.geometry import Point as CH017Point, LineString as CH017Line
+            pivot = ch017_pivots[0]
+            touched = any(
+                (CH017Point(xy(t.GetPosition())).distance(CH017Point(pivot)) < 0.000001
+                 if isinstance(t, pcbnew.PCB_VIA)
+                 else CH017Line([xy(t.GetStart()), xy(t.GetEnd())]).distance(
+                     CH017Point(pivot)) < 0.000001)
+                for t in board.GetTracks()
+                if t.GetNetname() == 'CH017_N_ELECTRODE'
+            )
+            # Preserve the center node if it is a real third-branch junction.
+            waypoints = [ch017_ends[0], pivot, ch017_ends[1]] if touched else ch017_ends
+            result['ch017_pivot_preserved'] = touched
+            result['ch017_original_endpoints_mm'] = [list(p) for p in ch017_ends]
+            result['ch017_new_routes'] = []
+            for p0, p1 in zip(waypoints, waypoints[1:]):
+                local = region.intersection(box(31, 11.5, 49, 27))
+                candidate = mesh_route(
+                    board, p0, p1, ch017_segments[0].GetNetCode(),
+                    layers, reserve, local, start_layer=1, goal_layer=1)
+                if candidate is None or len(candidate) < 2:
+                    result['status'] = 'ch017_local_restitution_blocked'
+                    return result
+                add_mesh_path(board, candidate, ch017_segments[0].GetNetCode(), layers)
+                result['ch017_new_routes'].append([list(p) for p in candidate])
+            # Native KiCad check of CH017 alone, even if a later CH022
+            # proposal fails. Other deliberately removed test-net copper
+            # must NOT be mistaken for an accepted full-board result.
+            pcbnew.SaveBoard(str(board_path), board)
+            original_report = native_fresh(
+                output.parent / 'baseline' / PCB,
+                output.with_suffix('.ch017-baseline-drc.json'))
+            ch017_report = native_fresh(
+                board_path, output.with_suffix('.ch017-probe-drc.json'))
+            from native_connectivity import airwire_counts
+            previous = airwire_counts(original_report)['CH017_N_ELECTRODE']
+            current = airwire_counts(ch017_report)['CH017_N_ELECTRODE']
+            errors = [v for v in ch017_report.get('violations', [])
+                      if 'CH017_N_ELECTRODE' in json.dumps(v)]
+            result['ch017_airwires_before'] = previous
+            result['ch017_airwires_after'] = current
+            result['ch017_native_violations'] = len(errors)
+            result['ch017_native_continuity_ok'] = (
+                current <= previous and not errors)
+            if not result['ch017_native_continuity_ok']:
+                result['status'] = 'ch017_native_restitution_failed'
+                return result
         if joint_order == 'ch022-first':
             if not (connect_ch022_via_bridge() if via_plan else
                     connect('CH022_N_ELECTRODE', {'J2.23','R302.1'})):
@@ -429,6 +519,8 @@ def main() -> None:
     parser.add_argument('--reserve-radius', type=float, choices=(.35,.65,.95),
                         required=True)
     parser.add_argument('--ch022-root', choices=('J2.23','R302.1'), required=True)
+    parser.add_argument('--ch017-local-restore', action='store_true',
+                        help='Route both pinned CH017_N BCu segments before CH022; reject native regressions')
     parser.add_argument('--ch022-bcu-inventory', action='store_true',
                         help='Capture protected B.Cu blockers if seeded via bridge is blocked')
     parser.add_argument('--ch026-restore-early', action='store_true',
@@ -457,7 +549,8 @@ def main() -> None:
             output = model(work / PCB, work / 'crosslayer.json', 'exact-eleven-conflicts',
                            args.joint_order, args.reserve_radius, args.ch022_root,
                            args.ch022_via_plan, args.ch026_escape_cut,
-                           args.ch026_restore_early, args.ch022_bcu_inventory)
+                           args.ch026_restore_early, args.ch022_bcu_inventory,
+                           args.ch017_local_restore)
         except Exception as exc:
             output = {**FLAGS, 'status': 'diagnostic_exception',
                       'error_type': type(exc).__name__, 'detail': str(exc),
@@ -467,7 +560,8 @@ def main() -> None:
                       'forced_existing_pad_via_plan': args.ch022_via_plan,
                       'ch026_escape_cut': args.ch026_escape_cut,
                       'ch026_restore_early': args.ch026_restore_early,
-                      'ch022_bcu_inventory': args.ch022_bcu_inventory}
+                      'ch022_bcu_inventory': args.ch022_bcu_inventory,
+                      'ch017_local_restore': args.ch017_local_restore}
     if digest(args.archive.read_bytes()) != ZIP_SHA:
         raise ValueError('Source archive changed')
     args.output.write_text(json.dumps(output, indent=2) + '\n')
