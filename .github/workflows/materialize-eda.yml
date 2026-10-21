@@ -48,10 +48,6 @@ jobs:
           test -d /usr/share/kicad/footprints
           echo "KiCad 8.0.9 and pcbnew verified, no Launchpad PPA"
 
-      - uses: actions/setup-python@v7
-        with:
-          python-version: "3.13"
-
       - name: Normalize primary A1 connectivity
         run: |
           /usr/bin/python3 hardware/eeg128-tdm/normalize_connectivity.py \
@@ -71,22 +67,22 @@ jobs:
 
       - name: Generate deterministic KiCad connectivity schematic
         run: |
-          python hardware/eeg128-tdm/generate_schematic.py \
+          /usr/bin/python3 hardware/eeg128-tdm/generate_schematic.py \
             --output hardware/eeg128-tdm/eeg128-tdm.generated.kicad_sch
           cp hardware/eeg128-tdm/eeg128-tdm.generated.kicad_sch \
             hardware/eeg128-tdm/eeg128-tdm.kicad_sch
 
       - name: Generate local KiCad symbol library
-        run: python hardware/eeg128-tdm/generate_symbol_library.py
+        run: /usr/bin/python3 hardware/eeg128-tdm/generate_symbol_library.py
 
       - name: Verify BOM, CPL, footprints and critical pinouts
         run: |
-          python hardware/eeg128-tdm/verify_hardware_identity.py \
+          /usr/bin/python3 hardware/eeg128-tdm/verify_hardware_identity.py \
             --json-out /tmp/hardware-identity.json
 
       - name: Validate generated object counts
         run: |
-          python - <<'PY'
+          /usr/bin/python3 - <<'PY'
           from pathlib import Path
           import re
 
