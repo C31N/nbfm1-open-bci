@@ -57,8 +57,19 @@ jobs:
       - name: Install exact KiCad 8.0.9 and Shapely
         run: |
           sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
-          sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely python3-pip
+          for attempt in 1 2 3 4; do
+            if sudo apt-get -o Acquire::Retries=4 update &&
+               sudo DEBIAN_FRONTEND=noninteractive apt-get \
+                 -o Acquire::Retries=4 install -y --no-install-recommends \
+                 kicad python3-numpy python3-shapely python3-pip; then
+              break
+            fi
+            if [ "$attempt" -eq 4 ]; then
+              echo "KiCad 8.0.9 PPA unavailable, failing closed" >&2
+              exit 1
+            fi
+            sleep $((attempt * 15))
+          done
           sudo /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps 'shapely==2.1.2'
           test "$(kicad-cli version)" = "8.0.9"
       - name: Test fail-closed guards before board experiment
