@@ -25,19 +25,20 @@ jobs:
       - name: Run strictly pinned official KiCad Docker image without Launchpad PPA
         timeout-minutes: 60
         run: |
-          docker pull kicad/kicad:8.0.9
-          docker run --rm --network bridge \
+          docker pull kicad/kicad@sha256:5716d82aa247abdbe512650eb4e8fce5a4031cbbef0a2c8df83208a69fef87b2
+          docker run --rm --user 0:0 --network bridge \
             -v "$PWD:/workspace:ro" \
             -v "$RUNNER_TEMP:/diagnostic:rw" \
             -w /workspace --entrypoint /bin/sh \
             -e RADIUS="${{ matrix.radius }}" \
-            kicad/kicad:8.0.9 -ec '
+            kicad/kicad@sha256:5716d82aa247abdbe512650eb4e8fce5a4031cbbef0a2c8df83208a69fef87b2 -ec '
               set -eu
               test "$(kicad-cli version)" = "8.0.9"
               /usr/bin/python3 -c "import pcbnew; assert pcbnew.Version().startswith(\"8.0.9\")"
               apt-get update
-              DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3-shapely python3-numpy
-              /usr/bin/python3 -c "import pcbnew, shapely; print(pcbnew.Version(),shapely.__version__)"
+              DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3-shapely python3-numpy python3-pip
+              /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
+              /usr/bin/python3 -c "import pcbnew, shapely; assert shapely.__version__ == \"2.1.2\"; print(pcbnew.Version(),shapely.__version__)"
               /usr/bin/python3 hardware/eeg128-tdm/probe_block2_r302_joint.py \
                 --archive hardware/eeg128-tdm/engineering/followup-2026-10-16-mux137/joint-unadopted137.zip \
                 --joint-order interleave --ch022-root R302.1 \
