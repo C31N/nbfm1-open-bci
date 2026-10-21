@@ -13,7 +13,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import math
 import tempfile
 import zipfile
 from pathlib import Path
@@ -54,6 +53,89 @@ def choose(inventory: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
     if len(r["blockers"]) != r["blocking_uuid_count"]:
         raise ValueError("Truncated blocker report")
     return p, r
+
+
+def virtual_mesh(board: Any, pair: dict[str, Any],
+                 candidates: list[dict[str, Any]],
+                 originals: list[Any]) -> dict[str, Any]:
+    """Test F.Cu route after removing exactly nine movable tracks in RAM.
+
+    This removal is virtual: their native connectivity would be broken.
+    Reconnection and neighbor restitution are entirely unproved. The
+    experiment never calls SaveBoard and restores original SWIG objects.
+    """
+    import pcbnew
+    from shapely.geometry import GeometryCollection, LineString, Point, box
+    from shapely.ops import unary_union
+    from escape_mesh_505 import mesh_route
+    from probe_ch025_fcu_l3_exact import power_fcu_obstacles
+    from analyze_ch025_l3_precision_mask import PROBE_28_CH022_LAYERS
+    from route_targeted_closure import routing_domain, xy
+
+    removed = []
+    for item in candidates:
+        track = next((t for t in board.GetTracks()
+                      if t.m_Uuid.AsString() == item["uuid"]), None)
+        if (track is None or isinstance(track, (pcbnew.PCB_ARC, pcbnew.PCB_VIA))
+                or protected_net(track.GetNetname())
+                or track.GetNetname() != item["net"]):
+            raise ValueError("Virtual removal selection not identical")
+        board.Remove(track)
+        removed.append(track)
+    report: dict[str, Any] = dict(
+        status="no_virtual_FCu_route",
+        removed_foreign_track_UUIDs=[t.m_Uuid.AsString() for t in removed],
+        virtual_only=True, complete_original_net_restitution=False,
+        F_Cu_only=True, In1_Cu_used=False, native_DRC_passed=False,
+        path=None, required_restoration_UUIDs=[])
+    try:
+        zone = next(z for z in board.Zones()
+                    if z.m_Uuid.AsString() ==
+                    "06a28b70-5141-41e4-bdb1-c8324bc06fcb")
+        from analyze_ch025_l3_native_refill import filled
+        power = filled(zone)
+        extra = power_fcu_obstacles(board)
+        via_window = [Point(a[1:]).buffer(.505) for a, b in
+                      zip(PROBE_28_CH022_LAYERS, PROBE_28_CH022_LAYERS[1:])
+                      if a[0] != b[0]]
+        extra = unary_union([extra, *via_window])
+        domain = routing_domain(board, .075, .25)
+        code = board.FindNet(CH025).GetNetCode()
+        a, b = tuple(pair["source_mm"]), tuple(pair["target_mm"])
+        for margin in (3.0, 6.0):
+            region = box(min(a[0], b[0]) - margin,
+                         min(a[1], b[1]) - margin,
+                         max(a[0], b[0]) + margin,
+                         max(a[1], b[1]) + margin).intersection(domain)
+            path = mesh_route(
+                board, a, b, code, (pcbnew.F_Cu, pcbnew.B_Cu),
+                power, region, start_layer=0, goal_layer=0,
+                allow_vias=False,
+                extra_obstacles=[extra, GeometryCollection()])
+            if path is None or any(p[0] != 0 for p in path):
+                continue
+            points = [(p[1], p[2]) for p in path]
+            line = LineString(points)
+            required = []
+            for original in removed:
+                copper = LineString([
+                    xy(original.GetStart()), xy(original.GetEnd())])
+                if copper.buffer(.225).intersects(line):
+                    required.append(original.m_Uuid.AsString())
+            report.update(
+                status="virtual_FCu_mesh_found_requires_neighbors",
+                margin_mm=margin, path=path, vertex_count=len(path),
+                required_restoration_UUIDs=sorted(required))
+            break
+    finally:
+        for track in removed:
+            board.Add(track)
+    now = {t.m_Uuid.AsString(): t.GetNetname() for t in board.GetTracks()}
+    if any(t.m_Uuid.AsString() not in now for t in removed):
+        raise RuntimeError("Virtual candidate track was not restored")
+    if len(removed) != len(candidates):
+        raise RuntimeError("Unexpected virtual track count")
+    return report
 
 
 def scan(board: Any, inventory: dict[str, Any], max_native: int,
@@ -160,6 +242,8 @@ def scan(board: Any, inventory: dict[str, Any], max_native: int,
                                virtual_nine_removed=True,
                                FCu_component_connected=same,
                                qualified_route=False))
+    virtual = virtual_mesh(board, pair, candidates,
+                           [track_by_uuid[c["uuid"]] for c in candidates])
     baseline_drc = None
     attempted = 0
     for ix, _, _ in native_proposals[:max_native]:
@@ -215,6 +299,7 @@ def scan(board: Any, inventory: dict[str, Any], max_native: int,
             "L3_gain_mm2": None, "all_neighbors_restituted": False,
             "geometrically_best": best,
             "virtual_topology": topologies,
+            "virtual_FCu_mesh": virtual,
             "displacements": rows}
 
 
