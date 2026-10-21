@@ -55,6 +55,74 @@ def choose(inventory: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
     return p, r
 
 
+def minimize_virtual_removal(board: Any, pair: dict[str, Any],
+                             candidates: list[dict[str, Any]]
+                             ) -> dict[str, Any]:
+    """Reduce a virtual neighbor-removal set without changing any copper.
+
+    Two greedy UUID orders are used. Their result is topology screening,
+    not proof of a globally minimal cut set or of native DRC conformity.
+    """
+    from shapely.geometry import Point, box
+    from shapely.ops import unary_union
+    from route_targeted_closure import routing_domain
+
+    shapes, items = copper_shapes(board)
+    ids = {c["uuid"] for c in candidates}
+    if len(ids) != 9:
+        raise ValueError("Unexpected native candidate count")
+    a, b = tuple(pair["source_mm"]), tuple(pair["target_mm"])
+    region = box(min(a[0], b[0])-3, min(a[1], b[1])-3,
+                 max(a[0], b[0])+3, max(a[1], b[1])+3)
+    region = region.intersection(routing_domain(board, .075, .25))
+    fixed = unary_union([
+        shape.intersection(region) for shape, item in zip(shapes, items)
+        if item["uuid"] not in ids and item["net"] != CH025
+        and shape.intersects(region)
+    ])
+    affected = {
+        item["uuid"]: shape.intersection(region)
+        for shape, item in zip(shapes, items) if item["uuid"] in ids
+    }
+    if set(affected) != ids:
+        raise ValueError("Source UUID/geometry parity mismatch")
+    tests = 0
+
+    def connected(removed: set[str]) -> bool:
+        nonlocal tests
+        tests += 1
+        obstacles = unary_union([
+            fixed, *(affected[uid] for uid in sorted(ids-removed))
+        ])
+        free = region.difference(obstacles).buffer(-.000005)
+        return any(p.covers(Point(a)) and p.covers(Point(b))
+                   for p in _polygons(free))
+
+    if not connected(ids):
+        raise ValueError("Original nine-removed F.Cu topology not replicated")
+    solutions = []
+    for reverse in (False, True):
+        removed = set(ids)
+        for uid in sorted(ids, reverse=reverse):
+            if connected(removed - {uid}):
+                removed.remove(uid)
+        if not connected(removed):
+            raise RuntimeError("Greedy set lost source/target component")
+        solutions.append(sorted(removed))
+    chosen = min(solutions, key=lambda x: (len(x), x))
+    return dict(
+        status="virtual_neighbor_subset_only",
+        original_candidates=len(ids), greedy_orders=2,
+        connectivity_tests=tests,
+        removed_uuid_count=len(chosen),
+        required_virtual_removal_uuids=chosen,
+        preserved_original_signal_uuids=sorted(ids-set(chosen)),
+        connected_if_removed=True,
+        native_DRC_qualified=False,
+        independent_replay_qualified=False,
+        real_neighbor_restitution=False)
+
+
 def virtual_mesh(board: Any, pair: dict[str, Any],
                  candidates: list[dict[str, Any]],
                  originals: list[Any]) -> dict[str, Any]:
@@ -242,8 +310,11 @@ def scan(board: Any, inventory: dict[str, Any], max_native: int,
                                virtual_nine_removed=True,
                                FCu_component_connected=same,
                                qualified_route=False))
-    virtual = virtual_mesh(board, pair, candidates,
-                           [track_by_uuid[c["uuid"]] for c in candidates])
+    subset = minimize_virtual_removal(board, pair, candidates)
+    selected = set(subset["required_virtual_removal_uuids"])
+    virtual = virtual_mesh(
+        board, pair, [c for c in candidates if c["uuid"] in selected],
+        [track_by_uuid[c["uuid"]] for c in candidates if c["uuid"] in selected])
     baseline_drc = None
     attempted = 0
     for ix, _, _ in native_proposals[:max_native]:
@@ -299,6 +370,7 @@ def scan(board: Any, inventory: dict[str, Any], max_native: int,
             "L3_gain_mm2": None, "all_neighbors_restituted": False,
             "geometrically_best": best,
             "virtual_topology": topologies,
+            "greedy_virtual_restitution_screen": subset,
             "virtual_FCu_mesh": virtual,
             "displacements": rows}
 
