@@ -44,6 +44,7 @@ def candidate(board: Any, ch022_start: tuple[float, float],
     import pcbnew
     from route_targeted_closure import xy
     from escape_mesh_505 import add_mesh_path, mesh_route
+    from analyze_ch025_existing_via_anchor import connected_existing_vias
 
     # The 0.505-mm L3 keepout is enforced by mesh_route on each attempt.
     # Its via-obstacle model also includes foreign F.Cu tracks and all pads.
@@ -97,9 +98,51 @@ def candidate(board: Any, ch022_start: tuple[float, float],
                         from analyze_ch025_route_topology import assess
                         trial['ch025_anchor_cut_diagnostic'] = assess(
                             board, start, end, netcode, power, region)
-                    trial['status'] = 'mesh_unreachable_'+netname
-                    break
-                if not path_is_pinned(path, start, end, 0):
+                        via_report = connected_existing_vias(
+                            board, end, netcode, power)
+                        trial['CH025_target_connected_vias'] = via_report
+                        trial['CH025_existing_via_fallback_trials'] = []
+                        for via in via_report['via_candidates'][:4]:
+                            goal = tuple(via['coordinate_mm'])
+                            # First layer In2.Cu, second B.Cu, using the
+                            # already-existing via as the sole goal anchor.
+                            substitute = mesh_route(
+                                board, start, goal, netcode, layers,
+                                power, region, start_layer=0, goal_layer=1)
+                            attempt = {
+                                'existing_via_uuid': via['uuid'],
+                                'existing_via_coordinate_mm': list(goal),
+                                'path_proposed': substitute is not None,
+                            }
+                            trial['CH025_existing_via_fallback_trials'].append(
+                                attempt)
+                            if substitute is None:
+                                continue
+                            if len(substitute) < 2 or substitute[0] != (0, *start) or substitute[-1] != (1, *goal):
+                                attempt['status'] = 'pinned_goal_rejected'
+                                continue
+                            if any(a[0] != b[0] and a[1:] != b[1:]
+                                   for a, b in zip(substitute, substitute[1:])):
+                                attempt['status'] = 'invalid_via_transition'
+                                continue
+                            path = substitute
+                            attempt['status'] = 'geometry_proposed_unqualified'
+                            trial['CH025_target_reconnected_via_uuid'] = via['uuid']
+                            break
+                    if path is None:
+                        trial['status'] = 'mesh_unreachable_'+netname
+                        break
+                # A reused target through-via is a valid CH025 endpoint
+                # ONLY if verified reachable through the surviving target net.
+                expected_goal = (
+                    tuple(trial.get('CH025_existing_via_fallback_trials', [])[-1]['existing_via_coordinate_mm'])
+                    if netname == 'CH025_N_MUX' and trial.get('CH025_target_reconnected_via_uuid')
+                    else end)
+                goal_layer = (
+                    1 if netname == 'CH025_N_MUX'
+                    and trial.get('CH025_target_reconnected_via_uuid')
+                    else 0)
+                if not path_is_pinned(path, start, expected_goal, goal_layer):
                     trial['status'] = 'mesh_endpoint_or_layer_invalid_'+netname
                     break
                 trial['paths'][netname] = {
@@ -109,6 +152,7 @@ def candidate(board: Any, ch022_start: tuple[float, float],
                     'layer_sequence': [LAYERS_ALLOWED[0] if layers[l] == pcbnew.B_Cu
                                        else LAYERS_ALLOWED[1] for l, _, _ in path],
                     'path_mm': [list(p) for p in path],
+                    'reconnected_existing_via_uuid': trial.get('CH025_target_reconnected_via_uuid'),
                 }
                 # Must be added before checking the other net so its copper
                 # is a real obstacle. It is *always* removed in finally.
