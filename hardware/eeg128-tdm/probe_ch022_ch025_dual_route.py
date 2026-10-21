@@ -93,6 +93,10 @@ def candidate(board: Any, ch022_start: tuple[float, float],
                     board, start, end, netcode, layers,
                     power, region, start_layer=0, goal_layer=0)
                 if path is None:
+                    if netname == 'CH025_N_MUX':
+                        from analyze_ch025_route_topology import assess
+                        trial['ch025_anchor_cut_diagnostic'] = assess(
+                            board, start, end, netcode, power, region)
                     trial['status'] = 'mesh_unreachable_'+netname
                     break
                 if not path_is_pinned(path, start, end, 0):
