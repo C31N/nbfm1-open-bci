@@ -37,6 +37,8 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+      - name: Trust checked-out Git workspace inside pinned container
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Use exact KiCad 8.0.9 and matching system pcbnew
         run: |

@@ -266,7 +266,7 @@ jobs:
 
       - name: Confirm release remains fail closed
         run: |
-          python - <<'PY'
+          /usr/bin/python3 - <<'PY'
           import json
           from pathlib import Path
 
