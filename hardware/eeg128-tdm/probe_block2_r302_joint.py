@@ -230,8 +230,10 @@ def model(board_path: Path, output: Path, case: str,
                 rvia = seeded_ch022['rvia']
                 jvia = seeded_ch022['jvia']
                 code = seeded_ch022['code']
-                bridge = mesh_route(board, rvia, jvia, code, layers,
-                                    reserve, region, start_layer=1, goal_layer=1)
+                # No legacy F.Cu-capable mesh in the B.Cu/In2.Cu mode.
+                bridge = (None if ch022_in2_bypass else mesh_route(
+                    board, rvia, jvia, code, layers, reserve, region,
+                    start_layer=1, goal_layer=1))
                 if (bridge is None or len(bridge) < 2) and ch022_in2_bypass:
                     from probe_ch022_bcu_in2_bypass import propose as in2_propose
                     bridge, in2_report = in2_propose(

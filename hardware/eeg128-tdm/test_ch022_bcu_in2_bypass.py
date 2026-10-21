@@ -50,6 +50,7 @@ class In2BypassSafety(unittest.TestCase):
         self.assertIn('ch022_in2_bypass_analysis', joint)
         self.assertIn('args.ch022_in2_bypass', joint)
         self.assertIn('CH024_N_ELECTRODE', joint)
+        self.assertIn('bridge = (None if ch022_in2_bypass else mesh_route(', joint)
 
 
 if __name__ == '__main__':
