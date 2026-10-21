@@ -170,6 +170,10 @@ def scan(board: Any) -> dict[str, Any]:
         ((44.505, 25.129999), (44.505, 39.129999))):
         raise ValueError("CH025 cut endpoints changed")
     power = filled(zones[0])
+    # Resolve connectivity ONLY with the 14-mm original trace removed.
+    # The change exists in RAM on a temporary archive-extracted PCB and
+    # is restored before returning. No PCB bytes are ever saved.
+    board.Remove(cut)
     netcode = board.FindNet("CH025_N_MUX").GetNetCode()
     source = connected_existing_vias(board, xy(cut.GetStart()), netcode, power, 4)
     target = connected_existing_vias(board, xy(cut.GetEnd()), netcode, power, 4)
@@ -256,8 +260,9 @@ def scan(board: Any) -> dict[str, Any]:
                                 if record["obstructing_objects"]
                                 else "gap_unexplained_by_local_uuid_window")
             rows.append(record)
+    board.Add(cut)
     if footprint_and_track_inventory(board) != before:
-        raise RuntimeError("Read-only scan modified protected board")
+        raise RuntimeError("Temporary CH025 cut not fully restored")
     return {**FLAGS, "status": "FCu_UUID_inventory_model_only",
             "baseline_airwires": 139, "via_pairs": len(rows),
             "L3_zone_uuid": ZONE_UUID,
