@@ -70,7 +70,7 @@ def transition_graph(
     graph['valid_via_transition_edges'] = len(contacts)
     graph['sampled_via_centres'] = sum(len(v) for v in contacts.values())
 
-    def search(root: tuple[str, int]):
+    def search(root: tuple[str, int]) -> dict[tuple[str, int], tuple[str, int] | None]:
         frontier = deque([root])
         prev: dict[tuple[str, int], tuple[str, int] | None] = {root: None}
         while frontier:
