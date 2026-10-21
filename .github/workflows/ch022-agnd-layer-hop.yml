@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
-name: CH025 expanded BCu and native L3 removal refill
+name: CH025 BCu native UUID cut and L3 power differential
 
 on:
   push:
-    branches: [codex/ch025-l3-native-refill-audit-2026-10-21]
+    branches: [codex/ch025-bcu-cut-uuid-survey-2026-10-21]
     paths:
       - ".github/workflows/ch022-agnd-layer-hop.yml"
       - "hardware/eeg128-tdm/probe_ch022_agnd_hop.py"
@@ -15,6 +15,8 @@ on:
       - "hardware/eeg128-tdm/analyze_ch025_route_topology.py"
       - "hardware/eeg128-tdm/analyze_ch025_existing_via_anchor.py"
       - "hardware/eeg128-tdm/analyze_ch025_reused_via_pairs.py"
+      - "hardware/eeg128-tdm/analyze_ch025_bcu_cut_uuids.py"
+      - "hardware/eeg128-tdm/test_ch025_bcu_cut_uuids.py"
       - "hardware/eeg128-tdm/analyze_ch025_l3_native_refill.py"
       - "hardware/eeg128-tdm/test_ch025_l3_native_refill.py"
       - "hardware/eeg128-tdm/test_ch025_reused_via_pairs.py"
@@ -68,6 +70,7 @@ jobs:
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_route_topology.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_existing_via_anchor.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_reused_via_pairs.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_bcu_cut_uuids.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_l3_native_refill.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch017_ch022_restitution.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch026_r302_joint.py -v
@@ -148,6 +151,12 @@ jobs:
                                   print('CH025_REUSED_VIA_PAIRS', pair['status'],
                                         pair['source_connected_vias'].get('via_candidates', []),
                                         pair['candidates'], flush=True)
+                              gap_report = pair.get('first_BCu_cut_UUID_inventory') if pair else None
+                              if gap_report:
+                                  assert gap_report['read_only'] is True
+                                  assert gap_report['accepted'] is False
+                                  print('CH025_BCU_CUT_UUIDS', gap_report,
+                                        flush=True)
                               print('CH025_EXISTING_VIA', via_report['status'],
                                     via_report.get('via_candidates', [])[:4],
                                     'fallback_trials', attempt.get('CH025_existing_via_fallback_trials', []),

@@ -62,6 +62,7 @@ def try_pair(board: Any, source_anchor: tuple[float, float],
     from escape_mesh_505 import mesh_route, polygons
     from route_targeted_closure import obstacles, routing_domain
     from analyze_ch025_existing_via_anchor import connected_existing_vias
+    from analyze_ch025_bcu_cut_uuids import survey as gap_survey
 
     source = connected_existing_vias(
         board, source_anchor, netcode, power, max_candidates=limit)
@@ -124,6 +125,11 @@ def try_pair(board: Any, source_anchor: tuple[float, float],
                 continue
             row['status'] = pair_status(
                 row['BCu_source_component'], row['BCu_target_component'])
+            if (row['status'] == 'reused_via_pair_separated_on_BCu'
+                    and 'first_BCu_cut_UUID_inventory' not in result):
+                result['first_BCu_cut_UUID_inventory'] = gap_survey(
+                    board, parts[row['BCu_source_component']],
+                    parts[row['BCu_target_component']])
             if row['status'] != 'BCu_component_connected_but_mesh_unqualified':
                 continue
             # A new through-via would change the protected L3 power
