@@ -8,6 +8,8 @@ on:
       - ".github/workflows/ch022-agnd-layer-hop.yml"
       - "hardware/eeg128-tdm/probe_ch022_agnd_hop.py"
       - "hardware/eeg128-tdm/probe_ch022_bcu_in2_bypass.py"
+      - "hardware/eeg128-tdm/analyze_ch022_multihop_graph.py"
+      - "hardware/eeg128-tdm/test_ch022_multihop_graph.py"
       - "hardware/eeg128-tdm/test_ch022_bcu_in2_bypass.py"
       - "hardware/eeg128-tdm/probe_ch022_fcu_micro.py"
       - "hardware/eeg128-tdm/analyze_ch025_via_guard.py"
@@ -45,6 +47,7 @@ jobs:
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch022_fcu_micro.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_interior_virtual.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch022_bcu_in2_bypass.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch022_multihop_graph.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch017_ch022_restitution.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch026_r302_joint.py -v
       - name: Evaluate strict BCu to In2Cu transition and guarded full-board candidate
@@ -75,8 +78,11 @@ jobs:
               assert in2['layers_only'] == ['B.Cu', 'In2.Cu']
               assert in2['L3_loss_qualified'] is False
               assert in2['L3_gain_qualified'] is False
+              assert in2.get('multihop_component_graph', {}).get('read_only') is True
+              assert in2['multihop_component_graph']['accepted'] is False
               print('IN2_BYPASS_DIAGNOSTIC', in2.get('status'),
-                    'component_count', in2.get('reachable_via_component_count'),
+                    'direct_components', in2.get('reachable_via_component_count'),
+                    'graph_connected', in2['multihop_component_graph']['multihop_connected'],
                     flush=True)
           if d.get('status') == 'native_audit_only_unaccepted':
               assert d['ch017_native_continuity_ok'] is True

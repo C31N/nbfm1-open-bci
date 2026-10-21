@@ -150,8 +150,14 @@ def propose(board: Any, source: tuple[float, float],
     report['target_accessible_In2_count'] = len(target_access)
     report['joint_BCu_In2_transition_components'] = candidates
     report['reachable_via_component_count'] = len(candidates)
-    if not candidates:
-        report['status'] = 'no_local_BCu_In2_transition_component'
+    # One common In2 island is sufficient, but not necessary: a legal chain
+    # of BCu/In2Cu/BCu/In2Cu/BCu transitions can bridge separate islands.
+    from analyze_ch022_multihop_graph import transition_graph
+    component_graph = transition_graph(
+        bcufree, in2free, viafree, source, target)
+    report['multihop_component_graph'] = component_graph
+    if not component_graph['multihop_connected']:
+        report['status'] = 'no_BCu_In2_multihop_component_path'
         return None, report
 
     # Only run heavy KiCad-mesh routing after topology makes a route possible.
