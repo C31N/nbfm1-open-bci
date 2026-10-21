@@ -50,6 +50,7 @@ def filled(zone: Any) -> Any:
 def audit(board: Any) -> dict[str, Any]:
     import pcbnew
     from route_targeted_closure import xy
+    from analyze_ch025_l3_precision_mask import try_keepout
 
     out: dict[str, Any] = {
         **FLAGS, 'status': 'native_refill_not_started',
@@ -87,12 +88,20 @@ def audit(board: Any) -> dict[str, Any]:
     before = snapshot()
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())
     initial = filled(z)
+    native_initial = pcbnew.SHAPE_POLY_SET(
+        z.GetFilledPolysList(pcbnew.In2_Cu))
     out['native_zone_fill_executed'] = True
     out['baseline_3V3A_mm2'] = initial.area
     board.Remove(t)
     try:
         pcbnew.ZONE_FILLER(board).Fill(board.Zones())
         after_cut = filled(z)
+        native_cut = pcbnew.SHAPE_POLY_SET(
+            z.GetFilledPolysList(pcbnew.In2_Cu))
+        out['precision_keepout_model'] = try_keepout(
+            board, z, native_initial, native_cut, initial, after_cut)
+        assert out['precision_keepout_model']['new_keepout_removed']
+        assert out['precision_keepout_model']['original_power_refill_restored']
         lost = initial.difference(after_cut).area
         gained = after_cut.difference(initial).area
         out['loss_mm2'] = lost
