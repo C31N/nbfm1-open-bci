@@ -32,7 +32,7 @@ jobs:
         timeout-minutes: 36
         run: |
           /usr/bin/python3 hardware/eeg128-tdm/probe_ch025_fcu_l3_exact.py \
-            --board hardware/eeg128-tdm/eeg128-tdm.kicad_pcb \
+            --board hardware/eeg128-tdm/engineering/block2-ch019-electrode-closed139.zip \
             --output /tmp/ch025-fcu-l3-report.json
       - name: Confirm no release or manufacturing promotion
         if: always()

@@ -11,8 +11,8 @@ import argparse
 import hashlib
 import json
 import shutil
-import subprocess
 import tempfile
+import zipfile
 from pathlib import Path
 
 NET = "CH025_N_MUX"
@@ -231,14 +231,29 @@ def run(source_path, output_path):
               "F_Cu_only": True, "In1_Cu_AGND_preserved": True,
               "L3_gate_exact": False, "native_DRC_qualified": False,
               "native_parity_qualified": False, "candidate_replay_qualified": False}
-    source_hash = hashlib.sha256(source_path.read_bytes()).hexdigest()
-    result["source_pcb_sha256"] = source_hash
+    # The tracked primary .kicad_pcb is the historical 499-airwire design.
+    # Load ONLY the byte-reviewed 139-airwire *engineering* checkpoint.
+    if source_path.suffix != ".zip":
+        raise ValueError("A pinned 139 engineering ZIP, not the primary PCB, is mandatory")
+    archive_hash = hashlib.sha256(source_path.read_bytes()).hexdigest()
+    if archive_hash != "f022d711bf860c6ec9383dae6f511c41189bf7348035d8d1e5e0e0ca6bcd6d1b":
+        raise ValueError("Wrong immutable 139 checkpoint ZIP SHA-256")
+    result["baseline_archive_sha256"] = archive_hash
     with tempfile.TemporaryDirectory(prefix="ch025-fcu-") as d:
         root = Path(d)
         scratch = root / "eeg128-tdm.kicad_pcb"
-        for suffix in (".kicad_pcb", ".kicad_pro", ".kicad_dru"):
-            shutil.copy2(source_path.with_suffix(suffix),
-                         scratch.with_suffix(suffix))
+        members = ("eeg128-tdm.kicad_pcb", "eeg128-tdm.kicad_pro",
+                   "eeg128-tdm.kicad_dru")
+        with zipfile.ZipFile(source_path) as archive:
+            if sorted(archive.namelist()) != sorted(members):
+                raise ValueError("Wrong 139 checkpoint ZIP member inventory")
+            for name in members:
+                (root / name).write_bytes(archive.read(name))
+        pcb_sha = hashlib.sha256(scratch.read_bytes()).hexdigest()
+        if pcb_sha != "f2780989e2dee6233f207df1f420f7e89d8e855493eb6b1e7fb731d4a4dda1ea":
+            raise ValueError("Wrong 139 checkpoint PCB member SHA-256")
+        result["source_pcb_sha256"] = pcb_sha
+        original_project = scratch.with_suffix(".kicad_pro").read_bytes()
         baseline_drc = native(scratch, root / "drc-before.json")
         result["initial_drc"] = metrics(baseline_drc)
         if metrics(baseline_drc) != dict(violations=0, warnings=0, unconnected=139):
@@ -302,8 +317,7 @@ def run(source_path, output_path):
             pcbnew.SaveBoard(str(scratch), board)
             # SaveBoard may regenerate project defaults, so restore source
             # netclasses before any native DRC and after the temporary save.
-            shutil.copy2(source_path.with_suffix(".kicad_pro"),
-                         scratch.with_suffix(".kicad_pro"))
+            scratch.with_suffix(".kicad_pro").write_bytes(original_project)
             native_after = native(scratch, root / "drc-after.json")
             result["after_drc"] = metrics(native_after)
             result["regressed_nets"] = regressed_nets(baseline_drc, native_after)
@@ -332,8 +346,8 @@ def run(source_path, output_path):
                 zone.GetFilledPolysList(pcbnew.In2_Cu))
             if not exact_native_difference(original_native, restored)["native_both_empty"]:
                 raise RuntimeError("L3 polygon rollback mismatch")
-    if hashlib.sha256(source_path.read_bytes()).hexdigest() != source_hash:
-        raise RuntimeError("Source PCB was modified")
+    if hashlib.sha256(source_path.read_bytes()).hexdigest() != archive_hash:
+        raise RuntimeError("Source checkpoint ZIP was modified")
 
 
 def main():
