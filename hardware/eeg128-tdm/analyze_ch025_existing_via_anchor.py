@@ -24,7 +24,7 @@ def connected_existing_vias(
     power: Any, max_candidates: int = 10,
 ) -> dict[str, Any]:
     import pcbnew
-    from shapely.geometry import LineString, Point, box
+    from shapely.geometry import LineString, Point
     from route_targeted_closure import xy
 
     result: dict[str, Any] = {
