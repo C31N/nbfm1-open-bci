@@ -34,7 +34,7 @@ jobs:
             kicad/kicad:8.0.9 -ec '
               set -eu
               test "$(kicad-cli version)" = "8.0.9"
-              /usr/bin/python3 -c "import pcbnew; assert pcbnew.Version().startswith('8.0.9')"
+              /usr/bin/python3 -c "import pcbnew; assert pcbnew.Version().startswith(\"8.0.9\")"
               apt-get update
               DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3-shapely python3-numpy
               /usr/bin/python3 -c "import pcbnew, shapely; print(pcbnew.Version(),shapely.__version__)"
@@ -45,7 +45,7 @@ jobs:
                 --ch022-via-plan --ch026-escape-cut --ch026-restore-early \
                 --ch017-local-restore --ch022-bcu-inventory --ch022-in2-bypass \
                 --output "/diagnostic/ch022-docker-$RADIUS.json"
-              /usr/bin/python3 -c "import json,os;d=json.load(open('/diagnostic/ch022-docker-'+os.environ['RADIUS']+'.json')); assert d.get('accepted') is False and d.get('fabrication_release') is False and d.get('routing_completed') is False; assert d.get('status') != 'diagnostic_exception',d.get('detail')"
+              /usr/bin/python3 -c "import json,os;d=json.load(open(\"/diagnostic/ch022-docker-\"+os.environ[\"RADIUS\"]+\".json\")); assert d.get(\"accepted\") is False and d.get(\"fabrication_release\") is False and d.get(\"routing_completed\") is False; assert d.get(\"status\") != \"diagnostic_exception\",d.get(\"detail\")"
             '
       - name: Preserve JSON-only diagnosis; never upload PCBs or fabrication exports
         if: always()
