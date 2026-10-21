@@ -13,6 +13,7 @@ class In2BypassSafety(unittest.TestCase):
     def test_zero_release_and_exact_power_radius(self) -> None:
         self.assertEqual(probe.KEEP_OUT_MM, .505)
         self.assertEqual(probe.EDGE_CLEARANCE_MM, .25)
+        self.assertEqual(probe.SEARCH_MARGIN_MM, 24.0)
         for key in ('accepted', 'fabrication_release', 'routing_completed',
                     'native_qualification', 'independent_replay_verified',
                     'manufacturing_files'):
@@ -33,7 +34,8 @@ class In2BypassSafety(unittest.TestCase):
             "(pcbnew.B_Cu, pcbnew.In2_Cu)", "power.buffer(KEEP_OUT_MM)",
             "part.intersection(source_comp).intersection(viafree)",
             "part.intersection(target_comp).intersection(viafree)",
-            "reachable_via_component_count",
+            "reachable_via_component_count", "source_accessible_In2_count",
+            "target_accessible_In2_count",
             "len(candidates)", "'foreign_FCu_mutation': False",
             "start_layer=0, goal_layer=0",
             "BCu_In2_geometry_proposed_unqualified",

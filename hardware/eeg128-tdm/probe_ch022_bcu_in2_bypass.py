@@ -18,7 +18,7 @@ FLAGS = {
 }
 KEEP_OUT_MM = .505
 EDGE_CLEARANCE_MM = .25
-SEARCH_MARGIN_MM = 11.0
+SEARCH_MARGIN_MM = 24.0
 
 
 def _component_at(free: Any, point: tuple[float, float]) -> Any:
@@ -80,7 +80,8 @@ def propose(board: Any, source: tuple[float, float],
         'power_outline_via_keepout_mm': KEEP_OUT_MM,
         'board_edge_clearance_mm': EDGE_CLEARANCE_MM,
         'L3_loss_qualified': False, 'L3_gain_qualified': False,
-        'scope': 'Local window; absence of route does not prove global impossibility',
+        'scope': 'Extended 24mm window; negative result is still local-only',
+        'search_margin_mm': SEARCH_MARGIN_MM,
     }
     # No new source or target via: exact same-net retained vias only.
     if source not in existing or target not in existing:
@@ -115,6 +116,7 @@ def propose(board: Any, source: tuple[float, float],
         return None, report
 
     candidates = []
+    source_access, target_access = [], []
     for idx, part in enumerate(polygons(in2free)):
         # Through-via access needs simultaneous clearance on B.Cu, In2.Cu
         # and from the complete L3 power-zone outline; no F.Cu detour.
@@ -123,6 +125,16 @@ def propose(board: Any, source: tuple[float, float],
         downstream = (part.intersection(target_comp).intersection(viafree)
                       .buffer(-.000005))
         sa, ta = upstream.area, downstream.area
+        if sa > 1e-10:
+            source_access.append({
+                'component': idx, 'legal_transition_area_mm2': round(sa, 7),
+                'via_centres_mm': [list(p) for p in _via_centres(upstream)],
+            })
+        if ta > 1e-10:
+            target_access.append({
+                'component': idx, 'legal_transition_area_mm2': round(ta, 7),
+                'via_centres_mm': [list(p) for p in _via_centres(downstream)],
+            })
         if sa <= 1e-10 or ta <= 1e-10:
             continue
         candidates.append({
@@ -132,6 +144,10 @@ def propose(board: Any, source: tuple[float, float],
             'upstream_samples_mm': [list(p) for p in _via_centres(upstream)],
             'downstream_samples_mm': [list(p) for p in _via_centres(downstream)],
         })
+    report['source_accessible_In2_components'] = source_access
+    report['target_accessible_In2_components'] = target_access
+    report['source_accessible_In2_count'] = len(source_access)
+    report['target_accessible_In2_count'] = len(target_access)
     report['joint_BCu_In2_transition_components'] = candidates
     report['reachable_via_component_count'] = len(candidates)
     if not candidates:
