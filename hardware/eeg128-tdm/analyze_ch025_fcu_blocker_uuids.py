@@ -121,12 +121,12 @@ def native_shapes(board: Any, window: Any) -> list[dict[str, Any]]:
 
 
 def geometry_candidate(board: Any, track: Any, move: float,
-                       domain: Any, reserved_ch022: Any) -> dict[str, Any]:
+                       domain: Any, reserved_ch022: Any,
+                       cached_power_fcu: Any) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import LineString
     from shapely.ops import unary_union
     from route_targeted_closure import obstacles, xy
-    from probe_ch025_fcu_l3_exact import power_fcu_obstacles
 
     start, end = xy(track.GetStart()), xy(track.GetEnd())
     proposed = micro_dogleg(start, end, move)
@@ -135,7 +135,7 @@ def geometry_candidate(board: Any, track: Any, move: float,
     by_layer, _ = obstacles(board, track.GetNetCode(),
                             pcbnew.ToMM(track.GetWidth()), .15,
                             window, .60, (pcbnew.F_Cu, pcbnew.B_Cu))
-    forbidden = unary_union([by_layer[0], power_fcu_obstacles(board),
+    forbidden = unary_union([by_layer[0], cached_power_fcu,
                              reserved_ch022])
     passed = domain.covers(line) and not line.intersects(forbidden)
     return dict(move_mm=move, dogleg_xy_mm=[
@@ -218,6 +218,7 @@ def scan(board: Any) -> dict[str, Any]:
             local.sort(key=lambda x: (x["geometry"].distance(gap),
                                       x["kind"], x["uuid"]))
             seen_uuids: set[str] = set()
+            evaluated_micro_tracks = 0
             for item in local:
                 if item["uuid"] in seen_uuids or len(seen_uuids) >= 35:
                     continue
@@ -231,16 +232,20 @@ def scan(board: Any) -> dict[str, Any]:
                          reference=item.get("reference")))
                 if item["immutable"] or item["kind"] != "track":
                     continue
+                if evaluated_micro_tracks >= 6:
+                    continue
                 track = item["native_object"]
                 width = pcbnew.ToMM(track.GetWidth())
                 if width > .250 or LineString(
                     [xy(track.GetStart()), xy(track.GetEnd())]).length < 1.0:
                     continue
+                evaluated_micro_tracks += 1
                 for m in MICRO_MM:
                     for sign in (-1, 1):
                         try:
                             candidate = geometry_candidate(
-                                board, track, sign * m, domain, reserved_ch022)
+                                board, track, sign * m, domain,
+                                reserved_ch022, power_fcu)
                         except ValueError:
                             continue
                         if candidate["geometric_candidate"]:
