@@ -1,14 +1,16 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
-name: CH022 guarded BCu In2Cu multihop probe
+name: CH022 UUID-precise In2 gap blocker inventory
 
 on:
   push:
-    branches: [codex/ch022-in2-multihop-graph-2026-10-21]
+    branches: [codex/ch022-in2-gap-uuid-inventory-2026-10-21]
     paths:
       - ".github/workflows/ch022-agnd-layer-hop.yml"
       - "hardware/eeg128-tdm/probe_ch022_agnd_hop.py"
       - "hardware/eeg128-tdm/probe_ch022_bcu_in2_bypass.py"
       - "hardware/eeg128-tdm/analyze_ch022_multihop_graph.py"
+      - "hardware/eeg128-tdm/analyze_ch022_in2_gap_blockers.py"
+      - "hardware/eeg128-tdm/test_ch022_in2_gap_blockers.py"
       - "hardware/eeg128-tdm/test_ch022_multihop_graph.py"
       - "hardware/eeg128-tdm/test_ch022_bcu_in2_bypass.py"
       - "hardware/eeg128-tdm/probe_ch022_fcu_micro.py"
@@ -48,6 +50,7 @@ jobs:
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_interior_virtual.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch022_bcu_in2_bypass.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch022_multihop_graph.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch022_in2_gap_blockers.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch017_ch022_restitution.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch026_r302_joint.py -v
       - name: Evaluate strict BCu to In2Cu transition and guarded full-board candidate
@@ -80,6 +83,20 @@ jobs:
               assert in2['L3_gain_qualified'] is False
               assert in2.get('multihop_component_graph', {}).get('read_only') is True
               assert in2['multihop_component_graph']['accepted'] is False
+              inv = in2.get('in2_gap_uuid_inventory')
+              assert inv is not None, 'Missing In2 gap UUID inventory'
+              assert inv['accepted'] is False
+              assert inv['VCM_modified'] is False
+              assert inv['other_nets_modified'] is False
+              assert inv['power_outline_keepout_mm'] == .505
+              assert inv['status'] == 'UUID_inventory_only_no_mutation'
+              print('IN2_GAP_INVENTORY', inv['gap_length_mm'],
+                    'power_intersects', inv['gap_power_keepout_intersects'],
+                    'objects', inv['object_count'],
+                    'protected', inv['protected_barrier_uuids'][:12],
+                    'potential_candidates',
+                    inv['candidate_requiring_restitution_uuids'][:12],
+                    flush=True)
               print('IN2_BYPASS_DIAGNOSTIC', in2.get('status'),
                     'direct_components', in2.get('reachable_via_component_count'),
                     'graph_connected', in2['multihop_component_graph']['multihop_connected'],

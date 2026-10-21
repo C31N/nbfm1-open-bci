@@ -156,6 +156,8 @@ def propose(board: Any, source: tuple[float, float],
     component_graph = transition_graph(
         bcufree, in2free, viafree, source, target)
     report['multihop_component_graph'] = component_graph
+    from analyze_ch022_in2_gap_blockers import inventory
+    report['in2_gap_uuid_inventory'] = inventory(board, component_graph, power)
     if not component_graph['multihop_connected']:
         report['status'] = 'no_BCu_In2_multihop_component_path'
         return None, report
