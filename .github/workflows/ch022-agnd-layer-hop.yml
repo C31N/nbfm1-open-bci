@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
-name: CH025 retained BCu via-pair bypass diagnostic
+name: CH025 existing BCu via pairs expanded A2 corridor
 
 on:
   push:
-    branches: [codex/ch025-reused-bcu-via-pairs-2026-10-21]
+    branches: [codex/ch025-extended-bcu-corridor-2026-10-21]
     paths:
       - ".github/workflows/ch022-agnd-layer-hop.yml"
       - "hardware/eeg128-tdm/probe_ch022_agnd_hop.py"

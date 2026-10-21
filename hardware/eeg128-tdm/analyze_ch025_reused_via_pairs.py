@@ -30,6 +30,29 @@ def pair_status(source_component: int | None,
     return 'BCu_component_connected_but_mesh_unqualified'
 
 
+def expanded_region(region: Any, source: tuple[float, float],
+                    target: tuple[float, float], copper_domain: Any,
+                    margin_mm: float = 4.0) -> Any:
+    """Cover both retained through-via anchors, clipped to legal A2 board domain.
+
+    Earlier probes clipped the entire route to the CH022-local box, with
+    y_max=40.949 mm; the CH025 targets at y=48.85/52.18 were excluded.
+    This fixes a search-domain error, NOT a genuine copper clearance.
+    """
+    from shapely.geometry import Point, box
+
+    if not 2.0 <= margin_mm <= 10.0:
+        raise ValueError('Expanded B.Cu target margin out of range')
+    envelope = box(min(source[0], target[0]) - margin_mm,
+                   min(source[1], target[1]) - margin_mm,
+                   max(source[0], target[0]) + margin_mm,
+                   max(source[1], target[1]) + margin_mm)
+    clipped = region.union(envelope).intersection(copper_domain)
+    if not clipped.covers(Point(source)) or not clipped.covers(Point(target)):
+        raise ValueError('Pinned existing CH025 via outside legal A2 domain')
+    return clipped
+
+
 def try_pair(board: Any, source_anchor: tuple[float, float],
              target_anchor: tuple[float, float], netcode: int,
              power: Any, region: Any, limit: int = 4,
@@ -37,7 +60,7 @@ def try_pair(board: Any, source_anchor: tuple[float, float],
     import pcbnew
     from shapely.geometry import Point
     from escape_mesh_505 import mesh_route, polygons
-    from route_targeted_closure import obstacles
+    from route_targeted_closure import obstacles, routing_domain
     from analyze_ch025_existing_via_anchor import connected_existing_vias
 
     source = connected_existing_vias(
@@ -57,16 +80,10 @@ def try_pair(board: Any, source_anchor: tuple[float, float],
         result['status'] = 'missing_or_unsupported_connected_via_anchors'
         return result
 
-    shapes, _ = obstacles(
-        board, netcode, .15, .15, region, .60,
-        (pcbnew.B_Cu, pcbnew.In2_Cu))
-    free = region.difference(shapes[0]).buffer(-.000005)
-    parts = polygons(free)
-
-    def component(p: tuple[float, float]) -> int | None:
-        point = Point(p)
-        return next((i for i, shape in enumerate(parts)
-                     if shape.covers(point)), None)
+    # The first two probes mistakenly inherited CH022's short local
+    # y-window. Measure both endpoints against the expanded *per-pair*
+    # B.Cu search corridor; never bypass native clearance or board edges.
+    domain = routing_domain(board, .075)
 
     for start in source['via_candidates']:
         for end in target['via_candidates']:
@@ -77,11 +94,31 @@ def try_pair(board: Any, source_anchor: tuple[float, float],
                 'target_uuid': end['uuid'],
                 'source_mm': list(sp), 'target_mm': list(tp),
                 'source_existing_via': True, 'target_existing_via': True,
-                'BCu_source_component': component(sp),
-                'BCu_target_component': component(tp),
+                'source_in_previous_local_window': region.covers(Point(sp)),
+                'target_in_previous_local_window': region.covers(Point(tp)),
                 'path_proposed': False,
             }
             result['candidates'].append(row)
+            if not domain.covers(Point(sp)) or not domain.covers(Point(tp)):
+                row['status'] = 'existing_via_outside_A2_domain'
+                continue
+            corridor = expanded_region(region, sp, tp, domain)
+            shapes, _ = obstacles(
+                board, netcode, .15, .15, corridor, .60,
+                (pcbnew.B_Cu, pcbnew.In2_Cu))
+            free = corridor.difference(shapes[0]).buffer(-.000005)
+            parts = polygons(free)
+            def component(p: tuple[float, float]) -> int | None:
+                point = Point(p)
+                return next((i for i, shape in enumerate(parts)
+                             if shape.covers(point)), None)
+            row['BCu_source_component'] = component(sp)
+            row['BCu_target_component'] = component(tp)
+            row['expanded_region_bounds_mm'] = list(corridor.bounds)
+            row['expanded_region_contains_target'] = (
+                corridor.covers(Point(tp)))
+            row['BCu_target_distance_to_legal_free_mm'] = round(
+                Point(tp).distance(free), 7)
             if start['uuid'] == end['uuid']:
                 row['status'] = 'same_via_identity_no_new_route'
                 continue
@@ -93,7 +130,7 @@ def try_pair(board: Any, source_anchor: tuple[float, float],
             # antipad. B.Cu-only geometry uses retained same-net vias.
             raw = mesh_route(board, sp, tp, netcode,
                              (pcbnew.B_Cu, pcbnew.In2_Cu),
-                             power, region, start_layer=0, goal_layer=0,
+                             power, corridor, start_layer=0, goal_layer=0,
                              allow_vias=False)
             if raw is None or len(raw) < 2:
                 row['status'] = 'BCu_mesh_failed_same_component'
