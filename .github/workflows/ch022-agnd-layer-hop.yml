@@ -54,6 +54,18 @@ jobs:
         radius: ["0.35", "0.65"]
     steps:
       - uses: actions/checkout@v4
+      - name: Validate embedded Python syntax before external KiCad installation
+        run: |
+          python3 - <<'CHECK_PY'
+          import ast
+          from pathlib import Path
+          file = Path('.github/workflows/ch022-agnd-layer-hop.yml')
+          rows = file.read_text(encoding='utf-8').splitlines()
+          begin = rows.index("          /usr/bin/python3 - <<'PY'")
+          end = rows.index("          PY", begin)
+          ast.parse("\n".join(row[10:] for row in rows[begin + 1:end]))
+          print('Embedded diagnostic verifier syntax: PASS')
+          CHECK_PY
       - name: Install exact KiCad 8.0.9 and Shapely
         run: |
           sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
@@ -138,18 +150,18 @@ jobs:
               assert delta['accepted'] is False
               assert delta['fabrication_release'] is False
               assert delta['native_zone_fill_executed'] is True
-                  mask = delta['precision_keepout_model']
-                  assert mask['accepted'] is False
-                  assert mask['fabrication_release'] is False
-                  assert mask['new_keepout_removed'] is True
-                  assert mask['original_power_refill_restored'] is True
-                  print('CH025_L3_PRECISION_KEEP_OUT', mask['status'],
-                        'native_loss_mm2', mask['loss_native_mm2'],
-                        'native_gain_mm2', mask['gain_native_mm2'],
-                        'mask_intersects_CH022', not mask['ch022_corridor'][
-                            'protects_reviewed_CH022_in2_corridor'],
-                        'trial_exact', mask['trial_native_both_empty'],
-                        flush=True)
+              mask = delta['precision_keepout_model']
+              assert mask['accepted'] is False
+              assert mask['fabrication_release'] is False
+              assert mask['new_keepout_removed'] is True
+              assert mask['original_power_refill_restored'] is True
+              print('CH025_L3_PRECISION_KEEP_OUT', mask['status'],
+                    'native_loss_mm2', mask['loss_native_mm2'],
+                    'native_gain_mm2', mask['gain_native_mm2'],
+                    'mask_intersects_CH022', not mask['ch022_corridor'][
+                        'protects_reviewed_CH022_in2_corridor'],
+                    'trial_exact', mask['trial_native_both_empty'],
+                    flush=True)
               assert delta['tracks_restored'] is True
               assert delta['native_zone_fill_restored'] is True
               print('CH025_NATIVE_REMOVAL_ONLY_L3', delta['status'],
@@ -185,14 +197,14 @@ jobs:
                                   assert gap_report['read_only'] is True
                                   assert gap_report['accepted'] is False
                                   virtual = pair.get('virtual_CH039_BCu_cut_opening')
-                                      if virtual:
-                                          assert virtual['accepted'] is False
-                                          assert virtual['fabrication_release'] is False
-                                          assert virtual['original_uuid_copper_restored'] is True
-                                          assert virtual['protected_VCM_unchanged'] is True
-                                          print('CH039_VIRTUAL_CUT', virtual,
-                                                flush=True)
-                                      print('CH025_BCU_CUT_UUIDS', gap_report,
+                                  if virtual:
+                                      assert virtual['accepted'] is False
+                                      assert virtual['fabrication_release'] is False
+                                      assert virtual['original_uuid_copper_restored'] is True
+                                      assert virtual['protected_VCM_unchanged'] is True
+                                      print('CH039_VIRTUAL_CUT', virtual,
+                                            flush=True)
+                                  print('CH025_BCU_CUT_UUIDS', gap_report,
                                         flush=True)
                               print('CH025_EXISTING_VIA', via_report['status'],
                                     via_report.get('via_candidates', [])[:4],
