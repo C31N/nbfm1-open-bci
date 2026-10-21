@@ -45,6 +45,7 @@ def candidate(board: Any, ch022_start: tuple[float, float],
     from route_targeted_closure import xy
     from escape_mesh_505 import add_mesh_path, mesh_route
     from analyze_ch025_existing_via_anchor import connected_existing_vias
+    from analyze_ch025_reused_via_pairs import try_pair
 
     # The 0.505-mm L3 keepout is enforced by mesh_route on each attempt.
     # Its via-obstacle model also includes foreign F.Cu tracks and all pads.
@@ -129,20 +130,34 @@ def candidate(board: Any, ch022_start: tuple[float, float],
                             attempt['status'] = 'geometry_proposed_unqualified'
                             trial['CH025_target_reconnected_via_uuid'] = via['uuid']
                             break
+                    if path is None and netname == 'CH025_N_MUX':
+                        pair = try_pair(board, start, end, netcode, power, region)
+                        trial['CH025_reused_via_pair_analysis'] = pair
+                        if pair['best_path'] is not None:
+                            path = [tuple(p) for p in pair['best_path']['path_mm']]
+                            trial['CH025_reused_pair'] = pair['best_path']
                     if path is None:
                         trial['status'] = 'mesh_unreachable_'+netname
                         break
                 # A reused target through-via is a valid CH025 endpoint
                 # ONLY if verified reachable through the surviving target net.
+                reused_pair = trial.get('CH025_reused_pair')
+                expected_start = (
+                    tuple(reused_pair['source_mm'])
+                    if reused_pair is not None else start)
                 expected_goal = (
-                    tuple(trial.get('CH025_existing_via_fallback_trials', [])[-1]['existing_via_coordinate_mm'])
+                    tuple(reused_pair['target_mm'])
+                    if reused_pair is not None else
+                    tuple(trial['CH025_existing_via_fallback_trials'][-1]['existing_via_coordinate_mm'])
                     if netname == 'CH025_N_MUX' and trial.get('CH025_target_reconnected_via_uuid')
                     else end)
                 goal_layer = (
+                    1 if reused_pair is not None else
                     1 if netname == 'CH025_N_MUX'
                     and trial.get('CH025_target_reconnected_via_uuid')
                     else 0)
-                if not path_is_pinned(path, start, expected_goal, goal_layer):
+                if not path_is_pinned(path, expected_start, expected_goal,
+                                      goal_layer):
                     trial['status'] = 'mesh_endpoint_or_layer_invalid_'+netname
                     break
                 trial['paths'][netname] = {
@@ -153,6 +168,9 @@ def candidate(board: Any, ch022_start: tuple[float, float],
                                        else LAYERS_ALLOWED[1] for l, _, _ in path],
                     'path_mm': [list(p) for p in path],
                     'reconnected_existing_via_uuid': trial.get('CH025_target_reconnected_via_uuid'),
+                    'reused_existing_via_pair_uuids': (
+                        [reused_pair['source_uuid'], reused_pair['target_uuid']]
+                        if reused_pair is not None else []),
                 }
                 # Must be added before checking the other net so its copper
                 # is a real obstacle. It is *always* removed in finally.

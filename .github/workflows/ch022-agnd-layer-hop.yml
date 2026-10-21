@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
-name: CH022 CH025 existing-via restitution diagnostic
+name: CH025 retained BCu via-pair bypass diagnostic
 
 on:
   push:
-    branches: [codex/ch025-existing-via-restitution-2026-10-21]
+    branches: [codex/ch025-reused-bcu-via-pairs-2026-10-21]
     paths:
       - ".github/workflows/ch022-agnd-layer-hop.yml"
       - "hardware/eeg128-tdm/probe_ch022_agnd_hop.py"
@@ -14,6 +14,8 @@ on:
       - "hardware/eeg128-tdm/probe_ch022_ch025_dual_route.py"
       - "hardware/eeg128-tdm/analyze_ch025_route_topology.py"
       - "hardware/eeg128-tdm/analyze_ch025_existing_via_anchor.py"
+      - "hardware/eeg128-tdm/analyze_ch025_reused_via_pairs.py"
+      - "hardware/eeg128-tdm/test_ch025_reused_via_pairs.py"
       - "hardware/eeg128-tdm/test_ch025_existing_via_anchor.py"
       - "hardware/eeg128-tdm/test_ch025_route_topology.py"
       - "hardware/eeg128-tdm/test_ch022_ch025_dual_route.py"
@@ -63,6 +65,7 @@ jobs:
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch022_ch025_dual_route.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_route_topology.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_existing_via_anchor.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_reused_via_pairs.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch017_ch022_restitution.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch026_r302_joint.py -v
       - name: Evaluate strict BCu to In2Cu transition and guarded full-board candidate
@@ -124,6 +127,14 @@ jobs:
                           if via_report:
                               assert via_report['accepted'] is False
                               assert via_report['fabrication_release'] is False
+                              pair = attempt.get('CH025_reused_via_pair_analysis')
+                              if pair is not None:
+                                  assert pair['accepted'] is False
+                                  assert pair['fabrication_release'] is False
+                                  assert pair['new_vias_allowed'] is False
+                                  print('CH025_REUSED_VIA_PAIRS', pair['status'],
+                                        pair['source_connected_vias'].get('via_candidates', []),
+                                        pair['candidates'], flush=True)
                               print('CH025_EXISTING_VIA', via_report['status'],
                                     via_report.get('via_candidates', [])[:4],
                                     'fallback_trials', attempt.get('CH025_existing_via_fallback_trials', []),
