@@ -14,18 +14,21 @@ permissions:
 jobs:
   precheck:
     runs-on: ubuntu-24.04
+    container:
+      image: kicad/kicad@sha256:5716d82aa247abdbe512650eb4e8fce5a4031cbbef0a2c8df83208a69fef87b2
+      options: --user 0:0
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - name: Install KiCad 8
+      - name: Verify pinned KiCad 8.0.9 without unstable PPA
         run: |
-          sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
-          sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-            kicad kicad-footprints
-          kicad-cli version
+          set -eu
+          test "$(kicad-cli version)" = "8.0.9"
+          /usr/bin/python3 -c 'import pcbnew; assert pcbnew.Version().startswith("8.0.9")'
+          test -d /usr/share/kicad/footprints/Package_SO.pretty
+          echo "A1 uses the audited exact native KiCad 8.0.9 container"
 
       - name: Prepare A1
         run: |
