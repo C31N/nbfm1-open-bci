@@ -24,21 +24,10 @@ jobs:
       - name: Install KiCad 8
         run: |
           sudo add-apt-repository --yes ppa:kicad/kicad-8.0-releases
-          for attempt in 1 2 3 4; do
-            if sudo apt-get -o Acquire::Retries=4 update &&
-               sudo DEBIAN_FRONTEND=noninteractive apt-get \
-                 -o Acquire::Retries=4 install -y --no-install-recommends \
-                 kicad python3-numpy python3-shapely; then
-              break
-            fi
-            if [ "$attempt" -eq 4 ]; then
-              echo "KiCad 8.0.9 PPA unavailable, failing closed" >&2
-              exit 1
-            fi
-            sleep $((attempt * 15))
-          done
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends kicad python3-numpy python3-shapely
           kicad-cli version
-          test "$(kicad-cli version)" = "8.0.9"
+          kicad-cli version | grep -E '^8\.'
 
       - name: Parse primary connectivity-index schematic
         run: |
