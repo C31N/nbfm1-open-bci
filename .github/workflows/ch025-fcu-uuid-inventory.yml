@@ -8,6 +8,8 @@ on:
       - ".github/workflows/ch025-fcu-uuid-inventory.yml"
       - "hardware/eeg128-tdm/analyze_ch025_fcu_blocker_uuids.py"
       - "hardware/eeg128-tdm/test_ch025_fcu_blocker_uuids.py"
+      - "hardware/eeg128-tdm/probe_ch025_fcu_microselect.py"
+      - "hardware/eeg128-tdm/test_ch025_fcu_microselect.py"
 
 permissions:
   contents: read
@@ -55,10 +57,38 @@ jobs:
           assert not list(Path("/tmp").rglob("*.drl"))
           print(report["status"], report["sampled_direct_corridors"])
           PY
+      - name: Unit-test the fail-closed micro-selective gate
+        run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_fcu_microselect.py -v
+      - name: Evaluate neighbor F.Cu micro-displacements without source changes
+        timeout-minutes: 7
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_ch025_fcu_microselect.py \
+            --archive hardware/eeg128-tdm/engineering/block2-ch019-electrode-closed139.zip \
+            --inventory /tmp/ch025-fcu-blocker-uuids.json \
+            --output /tmp/ch025-fcu-microselect.json --max-native 2
+      - name: Enforce no promotion, no manufacturing
+        run: |
+          /usr/bin/python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report=json.loads(Path("/tmp/ch025-fcu-microselect.json").read_text())
+          assert report["tested_displacements"] == 54
+          assert report["selected_pair"]["fixed_blockers"] == 19
+          assert report["selected_pair"]["movable_blockers"] == 9
+          assert report["In1_Cu_used"] is False
+          for key in ("accepted", "fabrication_release", "routing_completed",
+                      "manufacturing_files", "copper_changed",
+                      "native_qualification", "native_drc_qualified"):
+              assert report[key] is False, key
+          print(report["status"], report["geometry_eligible_count"],
+                report["native_trials"])
+          PY
       - name: Upload JSON-only F.Cu UUID diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ch025-fcu-native-uuid-inventory
-          path: /tmp/ch025-fcu-blocker-uuids.json
+          path: |
+            /tmp/ch025-fcu-blocker-uuids.json
+            /tmp/ch025-fcu-microselect.json
           if-no-files-found: ignore
