@@ -159,6 +159,11 @@ def propose(board: Any, source: tuple[float, float],
     from analyze_ch022_in2_gap_blockers import inventory
     report['in2_gap_uuid_inventory'] = inventory(board, component_graph, power)
     if not component_graph['multihop_connected']:
+        from analyze_ch022_in2_gap_virtual import evaluate as virtual_gap
+        report['ch025_N_MUX_virtual'] = virtual_gap(
+            board, source, target, code, power, region,
+            report['in2_gap_uuid_inventory'])
+    if not component_graph['multihop_connected']:
         report['status'] = 'no_BCu_In2_multihop_component_path'
         return None, report
 
