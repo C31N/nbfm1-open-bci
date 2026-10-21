@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
-name: CH022 guarded BCu In2Cu AGND bypass
+name: CH022 guarded BCu In2Cu multihop probe
 
 on:
   push:
-    branches: [codex/ch022-bcu-in2-bypass-diagnostic-2026-10-21]
+    branches: [codex/ch022-in2-multihop-graph-2026-10-21]
     paths:
       - ".github/workflows/ch022-agnd-layer-hop.yml"
       - "hardware/eeg128-tdm/probe_ch022_agnd_hop.py"
