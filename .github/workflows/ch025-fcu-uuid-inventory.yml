@@ -1,0 +1,64 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+name: CH025 F.Cu UUID cut inventory
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/ch025-fcu-l3-exact-2026-10-21]
+    paths:
+      - ".github/workflows/ch025-fcu-uuid-inventory.yml"
+      - "hardware/eeg128-tdm/analyze_ch025_fcu_blocker_uuids.py"
+      - "hardware/eeg128-tdm/test_ch025_fcu_blocker_uuids.py"
+
+permissions:
+  contents: read
+
+jobs:
+  uuid-inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    container:
+      image: kicad/kicad@sha256:5716d82aa247abdbe512650eb4e8fce5a4031cbbef0a2c8df83208a69fef87b2
+      options: --user 0:0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify exact native environment
+        run: |
+          set -eu
+          test "$(kicad-cli version)" = "8.0.9"
+          apt-get -o Acquire::Retries=3 update
+          DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 install -y --no-install-recommends python3-shapely python3-pip python3-numpy
+          /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
+          /usr/bin/python3 -c 'import pcbnew,shapely; assert pcbnew.Version().startswith("8.0.9") and shapely.__version__=="2.1.2"'
+      - name: Check UUID-survey safety invariants
+        run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_fcu_blocker_uuids.py -v
+      - name: Native F.Cu blocker-UUID analysis on immutable 139 checkpoint
+        timeout-minutes: 24
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/analyze_ch025_fcu_blocker_uuids.py \
+            --archive hardware/eeg128-tdm/engineering/block2-ch019-electrode-closed139.zip \
+            --output /tmp/ch025-fcu-blocker-uuids.json
+      - name: Assert no release, no fabrication and no board write
+        run: |
+          /usr/bin/python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("/tmp/ch025-fcu-blocker-uuids.json")
+          report=json.loads(p.read_text())
+          assert report["source_pcb_sha256"] == "f2780989e2dee6233f207df1f420f7e89d8e855493eb6b1e7fb731d4a4dda1ea"
+          assert report["via_pairs"] == 4
+          assert report["F_Cu_only"] is True and report["In1_Cu_used"] is False
+          for key in ("accepted", "routing_completed", "fabrication_release",
+                      "manufacturing_files", "copper_changed",
+                      "native_qualification"):
+              assert report[key] is False, key
+          assert not list(Path("/tmp").rglob("*.gbr"))
+          assert not list(Path("/tmp").rglob("*.drl"))
+          print(report["status"], report["micro_proposal_count"])
+          PY
+      - name: Upload JSON-only F.Cu UUID diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ch025-fcu-native-uuid-inventory
+          path: /tmp/ch025-fcu-blocker-uuids.json
+          if-no-files-found: ignore
