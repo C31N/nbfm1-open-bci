@@ -128,7 +128,8 @@ def evaluate(board: Any, start: tuple[float, float],
         neighbours = [
             (t.m_Uuid.AsString(), xy(t.GetStart()), xy(t.GetEnd()))
             for t in board.GetTracks()
-            if (t is not target and t.GetNetname() == target.GetNetname()
+            if (t.m_Uuid.AsString() != target.m_Uuid.AsString()
+                and t.GetNetname() == target.GetNetname()
                 and not isinstance(t, pcbnew.PCB_VIA)
                 and t.GetLayer() == pcbnew.F_Cu)
         ]

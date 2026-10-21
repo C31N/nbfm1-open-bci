@@ -75,7 +75,8 @@ def model(board_path: Path, output: Path, case: str,
           ch022_bcu_inventory: bool = False,
           ch017_local_restore: bool = False,
           ch022_agnd_hop: bool = False,
-          ch022_fcu_micro: bool = False) -> dict[str, Any]:
+          ch022_fcu_micro: bool = False,
+          ch022_in2_bypass: bool = False) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import box, Point, LineString
     from analyze_139_escape_blockers import protected_power, windows
@@ -99,9 +100,15 @@ def model(board_path: Path, output: Path, case: str,
               'ch017_local_restore': ch017_local_restore,
               'ch022_agnd_hop': ch022_agnd_hop,
               'ch022_fcu_micro': ch022_fcu_micro,
+              'ch022_in2_bypass': ch022_in2_bypass,
               'ch017_segment_uuids': [], 'ch017_native_continuity_ok': False}
     if ch022_fcu_micro and not ch022_agnd_hop:
         raise ValueError('Micro rerouting requires protected AGND hop mode')
+    if ch022_in2_bypass and (ch022_fcu_micro or ch022_agnd_hop):
+        raise ValueError('No F.Cu cutting or hopping in B.Cu/In2.Cu mode')
+    if ch022_in2_bypass and not (ch017_local_restore and via_plan
+                                 and ch026_escape_cut and ch026_restore_early):
+        raise ValueError('In2 bypass requires native-restored CH017/CH026 and seeded vias')
     if ch022_agnd_hop and not (ch017_local_restore and via_plan
                                 and ch026_escape_cut and ch026_restore_early):
         raise ValueError('AGND hop needs pinned restored CH017/CH026 and seeded CH022 vias')
@@ -225,6 +232,11 @@ def model(board_path: Path, output: Path, case: str,
                 code = seeded_ch022['code']
                 bridge = mesh_route(board, rvia, jvia, code, layers,
                                     reserve, region, start_layer=1, goal_layer=1)
+                if (bridge is None or len(bridge) < 2) and ch022_in2_bypass:
+                    from probe_ch022_bcu_in2_bypass import propose as in2_propose
+                    bridge, in2_report = in2_propose(
+                        board, rvia, jvia, code, layers, reserve, region)
+                    result['ch022_in2_bypass_analysis'] = in2_report
                 if (bridge is None or len(bridge) < 2) and ch022_agnd_hop:
                     from probe_ch022_agnd_hop import propose
                     bridge, hop_report = propose(
@@ -577,6 +589,8 @@ def main() -> None:
     parser.add_argument('--reserve-radius', type=float, choices=(.35,.65,.95),
                         required=True)
     parser.add_argument('--ch022-root', choices=('J2.23','R302.1'), required=True)
+    parser.add_argument('--ch022-in2-bypass', action='store_true',
+                        help='Pinned B.Cu/In2.Cu transition trial; no F.Cu cuts')
     parser.add_argument('--ch022-fcu-micro', action='store_true',
                         help='Temporarily displace pinned CH024_N FCu links and fully restore')
     parser.add_argument('--ch022-agnd-hop', action='store_true',
@@ -613,7 +627,7 @@ def main() -> None:
                            args.ch022_via_plan, args.ch026_escape_cut,
                            args.ch026_restore_early, args.ch022_bcu_inventory,
                            args.ch017_local_restore, args.ch022_agnd_hop,
-                           args.ch022_fcu_micro)
+                           args.ch022_fcu_micro, args.ch022_in2_bypass)
         except Exception as exc:
             output = {**FLAGS, 'status': 'diagnostic_exception',
                       'error_type': type(exc).__name__, 'detail': str(exc),
@@ -626,7 +640,8 @@ def main() -> None:
                       'ch022_bcu_inventory': args.ch022_bcu_inventory,
                       'ch017_local_restore': args.ch017_local_restore,
                       'ch022_agnd_hop': args.ch022_agnd_hop,
-                      'ch022_fcu_micro': args.ch022_fcu_micro}
+                      'ch022_fcu_micro': args.ch022_fcu_micro,
+                      'ch022_in2_bypass': args.ch022_in2_bypass}
     if digest(args.archive.read_bytes()) != ZIP_SHA:
         raise ValueError('Source archive changed')
     args.output.write_text(json.dumps(output, indent=2) + '\n')
