@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
-name: CH025 native integer-polyset precision L3 rule-area trial
+name: CH025 protected VCM CH039 virtual BCu-cut and L3 rule area
 
 on:
   push:
-    branches: [codex/ch025-precision-l3-mask-trial-2026-10-21]
+    branches: [codex/ch039-bcu-virtual-cut-2026-10-21]
     paths:
       - ".github/workflows/ch022-agnd-layer-hop.yml"
       - "hardware/eeg128-tdm/probe_ch022_agnd_hop.py"
@@ -16,6 +16,8 @@ on:
       - "hardware/eeg128-tdm/analyze_ch025_existing_via_anchor.py"
       - "hardware/eeg128-tdm/analyze_ch025_reused_via_pairs.py"
       - "hardware/eeg128-tdm/analyze_ch025_bcu_cut_uuids.py"
+      - "hardware/eeg128-tdm/analyze_ch039_virtual_bcu_cut.py"
+      - "hardware/eeg128-tdm/test_ch039_virtual_bcu_cut.py"
       - "hardware/eeg128-tdm/test_ch025_bcu_cut_uuids.py"
       - "hardware/eeg128-tdm/analyze_ch025_l3_native_refill.py"
       - "hardware/eeg128-tdm/analyze_ch025_l3_precision_mask.py"
@@ -73,6 +75,7 @@ jobs:
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_existing_via_anchor.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_reused_via_pairs.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_bcu_cut_uuids.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch039_virtual_bcu_cut.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_l3_native_refill.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_l3_precision_mask.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch017_ch022_restitution.py -v
@@ -170,7 +173,15 @@ jobs:
                               if gap_report:
                                   assert gap_report['read_only'] is True
                                   assert gap_report['accepted'] is False
-                                  print('CH025_BCU_CUT_UUIDS', gap_report,
+                                  virtual = pair.get('virtual_CH039_BCu_cut_opening')
+                                      if virtual:
+                                          assert virtual['accepted'] is False
+                                          assert virtual['fabrication_release'] is False
+                                          assert virtual['original_uuid_copper_restored'] is True
+                                          assert virtual['protected_VCM_unchanged'] is True
+                                          print('CH039_VIRTUAL_CUT', virtual,
+                                                flush=True)
+                                      print('CH025_BCU_CUT_UUIDS', gap_report,
                                         flush=True)
                               print('CH025_EXISTING_VIA', via_report['status'],
                                     via_report.get('via_candidates', [])[:4],
