@@ -13,6 +13,7 @@ import json
 import tempfile
 import zipfile
 from pathlib import Path
+from typing import Any
 
 NET = "CH025_N_MUX"
 OTHER = "CH022_N_ELECTRODE"
@@ -24,7 +25,7 @@ FLAGS = dict(accepted=False, routing_completed=False,
              independent_replay_verified=False, checkpoint_promoted=False)
 
 
-def track_inventory(board):
+def track_inventory(board: Any) -> dict[str, tuple[Any, ...]]:
     from route_targeted_closure import xy
     return {
         t.m_Uuid.AsString(): (t.GetNetname(), t.GetLayer(),
@@ -34,13 +35,14 @@ def track_inventory(board):
     }
 
 
-def protected_unchanged(before, after):
+def protected_unchanged(before: dict[str, tuple[Any, ...]],
+                        after: dict[str, tuple[Any, ...]]) -> bool:
     """Only CH025's pinned cut and new CH022/CH025 copper may differ."""
     return all(after.get(uid) == properties for uid, properties in before.items()
                if uid != CUT)
 
 
-def power_fcu_obstacles(board):
+def power_fcu_obstacles(board: Any) -> Any:
     """Enforce 0.505 mm *copper-to-copper* on F.Cu around power nets."""
     import pcbnew
     from shapely.geometry import LineString, Point
@@ -75,7 +77,9 @@ def power_fcu_obstacles(board):
     return unary_union(shapes)
 
 
-def route_fcu(board, source, target, power):
+def route_fcu(board: Any, source: tuple[float, float],
+              target: tuple[float, float], power: Any
+              ) -> tuple[list[tuple[int, float, float]] | None, dict[str, Any]]:
     import pcbnew
     from shapely.geometry import GeometryCollection, Point, box
     from analyze_ch025_existing_via_anchor import connected_existing_vias
@@ -128,7 +132,7 @@ def route_fcu(board, source, target, power):
     return None, report
 
 
-def poly_as_shapely(polys):
+def poly_as_shapely(polys: Any) -> Any:
     from shapely.geometry import Polygon, GeometryCollection
     from shapely.ops import unary_union
     from route_targeted_closure import xy
@@ -149,7 +153,8 @@ def poly_as_shapely(polys):
     return unary_union(shapes) if shapes else GeometryCollection()
 
 
-def trial_l3_mask(board, zone, baseline):
+def trial_l3_mask(board: Any, zone: Any, baseline: Any
+                  ) -> tuple[Any | None, dict[str, Any]]:
     import pcbnew
     from analyze_ch025_l3_precision_mask import (
         exact_native_difference, native_gain_compatibility)
@@ -215,7 +220,7 @@ def trial_l3_mask(board, zone, baseline):
     return None, report
 
 
-def run(source_path, output_path):
+def run(source_path: Path, output_path: Path) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import LineString, Point
     from shapely.ops import unary_union
@@ -349,7 +354,7 @@ def run(source_path, output_path):
         raise RuntimeError("Source checkpoint ZIP was modified")
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--board", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
