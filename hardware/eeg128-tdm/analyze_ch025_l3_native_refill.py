@@ -50,6 +50,7 @@ def filled(zone: Any) -> Any:
 def audit(board: Any) -> dict[str, Any]:
     import pcbnew
     from route_targeted_closure import xy
+    from analyze_ch025_l3_keepout_trial import trial as mask_trial
 
     out: dict[str, Any] = {
         **FLAGS, 'status': 'native_refill_not_started',
@@ -100,6 +101,7 @@ def audit(board: Any) -> dict[str, Any]:
         out['loss_exact_zero'] = lost == 0.0
         out['gain_exact_zero'] = gained == 0.0
         out['status'] = classify_delta(lost, gained)
+        out['native_keepout_trial'] = mask_trial(board, z, initial, after_cut, filled)
     finally:
         board.Add(t)
         pcbnew.ZONE_FILLER(board).Fill(board.Zones())

@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
-name: CH025 BCu native UUID cut and L3 power differential
+name: CH025 L3 exact-growth keepout model and BCu UUID survey
 
 on:
   push:
-    branches: [codex/ch025-bcu-cut-uuid-survey-2026-10-21]
+    branches: [codex/ch025-l3-exact-keepout-prototype-2026-10-21]
     paths:
       - ".github/workflows/ch022-agnd-layer-hop.yml"
       - "hardware/eeg128-tdm/probe_ch022_agnd_hop.py"
@@ -18,6 +18,8 @@ on:
       - "hardware/eeg128-tdm/analyze_ch025_bcu_cut_uuids.py"
       - "hardware/eeg128-tdm/test_ch025_bcu_cut_uuids.py"
       - "hardware/eeg128-tdm/analyze_ch025_l3_native_refill.py"
+      - "hardware/eeg128-tdm/analyze_ch025_l3_keepout_trial.py"
+      - "hardware/eeg128-tdm/test_ch025_l3_keepout_trial.py"
       - "hardware/eeg128-tdm/test_ch025_l3_native_refill.py"
       - "hardware/eeg128-tdm/test_ch025_reused_via_pairs.py"
       - "hardware/eeg128-tdm/test_ch025_existing_via_anchor.py"
@@ -72,6 +74,7 @@ jobs:
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_reused_via_pairs.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_bcu_cut_uuids.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_l3_native_refill.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_l3_keepout_trial.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch017_ch022_restitution.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch026_r302_joint.py -v
       - name: Evaluate strict BCu to In2Cu transition and guarded full-board candidate
@@ -121,6 +124,15 @@ jobs:
               assert delta['accepted'] is False
               assert delta['fabrication_release'] is False
               assert delta['native_zone_fill_executed'] is True
+              keepout = delta.get('native_keepout_trial')
+              assert keepout is not None, 'Missing native growth-mask test'
+              assert keepout['accepted'] is False
+              assert keepout['fabrication_release'] is False
+              if keepout['status'].startswith('temporary_'):
+                  assert keepout['mask_removed'] is True
+                  assert keepout['filled_copper_restored'] is True
+                  assert keepout['original_zone_UUIDs_restored'] is True
+              print('CH025_NATIVE_KEEP_OUT_MODEL', keepout, flush=True)
               assert delta['tracks_restored'] is True
               assert delta['native_zone_fill_restored'] is True
               print('CH025_NATIVE_REMOVAL_ONLY_L3', delta['status'],
