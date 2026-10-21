@@ -34,6 +34,7 @@ def evaluate(board: Any, source: tuple[float, float],
     from route_targeted_closure import obstacles, xy
     from analyze_ch022_multihop_graph import transition_graph
     from probe_ch022_ch025_dual_route import candidate as dual_route_candidate
+    from analyze_ch025_l3_native_refill import audit as power_audit
 
     result: dict[str, Any] = {
         **FLAGS, 'status': 'not_run', 'pinned_uuid': PIN,
@@ -72,6 +73,11 @@ def evaluate(board: Any, source: tuple[float, float],
             for x in board.GetTracks()
         }
 
+    result['CH025_native_3V3A_removal_delta'] = power_audit(board)
+    if result['CH025_native_3V3A_removal_delta']['status'] in (
+            'missing_exact_zone_or_trace', 'pinned_trace_mismatch',
+            'pinned_trace_endpoints_mismatch'):
+        raise RuntimeError('Missing exact pinned zone or CH025 copper')
     before = snap()
     local = region.intersection(box(
         min(source[0], target[0]) - 24.,
