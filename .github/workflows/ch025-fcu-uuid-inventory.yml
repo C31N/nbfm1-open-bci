@@ -15,7 +15,7 @@ permissions:
 jobs:
   uuid-inventory:
     runs-on: ubuntu-24.04
-    timeout-minutes: 35
+    timeout-minutes: 16
     container:
       image: kicad/kicad@sha256:5716d82aa247abdbe512650eb4e8fce5a4031cbbef0a2c8df83208a69fef87b2
       options: --user 0:0
@@ -32,7 +32,7 @@ jobs:
       - name: Check UUID-survey safety invariants
         run: /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_fcu_blocker_uuids.py -v
       - name: Native F.Cu blocker-UUID analysis on immutable 139 checkpoint
-        timeout-minutes: 24
+        timeout-minutes: 9
         run: |
           /usr/bin/python3 hardware/eeg128-tdm/analyze_ch025_fcu_blocker_uuids.py \
             --archive hardware/eeg128-tdm/engineering/block2-ch019-electrode-closed139.zip \
@@ -53,7 +53,7 @@ jobs:
               assert report[key] is False, key
           assert not list(Path("/tmp").rglob("*.gbr"))
           assert not list(Path("/tmp").rglob("*.drl"))
-          print(report["status"], report["micro_proposal_count"])
+          print(report["status"], report["sampled_direct_corridors"])
           PY
       - name: Upload JSON-only F.Cu UUID diagnostics
         if: always()
