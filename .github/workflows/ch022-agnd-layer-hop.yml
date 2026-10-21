@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
-name: CH022 CH025_N_MUX protected virtual In2 bridge
+name: CH022 and CH025 N MUX dual-layer geometric restitution
 
 on:
   push:
-    branches: [codex/ch025-mux-in2-virtual-bridge-2026-10-21]
+    branches: [codex/ch022-ch025-dual-route-2026-10-21]
     paths:
       - ".github/workflows/ch022-agnd-layer-hop.yml"
       - "hardware/eeg128-tdm/probe_ch022_agnd_hop.py"
@@ -11,6 +11,8 @@ on:
       - "hardware/eeg128-tdm/analyze_ch022_multihop_graph.py"
       - "hardware/eeg128-tdm/analyze_ch022_in2_gap_blockers.py"
       - "hardware/eeg128-tdm/analyze_ch022_in2_gap_virtual.py"
+      - "hardware/eeg128-tdm/probe_ch022_ch025_dual_route.py"
+      - "hardware/eeg128-tdm/test_ch022_ch025_dual_route.py"
       - "hardware/eeg128-tdm/test_ch022_in2_gap_virtual.py"
       - "hardware/eeg128-tdm/test_ch022_in2_gap_blockers.py"
       - "hardware/eeg128-tdm/test_ch022_multihop_graph.py"
@@ -54,6 +56,7 @@ jobs:
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch022_multihop_graph.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch022_in2_gap_blockers.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch022_in2_gap_virtual.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch022_ch025_dual_route.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch017_ch022_restitution.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch026_r302_joint.py -v
       - name: Evaluate strict BCu to In2Cu transition and guarded full-board candidate
@@ -98,6 +101,16 @@ jobs:
               assert trial['accepted'] is False
               assert trial['fabrication_release'] is False
               assert trial['CH025_N_MUX_restitution_qualified'] is False
+              dual = trial.get('dual_routing_attempt')
+              if trial.get('CH022_virtual_component_connected') is True:
+                  assert dual is not None, 'Missing dual-route test after topology proof'
+                  assert dual['accepted'] is False
+                  assert dual['fabrication_release'] is False
+                  assert dual['retained_original_copper_verified'] is True
+                  assert all(a['new_copper_removed'] for a in dual['attempts'])
+                  print('DUAL_ROUTE', dual['status'],
+                        [(a['order'], a['status']) for a in dual['attempts']],
+                        flush=True)
               if trial.get('original_segment_restored'):
                   assert trial['all_track_geometries_restored'] is True
               print('PINNED_CH025_N_MUX_VIRTUAL', trial.get('status'),

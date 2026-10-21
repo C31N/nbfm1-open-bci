@@ -33,6 +33,7 @@ def evaluate(board: Any, source: tuple[float, float],
     from shapely.ops import unary_union
     from route_targeted_closure import obstacles, xy
     from analyze_ch022_multihop_graph import transition_graph
+    from probe_ch022_ch025_dual_route import candidate as dual_route_candidate
 
     result: dict[str, Any] = {
         **FLAGS, 'status': 'not_run', 'pinned_uuid': PIN,
@@ -91,6 +92,12 @@ def evaluate(board: Any, source: tuple[float, float],
         graph = transition_graph(bcu, in2, via, source, target)
         result['virtual_multihop_graph'] = graph
         result['CH022_virtual_component_connected'] = graph['multihop_connected']
+        if graph['multihop_connected']:
+            result['dual_routing_attempt'] = dual_route_candidate(
+                board, source, target, code,
+                xy(t.GetStart()), xy(t.GetEnd()), t.GetNetCode(),
+                power, local)
+            assert result['dual_routing_attempt']['retained_original_copper_verified']
         result['status'] = (
             'virtual_gap_connects_CH022_but_CH025_unrestored'
             if graph['multihop_connected']
