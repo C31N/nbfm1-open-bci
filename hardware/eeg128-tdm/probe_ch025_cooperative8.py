@@ -40,6 +40,11 @@ SRC_VIA = "c9831d96-6bbb-4308-9c5d-e72b6ccfbdac"
 DST_VIA = "c51e9b29-e51a-45cf-8047-3dd4484ec17e"
 SRC = (49.45, 14.90)
 DST = (36.105, 48.85)
+# Native geometry survey: original CH027 target is only 0.2807 mm from
+# 3V3A U4.24. This existing unchanged CH027 via copper boundary offers
+# 0.6895 mm local power clearance; final DRC/parity/replay remain mandatory.
+CH027_ALT_VIA = "1c642f97-035a-4f4e-a6d9-81ebabc1ab2f"
+CH027_ALT_TARGET = (32.475001, 47.760892)
 NATIVE_WINDOW_MM = (3.0, 6.0, 10.0)
 FLAGS = dict(
     accepted=False, routing_completed=False,
@@ -167,6 +172,8 @@ def candidate_route(board: Any, name: str, segment: Any,
     )
 
     start, end = ((SRC, DST) if name == NET else
+                  (xy(segment.GetStart()), CH027_ALT_TARGET)
+                  if name == "CH027_N_MUX" else
                   (xy(segment.GetStart()), xy(segment.GetEnd())))
     row: dict[str, Any] = {
         "margin_mm": margin, "mode": "astar_025_priority_cost",
@@ -192,6 +199,8 @@ def candidate_route(board: Any, name: str, segment: Any,
         if future_name == name:
             continue
         a, b = ((SRC, DST) if future_name == NET else
+                (xy(foreign.GetStart()), CH027_ALT_TARGET)
+                if future_name == "CH027_N_MUX" else
                 (xy(foreign.GetStart()), xy(foreign.GetEnd())))
         future.append(LineString([a, b]).buffer(.55))
     future_reserved = unary_union(future) if future else GeometryCollection()
@@ -272,6 +281,8 @@ def terminal_fixed_neighbors(board: Any, name: str,
                 entries.append({"net": NET, "uuid": t.m_Uuid.AsString(),
                                 "kind": "track", "protected": False})
     pts = ((SRC, DST) if name == NET else
+           (xy(segment.GetStart()), CH027_ALT_TARGET)
+           if name == "CH027_N_MUX" else
            (xy(segment.GetStart()), xy(segment.GetEnd())))
     near = {}
     for label, point in zip(("source", "target"), pts):
@@ -377,12 +388,34 @@ def attempt(work: Path, schedule: tuple[str, ...],
     guard = unary_union(guarded)
     fixed_power = power_fcu_obstacles(board)
     stage("power_fcu_obstacles_ready")
+    via = next((t for t in board.GetTracks()
+                if t.m_Uuid.AsString() == CH027_ALT_VIA
+                and isinstance(t, pcbnew.PCB_VIA)
+                and t.GetNetname() == "CH027_N_MUX"),None)
+    if via is None:
+        raise RuntimeError("Native immutable CH027 anchor via missing")
+    via_center = xy(via.GetPosition())
+    via_radius = pcbnew.ToMM(via.GetWidth()) / 2
+    if abs(math.dist(via_center,CH027_ALT_TARGET)-via_radius) > .005:
+        raise RuntimeError("Alternate CH027 target not on native via contour")
+    if fixed_power.distance(Point(CH027_ALT_TARGET)) <= .000005:
+        raise RuntimeError("Alternate CH027 target violates 0.505 power hard exclusion")
+    report["CH027_alternate_native_via_anchor"] = {
+        "uuid": CH027_ALT_VIA,
+        "coordinate_mm": list(CH027_ALT_TARGET),
+        "existing_via_unmoved": True,
+        "power_clearance_geometrically_prequalified": True,
+        "restoration_native_DRC_proven": False,
+    }
+    stage("CH027_safe_alternate_via_anchor_locked")
     order_deadline = time.monotonic() + order_time_budget
     stage("cooperative_bps_started")
     for name in schedule:
         segment = originals[name]
         endpoint_a, endpoint_b = (
             (SRC, DST) if name == NET
+            else (xy(segment.GetStart()), CH027_ALT_TARGET)
+            if name == "CH027_N_MUX"
             else (xy(segment.GetStart()), xy(segment.GetEnd()))
         )
         rows: list[dict[str, Any]] = []
