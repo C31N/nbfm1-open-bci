@@ -76,11 +76,12 @@ def order_schedules() -> list[tuple[str, ...]]:
     analog = ("CH027_N_MUX", "CH030_P_MUX")
     schedules = [
         (NET, *analog, *mux),
-        (*analog, *mux, NET),
+        (*analog, "MUX_S0", "MUX_S1", "MUX_EN",
+         "MUX_S2", "MUX_S3", NET),
         ("MUX_S1", "MUX_EN", NET, "CH027_N_MUX",
          "CH030_P_MUX", "MUX_S0", "MUX_S2", "MUX_S3"),
         ("CH027_N_MUX", "MUX_S0", "MUX_S1", "CH030_P_MUX",
-         NET, "MUX_S2", "MUX_S3", "MUX_EN"),
+         "MUX_EN", NET, "MUX_S2", "MUX_S3"),
     ]
     target = {NET, *NEIGHBORS.values()}
     if len(schedules) != 4 or any(set(s) != target or len(s) != 8
@@ -217,8 +218,24 @@ def candidate_route(board: Any, name: str, segment: Any,
         layers=(pcbnew.F_Cu, pcbnew.B_Cu),
         cost_regions=((0, guard, 250.0), (0, future_reserved, bias)),
     )
+    row["route_solver"] = "bounded_astar"
+    if not route and name == NET and margin >= 6.0:
+        # Exact-geometry mesh is a fallback only for the long CH025 span:
+        # its original 16-vertex corridor was proven feasible with neighbors
+        # virtually absent. All current neighbor copper remains an obstacle.
+        # The fallback cannot create vias or touch In1.Cu.
+        from escape_mesh_505 import mesh_route
+        row["mesh_fallback_attempted"] = True
+        candidate = mesh_route(
+            board, start, end, board.FindNet(name).GetNetCode(),
+            (pcbnew.F_Cu, pcbnew.B_Cu), power, region,
+            start_layer=0, goal_layer=0, allow_vias=False,
+            extra_obstacles=[guard, GeometryCollection()])
+        if candidate is not None and all(v[0] == 0 for v in candidate):
+            route = candidate
+            row["route_solver"] = "native_copper_mesh_fallback"
     if not route or any(point[0] != 0 for point in route):
-        row["reason"] = "astar_no_layer0_solution_under_budget"
+        row["reason"] = "astar_and_mesh_no_layer0_solution_under_budget"
         return None, row
     if (math.dist(route[0][1:], start) > .000002
             or math.dist(route[-1][1:], end) > .000002):
