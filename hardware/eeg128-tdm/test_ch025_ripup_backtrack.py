@@ -4,6 +4,8 @@
 from __future__ import annotations
 import time
 import unittest
+from collections.abc import Sequence
+from typing import Any
 
 from ch025_ripup_backtrack import bounded_ripup
 
@@ -13,15 +15,15 @@ class BoundedBacktrackTests(unittest.TestCase):
         names = tuple(f"N{i}" for i in range(8))
         placed: dict[str, tuple[float, ...]] = {}
         gone = []
-        def probe(name, margin, weight, pending):
+        def probe(name: str, margin: float, weight: float, pending: Sequence[str]) -> tuple[list[tuple[int, float, float]] | None, dict[str, Any]]:
             if name == "N1" and placed["N0"] == (3., .5):
                 return None, {"blocked_by": "N0-first-choice"}
             return [(0, margin, weight), (0, margin+1, weight)], {}
-        def place(name, path):
+        def place(name: str, path: list[tuple[int, float, float]]) -> list[str]:
             assert name not in placed
             placed[name] = (path[0][1], path[0][2])
             return [f"generated-{name}-{len(gone)}"]
-        def undo(name, uuids):
+        def undo(name: str, uuids: Sequence[str]) -> None:
             self.assertEqual(len(uuids), 1)
             self.assertTrue(uuids[0].startswith("generated-"+name))
             del placed[name]
@@ -38,14 +40,14 @@ class BoundedBacktrackTests(unittest.TestCase):
     def test_incomplete_cleans_all_created_tracks(self) -> None:
         names = tuple(f"N{i}" for i in range(8))
         placed = set()
-        def probe(name, margin, weight, pending):
+        def probe(name: str, margin: float, weight: float, pending: Sequence[str]) -> tuple[list[tuple[int, float, float]] | None, dict[str, Any]]:
             if name == "N7":
                 return None, {"no_legal_corridor": True}
             return [(0, margin, weight), (0, margin+1, weight)], {}
-        def place(name, path):
+        def place(name: str, path: list[tuple[int, float, float]]) -> list[str]:
             placed.add(name)
             return [f"new-{name}"]
-        def undo(name, uuids):
+        def undo(name: str, uuids: Sequence[str]) -> None:
             self.assertEqual(uuids, ["new-"+name] if isinstance(uuids, list)
                              else ("new-"+name,))
             placed.remove(name)
