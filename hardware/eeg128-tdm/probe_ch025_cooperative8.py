@@ -77,11 +77,11 @@ def order_schedules() -> list[tuple[str, ...]]:
     schedules = [
         (NET, *analog, *mux),
         (*analog, "MUX_S0", "MUX_S1", "MUX_EN",
-         "MUX_S2", "MUX_S3", NET),
+         "MUX_S3", "MUX_S2", NET),
         ("MUX_S1", "MUX_EN", NET, "CH027_N_MUX",
          "CH030_P_MUX", "MUX_S0", "MUX_S2", "MUX_S3"),
-        ("CH027_N_MUX", "MUX_S0", "MUX_S1", "CH030_P_MUX",
-         "MUX_EN", NET, "MUX_S2", "MUX_S3"),
+        ("CH027_N_MUX", NET, "CH030_P_MUX", "MUX_EN",
+         "MUX_S0", "MUX_S1", "MUX_S3", "MUX_S2"),
     ]
     target = {NET, *NEIGHBORS.values()}
     if len(schedules) != 4 or any(set(s) != target or len(s) != 8
