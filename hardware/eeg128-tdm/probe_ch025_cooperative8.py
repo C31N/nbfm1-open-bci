@@ -73,7 +73,6 @@ def assert_locked_plan() -> None:
 
 def order_schedules() -> list[tuple[str, ...]]:
     """Four deterministic priority permutations; every net exactly once."""
-    mux = ("MUX_S0", "MUX_S1", "MUX_S2", "MUX_S3", "MUX_EN")
     analog = ("CH027_N_MUX", "CH030_P_MUX")
     # Native Probe #10: MUX_S3 failed 24 times after early MUX_EN.
     # Try S3 before EN and S2 under four distinct bounded DFS prefixes.
