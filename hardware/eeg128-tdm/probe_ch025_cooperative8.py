@@ -19,6 +19,7 @@ import shutil
 import subprocess
 import tempfile
 import time
+import sys
 import zipfile
 from pathlib import Path
 from typing import Any
@@ -196,11 +197,13 @@ def candidate_route(board: Any, name: str, segment: Any,
     future_reserved = unary_union(future) if future else GeometryCollection()
     guard = unary_union([power_obstacles, via_guard.buffer(.075)])
     # Grid A* soft costs never override the final hard geometry rules.
+    raster_mm = .15 if margin <= 3.0 else .20
+    row["grid_mm"] = raster_mm
     route = search(
         board, start, end, board.FindNet(name).GetNetCode(),
         .15, .15, both_layers=False, margin=margin,
-        step=.25, max_nodes=36000,
-        deadline=min(deadline, time.monotonic() + 9.0),
+        step=raster_mm, max_nodes=48000,
+        deadline=min(deadline, time.monotonic() + 15.0),
         start_layer=0, goal_layer=0,
         layers=(pcbnew.F_Cu, pcbnew.B_Cu),
         cost_regions=((0, guard, 250.0), (0, future_reserved, bias)),
@@ -249,6 +252,47 @@ def candidate_route(board: Any, name: str, segment: Any,
     row["length_mm"] = round(sum(
         math.dist(a[1:], b[1:]) for a,b in zip(route, route[1:])), 6)
     return route, row
+
+
+
+def terminal_fixed_neighbors(board: Any, name: str,
+                             segment: Any) -> dict[str, Any]:
+    """Read-only nearest blocker coordinates for failed F.Cu endpoints."""
+    import pcbnew
+    from shapely.geometry import Point, LineString
+    from analyze_ch025_fcu_blocker_uuids import copper_shapes
+    from route_targeted_closure import xy
+    shapes, entries = copper_shapes(board)
+    if name != NET:
+        for t in board.GetTracks():
+            if t.GetNetname() == NET and t.GetLayer() == pcbnew.F_Cu:
+                shape = LineString([xy(t.GetStart()), xy(t.GetEnd())]).buffer(
+                    pcbnew.ToMM(t.GetWidth()) / 2 + .225)
+                shapes.append(shape)
+                entries.append({"net": NET, "uuid": t.m_Uuid.AsString(),
+                                "kind": "track", "protected": False})
+    pts = ((SRC, DST) if name == NET else
+           (xy(segment.GetStart()), xy(segment.GetEnd())))
+    near = {}
+    for label, point in zip(("source", "target"), pts):
+        origin = Point(point)
+        candidates = []
+        for shape, obj in zip(shapes, entries):
+            if obj["net"] == name:
+                continue
+            distance = shape.distance(origin)
+            if distance <= 2.0:
+                candidates.append({
+                    "uuid": obj["uuid"], "net": obj["net"],
+                    "kind": obj["kind"], "protected": obj["protected"],
+                    "clearance_expanded_distance_mm": round(distance, 6),
+                })
+        candidates.sort(key=lambda o: (
+            o["clearance_expanded_distance_mm"], o["uuid"]))
+        near[label] = {"coordinate_mm": list(point),
+                       "foreign_obstacles_within_2mm": len(candidates),
+                       "nearest": candidates[:8]}
+    return near
 
 
 def attempt(work: Path, schedule: tuple[str, ...],
@@ -314,7 +358,10 @@ def attempt(work: Path, schedule: tuple[str, ...],
                 return report
         if path is None:
             report["status"] = "unroutable_next_net"
-            report["failure"] = dict(net=name, trials=rows)
+            report["failure"] = dict(
+                net=name, trials=rows,
+                local_endpoint_obstacles=terminal_fixed_neighbors(
+                    board, name, segment))
             return report
         add_mesh_path(board, path, board.FindNet(name).GetNetCode(),
                       (pcbnew.F_Cu, pcbnew.B_Cu))
@@ -395,68 +442,30 @@ def attempt(work: Path, schedule: tuple[str, ...],
     return report
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--archive", required=True, type=Path)
-    parser.add_argument("--output", required=True, type=Path)
-    parser.add_argument("--max-orders", type=int, choices=(1, 2, 3, 4),
-                        default=4)
-    parser.add_argument("--max-margin", type=float, choices=(3.0, 6.0, 10.0),
-                        default=6.0)
-    args = parser.parse_args()
-    assert_locked_plan()
-    if digest(args.archive) != ARCHIVE_SHA256:
-        raise SystemExit("Pinned immutable checkpoint ZIP SHA-256 mismatch")
-    reports = []
-    for order in order_schedules()[:args.max_orders]:
-        with tempfile.TemporaryDirectory(prefix="ch025-cooperative8-") as d:
-            work = Path(d)
-            with zipfile.ZipFile(args.archive) as archive:
-                if sorted(archive.namelist()) != sorted(MEMBERS):
-                    raise RuntimeError("Unexpected 139 PCB archive members")
-                for name in MEMBERS:
-                    (work / name).write_bytes(archive.read(name))
-            if digest(work / MEMBERS[0]) != BOARD_SHA256:
-                raise RuntimeError("Immutable 139 PCB member hash mismatch")
-            import pcbnew
-            if not pcbnew.Version().startswith("8.0.9"):
-                raise RuntimeError("KiCad 8.0.9 required for native geometry")
-            (work / "baseline").mkdir()
+def one_order(archive_path: Path, index: int,
+              max_margin: float, order_budget: float) -> dict[str, Any]:
+    """Execute one KiCad SWIG BOARD lifecycle in an isolated child process."""
+    with tempfile.TemporaryDirectory(prefix="ch025-single-order-") as d:
+        work = Path(d)
+        with zipfile.ZipFile(archive_path) as archive:
+            if sorted(archive.namelist()) != sorted(MEMBERS):
+                raise RuntimeError("Unexpected 139 PCB archive members")
             for name in MEMBERS:
-                shutil.copy2(work / name, work / "baseline" / name)
-            report = attempt(
-                work, order, args.max_margin, bias=(.35, 1.0, 2.5, 5.0)[
-                    len(reports)])
-            reports.append(report)
-            # Persist each completed priority order atomically; even if the
-            # workflow later reaches its wall-time limit, the last report is
-            # available as JSON-only evidence and all release gates stay false.
-            partial = {
-                **FLAGS, "status": report["status"],
-                "source_archive_sha256": ARCHIVE_SHA256,
-                "source_pcb_sha256": BOARD_SHA256,
-                "baseline_airwires": 139, "target_airwires": 136,
-                "orders": reports, "orders_tried": len(reports),
-                "F_Cu_only": True, "In1_Cu_used": False,
-                "L3_gate_required": True,
-                "manufacturing_export_invoked": False,
-                "checkpoint_replaced": False,
-            }
-            args.output.parent.mkdir(parents=True, exist_ok=True)
-            stage = args.output.with_suffix(".tmp")
-            stage.write_text(json.dumps(partial, indent=2) + "\n",
-                             encoding="utf-8")
-            stage.replace(args.output)
-            print(json.dumps({
-                "order": report["order"],
-                "status": report["status"],
-                "eight_connected": len(report["connected"]),
-                "blocked_by": (report["failure"] or {}).get("net"),
-            }), flush=True)
-            if report["status"] == "qualified_geometry_pending_independent_replay":
-                break
-    if digest(args.archive) != ARCHIVE_SHA256:
-        raise RuntimeError("Pinned source archive changed after probe")
+                (work / name).write_bytes(archive.read(name))
+        if digest(work / MEMBERS[0]) != BOARD_SHA256:
+            raise RuntimeError("Immutable 139 PCB member hash mismatch")
+        import pcbnew
+        if not pcbnew.Version().startswith("8.0.9"):
+            raise RuntimeError("KiCad 8.0.9 required")
+        (work / "baseline").mkdir()
+        for name in MEMBERS:
+            shutil.copy2(work / name, work / "baseline" / name)
+        return attempt(work, order_schedules()[index], max_margin,
+                       bias=(.15, .75, 1.5, 3.0)[index],
+                       order_time_budget=order_budget)
+
+
+def write_evidence(path: Path, reports: list[dict[str, Any]]) -> None:
     result = {
         **FLAGS, "status": reports[-1]["status"],
         "source_archive_sha256": ARCHIVE_SHA256,
@@ -468,12 +477,107 @@ def main() -> None:
         "manufacturing_export_invoked": False,
         "checkpoint_replaced": False,
     }
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(result, indent=2) + "\n",
-                           encoding="utf-8")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    staged = path.with_suffix(".tmp")
+    staged.write_text(json.dumps(result, indent=2) + "\n",
+                      encoding="utf-8")
+    staged.replace(path)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--archive", required=True, type=Path)
+    parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--max-orders", type=int, choices=(1, 2, 3, 4),
+                        default=4)
+    parser.add_argument("--max-margin", type=float,
+                        choices=(3.0, 6.0, 10.0), default=6.0)
+    parser.add_argument("--single-order", type=int,
+                        choices=(0, 1, 2, 3), default=None)
+    parser.add_argument("--order-budget", type=float, default=115.0)
+    args = parser.parse_args()
+    assert_locked_plan()
+    if not (10.0 <= args.order_budget <= 180.0):
+        raise ValueError("Strict per-order time budget required")
+    if digest(args.archive) != ARCHIVE_SHA256:
+        raise SystemExit("Pinned immutable checkpoint ZIP SHA-256 mismatch")
+    if args.single_order is not None:
+        report = one_order(args.archive, args.single_order,
+                           args.max_margin, args.order_budget)
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(json.dumps(report, indent=2) + "\n",
+                               encoding="utf-8")
+        print(json.dumps({
+            "single_order": args.single_order,
+            "status": report["status"],
+            "eight_connected": len(report["connected"]),
+            "blocker": (report["failure"] or {}).get("net"),
+        }), flush=True)
+        return
+
+    reports = []
+    for index in range(args.max_orders):
+        with tempfile.TemporaryDirectory(prefix="cooperative-order-child-") as d:
+            individual = Path(d) / "result.json"
+            cmd = [sys.executable, str(Path(__file__).resolve()),
+                   "--archive", str(args.archive.resolve()),
+                   "--output", str(individual),
+                   "--max-margin", str(args.max_margin),
+                   "--single-order", str(index),
+                   "--order-budget", str(args.order_budget)]
+            try:
+                proc = subprocess.run(cmd, capture_output=True,
+                                      text=True, timeout=args.order_budget + 38,
+                                      check=False)
+                if proc.returncode == 0 and individual.is_file():
+                    report = json.loads(individual.read_text(
+                        encoding="utf-8"))
+                    if (report["order"] != list(order_schedules()[index])
+                            or report["fabrication_release"] is not False
+                            or report["accepted"] is not False):
+                        raise RuntimeError("Untrusted child report")
+                else:
+                    report = {
+                        **FLAGS, "status": "isolated_order_process_failed",
+                        "order": list(order_schedules()[index]),
+                        "connected": [], "failure": {
+                            "net": None,
+                            "child_exit_code": proc.returncode,
+                            "stderr_tail": proc.stderr[-1200:],
+                        },
+                        "native_DRC": None,
+                        "L3_loss_mm2": None, "L3_gain_mm2": None,
+                    }
+                if proc.stdout:
+                    print(proc.stdout[-1500:], flush=True)
+            except subprocess.TimeoutExpired:
+                report = {
+                    **FLAGS, "status": "isolated_order_process_timeout",
+                    "order": list(order_schedules()[index]),
+                    "connected": [],
+                    "failure": {
+                        "net": None,
+                        "time_budget_s": args.order_budget + 38,
+                    },
+                    "native_DRC": None,
+                    "L3_loss_mm2": None, "L3_gain_mm2": None,
+                }
+        reports.append(report)
+        write_evidence(args.output, reports)
+        print(json.dumps({
+            "order_index": index, "status": report["status"],
+            "connected": len(report["connected"]),
+            "blocking_net": (report["failure"] or {}).get("net"),
+            "accepted": False,
+        }), flush=True)
+        if report["status"] == "qualified_geometry_pending_independent_replay":
+            break
+    if digest(args.archive) != ARCHIVE_SHA256:
+        raise RuntimeError("Pinned source archive changed after probe")
+    write_evidence(args.output, reports)
     print(json.dumps({
-        "result": result["status"], "orders": result["orders_tried"],
-        "accepted": False, "manufacturing_files": False,
+        "result": reports[-1]["status"], "orders": len(reports),
+        "accepted": False, "fabrication_release": False,
     }), flush=True)
 
 
