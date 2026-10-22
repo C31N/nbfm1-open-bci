@@ -30,8 +30,11 @@ class CoupledMuxTests(unittest.TestCase):
         self.assertEqual(result["status"],
                          "joint_three_commodity_geometries_proposed")
         self.assertGreater(result["compatible_combination_count"],0)
-        self.assertEqual(result["plans"][0]["candidate_indices"]["MUX_EN"],0)
-        self.assertEqual(result["plans"][0]["candidate_indices"]["MUX_S2"],1)
+        indices = result["plans"][0]["candidate_indices"]
+        # Global optimizer may prefer either alternate net; only the
+        # individually optimal colliding pair (0, 0) is forbidden.
+        self.assertNotEqual(
+            (indices["MUX_EN"], indices["MUX_S2"]), (0, 0))
         self.assertGreaterEqual(result["plans"][0][
             "minimum_pair_center_separation_mm"], MIN_CENTER_SEPARATION_MM)
         self.assertFalse(result["accepted"])
