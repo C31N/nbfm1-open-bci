@@ -57,91 +57,126 @@ def endpoint_clearance(raw_center_distance_mm: float) -> dict[str, Any]:
 
 
 
-def alternate_native_anchor_inventory(board: Any, target: tuple[float, float],
-                                      power_objects: list[dict[str, Any]]
-                                      ) -> dict[str, Any]:
-    """Sample original same-net copper touching the old immutable endpoint.
+def alternate_native_anchor_inventory(board: Any, target: tuple[float,float],
+                                      power_objects: list[dict[str,Any]]
+                                      ) -> dict[str,Any]:
+    """Read-only F.Cu copper-connected component and safe-anchor inventory.
 
-    Geometric contact, not native netlist/DRC proof. This finds candidates
-    that do NOT need pads/vias relocated and clear all power shapes by 0.505.
+    Never treat the removed CH027 segment as a bridge. Through vias and pads
+    are immutable contact nodes. Contact is geometric-only; final native DRC,
+    netlist parity and independent replay must still be proven separately.
     """
     import math
     import pcbnew
-    from shapely.geometry import LineString, Point
+    from shapely.geometry import LineString, Point, box
+    from shapely.ops import unary_union
     from route_targeted_closure import pad_copper_shape, routing_domain, xy
 
-    origin = Point(target)
-    domain = routing_domain(board, TRACE_HALF_WIDTH_MM, .25)
-    touching = []
+    origin=Point(target)
+    domain=routing_domain(board,TRACE_HALF_WIDTH_MM,.25)
+    all_items=[]
     for fp in board.GetFootprints():
         for pad in fp.Pads():
-            if (pad.GetNetname() != "CH027_N_MUX"
-                    or not pad.IsOnLayer(pcbnew.F_Cu)):
-                continue
-            geom = pad_copper_shape(pad, pcbnew.F_Cu)
-            if geom.distance(origin) <= .000002:
-                touching.append((pad.m_Uuid.AsString(), "pad",
-                                 fp.GetReference()+"."+pad.GetNumber(),
-                                 geom, None))
+            if (pad.GetNetname()=="CH027_N_MUX"
+                    and pad.IsOnLayer(pcbnew.F_Cu)):
+                all_items.append(dict(uuid=pad.m_Uuid.AsString(),kind="pad",
+                    ref=fp.GetReference()+"."+pad.GetNumber(),
+                    shape=pad_copper_shape(pad,pcbnew.F_Cu),axis=None))
     for track in board.GetTracks():
-        if (track.m_Uuid.AsString() == CH027_UUID
-                or track.GetNetname() != "CH027_N_MUX"
-                or track.GetLayer() != pcbnew.F_Cu
-                or isinstance(track, (pcbnew.PCB_VIA, pcbnew.PCB_ARC))):
+        if track.m_Uuid.AsString()==CH027_UUID or track.GetNetname()!="CH027_N_MUX":
             continue
-        axis = LineString([xy(track.GetStart()),xy(track.GetEnd())])
-        geometry = axis.buffer(pcbnew.ToMM(track.GetWidth())/2)
-        if geometry.distance(origin) <= .000002:
-            touching.append((track.m_Uuid.AsString(), "track",
-                             None, geometry, axis))
-    candidates = []
-    for uid, kind, ref, copper, axis in touching:
-        samples = [origin]
-        if axis is None:
-            perimeter = copper.boundary
-            n = min(300, max(8, int(math.ceil(perimeter.length/.08))))
-            samples.extend(perimeter.interpolate(i/n, normalized=True)
-                           for i in range(n))
-            samples.append(copper.representative_point())
-        else:
-            n = min(300, max(8, int(math.ceil(axis.length/.08))))
-            samples.extend(axis.interpolate(i/n, normalized=True)
-                           for i in range(n+1))
-        for point in samples:
-            if (point.distance(origin) > 4.0
-                    or not copper.buffer(.000002).covers(point)
-                    or not domain.covers(point)):
+        if isinstance(track,pcbnew.PCB_VIA):
+            if not track.IsOnLayer(pcbnew.F_Cu):
                 continue
-            distance, nearest = min(
-                ((point.distance(obj["copper"]), obj)
-                 for obj in power_objects),
-                key=lambda row: row[0])
-            check = endpoint_clearance(distance)
+            shape=Point(xy(track.GetPosition())).buffer(
+                pcbnew.ToMM(track.GetWidth())/2)
+            kind="via";axis=None
+        elif track.GetLayer()!=pcbnew.F_Cu:
+            continue
+        elif isinstance(track,pcbnew.PCB_ARC):
+            bounds=track.GetBoundingBox()
+            shape=box(pcbnew.ToMM(bounds.GetX()),
+                      pcbnew.ToMM(bounds.GetY()),
+                      pcbnew.ToMM(bounds.GetRight()),
+                      pcbnew.ToMM(bounds.GetBottom()))
+            kind="arc_conservative";axis=None
+        else:
+            axis=LineString([xy(track.GetStart()),xy(track.GetEnd())])
+            shape=axis.buffer(pcbnew.ToMM(track.GetWidth())/2)
+            kind="track"
+        all_items.append(dict(uuid=track.m_Uuid.AsString(),
+            kind=kind,ref=None,shape=shape,axis=axis))
+    start_indices={i for i,item in enumerate(all_items)
+                   if item["shape"].distance(origin)<=.000002}
+    seen=set(start_indices);front=list(start_indices)
+    while front:
+        current=front.pop()
+        copper=all_items[current]["shape"]
+        for i,other in enumerate(all_items):
+            if i in seen:
+                continue
+            if copper.buffer(.000002).intersects(other["shape"]):
+                seen.add(i);front.append(i)
+    component=[all_items[i] for i in sorted(seen)]
+    power_union=unary_union([x["copper"] for x in power_objects])
+    candidate_rows=[]
+    tested=0
+    for item in component:
+        shape=item["shape"]
+        samples=[]
+        if item["axis"] is not None:
+            axis=item["axis"]
+            count=min(400,max(8,int(math.ceil(axis.length/.075))))
+            samples=(axis.interpolate(i/count,normalized=True)
+                     for i in range(count+1))
+        else:
+            boundary=shape.boundary
+            count=min(400,max(12,int(math.ceil(boundary.length/.075))))
+            samples=(boundary.interpolate(i/count,normalized=True)
+                     for i in range(count))
+        for point in samples:
+            if (point.distance(origin)>20.0
+                    or not domain.covers(point)
+                    or not shape.buffer(.000002).covers(point)):
+                continue
+            tested+=1
+            if point.distance(power_union)+1e-9 < (
+                    CLEARANCE_MM+TRACE_HALF_WIDTH_MM):
+                continue
+            nearest=min(
+                ((point.distance(other["copper"]),other)
+                 for other in power_objects),key=lambda row:row[0])
+            check=endpoint_clearance(nearest[0])
             if not check["strict_power_clearance_possible_at_this_point"]:
                 continue
-            candidates.append({
-                "on_original_connected_uuid": uid,
-                "kind": kind, "ref": ref,
-                "coordinate_mm": [round(point.x, 6),round(point.y,6)],
-                "distance_to_original_endpoint_mm": round(
+            candidate_rows.append(dict(
+                uuid=item["uuid"],kind=item["kind"],ref=item["ref"],
+                coordinate_mm=[round(point.x,6),round(point.y,6)],
+                distance_to_original_endpoint_mm=round(
                     point.distance(origin),6),
-                "nearest_power_uuid": nearest["uuid"],
-                "nearest_power_net": nearest["net"],
-                "min_power_gap_mm": check[
+                nearest_power_uuid=nearest[1]["uuid"],
+                min_power_gap_mm=check[
                     "new_trace_edge_to_power_surface_mm"],
-                "strict_power_margin_mm": check["margin_mm"],
-                "route_restituted_native_DRC": False,
-            })
-    candidates.sort(key=lambda x: (
-        x["distance_to_original_endpoint_mm"],
-        -x["strict_power_margin_mm"],x["on_original_connected_uuid"]))
+                strict_power_margin_mm=check["margin_mm"],
+                restoration_proven=False))
+    candidate_rows.sort(key=lambda row:(
+        row["distance_to_original_endpoint_mm"],
+        -row["strict_power_margin_mm"],row["uuid"]))
     return {
-        "same_net_contact_objects": [
-            {"uuid":x[0],"kind":x[1],"ref":x[2]} for x in touching],
-        "strict_505_candidate_count": len(candidates),
-        "closest_safe_candidates": candidates[:20],
-        "complete_native_connectivity_proven": False,
-        "restoration_proven": False,
+        "component_root_count":len(start_indices),
+        "component_objects": [
+            dict(uuid=item["uuid"],kind=item["kind"],ref=item["ref"],
+                 distance_to_original_endpoint_mm=round(
+                     item["shape"].distance(origin),6),
+                 bounds_mm=[round(v,6) for v in item["shape"].bounds])
+            for item in component],
+        "component_objects_count":len(component),
+        "component_survives_removed_original_segment":True,
+        "centerline_samples_tested":tested,
+        "strict_505_candidate_count":len(candidate_rows),
+        "closest_safe_candidates":candidate_rows[:20],
+        "complete_native_connectivity_proven":False,
+        "restoration_proven":False,
     }
 
 
