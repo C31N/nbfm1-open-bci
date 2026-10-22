@@ -200,7 +200,7 @@ def attempt(root: Path, reverse: bool) -> dict[str, Any]:
         }
         report["neighbors"].append(row)
         proposed = None
-        for margin in (2.5, 5.0):
+        for margin in (2.5, 5.0, 10.0, 18.0):
             proposed = propose(board, t, power, margin)
             row["trials"].append({"margin_mm": margin, "path_found": proposed is not None})
             if proposed is not None:
