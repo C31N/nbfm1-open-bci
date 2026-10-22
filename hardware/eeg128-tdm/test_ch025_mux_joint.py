@@ -51,6 +51,30 @@ class CoupledMuxTests(unittest.TestCase):
         self.assertFalse(result["plans"])
         self.assertFalse(result["fabrication_release"])
 
+    def test_probe13_real_crossing_needs_joint_repair(self) -> None:
+        # Pin the native diagnostic #13 centerlines. These individual
+        # suggestions cannot coexist despite all three individually routing.
+        pools: dict[str, list[dict[str, Any]]] = {
+            "MUX_EN": [{"path": [
+                (0, 27.8179, 37.1976), (0, 34.1179, 37.4976),
+                (0, 43.8939, 37.1976),
+            ]}],
+            "MUX_S2": [{"path": [
+                (0, 44.9121, 37.4994), (0, 27.693, 37.4994),
+            ]}],
+            "MUX_S3": [{"path": [
+                (0, 26.4572, 37.8222), (0, 45.8284, 37.8222),
+            ]}],
+        }
+        result = coupled_candidates(pools)
+        self.assertEqual(result["status"],
+                         "no_joint_nonoverlapping_triplet")
+        self.assertEqual(
+            result["collisions"]["MUX_EN:MUX_S2"]["minimum_mm"],
+            .0018)
+        self.assertFalse(result["plans"])
+        self.assertFalse(result["accepted"])
+
     def test_bad_layer_rejected(self) -> None:
         pools: dict[str,list[dict[str,Any]]] = {
             name: [{"path":[(0,0.,0.),(0,5.,1.)]}]

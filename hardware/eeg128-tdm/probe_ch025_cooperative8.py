@@ -160,7 +160,8 @@ def candidate_route(board: Any, name: str, segment: Any,
                     via_guard: Any, margin: float,
                     unplaced: list[tuple[str, Any]],
                     bias: float, deadline: float,
-                    diverse_paths: list[Any] | None = None
+                    diverse_paths: list[Any] | None = None,
+                    hot_spots: list[Any] | None = None
                     ) -> tuple[Any | None, dict[str, Any]]:
     """Bounded A* search with F.Cu congestion costs and exact polygon checking.
 
@@ -218,6 +219,9 @@ def candidate_route(board: Any, name: str, segment: Any,
         for path in (diverse_paths or []) if len(path) >= 2
     ]) if diverse_paths else GeometryCollection()
     extra_costs = ((0, diverse, 7.5),) if diverse_paths else ()
+    extra_costs += tuple((0, region, 40.0)
+                         for region in (hot_spots or [])
+                         if not region.is_empty)
     # Grid A* soft costs never override the final hard geometry rules.
     raster_mm = .15 if margin <= 3.0 else .20
     row["grid_mm"] = raster_mm
@@ -471,8 +475,10 @@ def attempt(work: Path, schedule: tuple[str, ...],
             prior: list[Any] = []
             rows: list[dict[str, Any]] = []
             candidates: list[dict[str, Any]] = []
-            for margin, multiplier in (
-                    (3.0, .5), (6.0, 1.0), (6.0, 3.0)):
+            variants = ((3.0, .5), (6.0, 1.0), (6.0, 3.0))
+            if name != "MUX_EN":
+                variants = variants[:2]
+            for margin, multiplier in variants:
                 if time.monotonic() >= order_deadline or margin > max_margin:
                     break
                 pending = [
@@ -508,6 +514,73 @@ def attempt(work: Path, schedule: tuple[str, ...],
             _write_child_progress(progress_path, report)
         proposal = coupled_candidates(
             pools, maximum_combinations=256, maximum_plans=4)
+
+        # Negotiated-congestion repair: the native #15 joint inventory
+        # identified 3 EN candidates but only 1 each for S2/S3.
+        # Generate a fresh candidate specifically repelled from the actual
+        # pairwise near-collision geometry instead of simply reordering.
+        from shapely.geometry import LineString
+        feedback: list[dict[str, Any]] = []
+        if not proposal["plans"]:
+            stage("joint_mux_conflict_directed_refinement")
+        for name in TRIPLET:
+            if (proposal["plans"] or
+                    time.monotonic() >= order_deadline - 8.0 or
+                    any(not pool for pool in pools.values())):
+                break
+            own = [
+                LineString([(v[1], v[2]) for v in item["path"]])
+                for item in pools[name]
+            ]
+            rivals = [
+                item["path"] for other in TRIPLET if other != name
+                for item in pools[other][:1]
+            ]
+            hot: list[Any] = []
+            for line in own[:2]:
+                for rival in rivals:
+                    other_line = LineString(
+                        [(v[1], v[2]) for v in rival])
+                    crossing = line.buffer(.15).intersection(
+                        other_line.buffer(.15))
+                    if not crossing.is_empty:
+                        hot.append(crossing.buffer(.45))
+            if not hot:
+                continue
+            diversity = [item["path"] for item in pools[name]]
+            newpath, detail = candidate_route(
+                board, name, originals[name], power,
+                fixed_power, guard, 6.0,
+                [(other, originals[other]) for other in TRIPLET
+                 if other != name],
+                max(bias, 1.0) * 2.0, order_deadline,
+                diverse_paths=diversity,
+                hot_spots=hot,
+            )
+            changed = False
+            if newpath is not None:
+                key = tuple(tuple(v) for v in newpath)
+                if not any(
+                        tuple(tuple(v) for v in item["path"]) == key
+                        for item in pools[name]):
+                    pools[name].append({
+                        "path": newpath,
+                        "margin_mm": 6.0,
+                        "solver": "conflict_directed_reroute",
+                        "native_DRC_qualified": False,
+                    })
+                    changed = True
+                    proposal = coupled_candidates(
+                        pools, maximum_combinations=512,
+                        maximum_plans=4)
+            feedback.append({
+                "net": name, "congestion_regions": len(hot),
+                "new_candidate": changed, "candidate": detail,
+                "compatible_triples": proposal.get(
+                    "compatible_combination_count", 0),
+            })
+            report["joint_mux_conflict_feedback"] = feedback
+            _write_child_progress(progress_path, report)
         joint_cache["result"] = proposal
         report["joint_mux_optimisation"] = {
             key: val for key, val in proposal.items() if key != "plans"
