@@ -43,8 +43,8 @@ def bounded_ripup(
     Failures are explicitly not net-closure or DRC qualifications.
     """
     nets = tuple(order)
-    if len(nets) != 8 or len(set(nets)) != 8:
-        raise ValueError("Expected eight distinct mutable net names")
+    if not 1 <= len(nets) <= 8 or len(set(nets)) != len(nets):
+        raise ValueError("Expected one to eight distinct bounded routing tasks")
     if (max_probes < 1 or max_backtracks < 0 or
             not choices or any(not math.isfinite(a)
                 or not math.isfinite(b) or a <= 0 or b < 0
@@ -75,7 +75,7 @@ def bounded_ripup(
 
     while True:
         if depth == len(nets):
-            outcome = "eight_geometric_paths_proposed_not_natively_qualified"
+            outcome = "all_task_geometries_proposed_not_natively_qualified"
             break
         if time.monotonic() >= deadline:
             outcome = "bounded_backtracking_time_limit"
@@ -153,7 +153,10 @@ def bounded_ripup(
         emit({"event": "discard_unqualified_partial", "outcome": outcome})
     return {
         "status": outcome,
-        "eight_geometric_paths_proposed": depth == len(nets),
+        "all_tasks_geometrically_proposed": depth == len(nets),
+        "eight_geometric_paths_proposed": (
+            depth == len(nets) and len(nets) == 8),
+        "task_count": len(nets),
         "connected": [
             {k: v for k, v in item.items() if k != "created_uuids"}
             for item in stack

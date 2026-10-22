@@ -60,6 +60,24 @@ class BoundedBacktrackTests(unittest.TestCase):
         self.assertEqual(out["connected"], [])
         self.assertFalse(out["fabrication_release"])
 
+    def test_joint_three_net_group_is_one_bounded_task(self) -> None:
+        names = ("A", "B", "__JOINT__", "C", "D", "E")
+        placed: set[str] = set()
+        def probe(name: str, margin: float, weight: float,
+                  pending: Sequence[str]) -> tuple[list[tuple[int, float, float]] | None, dict[str, Any]]:
+            return [(0, margin, weight), (0, margin+1, weight)], {}
+        def place(name: str, path: list[tuple[int, float, float]]) -> list[str]:
+            placed.add(name)
+            return ["generated-" + name]
+        def undo(name: str, uuids: Sequence[str]) -> None:
+            placed.remove(name)
+        out = bounded_ripup(
+            names, probe, place, undo, deadline=time.monotonic()+10)
+        self.assertTrue(out["all_tasks_geometrically_proposed"])
+        self.assertFalse(out["eight_geometric_paths_proposed"])
+        self.assertEqual(len(placed), 6)
+        self.assertFalse(out["accepted"])
+
     def test_duplicate_nets_fail_closed(self) -> None:
         with self.assertRaises(ValueError):
             bounded_ripup(("N",)*8, lambda *a: (None, {}),

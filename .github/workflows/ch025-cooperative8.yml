@@ -10,6 +10,8 @@ on:
       - "hardware/eeg128-tdm/test_ch025_cooperative8.py"
       - "hardware/eeg128-tdm/ch025_ripup_backtrack.py"
       - "hardware/eeg128-tdm/test_ch025_ripup_backtrack.py"
+      - "hardware/eeg128-tdm/ch025_mux_joint.py"
+      - "hardware/eeg128-tdm/test_ch025_mux_joint.py"
 permissions:
   contents: read
 jobs:
@@ -33,13 +35,14 @@ jobs:
         run: |
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_cooperative8.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_ripup_backtrack.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_mux_joint.py -v
       - name: Bounded eight-net BPS plus native geometry on immutable PCB
         timeout-minutes: 19
         run: |
           /usr/bin/python3 hardware/eeg128-tdm/probe_ch025_cooperative8.py \
             --archive hardware/eeg128-tdm/engineering/block2-ch019-electrode-closed139.zip \
             --output /tmp/ch025-cooperative8.json \
-            --max-orders 4 --max-margin 6.0 --order-budget 90.0
+            --max-orders 4 --max-margin 6.0 --order-budget 140.0
       - name: Assert checkpoint is NOT promoted and manufacturing is disabled
         run: |
           /usr/bin/python3 - <<'PY'

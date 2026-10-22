@@ -47,6 +47,7 @@ DST = (36.105, 48.85)
 CH027_ALT_VIA = "1c642f97-035a-4f4e-a6d9-81ebabc1ab2f"
 CH027_ALT_TARGET = (32.475001, 47.760892)
 NATIVE_WINDOW_MM = (3.0, 6.0, 10.0)
+JOINT_NODE = "__JOINT_MUX_EN_S2_S3__"
 FLAGS = dict(
     accepted=False, routing_completed=False,
     fabrication_release=False, manufacturing_files=False,
@@ -74,17 +75,17 @@ def assert_locked_plan() -> None:
 def order_schedules() -> list[tuple[str, ...]]:
     """Four deterministic priority permutations; every net exactly once."""
     analog = ("CH027_N_MUX", "CH030_P_MUX")
-    # Native Probe #10: MUX_S3 failed 24 times after early MUX_EN.
-    # Try S3 before EN and S2 under four distinct bounded DFS prefixes.
+    # Joint MUX groups are solved as a single three-net commodity. The
+    # schedules determine the order of the five other nets relative to it.
     schedules = [
-        (*analog, "MUX_S0", "MUX_S1", "MUX_S3",
-         "MUX_EN", "MUX_S2", NET),
-        (*analog, "MUX_S0", "MUX_S1", "MUX_S3",
-         "MUX_S2", "MUX_EN", NET),
-        (*analog, "MUX_S3", "MUX_EN", "MUX_S2",
+        (*analog, "MUX_S0", "MUX_S1", "MUX_EN",
+         "MUX_S2", "MUX_S3", NET),
+        (*analog, "MUX_S1", "MUX_S0", "MUX_S2",
+         "MUX_S3", "MUX_EN", NET),
+        (*analog, "MUX_EN", "MUX_S2", "MUX_S3",
          "MUX_S0", "MUX_S1", NET),
-        (*analog, "MUX_S3", "MUX_S2", NET,
-         "MUX_S0", "MUX_S1", "MUX_EN"),
+        (*analog, "MUX_EN", "MUX_S2", "MUX_S3",
+         NET, "MUX_S0", "MUX_S1"),
     ]
     target = {NET, *NEIGHBORS.values()}
     if len(schedules) != 4 or any(set(s) != target or len(s) != 8
@@ -158,7 +159,8 @@ def candidate_route(board: Any, name: str, segment: Any,
                     power: Any, power_obstacles: Any,
                     via_guard: Any, margin: float,
                     unplaced: list[tuple[str, Any]],
-                    bias: float, deadline: float
+                    bias: float, deadline: float,
+                    diverse_paths: list[Any] | None = None
                     ) -> tuple[Any | None, dict[str, Any]]:
     """Bounded A* search with F.Cu congestion costs and exact polygon checking.
 
@@ -209,6 +211,13 @@ def candidate_route(board: Any, name: str, segment: Any,
         future.append(LineString([a, b]).buffer(.55))
     future_reserved = unary_union(future) if future else GeometryCollection()
     guard = unary_union([power_obstacles, via_guard.buffer(.075)])
+    # Repel candidate routes from previously sampled paths of THIS net.
+    # This is a soft cost, never an exemption from actual copper clearance.
+    diverse = unary_union([
+        LineString([(v[1], v[2]) for v in path]).buffer(.22)
+        for path in (diverse_paths or []) if len(path) >= 2
+    ]) if diverse_paths else GeometryCollection()
+    extra_costs = ((0, diverse, 7.5),) if diverse_paths else ()
     # Grid A* soft costs never override the final hard geometry rules.
     raster_mm = .15 if margin <= 3.0 else .20
     row["grid_mm"] = raster_mm
@@ -219,7 +228,8 @@ def candidate_route(board: Any, name: str, segment: Any,
         deadline=min(deadline, time.monotonic() + 8.0),
         start_layer=0, goal_layer=0,
         layers=(pcbnew.F_Cu, pcbnew.B_Cu),
-        cost_regions=((0, guard, 250.0), (0, future_reserved, bias)),
+        cost_regions=((0, guard, 250.0),
+                      (0, future_reserved, bias)) + extra_costs,
     )
     row["route_solver"] = "bounded_astar"
     if not route and name == NET and margin >= 6.0:
@@ -430,72 +440,188 @@ def attempt(work: Path, schedule: tuple[str, ...],
     stage("CH027_safe_alternate_via_anchor_locked")
     order_deadline = time.monotonic() + order_time_budget
     stage("cooperative_bps_started")
-    from ch025_ripup_backtrack import bounded_ripup
+    from ch025_ripup_backtrack import bounded_ripup, CHOICES
+    from ch025_mux_joint import TRIPLET, coupled_candidates
 
-    # Only new, temporary copper UUIDs may be removed during backtracking.
-    # Preserve every original via, pad and protected trace byte-for-byte.
+    # Search tasks are five independent nets plus one *atomic* MUX group.
+    # Internally all three triplet geometries are proposed on the identical
+    # fixed-copper snapshot, then accepted/rejected as one joint commodity.
+    tasks: list[str] = []
+    for net in schedule:
+        task = JOINT_NODE if net in TRIPLET else net
+        if task not in tasks:
+            tasks.append(task)
+    if len(tasks) != 6 or set(tasks) != (
+            {NET, "CH027_N_MUX", "CH030_P_MUX", "MUX_S0",
+             "MUX_S1", JOINT_NODE}):
+        raise RuntimeError("Joint routing omitted a physical net")
     fixed_ids = set(after_ripup)
-    journal = []
+    journal: list[dict[str, Any]] = []
+    joint_cache: dict[str, Any] = {}
+    joint_active: dict[str, Any] = {}
+    choose = {pair: i for i, pair in enumerate(CHOICES)}
+
+    def joint_plans() -> dict[str, Any]:
+        if joint_cache:
+            return joint_cache["result"]
+        stage("building_joint_three_commodity_candidate_pools")
+        pools: dict[str, list[dict[str, Any]]] = {}
+        diagnostics: dict[str, Any] = {}
+        for name in TRIPLET:
+            prior: list[Any] = []
+            rows: list[dict[str, Any]] = []
+            candidates: list[dict[str, Any]] = []
+            for margin, multiplier in (
+                    (3.0, .5), (6.0, 1.0), (6.0, 3.0)):
+                if time.monotonic() >= order_deadline or margin > max_margin:
+                    break
+                pending = [
+                    (other, originals[other]) for other in TRIPLET
+                    if other != name
+                ]
+                path, diag = candidate_route(
+                    board, name, originals[name], power,
+                    fixed_power, guard, margin, pending,
+                    bias * multiplier, order_deadline,
+                    diverse_paths=prior)
+                rows.append(diag)
+                if path is None:
+                    continue
+                key = tuple(tuple(v) for v in path)
+                if any(tuple(tuple(v) for v in x["path"]) == key
+                       for x in candidates):
+                    continue
+                candidates.append({
+                    "path": path, "margin_mm": margin,
+                    "soft_penalty": bias * multiplier,
+                    "native_DRC_qualified": False,
+                })
+                prior.append(path)
+            pools[name] = candidates
+            diagnostics[name] = rows
+            report["joint_mux_candidate_progress"] = {
+                "completed_networks": list(pools),
+                "sizes": {key: len(value)
+                          for key, value in pools.items()},
+                "details": diagnostics,
+            }
+            _write_child_progress(progress_path, report)
+        proposal = coupled_candidates(
+            pools, maximum_combinations=256, maximum_plans=4)
+        joint_cache["result"] = proposal
+        report["joint_mux_optimisation"] = {
+            key: val for key, val in proposal.items() if key != "plans"
+        }
+        report["joint_mux_optimisation"]["plans"] = [
+            {key: val for key, val in plan.items() if key != "paths"}
+            for plan in proposal["plans"]
+        ]
+        stage("joint_three_commodity_plan_selection_ready")
+        return proposal
+
     def try_route(name: str, margin: float, factor: float,
                   pending: tuple[str, ...]) -> tuple[Any | None, dict]:
         if margin > max_margin:
-            return None, {"reason": "routing_window_limit",
-                          "margin_mm": margin}
-        segment = originals[name]
-        report["failure"] = {"net": name,
-                             "phase": "backtracking_probe",
-                             "margin_mm": margin, "weight": factor}
+            return None, {"reason": "routing_window_limit"}
+        report["failure"] = {
+            "net": name, "phase": "joint_backtracking_probe",
+            "margin_mm": margin, "weight": factor,
+        }
         _write_child_progress(progress_path, report)
+        if name == JOINT_NODE:
+            group = joint_plans()
+            index = choose[(margin, factor)]
+            if index >= len(group["plans"]):
+                return None, {
+                    "reason": group["status"],
+                    "joint_plan_index": index,
+                    "candidate_sizes": group.get("candidate_pool_sizes"),
+                    "collisions": group.get("collisions", {}),
+                }
+            # Uniquely encoded planner selection; place_proposal resolves
+            # the three actual native F.Cu paths in one atomic group.
+            return [(0, float(index), 0.0),
+                    (0, float(index), 1.0)], {
+                "reason": "coupled_three_commodity_plan",
+                "joint_plan_index": index,
+                "separation_mm": group["plans"][index][
+                    "minimum_pair_center_separation_mm"],
+                "native_DRC_qualified": False,
+            }
+        future: list[str] = []
+        for task in pending:
+            future.extend(TRIPLET if task == JOINT_NODE else (task,))
         return candidate_route(
-            board, name, segment, power, fixed_power, guard, margin,
-            [(net, originals[net]) for net in pending],
-            bias * factor, order_deadline,
-        )
+            board, name, originals[name], power, fixed_power,
+            guard, margin,
+            [(net, originals[net]) for net in future if net != name],
+            bias * factor, order_deadline)
 
     def place_proposal(name: str, path: Any) -> list[str]:
         if not path or any(len(p) != 3 or p[0] != 0 for p in path):
-            raise RuntimeError("Speculative route left F.Cu")
+            raise RuntimeError("Speculative path is not on F.Cu")
         before_add = {
             t.m_Uuid.AsString() for t in board.GetTracks()
         }
-        add_mesh_path(board, path, board.FindNet(name).GetNetCode(),
-                      (pcbnew.F_Cu, pcbnew.B_Cu))
+        if name == JOINT_NODE:
+            index = int(path[0][1])
+            plan = joint_plans()["plans"][index]
+            if (path[0][1] != float(index) or
+                    path[-1][1] != float(index)):
+                raise RuntimeError("Invalid joint plan token")
+            for net in TRIPLET:
+                add_mesh_path(board, plan["paths"][net],
+                              board.FindNet(net).GetNetCode(),
+                              (pcbnew.F_Cu, pcbnew.B_Cu))
+            joint_active["plan"] = plan
+        else:
+            add_mesh_path(board, path, board.FindNet(name).GetNetCode(),
+                          (pcbnew.F_Cu, pcbnew.B_Cu))
         additions = {
             t.m_Uuid.AsString(): t for t in board.GetTracks()
             if t.m_Uuid.AsString() not in before_add
         }
-        if not additions or any(
-                uid in before or
-                t.GetNetname() != name or
-                t.GetLayer() != pcbnew.F_Cu or
-                isinstance(t, (pcbnew.PCB_VIA, pcbnew.PCB_ARC)) or
-                abs(pcbnew.ToMM(t.GetWidth()) - .15) > .000001
-                for uid, t in additions.items()):
-            raise RuntimeError(
-                "Speculative insertion changed an untouchable layer/object")
+        legal = set(TRIPLET) if name == JOINT_NODE else {name}
+        if (not additions or
+                (name == JOINT_NODE and
+                 not all(any(t.GetNetname() == net
+                             for t in additions.values()) for net in TRIPLET)) or
+                any(uid in before or
+                    t.GetNetname() not in legal or
+                    t.GetLayer() != pcbnew.F_Cu or
+                    isinstance(t, (pcbnew.PCB_VIA, pcbnew.PCB_ARC)) or
+                    abs(pcbnew.ToMM(t.GetWidth()) - .15) > .000001
+                    for uid, t in additions.items())):
+            raise RuntimeError("Immutable copper touched by proposal")
         return sorted(additions)
 
     def ripup_only_owned(name: str, owned: tuple[str, ...]) -> None:
         copper = {
             t.m_Uuid.AsString(): t for t in board.GetTracks()
         }
+        legal = set(TRIPLET) if name == JOINT_NODE else {name}
         for uid in owned:
             t = copper.get(uid)
             if (t is None or uid in before or uid in fixed_ids or
-                    t.GetNetname() != name or
+                    t.GetNetname() not in legal or
                     t.GetLayer() != pcbnew.F_Cu or
                     isinstance(t, (pcbnew.PCB_VIA, pcbnew.PCB_ARC))):
                 raise RuntimeError(
-                    "Rejected ripup of immutable or wrong-net copper: " + uid)
+                    "Rejected immutable/wrong-net ripup: " + uid)
             board.Remove(t)
-        surviving = {
-            t.m_Uuid.AsString() for t in board.GetTracks()
-        }
+        surviving = {t.m_Uuid.AsString() for t in board.GetTracks()}
         if surviving != set(copper).difference(owned):
-            raise RuntimeError("Ripup changed unrelated PCB objects")
+            raise RuntimeError("Ripup modified unrelated copper")
+        # A rollback AFTER the atomic group must preserve its chosen
+        # geometry and candidate cache. A rollback OF the group (or before
+        # the group was placed) invalidates the whole coupled search space.
+        if name == JOINT_NODE:
+            joint_active.clear()
+            joint_cache.clear()
+        elif not joint_active:
+            joint_cache.clear()
 
     def save_backtrack_state(state: dict[str, Any]) -> None:
-        # Keep a small bounded chronological log and maximum partial prefix.
         report["backtracking_progress"] = {
             "current_depth": state["current_depth"],
             "best_depth": state["best_depth"],
@@ -508,37 +634,52 @@ def attempt(work: Path, schedule: tuple[str, ...],
         report["best_partial_routes"] = state["best_routes"]
         _write_child_progress(progress_path, report)
 
-    stage("backtracking_on_temporary_new_copper")
+    stage("coupled_mux_three_commodity_backtracking")
     result = bounded_ripup(
-        schedule, try_route, place_proposal, ripup_only_owned,
-        deadline=order_deadline, max_probes=36, max_backtracks=12,
+        tasks, try_route, place_proposal, ripup_only_owned,
+        deadline=order_deadline, max_probes=40, max_backtracks=12,
         progress=save_backtrack_state,
     )
     report["backtracking_result"] = {
         "status": result["status"],
-        "best_partial_count": result["best_partial_count"],
+        "best_partial_tasks": result["best_partial_count"],
+        "best_partial_net_count": (
+            result["best_partial_count"] + 2 if any(
+                x["net"] == JOINT_NODE
+                for x in result["best_partial"]) else
+            result["best_partial_count"]),
         "backtracks": result["backtracks"],
         "probes": result["probes"],
         "events": journal,
     }
     report["best_partial_routes"] = result["best_partial"]
-    report["connected"] = result["connected"]
-    report["failure"] = None if result[
-        "eight_geometric_paths_proposed"] else {
-        "net": (result["best_partial"][-1]["net"] if
-                result["best_partial"] else None),
-        "kind": "bounded_backtracking_not_eight_connected",
-        "best_partial_count": result["best_partial_count"],
-    }
-    if not result["eight_geometric_paths_proposed"]:
-        if {
-            t.m_Uuid.AsString() for t in board.GetTracks()
-        } != fixed_ids:
-            raise RuntimeError("Failed search did not restore scratch copper")
+    if not result["all_tasks_geometrically_proposed"]:
+        if {t.m_Uuid.AsString() for t in board.GetTracks()} != fixed_ids:
+            raise RuntimeError("Unqualified search left speculative copper")
+        report["connected"] = []
+        report["failure"] = {
+            "kind": "coupled_mux_joint_search_not_all_eight_connected",
+            "best_partial_tasks": result["best_partial_count"],
+        }
         report["status"] = result["status"]
         _write_child_progress(progress_path, report)
         return report
-    stage("eight_bounded_backtrack_proposals_ready")
+    if "plan" not in joint_active:
+        raise RuntimeError("Successful task search has no joint MUX plan")
+    report["connected"] = []
+    for row in result["connected"]:
+        if row["net"] != JOINT_NODE:
+            report["connected"].append(row)
+        else:
+            for net in TRIPLET:
+                report["connected"].append({
+                    "net": net, "path": joint_active["plan"]["paths"][net],
+                    "points": len(joint_active["plan"]["paths"][net]),
+                    "joint_commodity": True,
+                    "native_DRC_qualified": False,
+                })
+    report["failure"] = None
+    stage("eight_joint_geometric_paths_proposed")
     if len(report["connected"]) != 8:
         raise RuntimeError("Incomplete eight-net order")
     report["eight_geometry_proposed"] = True
