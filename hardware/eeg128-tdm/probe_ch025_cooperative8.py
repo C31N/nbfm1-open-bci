@@ -359,10 +359,15 @@ def attempt(work: Path, schedule: tuple[str, ...],
     selected = {t.m_Uuid.AsString() for t in originals.values()}
     for track in originals.values():
         board.Remove(track)
-    # Protected and otherwise existing objects are never removed.
+    # Build the comparison map ONCE after ripup. The former per-UUID full
+    # track_inventory(board) caused O(N^2) SWIG reads and four probe timeouts
+    # BEFORE the first A* candidate search. Never weaken this protection.
+    after_ripup = track_inventory(board)
     for uid, item in before.items():
-        if uid not in selected and track_inventory(board).get(uid) != item:
-            raise RuntimeError("Foreign copper UUID modified by ripup")
+        if uid not in selected and after_ripup.get(uid) != item:
+            raise RuntimeError("Foreign copper UUID modified by ripup: " + uid)
+    if len(before) - len(after_ripup) != len(selected):
+        raise RuntimeError("Unexpected count of removed selected copper")
     stage("protected_original_copper_locked")
     guarded = [
         Point(a[1:]).buffer(.505)
