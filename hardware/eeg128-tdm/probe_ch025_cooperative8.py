@@ -18,6 +18,7 @@ import math
 import shutil
 import subprocess
 import tempfile
+import time
 import zipfile
 from pathlib import Path
 from typing import Any
@@ -145,43 +146,114 @@ def pinned_items(board: Any) -> tuple[dict[str, Any], Any, dict[str, Any]]:
 
 def candidate_route(board: Any, name: str, segment: Any,
                     power: Any, power_obstacles: Any,
-                    via_guard: Any, margin: float) -> Any | None:
+                    via_guard: Any, margin: float,
+                    unplaced: list[tuple[str, Any]],
+                    bias: float, deadline: float
+                    ) -> tuple[Any | None, dict[str, Any]]:
+    """Bounded A* search with F.Cu congestion costs and exact polygon checking.
+
+    Protect remaining terminal corridors by soft costs, never by moving pads
+    or other immutable copper. A* is speculative; native KiCad DRC remains
+    mandatory. Reject an entire raster route if any segment misses the exact
+    geometric free space, including 0.505-mm power clearance and CH022 vias.
+    """
     import pcbnew
-    from shapely.geometry import GeometryCollection, Point, box
+    import time
+    from shapely.geometry import GeometryCollection, LineString, Point, box
     from shapely.ops import unary_union
-    from escape_mesh_505 import mesh_route
-    from route_targeted_closure import xy, routing_domain
+    from route_targeted_closure import (
+        obstacles, routing_domain, search, xy,
+    )
 
     start, end = ((SRC, DST) if name == NET else
                   (xy(segment.GetStart()), xy(segment.GetEnd())))
+    row: dict[str, Any] = {
+        "margin_mm": margin, "mode": "astar_025_priority_cost",
+        "priority_penalty": bias, "found": False,
+        "reason": "not_attempted",
+    }
+    if time.monotonic() >= deadline:
+        row["reason"] = "order_time_budget_exhausted"
+        return None, row
+    domain = routing_domain(board, .075, .25)
+    if not domain.covers(Point(start)) or not domain.covers(Point(end)):
+        row["reason"] = "source_or_target_outside_board_domain"
+        return None, row
     region = box(min(start[0], end[0]) - margin,
                  min(start[1], end[1]) - margin,
                  max(start[0], end[0]) + margin,
-                 max(start[1], end[1]) + margin)
-    domain = routing_domain(board, .075, .25)
-    if not domain.covers(Point(start)) or not domain.covers(Point(end)):
-        return None
-    region = region.intersection(domain)
+                 max(start[1], end[1]) + margin).intersection(domain)
     if region.is_empty:
-        return None
-    route = mesh_route(
+        row["reason"] = "empty_legal_region"
+        return None, row
+    future = []
+    for future_name, foreign in unplaced:
+        if future_name == name:
+            continue
+        a, b = ((SRC, DST) if future_name == NET else
+                (xy(foreign.GetStart()), xy(foreign.GetEnd())))
+        future.append(LineString([a, b]).buffer(.55))
+    future_reserved = unary_union(future) if future else GeometryCollection()
+    guard = unary_union([power_obstacles, via_guard.buffer(.075)])
+    # Grid A* soft costs never override the final hard geometry rules.
+    route = search(
         board, start, end, board.FindNet(name).GetNetCode(),
-        (pcbnew.F_Cu, pcbnew.B_Cu), power, region,
-        start_layer=0, goal_layer=0, allow_vias=False,
-        extra_obstacles=[
-            unary_union([power_obstacles, via_guard]),
-            GeometryCollection(),
-        ])
-    if (route is None or len(route) < 2
-            or any(v[0] != 0 for v in route)
-            or math.dist(route[0][1:], start) > .000002
+        .15, .15, both_layers=False, margin=margin,
+        step=.25, max_nodes=36000,
+        deadline=min(deadline, time.monotonic() + 9.0),
+        start_layer=0, goal_layer=0,
+        layers=(pcbnew.F_Cu, pcbnew.B_Cu),
+        cost_regions=((0, guard, 250.0), (0, future_reserved, bias)),
+    )
+    if not route or any(point[0] != 0 for point in route):
+        row["reason"] = "astar_no_layer0_solution_under_budget"
+        return None, row
+    if (math.dist(route[0][1:], start) > .000002
             or math.dist(route[-1][1:], end) > .000002):
-        return None
-    return route
+        row["reason"] = "original_net_endpoints_not_preserved"
+        return None, row
+    blocked = obstacles(
+        board, board.FindNet(name).GetNetCode(),
+        .15, .15, region, .60,
+        (pcbnew.F_Cu, pcbnew.B_Cu),
+    )[0][0]
+    free = region.difference(unary_union([blocked, guard])).buffer(-.000005)
+    coords = [(float(v[1]), float(v[2])) for v in route]
+    path = [coords[0]]
+    i = 0
+    # Farthest-visible pruning produces a bounded number of native tracks;
+    # no outside-layer detours, corner cuts, or zero-length segments.
+    while i < len(coords)-1:
+        found = None
+        for j in range(len(coords)-1, i, -1):
+            if free.covers(LineString([coords[i], coords[j]])):
+                found = j
+                break
+        if found is None:
+            row["reason"] = "astar_raster_or_anchor_hits_fcu_obstacles"
+            return None, row
+        path.append(coords[found])
+        i = found
+        if len(path) > 300:
+            row["reason"] = "path_complexity_limit"
+            return None, row
+    route = [(0, round(x, 6), round(y, 6)) for x, y in path]
+    if (not domain.covers(LineString([v[1:] for v in route]))
+            or any(not free.covers(LineString([a[1:], b[1:]]))
+                   for a, b in zip(route, route[1:]))):
+        row["reason"] = "nanometre_rounding_changed_clearance"
+        return None, row
+    row["found"] = True
+    row["reason"] = "geometric_proposal_requires_native_DRC"
+    row["vertices"] = len(route)
+    row["length_mm"] = round(sum(
+        math.dist(a[1:], b[1:]) for a,b in zip(route, route[1:])), 6)
+    return route, row
 
 
 def attempt(work: Path, schedule: tuple[str, ...],
-            max_margin: float) -> dict[str, Any]:
+            max_margin: float, bias: float,
+            order_time_budget: float = 170.0) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import Point
     from shapely.ops import unary_union
@@ -213,6 +285,7 @@ def attempt(work: Path, schedule: tuple[str, ...],
     ]
     guard = unary_union(guarded)
     fixed_power = power_fcu_obstacles(board)
+    order_deadline = time.monotonic() + order_time_budget
     report: dict[str, Any] = {
         **FLAGS, "status": "cooperative_bps_started",
         "order": list(schedule), "connected": [],
@@ -227,11 +300,18 @@ def attempt(work: Path, schedule: tuple[str, ...],
         for margin in NATIVE_WINDOW_MM:
             if margin > max_margin:
                 continue
-            path = candidate_route(board, name, segment, power,
-                                   fixed_power, guard, margin)
-            rows.append(dict(margin_mm=margin, route_found=path is not None))
+            pending = [(n, originals[n]) for n in schedule
+                       if n not in {v["net"] for v in report["connected"]}]
+            path, detail = candidate_route(
+                board, name, segment, power, fixed_power, guard,
+                margin, pending, bias, order_deadline)
+            rows.append(detail)
             if path is not None:
                 break
+            if time.monotonic() >= order_deadline:
+                report["status"] = "bounded_order_budget_exhausted"
+                report["failure"] = dict(net=name, trials=rows)
+                return report
         if path is None:
             report["status"] = "unroutable_next_net"
             report["failure"] = dict(net=name, trials=rows)
@@ -344,8 +424,29 @@ def main() -> None:
             (work / "baseline").mkdir()
             for name in MEMBERS:
                 shutil.copy2(work / name, work / "baseline" / name)
-            report = attempt(work, order, args.max_margin)
+            report = attempt(
+                work, order, args.max_margin, bias=(.35, 1.0, 2.5, 5.0)[
+                    len(reports)])
             reports.append(report)
+            # Persist each completed priority order atomically; even if the
+            # workflow later reaches its wall-time limit, the last report is
+            # available as JSON-only evidence and all release gates stay false.
+            partial = {
+                **FLAGS, "status": report["status"],
+                "source_archive_sha256": ARCHIVE_SHA256,
+                "source_pcb_sha256": BOARD_SHA256,
+                "baseline_airwires": 139, "target_airwires": 136,
+                "orders": reports, "orders_tried": len(reports),
+                "F_Cu_only": True, "In1_Cu_used": False,
+                "L3_gate_required": True,
+                "manufacturing_export_invoked": False,
+                "checkpoint_replaced": False,
+            }
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            stage = args.output.with_suffix(".tmp")
+            stage.write_text(json.dumps(partial, indent=2) + "\n",
+                             encoding="utf-8")
+            stage.replace(args.output)
             print(json.dumps({
                 "order": report["order"],
                 "status": report["status"],
