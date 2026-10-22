@@ -317,15 +317,45 @@ def attempt(work: Path, schedule: tuple[str, ...],
     from native_connectivity import airwire_counts, regressed_nets
     from route_targeted_closure import metrics, native, xy
 
+    report: dict[str, Any] = {
+        **FLAGS, "status": "loading_immutable_board",
+        "order": list(schedule), "connected": [],
+        "failure": None, "native_DRC": None,
+        "native_parity_pass": False,
+        "L3_loss_mm2": None, "L3_gain_mm2": None,
+        "phase_trace": [], "native_DRC_qualified": False,
+    }
+    began = time.monotonic()
+    def stage(name: str) -> None:
+        report["status"] = name
+        report["phase_trace"].append({
+            "phase": name,
+            "elapsed_s": round(time.monotonic() - began, 3),
+        })
+        _write_child_progress(progress_path, report)
+
+    stage("loading_immutable_board")
     pcbfile = work / MEMBERS[0]
     board = pcbnew.LoadBoard(str(pcbfile))
+    stage("board_loaded_snapshot_original_copper")
     before = track_inventory(board)
     fingerprints = unchanged_fingerprints(board)
     originals, zone, _ = pinned_items(board)
-    pcbnew.ZONE_FILLER(board).Fill(board.Zones())
-    original_l3 = pcbnew.SHAPE_POLY_SET(
+    # Use an existing native saved fill ONLY for preliminary geometry.
+    # Independent native baseline refill remains a mandatory release gate.
+    existing_native = pcbnew.SHAPE_POLY_SET(
         zone.GetFilledPolysList(pcbnew.In2_Cu))
+    report["saved_zone_fill_outlines"] = existing_native.OutlineCount()
+    stage("saved_zone_fill_checked")
+    if existing_native.OutlineCount() == 0:
+        stage("refreshing_missing_saved_zone_fill")
+        pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+        existing_native = pcbnew.SHAPE_POLY_SET(
+            zone.GetFilledPolysList(pcbnew.In2_Cu))
+        if existing_native.OutlineCount() == 0:
+            raise ValueError("No baseline native power fill available")
     power = filled(zone)
+    stage("baseline_power_geometry_ready")
     selected = {t.m_Uuid.AsString() for t in originals.values()}
     for track in originals.values():
         board.Remove(track)
@@ -333,6 +363,7 @@ def attempt(work: Path, schedule: tuple[str, ...],
     for uid, item in before.items():
         if uid not in selected and track_inventory(board).get(uid) != item:
             raise RuntimeError("Foreign copper UUID modified by ripup")
+    stage("protected_original_copper_locked")
     guarded = [
         Point(a[1:]).buffer(.505)
         for a, b in zip(PROBE_28_CH022_LAYERS, PROBE_28_CH022_LAYERS[1:])
@@ -340,15 +371,9 @@ def attempt(work: Path, schedule: tuple[str, ...],
     ]
     guard = unary_union(guarded)
     fixed_power = power_fcu_obstacles(board)
+    stage("power_fcu_obstacles_ready")
     order_deadline = time.monotonic() + order_time_budget
-    report: dict[str, Any] = {
-        **FLAGS, "status": "cooperative_bps_started",
-        "order": list(schedule), "connected": [],
-        "failure": None,
-        "native_DRC": None, "native_parity_pass": False,
-        "L3_loss_mm2": None, "L3_gain_mm2": None,
-    }
-    _write_child_progress(progress_path, report)
+    stage("cooperative_bps_started")
     for name in schedule:
         segment = originals[name]
         endpoint_a, endpoint_b = (
@@ -359,6 +384,7 @@ def attempt(work: Path, schedule: tuple[str, ...],
         path = None
         # UUID and endpoint evidence is written before A* so the parent
         # can recover it even if this child exceeds its hard wall-clock cap.
+        stage("diagnosing_" + name)
         diagnosis = terminal_fixed_neighbors(board, name, segment)
         report["status"] = "evaluating_single_net"
         report["failure"] = {
@@ -412,6 +438,24 @@ def attempt(work: Path, schedule: tuple[str, ...],
     if unchanged_fingerprints(board) != fingerprints:
         raise RuntimeError("Pad, via or zone fingerprint changed")
 
+    # Independently refill an unmodified baseline before the first L3
+    # acceptance test. Saved fill has no release authority.
+    stage("native_refill_independent_baseline_before_L3_gate")
+    reference_board = pcbnew.LoadBoard(
+        str(work / "baseline" / MEMBERS[0]))
+    reference_zone = next(
+        (z for z in reference_board.Zones()
+         if z.m_Uuid.AsString() == ZONE and
+         z.GetNetname() == "3V3A"
+         and z.IsOnLayer(pcbnew.In2_Cu)), None)
+    if reference_zone is None:
+        raise RuntimeError("Independent native baseline zone missing")
+    pcbnew.ZONE_FILLER(reference_board).Fill(reference_board.Zones())
+    original_l3 = pcbnew.SHAPE_POLY_SET(
+        reference_zone.GetFilledPolysList(pcbnew.In2_Cu))
+    if original_l3.OutlineCount() == 0:
+        raise RuntimeError("Independent native power refill empty")
+    stage("native_original_power_refill_ready")
     ch022 = list(PROBE_28_CH022_LAYERS)
     if len(ch022) != 23 or sum(a[0] != b[0]
                                for a, b in zip(ch022, ch022[1:])) != 4:
@@ -479,6 +523,15 @@ def one_order(archive_path: Path, index: int,
               max_margin: float, order_budget: float,
               progress_path: Path | None = None) -> dict[str, Any]:
     """Execute one KiCad SWIG BOARD lifecycle in an isolated child process."""
+    _write_child_progress(progress_path, {
+        **FLAGS, "status": "child_started_before_archive_extraction",
+        "order": list(order_schedules()[index]), "connected": [],
+        "failure": {"net": None},
+        "phase_trace": [{"phase": "child_started_before_archive_extraction",
+                         "elapsed_s": 0.0}],
+        "native_DRC": None, "native_DRC_qualified": False,
+        "L3_loss_mm2": None, "L3_gain_mm2": None,
+    })
     with tempfile.TemporaryDirectory(prefix="ch025-single-order-") as d:
         work = Path(d)
         with zipfile.ZipFile(archive_path) as archive:
@@ -488,6 +541,15 @@ def one_order(archive_path: Path, index: int,
                 (work / name).write_bytes(archive.read(name))
         if digest(work / MEMBERS[0]) != BOARD_SHA256:
             raise RuntimeError("Immutable 139 PCB member hash mismatch")
+        _write_child_progress(progress_path, {
+            **FLAGS, "status": "archive_verified_pre_pcbnew",
+            "order": list(order_schedules()[index]), "connected": [],
+            "failure": {"net": None},
+            "phase_trace": [{"phase": "archive_verified_pre_pcbnew",
+                             "elapsed_s": 0.0}],
+            "native_DRC": None, "native_DRC_qualified": False,
+            "L3_loss_mm2": None, "L3_gain_mm2": None,
+        })
         import pcbnew
         if not pcbnew.Version().startswith("8.0.9"):
             raise RuntimeError("KiCad 8.0.9 required")
@@ -608,6 +670,9 @@ def main() -> None:
                 }
                 report["status"] = "isolated_order_timeout_partial_evidence"
                 report["native_DRC_qualified"] = False
+                report["native_parity_pass"] = False
+                report["L3_loss_mm2"] = None
+                report["L3_gain_mm2"] = None
                 report["independent_replay_verified"] = False
                 report.setdefault("failure", {})
                 if report["failure"] is None:
