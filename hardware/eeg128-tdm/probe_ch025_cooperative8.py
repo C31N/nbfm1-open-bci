@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
 """Fail-closed cooperative F.Cu eight-net routing on SHA-pinned 139 PCB.
 
-BPS: bounded best-priority permutations, with native-obstacle shortest-path
-mesh as the local search primitive (the latter is Dijkstra, not A*).
+BPS: bounded local backtracking across four seed priority orders.
+Only temporary new F.Cu tracks may be ripped up; A* and (for CH025) a
+Dijkstra mesh fallback propose geometry, never native DRC qualification.
 The old 16-point CH025 line is NOT pinned. Every selected neighbor track,
 its original start/end coordinates and original net assignment are protected
 by endpoint and board-UUID checks. No new pads/vias, B.Cu, or In1.Cu copper.
@@ -427,60 +428,115 @@ def attempt(work: Path, schedule: tuple[str, ...],
     stage("CH027_safe_alternate_via_anchor_locked")
     order_deadline = time.monotonic() + order_time_budget
     stage("cooperative_bps_started")
-    for name in schedule:
+    from ch025_ripup_backtrack import bounded_ripup
+
+    # Only new, temporary copper UUIDs may be removed during backtracking.
+    # Preserve every original via, pad and protected trace byte-for-byte.
+    fixed_ids = set(after_ripup)
+    journal = []
+    def try_route(name: str, margin: float, factor: float,
+                  pending: tuple[str, ...]) -> tuple[Any | None, dict]:
+        if margin > max_margin:
+            return None, {"reason": "routing_window_limit",
+                          "margin_mm": margin}
         segment = originals[name]
-        endpoint_a, endpoint_b = (
-            (SRC, DST) if name == NET
-            else (xy(segment.GetStart()), CH027_ALT_TARGET)
-            if name == "CH027_N_MUX"
-            else (xy(segment.GetStart()), xy(segment.GetEnd()))
-        )
-        rows: list[dict[str, Any]] = []
-        path = None
-        # UUID and endpoint evidence is written before A* so the parent
-        # can recover it even if this child exceeds its hard wall-clock cap.
-        stage("diagnosing_" + name)
-        diagnosis = terminal_fixed_neighbors(board, name, segment)
-        report["status"] = "evaluating_single_net"
-        report["failure"] = {
-            "net": name, "source_mm": list(endpoint_a),
-            "target_mm": list(endpoint_b), "terminal_distance_mm": round(
-                math.dist(endpoint_a, endpoint_b), 6),
-            "local_endpoint_obstacles": diagnosis, "trials": rows,
-        }
+        report["failure"] = {"net": name,
+                             "phase": "backtracking_probe",
+                             "margin_mm": margin, "weight": factor}
         _write_child_progress(progress_path, report)
-        for margin in NATIVE_WINDOW_MM:
-            if margin > max_margin:
-                continue
-            rows.append({"margin_mm": margin,
-                         "status": "native_astar_attempt_in_progress"})
-            _write_child_progress(progress_path, report)
-            pending = [(n, originals[n]) for n in schedule
-                       if n not in {v["net"] for v in report["connected"]}]
-            path, detail = candidate_route(
-                board, name, segment, power, fixed_power, guard,
-                margin, pending, bias, order_deadline)
-            rows[-1] = detail
-            _write_child_progress(progress_path, report)
-            if path is not None:
-                break
-            if time.monotonic() >= order_deadline:
-                report["status"] = "bounded_order_budget_exhausted"
-                _write_child_progress(progress_path, report)
-                return report
-        if path is None:
-            report["status"] = "unroutable_next_net"
-            _write_child_progress(progress_path, report)
-            return report
+        return candidate_route(
+            board, name, segment, power, fixed_power, guard, margin,
+            [(net, originals[net]) for net in pending],
+            bias * factor, order_deadline,
+        )
+
+    def place_proposal(name: str, path: Any) -> list[str]:
+        if not path or any(len(p) != 3 or p[0] != 0 for p in path):
+            raise RuntimeError("Speculative route left F.Cu")
+        before_add = {
+            t.m_Uuid.AsString() for t in board.GetTracks()
+        }
         add_mesh_path(board, path, board.FindNet(name).GetNetCode(),
                       (pcbnew.F_Cu, pcbnew.B_Cu))
-        report["connected"].append({
-            "net": name, "points": len(path), "path": path,
-            "trials": rows,
-        })
-        report["failure"] = None
-        report["status"] = "partial_net_routes_only"
+        additions = {
+            t.m_Uuid.AsString(): t for t in board.GetTracks()
+            if t.m_Uuid.AsString() not in before_add
+        }
+        if not additions or any(
+                uid in before or
+                t.GetNetname() != name or
+                t.GetLayer() != pcbnew.F_Cu or
+                isinstance(t, (pcbnew.PCB_VIA, pcbnew.PCB_ARC)) or
+                abs(pcbnew.ToMM(t.GetWidth()) - .15) > .000001
+                for uid, t in additions.items()):
+            raise RuntimeError(
+                "Speculative insertion changed an untouchable layer/object")
+        return sorted(additions)
+
+    def ripup_only_owned(name: str, owned: tuple[str, ...]) -> None:
+        copper = {
+            t.m_Uuid.AsString(): t for t in board.GetTracks()
+        }
+        for uid in owned:
+            t = copper.get(uid)
+            if (t is None or uid in before or uid in fixed_ids or
+                    t.GetNetname() != name or
+                    t.GetLayer() != pcbnew.F_Cu or
+                    isinstance(t, (pcbnew.PCB_VIA, pcbnew.PCB_ARC))):
+                raise RuntimeError(
+                    "Rejected ripup of immutable or wrong-net copper: " + uid)
+            board.Remove(t)
+        surviving = {
+            t.m_Uuid.AsString() for t in board.GetTracks()
+        }
+        if surviving != set(copper).difference(owned):
+            raise RuntimeError("Ripup changed unrelated PCB objects")
+
+    def save_backtrack_state(state: dict[str, Any]) -> None:
+        # Keep a small bounded chronological log and maximum partial prefix.
+        report["backtracking_progress"] = {
+            "current_depth": state["current_depth"],
+            "best_depth": state["best_depth"],
+            "probes": state["probes"],
+            "backtracks": state["backtracks"],
+            "last_event": state["event"],
+        }
+        if len(journal) < 80:
+            journal.append(state["event"])
+        report["best_partial_routes"] = state["best_routes"]
         _write_child_progress(progress_path, report)
+
+    stage("backtracking_on_temporary_new_copper")
+    result = bounded_ripup(
+        schedule, try_route, place_proposal, ripup_only_owned,
+        deadline=order_deadline, max_probes=36, max_backtracks=12,
+        progress=save_backtrack_state,
+    )
+    report["backtracking_result"] = {
+        "status": result["status"],
+        "best_partial_count": result["best_partial_count"],
+        "backtracks": result["backtracks"],
+        "probes": result["probes"],
+        "events": journal,
+    }
+    report["best_partial_routes"] = result["best_partial"]
+    report["connected"] = result["connected"]
+    report["failure"] = None if result[
+        "eight_geometric_paths_proposed"] else {
+        "net": (result["best_partial"][-1]["net"] if
+                result["best_partial"] else None),
+        "kind": "bounded_backtracking_not_eight_connected",
+        "best_partial_count": result["best_partial_count"],
+    }
+    if not result["eight_geometric_paths_proposed"]:
+        if {
+            t.m_Uuid.AsString() for t in board.GetTracks()
+        } != fixed_ids:
+            raise RuntimeError("Failed search did not restore scratch copper")
+        report["status"] = result["status"]
+        _write_child_progress(progress_path, report)
+        return report
+    stage("eight_bounded_backtrack_proposals_ready")
     if len(report["connected"]) != 8:
         raise RuntimeError("Incomplete eight-net order")
     report["eight_geometry_proposed"] = True
