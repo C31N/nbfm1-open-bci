@@ -10,7 +10,7 @@ from pathlib import Path
 
 from probe_ch025_cooperative8 import (
     FLAGS, NET, NEIGHBORS, SRC, DST, assert_locked_plan, order_schedules,
-    write_evidence,
+    write_evidence, _write_child_progress,
 )
 
 
@@ -26,6 +26,26 @@ class CooperativeEightSafety(unittest.TestCase):
         self.assertIn(NET, orders[0])
         self.assertEqual(SRC, (49.45, 14.90))
         self.assertEqual(DST, (36.105, 48.85))
+
+    def test_atomic_child_progress_remains_nonrelease(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            path = Path(root) / "child.json"
+            report = {
+                **FLAGS, "status": "evaluating_single_net",
+                "order": list(order_schedules()[0]),
+                "connected": [], "failure": {
+                    "net": NET,
+                    "source_mm": [49.45, 14.9],
+                    "target_mm": [36.105, 48.85],
+                    "trials": [{"margin_mm": 3.0,
+                                "status": "native_astar_attempt_in_progress"}],
+                },
+            }
+            _write_child_progress(path, report)
+            self.assertEqual(json.loads(path.read_text())["failure"]["net"],
+                             NET)
+            self.assertFalse(json.loads(path.read_text())["accepted"])
+            self.assertFalse(path.with_suffix(".json.tmp").exists())
 
     def test_release_is_fail_closed(self) -> None:
         self.assertTrue(all(value is False for value in FLAGS.values()))

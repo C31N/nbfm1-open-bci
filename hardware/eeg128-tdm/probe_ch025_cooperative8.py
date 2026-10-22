@@ -202,8 +202,8 @@ def candidate_route(board: Any, name: str, segment: Any,
     route = search(
         board, start, end, board.FindNet(name).GetNetCode(),
         .15, .15, both_layers=False, margin=margin,
-        step=raster_mm, max_nodes=48000,
-        deadline=min(deadline, time.monotonic() + 15.0),
+        step=raster_mm, max_nodes=18000,
+        deadline=min(deadline, time.monotonic() + 8.0),
         start_layer=0, goal_layer=0,
         layers=(pcbnew.F_Cu, pcbnew.B_Cu),
         cost_regions=((0, guard, 250.0), (0, future_reserved, bias)),
@@ -295,16 +295,27 @@ def terminal_fixed_neighbors(board: Any, name: str,
     return near
 
 
+def _write_child_progress(path: Path | None, report: dict[str, Any]) -> None:
+    """Atomically retain native geometry diagnostics before expensive A*."""
+    if path is None:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    staged = path.with_suffix(path.suffix + ".tmp")
+    staged.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    staged.replace(path)
+
+
 def attempt(work: Path, schedule: tuple[str, ...],
             max_margin: float, bias: float,
-            order_time_budget: float = 170.0) -> dict[str, Any]:
+            order_time_budget: float = 65.0,
+            progress_path: Path | None = None) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import Point
     from shapely.ops import unary_union
     from escape_mesh_505 import add_mesh_path
     from analyze_ch025_l3_native_refill import filled
     from native_connectivity import airwire_counts, regressed_nets
-    from route_targeted_closure import metrics, native
+    from route_targeted_closure import metrics, native, xy
 
     pcbfile = work / MEMBERS[0]
     board = pcbnew.LoadBoard(str(pcbfile))
@@ -337,31 +348,48 @@ def attempt(work: Path, schedule: tuple[str, ...],
         "native_DRC": None, "native_parity_pass": False,
         "L3_loss_mm2": None, "L3_gain_mm2": None,
     }
+    _write_child_progress(progress_path, report)
     for name in schedule:
         segment = originals[name]
+        endpoint_a, endpoint_b = (
+            (SRC, DST) if name == NET
+            else (xy(segment.GetStart()), xy(segment.GetEnd()))
+        )
         rows: list[dict[str, Any]] = []
         path = None
+        # UUID and endpoint evidence is written before A* so the parent
+        # can recover it even if this child exceeds its hard wall-clock cap.
+        diagnosis = terminal_fixed_neighbors(board, name, segment)
+        report["status"] = "evaluating_single_net"
+        report["failure"] = {
+            "net": name, "source_mm": list(endpoint_a),
+            "target_mm": list(endpoint_b), "terminal_distance_mm": round(
+                math.dist(endpoint_a, endpoint_b), 6),
+            "local_endpoint_obstacles": diagnosis, "trials": rows,
+        }
+        _write_child_progress(progress_path, report)
         for margin in NATIVE_WINDOW_MM:
             if margin > max_margin:
                 continue
+            rows.append({"margin_mm": margin,
+                         "status": "native_astar_attempt_in_progress"})
+            _write_child_progress(progress_path, report)
             pending = [(n, originals[n]) for n in schedule
                        if n not in {v["net"] for v in report["connected"]}]
             path, detail = candidate_route(
                 board, name, segment, power, fixed_power, guard,
                 margin, pending, bias, order_deadline)
-            rows.append(detail)
+            rows[-1] = detail
+            _write_child_progress(progress_path, report)
             if path is not None:
                 break
             if time.monotonic() >= order_deadline:
                 report["status"] = "bounded_order_budget_exhausted"
-                report["failure"] = dict(net=name, trials=rows)
+                _write_child_progress(progress_path, report)
                 return report
         if path is None:
             report["status"] = "unroutable_next_net"
-            report["failure"] = dict(
-                net=name, trials=rows,
-                local_endpoint_obstacles=terminal_fixed_neighbors(
-                    board, name, segment))
+            _write_child_progress(progress_path, report)
             return report
         add_mesh_path(board, path, board.FindNet(name).GetNetCode(),
                       (pcbnew.F_Cu, pcbnew.B_Cu))
@@ -369,9 +397,14 @@ def attempt(work: Path, schedule: tuple[str, ...],
             "net": name, "points": len(path), "path": path,
             "trials": rows,
         })
+        report["failure"] = None
+        report["status"] = "partial_net_routes_only"
+        _write_child_progress(progress_path, report)
     if len(report["connected"]) != 8:
         raise RuntimeError("Incomplete eight-net order")
     report["eight_geometry_proposed"] = True
+    report["status"] = "eight_geometric_routes_require_native_gates"
+    _write_child_progress(progress_path, report)
     after = track_inventory(board)
     for uid, old in before.items():
         if uid not in selected and after.get(uid) != old:
@@ -443,7 +476,8 @@ def attempt(work: Path, schedule: tuple[str, ...],
 
 
 def one_order(archive_path: Path, index: int,
-              max_margin: float, order_budget: float) -> dict[str, Any]:
+              max_margin: float, order_budget: float,
+              progress_path: Path | None = None) -> dict[str, Any]:
     """Execute one KiCad SWIG BOARD lifecycle in an isolated child process."""
     with tempfile.TemporaryDirectory(prefix="ch025-single-order-") as d:
         work = Path(d)
@@ -462,7 +496,8 @@ def one_order(archive_path: Path, index: int,
             shutil.copy2(work / name, work / "baseline" / name)
         return attempt(work, order_schedules()[index], max_margin,
                        bias=(.15, .75, 1.5, 3.0)[index],
-                       order_time_budget=order_budget)
+                       order_time_budget=order_budget,
+                       progress_path=progress_path)
 
 
 def write_evidence(path: Path, reports: list[dict[str, Any]]) -> None:
@@ -494,7 +529,7 @@ def main() -> None:
                         choices=(3.0, 6.0, 10.0), default=6.0)
     parser.add_argument("--single-order", type=int,
                         choices=(0, 1, 2, 3), default=None)
-    parser.add_argument("--order-budget", type=float, default=115.0)
+    parser.add_argument("--order-budget", type=float, default=65.0)
     args = parser.parse_args()
     assert_locked_plan()
     if not (10.0 <= args.order_budget <= 180.0):
@@ -503,7 +538,8 @@ def main() -> None:
         raise SystemExit("Pinned immutable checkpoint ZIP SHA-256 mismatch")
     if args.single_order is not None:
         report = one_order(args.archive, args.single_order,
-                           args.max_margin, args.order_budget)
+                           args.max_margin, args.order_budget,
+                           progress_path=args.output)
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(report, indent=2) + "\n",
                                encoding="utf-8")
@@ -527,7 +563,7 @@ def main() -> None:
                    "--order-budget", str(args.order_budget)]
             try:
                 proc = subprocess.run(cmd, capture_output=True,
-                                      text=True, timeout=args.order_budget + 38,
+                                      text=True, timeout=args.order_budget + 12,
                                       check=False)
                 if proc.returncode == 0 and individual.is_file():
                     report = json.loads(individual.read_text(
@@ -551,17 +587,35 @@ def main() -> None:
                 if proc.stdout:
                     print(proc.stdout[-1500:], flush=True)
             except subprocess.TimeoutExpired:
-                report = {
-                    **FLAGS, "status": "isolated_order_process_timeout",
-                    "order": list(order_schedules()[index]),
-                    "connected": [],
-                    "failure": {
-                        "net": None,
-                        "time_budget_s": args.order_budget + 38,
-                    },
-                    "native_DRC": None,
-                    "L3_loss_mm2": None, "L3_gain_mm2": None,
+                # The child checkpoints before every expensive A* trial.
+                # Never mistake partial paths for electrical net restitution.
+                recovered = None
+                if individual.is_file():
+                    try:
+                        candidate = json.loads(individual.read_text(
+                            encoding="utf-8"))
+                        if (candidate.get("order") ==
+                                list(order_schedules()[index]) and
+                                all(candidate.get(k) is False for k in FLAGS)):
+                            recovered = candidate
+                    except (OSError, ValueError, TypeError):
+                        recovered = None
+                report = recovered if recovered is not None else {
+                    **FLAGS, "order": list(order_schedules()[index]),
+                    "connected": [], "failure": {"net": None},
+                    "native_DRC": None, "L3_loss_mm2": None,
+                    "L3_gain_mm2": None,
                 }
+                report["status"] = "isolated_order_timeout_partial_evidence"
+                report["native_DRC_qualified"] = False
+                report["independent_replay_verified"] = False
+                report.setdefault("failure", {})
+                if report["failure"] is None:
+                    report["failure"] = {"net": None}
+                report["failure"]["time_budget_s"] = (
+                    args.order_budget + 12)
+                report["failure"]["partial_evidence_recovered"] = (
+                    recovered is not None)
         reports.append(report)
         write_evidence(args.output, reports)
         print(json.dumps({
