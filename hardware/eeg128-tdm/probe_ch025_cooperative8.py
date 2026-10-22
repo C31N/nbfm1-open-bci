@@ -75,14 +75,17 @@ def order_schedules() -> list[tuple[str, ...]]:
     """Four deterministic priority permutations; every net exactly once."""
     mux = ("MUX_S0", "MUX_S1", "MUX_S2", "MUX_S3", "MUX_EN")
     analog = ("CH027_N_MUX", "CH030_P_MUX")
+    # Native Probe #10: MUX_S3 failed 24 times after early MUX_EN.
+    # Try S3 before EN and S2 under four distinct bounded DFS prefixes.
     schedules = [
-        (NET, *analog, *mux),
-        (*analog, "MUX_S0", "MUX_S1", "MUX_EN",
-         "MUX_S3", "MUX_S2", NET),
-        ("MUX_S1", "MUX_EN", NET, "CH027_N_MUX",
-         "CH030_P_MUX", "MUX_S0", "MUX_S2", "MUX_S3"),
-        ("CH027_N_MUX", NET, "CH030_P_MUX", "MUX_EN",
-         "MUX_S0", "MUX_S1", "MUX_S3", "MUX_S2"),
+        (*analog, "MUX_S0", "MUX_S1", "MUX_S3",
+         "MUX_EN", "MUX_S2", NET),
+        (*analog, "MUX_S0", "MUX_S1", "MUX_S3",
+         "MUX_S2", "MUX_EN", NET),
+        (*analog, "MUX_S3", "MUX_EN", "MUX_S2",
+         "MUX_S0", "MUX_S1", NET),
+        (*analog, "MUX_S3", "MUX_S2", NET,
+         "MUX_S0", "MUX_S1", "MUX_EN"),
     ]
     target = {NET, *NEIGHBORS.values()}
     if len(schedules) != 4 or any(set(s) != target or len(s) != 8
