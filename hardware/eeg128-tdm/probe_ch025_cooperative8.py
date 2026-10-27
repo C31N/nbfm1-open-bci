@@ -228,8 +228,8 @@ def candidate_route(board: Any, name: str, segment: Any,
     row["grid_mm"] = raster_mm
     route = None
     if prefer_exact_mesh:
-        if name != "MUX_EN":
-            raise ValueError("Exact mesh priority restricted to MUX_EN")
+        if name not in ("MUX_EN", "MUX_S2", "MUX_S3"):
+            raise ValueError("Exact mesh priority restricted to MUX triplet")
         # This is executed with temporary S2/S3 PCB tracks ALREADY inserted.
         # Native obstacle construction therefore treats their real copper
         # as hard constraints, unlike a cost-only A* preference.
@@ -704,6 +704,121 @@ def attempt(work: Path, schedule: tuple[str, ...],
                     "separation_mm": round(separation, 9),
                 })
                 report["joint_mux_hard_obstacle_repair"] = locked_result
+        # Reverse dependency: do not assume S2/S3 must remain straight.
+        # Temporarily lock each viable EN path and search alternative
+        # S2/S3 copper geometries against that hard native obstacle.
+        # Roll back the entire scratch set before any return/exception.
+        inverse_evidence: list[dict[str, Any]] = []
+        if (not proposal["plans"] and pools["MUX_EN"]
+                and time.monotonic() < order_deadline - 18.0):
+            stage("native_EN_locked_negotiated_S2_S3_reroute")
+        for en_index, en_candidate in enumerate(pools["MUX_EN"][:2]):
+            if proposal["plans"] or time.monotonic() >= order_deadline - 18.0:
+                break
+            snapshot = {
+                t.m_Uuid.AsString() for t in board.GetTracks()
+            }
+            staged_copper: list[str] = []
+            local = {
+                "EN_candidate_index": en_index,
+                "status": "EN_first_joint_retry",
+                "routing_trials": [],
+                "qualified_joint_triple": False,
+            }
+            try:
+                chosen: dict[str, Any] = {
+                    "MUX_EN": en_candidate["path"],
+                }
+                for net in ("MUX_EN", "MUX_S2", "MUX_S3"):
+                    if net != "MUX_EN":
+                        selected_path = None
+                        for window in (3.0, 6.0):
+                            if time.monotonic() >= order_deadline - 9.0:
+                                break
+                            path, detail = candidate_route(
+                                board, net, originals[net],
+                                power, fixed_power, guard,
+                                window, [], 1.0, order_deadline,
+                                prefer_exact_mesh=(window == 3.0))
+                            local["routing_trials"].append({
+                                "net": net, "window_mm": window,
+                                "found": path is not None,
+                                "diagnostic": detail,
+                            })
+                            _write_child_progress(progress_path, {
+                                **report,
+                                "joint_mux_EN_locked_trial": local,
+                            })
+                            if path is not None:
+                                selected_path = path
+                                break
+                        if selected_path is None:
+                            local["status"] = net + "_unroutable_against_locked_bundle"
+                            break
+                        chosen[net] = selected_path
+                    before_temp = {
+                        t.m_Uuid.AsString() for t in board.GetTracks()
+                    }
+                    add_mesh_path(
+                        board, chosen[net], board.FindNet(net).GetNetCode(),
+                        (pcbnew.F_Cu, pcbnew.B_Cu))
+                    additions = [
+                        t for t in board.GetTracks()
+                        if t.m_Uuid.AsString() not in before_temp
+                    ]
+                    if (not additions or
+                            any(t.m_Uuid.AsString() in before or
+                                t.GetNetname() != net or
+                                t.GetLayer() != pcbnew.F_Cu or
+                                isinstance(t, (pcbnew.PCB_VIA, pcbnew.PCB_ARC))
+                                for t in additions)):
+                        raise RuntimeError("Unsafe locked EN trial copper")
+                    staged_copper.extend(
+                        t.m_Uuid.AsString() for t in additions)
+                if len(chosen) == 3:
+                    alternate = {
+                        net: list(pools[net]) for net in TRIPLET
+                    }
+                    for net in ("MUX_S2", "MUX_S3"):
+                        alternate[net].append({
+                            "path": chosen[net],
+                            "solver": "locked_EN_native_alternative",
+                            "native_DRC_qualified": False,
+                        })
+                    evaluated = coupled_candidates(
+                        alternate, maximum_combinations=1024,
+                        maximum_plans=4)
+                    local["joint_candidates"] = evaluated.get(
+                        "compatible_combination_count", 0)
+                    if evaluated["plans"]:
+                        proposal = evaluated
+                        pools = alternate
+                        local["qualified_joint_triple"] = True
+                        local["status"] = "joint_geometry_proposed_pending_native_DRC"
+                    else:
+                        local["status"] = "joint_pairwise_clearance_failed"
+            finally:
+                copper = {
+                    t.m_Uuid.AsString(): t for t in board.GetTracks()
+                }
+                for uuid in staged_copper:
+                    t = copper.get(uuid)
+                    if (t is None or uuid in snapshot or uuid in fixed_ids
+                            or t.GetLayer() != pcbnew.F_Cu or
+                            t.GetNetname() not in TRIPLET or
+                            isinstance(t, (pcbnew.PCB_VIA, pcbnew.PCB_ARC))):
+                        raise RuntimeError(
+                            "Refused protected copper removal in EN-first retry")
+                    board.Remove(t)
+                if ({
+                    t.m_Uuid.AsString() for t in board.GetTracks()
+                } != snapshot or
+                        unchanged_fingerprints(board) != fingerprints):
+                    raise RuntimeError(
+                        "EN-first trial failed immutable copper restoration")
+            inverse_evidence.append(local)
+            report["joint_mux_EN_first_repair"] = inverse_evidence
+            _write_child_progress(progress_path, report)
         joint_cache["result"] = proposal
         report["joint_mux_optimisation"] = {
             key: val for key, val in proposal.items() if key != "plans"
