@@ -11,6 +11,7 @@ from pathlib import Path
 from probe_ch025_cooperative8 import (
     FLAGS, NET, NEIGHBORS, SRC, DST, assert_locked_plan, order_schedules,
     write_evidence, _write_child_progress,
+    native_staged_mux_corridor_inventory,
 )
 
 
@@ -46,6 +47,40 @@ class CooperativeEightSafety(unittest.TestCase):
                              NET)
             self.assertFalse(json.loads(path.read_text())["accepted"])
             self.assertFalse(path.with_suffix(".json.tmp").exists())
+
+    def test_corridor_uuid_diagnostic_is_read_only(self) -> None:
+        from unittest.mock import patch
+        from shapely.geometry import Point, box
+
+        class FakeSegment:
+            def GetStart(self) -> tuple[float, float]:
+                return (0.0, 0.0)
+
+            def GetEnd(self) -> tuple[float, float]:
+                return (10.0, 0.0)
+
+        source_copper = [Point(5.0, 0.0).buffer(.3)]
+        objects = [{
+            "uuid": "protected-test-copper",
+            "net": "VCM", "kind": "track", "protected": True,
+        }]
+        with (
+            patch("analyze_ch025_fcu_blocker_uuids.copper_shapes",
+                  return_value=(source_copper, objects)),
+            patch("route_targeted_closure.xy", side_effect=lambda x: x),
+            patch("route_targeted_closure.routing_domain",
+                  return_value=box(-2, -3, 12, 3)),
+        ):
+            result = native_staged_mux_corridor_inventory(
+                object(), "MUX_S2", FakeSegment())
+        self.assertEqual(len(result["corridors"]), 7)
+        direct = result["corridors"][0]
+        self.assertEqual(direct["blocked_item_count"], 1)
+        self.assertEqual(direct["protected_blocker_count"], 1)
+        self.assertEqual(direct["nearby"][0]["uuid"],
+                         "protected-test-copper")
+        self.assertFalse(result["native_DRC_qualified"])
+        self.assertFalse(result["release_allowed"])
 
     def test_release_is_fail_closed(self) -> None:
         self.assertTrue(all(value is False for value in FLAGS.values()))

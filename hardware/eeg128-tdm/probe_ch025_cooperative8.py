@@ -376,6 +376,87 @@ def terminal_fixed_neighbors(board: Any, name: str,
     return near
 
 
+def native_staged_mux_corridor_inventory(board: Any, name: str,
+                                      segment: Any) -> dict[str, Any]:
+    """Exact UUID-anchored read-only diagnosis of a blocked F.Cu MUX route.
+
+    Copper clearance is inherited from native pad/track geometries via
+    copper_shapes; include currently staged EN/S2/S3 temporary tracks,
+    original vias and protected nets without moving any item. Offset
+    corridors are diagnostic only and do not assert electrical closure.
+    """
+    from shapely.geometry import LineString, Point
+    from shapely.ops import nearest_points
+    from analyze_ch025_fcu_blocker_uuids import copper_shapes
+    from route_targeted_closure import xy, routing_domain
+
+    start, end = xy(segment.GetStart()), xy(segment.GetEnd())
+    if name not in ("MUX_S2", "MUX_S3"):
+        raise ValueError("Only blocked MUX S2/S3 corridor diagnostics")
+    shapes, entries = copper_shapes(board)
+    lines: list[tuple[str, Any]] = [
+        ("direct", LineString((start, end))),
+    ]
+    sign = 1.0 if end[0] >= start[0] else -1.0
+    for offset in (-.4, .4, -.8, .8, -1.2, 1.2):
+        a = (start[0] + sign*.6, start[1] + offset)
+        b = (end[0] - sign*.6, end[1] + offset)
+        lines.append((f"offset_{offset:+.1f}mm",
+                      LineString((start, a, b, end))))
+    domain = routing_domain(board, .075, .25)
+    trials = []
+    for label, centreline in lines:
+        blocked = []
+        for geom, entry in zip(shapes, entries):
+            if entry["net"] == name:
+                continue
+            distance = centreline.distance(geom)
+            if distance > .350:
+                continue
+            if distance <= .000005:
+                overlap = centreline.intersection(geom)
+                contact = (overlap.representative_point()
+                           if not overlap.is_empty
+                           else nearest_points(centreline,geom)[0])
+            else:
+                contact = nearest_points(centreline, geom)[0]
+            blocked.append({
+                "uuid": entry["uuid"],
+                "net": entry["net"],
+                "kind": entry["kind"],
+                "protected": entry["protected"],
+                "distance_to_clearance_envelope_mm": round(distance, 6),
+                "closest_centreline_point_mm": [
+                    round(contact.x, 6), round(contact.y, 6)],
+            })
+        blocked.sort(key=lambda item: (
+            item["distance_to_clearance_envelope_mm"],
+            item["net"], item["uuid"]))
+        trials.append({
+            "corridor": label,
+            "board_edge_domain_valid": domain.covers(centreline),
+            "blocked_item_count": sum(
+                x["distance_to_clearance_envelope_mm"] <= .000005
+                for x in blocked),
+            "protected_blocker_count": sum(
+                x["protected"] and
+                x["distance_to_clearance_envelope_mm"] <= .000005
+                for x in blocked),
+            "nearby": blocked[:20],
+            "candidate_is_native_DRC_qualified": False,
+        })
+    return {
+        "net": name,
+        "native_original_anchor_start_mm": list(start),
+        "native_original_anchor_end_mm": list(end),
+        "selected_layers": ["F.Cu"],
+        "corridors": trials,
+        "protected_original_copper_modified": False,
+        "native_DRC_qualified": False,
+        "release_allowed": False,
+    }
+
+
 def _write_child_progress(path: Path | None, report: dict[str, Any]) -> None:
     """Atomically retain native geometry diagnostics before expensive A*."""
     if path is None:
@@ -792,6 +873,14 @@ def attempt(work: Path, schedule: tuple[str, ...],
                                 break
                         if selected_path is None:
                             local["status"] = net + "_unroutable_against_locked_bundle"
+                            # Diagnostic only. Persist exact UUID/coordinate
+                            # witnesses while the temporary EN + first S
+                            # tracks still exist on the scratch board.
+                            local["blocked_corridor_inventory"] = (
+                                native_staged_mux_corridor_inventory(
+                                    board, net, originals[net]))
+                            report["joint_mux_EN_locked_trial"] = local
+                            _write_child_progress(progress_path, report)
                             break
                         chosen[net] = selected_path
                         # Exact path coordinates allow the next diagnosis to
