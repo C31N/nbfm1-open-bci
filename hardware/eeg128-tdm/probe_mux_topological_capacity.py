@@ -381,7 +381,24 @@ def mux_en_bcu_via_hop(board: Any, zone: Any) -> dict[str, Any]:
             (w, e, wi) for w, wi in western for e, ei in eastern
             if wi is not None and wi == ei
         ), None)
+        nearby_cut: dict[str, Any] | None = None
+        if label == "expanded_27mm" and match is None:
+            # One nearest disjoint free-space pair, NOT a global minimum
+            # cut. UUID inventory guides further review without rip-up.
+            separated = sorted((
+                (wide_components[wi].distance(wide_components[ei]),
+                 wi, ei)
+                for _, wi in western for _, ei in eastern
+                if wi is not None and ei is not None
+            ), key=lambda row: (row[0], row[1], row[2]))
+            if separated:
+                from analyze_ch025_bcu_cut_uuids import survey as gap_survey
+                _, west_id, east_id = separated[0]
+                nearby_cut = gap_survey(
+                    board, wide_components[west_id],
+                    wide_components[east_id], target_net="MUX_EN")
         expanded.append({
+            "nearest_BCu_gap_UUID_inventory": nearby_cut,
             "window_name": label,
             "bounds_mm": list(bounds),
             "free_BCu_components": len(wide_components),

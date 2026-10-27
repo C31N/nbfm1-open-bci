@@ -5,7 +5,8 @@ from __future__ import annotations
 
 from typing import Any
 
-PROTECTED = ('VCM', 'AGND', 'CH017_N', 'CH019_P', 'CH024_P',
+PROTECTED = ('VCM', 'AGND', 'CH017_N', 'CH019_P', 'CH021_P',
+             'CH010_N', 'CH024_P',
              'CH026_P', '3V3', 'VCC', 'VDD', 'VREG', 'GND')
 
 
@@ -17,7 +18,8 @@ def distance_gap(source: Any, target: Any) -> dict[str, Any]:
             'target_edge_mm': [round(b.x, 6), round(b.y, 6)]}
 
 
-def survey(board: Any, source: Any, target: Any) -> dict[str, Any]:
+def survey(board: Any, source: Any, target: Any,
+           *, target_net: str = 'CH025_N_MUX') -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import LineString, Point, box
     from route_targeted_closure import xy
@@ -28,11 +30,13 @@ def survey(board: Any, source: Any, target: Any) -> dict[str, Any]:
     result: dict[str, Any] = {
         'read_only': True, 'accepted': False,
         'routing_completed': False, 'fabrication_release': False,
-        'BCu_gap': gap, 'protected_uuids': [],
+        'BCu_gap': gap, 'survey_target_net': target_net,
+        'not_a_topological_minimum_cut_proof': True,
+        'protected_uuids': [],
         'movable_candidate_uuids': [], 'nearby_objects': [],
     }
     for item in board.GetTracks():
-        if item.GetNetname() == 'CH025_N_MUX':
+        if item.GetNetname() == target_net:
             continue
         is_via = isinstance(item, pcbnew.PCB_VIA)
         if not is_via and item.GetLayer() != pcbnew.B_Cu:
@@ -61,7 +65,7 @@ def survey(board: Any, source: Any, target: Any) -> dict[str, Any]:
         })
     for footprint in board.GetFootprints():
         for pad in footprint.Pads():
-            if pad.GetNetname() == 'CH025_N_MUX' or not pad.IsOnLayer(pcbnew.B_Cu):
+            if pad.GetNetname() == target_net or not pad.IsOnLayer(pcbnew.B_Cu):
                 continue
             b = pad.GetBoundingBox()
             shape = box(pcbnew.ToMM(b.GetX()), pcbnew.ToMM(b.GetY()),
