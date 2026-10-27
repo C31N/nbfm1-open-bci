@@ -279,7 +279,7 @@ def mux_en_bcu_via_hop(board: Any, zone: Any) -> dict[str, Any]:
     if power.is_empty or not power.is_valid:
         raise ValueError("Pinned saved L3 copper unavailable")
     legal = routing_domain(board, .325, .25)
-    region = legal.intersection(box(26.2, 34.5, 45.5, 40.5))
+    region = legal.intersection(box(21.5, 32.0, 53.0, 44.5))
     code = board.FindNet("MUX_EN").GetNetCode()
     walls, via_block = obstacles(
         board, code, .15, .15, region, .65,
@@ -312,13 +312,13 @@ def mux_en_bcu_via_hop(board: Any, zone: Any) -> dict[str, Any]:
         for via in vias if via.GetNetname() == "MUX_EN"
     ]
     samples: dict[str, list[dict[str, Any]]] = {"west": [], "east": []}
-    for xi in range(65):
-        x = round(27.5 + xi * .25, 6)
+    for xi in range(117):
+        x = round(22.5 + xi * .25, 6)
         side = via_side(x, left, right)
         if side not in samples:
             continue
-        for yi in range(19):
-            y = round(35.0 + yi * .25, 6)
+        for yi in range(45):
+            y = round(32.5 + yi * .25, 6)
             point = Point(x, y)
             if not (via_free.covers(point) and fcu_free.covers(point)
                     and bcu_free.covers(point)):
@@ -360,7 +360,7 @@ def mux_en_bcu_via_hop(board: Any, zone: Any) -> dict[str, Any]:
     for label, bounds in (
             ("local_6mm", (26.2, 34.5, 45.5, 40.5)),
             ("expanded_13mm", (25.0, 31.0, 47.0, 44.0)),
-            ("expanded_27mm", (23.0, 24.0, 49.0, 51.0))):
+            ("expanded_27mm", (21.0, 22.0, 54.0, 54.0))):
         wide_region = legal.intersection(box(*bounds))
         wide_walls, _ = obstacles(
             board, code, .15, .15, wide_region, .65,
@@ -433,7 +433,7 @@ def mux_en_bcu_via_hop(board: Any, zone: Any) -> dict[str, Any]:
             raise RuntimeError("Native CH019_N_MUX B.Cu UUID identity drift")
         candidate_tracks.append(target)
     virtual_restitutions: list[dict[str, Any]] = []
-    wide_region = legal.intersection(box(23.0, 24.0, 49.0, 51.0))
+    wide_region = legal.intersection(box(21.0, 22.0, 54.0, 54.0))
     for selection in ((0,), (1,), (0, 1)):
         removed = [candidate_tracks[i] for i in selection]
         trial = {
@@ -482,26 +482,31 @@ def mux_en_bcu_via_hop(board: Any, zone: Any) -> dict[str, Any]:
             target_fcu_id = fcu_component(TERMINALS["MUX_EN"][1])
             continuous: list[dict[str, Any]] = []
             if source_fcu_id is not None and target_fcu_id is not None:
+                # Preindex east-side candidates; avoid an unbounded
+                # west*east Shapely component search in larger windows.
+                east_access: dict[int, list[float]] = {}
+                for east_candidate in samples["east"]:
+                    ep = east_candidate["xy_mm"]
+                    if fcu_component(ep) != target_fcu_id:
+                        continue
+                    east_bcu = in_component(ep)
+                    if east_bcu is not None:
+                        east_access.setdefault(east_bcu, ep)
                 for west_candidate in samples["west"]:
                     wp = west_candidate["xy_mm"]
                     if fcu_component(wp) != source_fcu_id:
                         continue
-                    w_bcu = in_component(wp)
-                    if w_bcu is None:
+                    west_bcu = in_component(wp)
+                    if west_bcu is None or west_bcu not in east_access:
                         continue
-                    for east_candidate in samples["east"]:
-                        ep = east_candidate["xy_mm"]
-                        if (fcu_component(ep) != target_fcu_id or
-                                in_component(ep) != w_bcu):
-                            continue
-                        continuous.append({
-                            "west_via_xy_mm": wp,
-                            "east_via_xy_mm": ep,
-                            "same_BCu_free_component": w_bcu,
-                            "source_FCu_free_component": source_fcu_id,
-                            "target_FCu_free_component": target_fcu_id,
-                            "route_native_DRC_qualified": False,
-                        })
+                    continuous.append({
+                        "west_via_xy_mm": wp,
+                        "east_via_xy_mm": east_access[west_bcu],
+                        "same_BCu_free_component": west_bcu,
+                        "source_FCu_free_component": source_fcu_id,
+                        "target_FCu_free_component": target_fcu_id,
+                        "route_native_DRC_qualified": False,
+                    })
             trial.update({
                 "BCu_free_component_count": len(trial_components),
                 "west_component_ids": sorted(west_ids),
@@ -546,6 +551,7 @@ def mux_en_bcu_via_hop(board: Any, zone: Any) -> dict[str, Any]:
         "L3_power_gain_zero_qualified": False,
         "original_copper_changed": False,
         "sampling_step_mm": .25,
+        "extended_sampling_beyond_S2_S3_endpoints": True,
         "via_diameter_mm": .65,
         "power_clearance_mm": .505,
         "In1_Cu_used": False,
