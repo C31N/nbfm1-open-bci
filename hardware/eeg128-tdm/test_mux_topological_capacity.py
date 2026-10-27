@@ -4,7 +4,7 @@
 import unittest
 from shapely.geometry import box
 from probe_mux_topological_capacity import (
-    read_slices, MIN_CENTER_SEPARATION_MM, FLAGS,
+    read_slices, MIN_CENTER_SEPARATION_MM, FLAGS, assess_straight_bundle,
 )
 
 
@@ -33,6 +33,26 @@ class LocalCapacityTests(unittest.TestCase):
                       "manufacturing_files", "routing_completed",
                       "native_DRC_qualified", "checkpoint_promoted"):
             self.assertFalse(FLAGS[field])
+
+    def test_unobstructed_flat_immutable_bundle(self) -> None:
+        domain = box(0, 0, 100, 100)
+        report = assess_straight_bundle(domain, [])
+        self.assertTrue(report["pairwise_separation_pass"])
+        self.assertTrue(report["static_copper_straight_bundle_feasible"])
+        self.assertFalse(report["allowed_CH022_closure"])
+        self.assertFalse(report["fabrication_release"])
+
+    def test_foreign_protected_copper_blocks_flat_bundle(self) -> None:
+        domain = box(0, 0, 100, 100)
+        retained = [(box(33, 37.0, 34, 37.35),
+                     dict(net="CH021_P_MUX", kind="via",
+                          uuid="synthetic-protected", protected=True))]
+        report = assess_straight_bundle(domain, retained)
+        self.assertFalse(report["static_copper_straight_bundle_feasible"])
+        self.assertGreater(
+            next(row for row in report["candidate_lines"]
+                 if row["net"] == "MUX_EN")["protected_blocker_count"], 0)
+        self.assertFalse(report["checkpoint_promotion_allowed"])
 
     def test_no_zero_height_or_bad_steps(self) -> None:
         with self.assertRaises(ValueError):
