@@ -238,6 +238,44 @@ def propose_ch019_bcu_restitution(board: Any, source: tuple[float, float],
     })
     return report
 
+
+
+def native_polygon_ring_digest(polyset: Any) -> dict[str, Any]:
+    """Canonical exact integer-coordinate polygon-ring identity.
+
+    This compares native KiCad IU vertices, allowing only ring rotation,
+    reversal and polygon reordering. It never uses an area epsilon.
+    Equality of hashes is supporting evidence, NOT a released L3 gate.
+    """
+    def ring(chain: Any) -> tuple[tuple[int, int], ...]:
+        items = [(int(chain.CPoint(k).x), int(chain.CPoint(k).y))
+                 for k in range(chain.PointCount())]
+        if len(items) > 1 and items[0] == items[-1]:
+            items.pop()
+        if len(items) < 3:
+            raise RuntimeError("Native L3 polygon has fewer than 3 vertices")
+        def orient(values: list[tuple[int, int]]
+                   ) -> tuple[tuple[int, int], ...]:
+            low = min(values)
+            starts = [i for i, value in enumerate(values) if value == low]
+            return min(tuple(values[i:] + values[:i]) for i in starts)
+        return min(orient(items), orient(list(reversed(items))))
+
+    components = []
+    nvertices = 0
+    for i in range(polyset.OutlineCount()):
+        outer = ring(polyset.Outline(i))
+        holes = sorted(ring(polyset.Hole(i, j))
+                       for j in range(polyset.HoleCount(i)))
+        components.append((outer, tuple(holes)))
+        nvertices += len(outer) + sum(len(hole) for hole in holes)
+    encoded = json.dumps(sorted(components), separators=(",", ":"))
+    return {
+        "sha256": hashlib.sha256(encoded.encode("utf-8")).hexdigest(),
+        "outline_count": len(components),
+        "native_vertex_count": nvertices,
+    }
+
 def qualify(archive: Path) -> dict[str, Any]:
     """Diagnostic only: do not return an accepted PCB or manufacture."""
     import pcbnew
@@ -260,6 +298,8 @@ def qualify(archive: Path) -> dict[str, Any]:
         "F_Cu_source_optimization": None,
         "CH019_BCu_reconnected_scratch": False,
         "L3_loss_contours": [], "L3_gain_contours": [],
+        "L3_unchanged_baseline_repeat": None,
+        "L3_exact_native_polygon_ring_identity": False,
     }
     if not pcbnew.Version().startswith("8.0.9"):
         raise RuntimeError("Pinned KiCad 8.0.9 required")
@@ -304,6 +344,24 @@ def qualify(archive: Path) -> dict[str, Any]:
             zone.GetFilledPolysList(pcbnew.In2_Cu))
         if not before_zone.OutlineCount():
             raise RuntimeError("Native baseline L3 fill empty")
+        base_signature = native_polygon_ring_digest(before_zone)
+        # A same-board, same-copper control quantifies native KiCad
+        # refill/BooleanSubtract instability before changing any track.
+        pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+        repeat_zone = pcbnew.SHAPE_POLY_SET(
+            zone.GetFilledPolysList(pcbnew.In2_Cu))
+        repeat_diff = exact_native_difference(before_zone, repeat_zone)
+        repeat_signature = native_polygon_ring_digest(repeat_zone)
+        out["L3_unchanged_baseline_repeat"] = {
+            "loss_native_mm2": repeat_diff["loss_native_mm2"],
+            "gain_native_mm2": repeat_diff["gain_native_mm2"],
+            "loss_native_outlines": repeat_diff["loss_native_outlines"],
+            "gain_native_outlines": repeat_diff["gain_native_outlines"],
+            "native_polygon_ring_equal": (
+                base_signature == repeat_signature),
+            "before_signature": base_signature,
+            "repeat_signature": repeat_signature,
+        }
         board.Remove(originals[EN])
         board.Remove(ch019)
         out["CH019_original_track_removed_on_scratch"] = True
@@ -366,6 +424,10 @@ def qualify(archive: Path) -> dict[str, Any]:
                 d["distance_to_east_via_mm"]) < 1.0
             for d in out["L3_loss_contours"] + out["L3_gain_contours"])
         out["native_L3_exact_qualified"] = delta["native_both_empty"]
+        candidate_signature = native_polygon_ring_digest(after_zone)
+        out["L3_exact_native_polygon_ring_identity"] = (
+            candidate_signature == base_signature)
+        out["L3_candidate_ring_signature"] = candidate_signature
         pcbnew.SaveBoard(str(pcb_path), board)
         # The original project .kicad_pro snapshot is preserved by native().
         post = native(pcb_path, root / "candidate-drc.json")
