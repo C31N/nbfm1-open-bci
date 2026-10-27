@@ -276,6 +276,91 @@ def native_polygon_ring_digest(polyset: Any) -> dict[str, Any]:
         "native_vertex_count": nvertices,
     }
 
+
+
+def survey_reused_west_via(board: Any, power: Any,
+                           ) -> dict[str, Any]:
+    """Read-only source-F.Cu/B.Cu proposal using an EXISTING MUX_EN via."""
+    import pcbnew
+    from shapely.geometry import GeometryCollection, Point, box
+    from escape_mesh_505 import mesh_route, polygons
+    from probe_ch025_fcu_l3_exact import power_fcu_obstacles
+    from route_targeted_closure import obstacles, routing_domain
+
+    existing_west = (21.945, 37.6933)
+    target_east = EAST
+    en_code = board.FindNet(EN).GetNetCode()
+    candidates = [v for v in board.GetTracks()
+                  if isinstance(v, pcbnew.PCB_VIA)
+                  and v.GetNetCode() == en_code
+                  and xy(v.GetPosition()) == existing_west]
+    report: dict[str, Any] = {
+        "existing_west_via_uuid":
+            "c327c9cb-0509-46fc-b340-06bbd6a58962",
+        "source_FCu_connected": False,
+        "west_to_east_BCu_connected": False,
+        "reuse_all_original_via_copper": True,
+        "new_west_via_required": None,
+        "F_Cu_source_path": None,
+        "B_Cu_middle_path": None,
+        "native_DRC_qualified": False,
+        "L3_exact_gate_qualified": False,
+        "fabrication_release": False,
+    }
+    if (len(candidates) != 1 or
+            candidates[0].m_Uuid.AsString() !=
+            report["existing_west_via_uuid"]):
+        report["status"] = "reviewed_retained_west_via_missing"
+        return report
+    domain = routing_domain(board, .075, .25)
+    fcuregion = domain.intersection(box(19.0, 31.0, 32.0, 45.0))
+    bcuregion = domain.intersection(box(18.0, 28.0, 44.0, 49.0))
+    fcuwalls, _ = obstacles(
+        board, en_code, .15, .15, fcuregion, .65,
+        (pcbnew.F_Cu, pcbnew.B_Cu))
+    fcufree = fcuregion.difference(fcuwalls[0].union(
+        power_fcu_obstacles(board))).buffer(-.000005)
+    bcuwalls, _ = obstacles(
+        board, en_code, .15, .15, bcuregion, .65,
+        (pcbnew.B_Cu, pcbnew.F_Cu))
+    bcufree = bcuregion.difference(bcuwalls[0]).buffer(-.000005)
+
+    def connected(free: Any, a: tuple[float, float],
+                  b: tuple[float, float]) -> bool:
+        return any(p.covers(Point(a)) and p.covers(Point(b))
+                   for p in polygons(free))
+    source = L1_SOURCE[0]
+    report["source_FCu_connected"] = connected(
+        fcufree, source, existing_west)
+    report["west_to_east_BCu_connected"] = connected(
+        bcufree, existing_west, target_east)
+    if not (report["source_FCu_connected"] and
+            report["west_to_east_BCu_connected"]):
+        report["status"] = "reused_west_component_path_missing"
+        return report
+    fcu = mesh_route(
+        board, source, existing_west, en_code,
+        (pcbnew.F_Cu, pcbnew.B_Cu), power, fcuregion,
+        start_layer=0, goal_layer=0, allow_vias=False,
+        extra_obstacles=[power_fcu_obstacles(board), GeometryCollection()])
+    bcu = mesh_route(
+        board, existing_west, target_east, en_code,
+        (pcbnew.B_Cu, pcbnew.F_Cu), power, bcuregion,
+        start_layer=0, goal_layer=0, allow_vias=False)
+    for name, data, a, b in (
+            ("F_Cu_source_path", fcu, source, existing_west),
+            ("B_Cu_middle_path", bcu, existing_west, target_east)):
+        if (data is not None and len(data) >= 2
+                and data[0] == (0, *a) and data[-1] == (0, *b)
+                and all(p[0] == 0 for p in data)):
+            report[name] = [list(p[1:]) for p in data]
+    report["new_west_via_required"] = False
+    report["status"] = (
+        "reused_west_two_leg_mesh_found_unqualified"
+        if report["F_Cu_source_path"] and report["B_Cu_middle_path"]
+        else "reused_west_mesh_missing")
+    return report
+
 def qualify(archive: Path) -> dict[str, Any]:
     """Diagnostic only: do not return an accepted PCB or manufacture."""
     import pcbnew
@@ -300,6 +385,7 @@ def qualify(archive: Path) -> dict[str, Any]:
         "L3_loss_contours": [], "L3_gain_contours": [],
         "L3_phase_deltas": [],
         "L3_west_via_position_probes": [],
+        "existing_west_via_geometry": None,
         "L3_unchanged_baseline_repeat": None,
         "L3_exact_native_polygon_ring_identity": False,
     }
@@ -388,6 +474,9 @@ def qualify(archive: Path) -> dict[str, Any]:
         board.Remove(ch019)
         out["CH019_original_track_removed_on_scratch"] = True
         record_phase("removed_original_MUX_EN_and_CH019_only")
+        from analyze_ch025_l3_native_refill import filled
+        out["existing_west_via_geometry"] = survey_reused_west_via(
+            board, filled(zone))
         source_path, source_optim = optimize_fcu_source(
             board, netcode, L1_SOURCE)
         out["F_Cu_source_optimization"] = source_optim
@@ -398,6 +487,20 @@ def qualify(archive: Path) -> dict[str, Any]:
             for start, end in zip(segment, segment[1:]):
                 make_track(board, start, end, netcode, .15, layer)
         record_phase("new_MUX_EN_tracks_without_new_vias")
+        # Test EAST alone: this does not connect the WEST track endpoint.
+        # It is strictly an in-memory zone-fill diagnostic.
+        make_via(board, EAST, netcode, .65)
+        record_phase("new_MUX_EN_tracks_with_east_via_only")
+        east_matches = [
+            t for t in board.GetTracks()
+            if isinstance(t, pcbnew.PCB_VIA)
+            and t.GetNetCode() == netcode
+            and xy(t.GetPosition()) == EAST
+        ]
+        if len(east_matches) != 1:
+            raise RuntimeError("Temporary east EN via not unique")
+        board.Remove(east_matches[0])
+        record_phase("east_via_only_removed_and_native_refilled")
         make_via(board, WEST, netcode, .65)
         record_phase("new_MUX_EN_tracks_with_west_via_only")
         # Each offset is purely a temporary L3 refill probe; the connected
