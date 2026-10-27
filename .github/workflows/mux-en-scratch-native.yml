@@ -1,0 +1,69 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+name: Scratch MUX EN native BCu hop qualification
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/ch025-fcu-l3-exact-2026-10-21]
+    paths:
+      - ".github/workflows/mux-en-scratch-native.yml"
+      - "hardware/eeg128-tdm/probe_mux_en_hop_scratch.py"
+      - "hardware/eeg128-tdm/test_mux_en_hop_scratch.py"
+permissions:
+  contents: read
+jobs:
+  diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 26
+    container:
+      image: kicad/kicad@sha256:5716d82aa247abdbe512650eb4e8fce5a4031cbbef0a2c8df83208a69fef87b2
+      options: --user 0:0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Native KiCad 8.0.9 pinned runtime
+        run: |
+          set -eu
+          test "$(kicad-cli version)" = "8.0.9"
+          apt-get -o Acquire::Retries=3 update
+          DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 install -y --no-install-recommends python3-shapely python3-pip python3-numpy
+          /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
+          /usr/bin/python3 -c 'import pcbnew,shapely; assert pcbnew.Version().startswith("8.0.9") and shapely.__version__=="2.1.2"'
+      - name: Test fail-closed scratch design
+        run: |
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_mux_en_hop_scratch.py -v
+      - name: Native scratch MUX EN three-leg candidate and 3V3A audit
+        timeout-minutes: 20
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_mux_en_hop_scratch.py \
+            --archive hardware/eeg128-tdm/engineering/block2-ch019-electrode-closed139.zip \
+            --output /tmp/mux-en-hop-native.json
+      - name: Assert no accepted routing or manufacturing
+        run: |
+          /usr/bin/python3 - <<'PY'
+          from pathlib import Path
+          import json
+          x=json.loads(Path('/tmp/mux-en-hop-native.json').read_text())
+          assert x['baseline_airwires']==139
+          assert x['source_archive_sha256']=='f022d711bf860c6ec9383dae6f511c41189bf7348035d8d1e5e0e0ca6bcd6d1b'
+          assert x['source_pcb_sha256']=='f2780989e2dee6233f207df1f420f7e89d8e855493eb6b1e7fb731d4a4dda1ea'
+          assert x['source_board_unmodified'] is True
+          assert x['protected_original_items_unchanged'] is True
+          assert x['CH027_original_via_unchanged'] is True
+          assert x['CH019_original_track_removed_on_scratch'] is True
+          for k in ('accepted','routing_completed','fabrication_release',
+                    'manufacturing_files','manufacturing_export_invoked',
+                    'checkpoint_promoted','independent_replay_verified',
+                    'schematic_parity_qualified','CH019_restitution_qualified',
+                    'CH019_original_track_restituted','board_checkpoint_saved',
+                    'In1_Cu_tracks_added'):
+              assert x[k] is False, k
+          assert not list(Path('/tmp').rglob('*.gbr'))
+          assert not list(Path('/tmp').rglob('*.drl'))
+          print(x['status'], x.get('candidate_native_metrics'))
+          PY
+      - name: Upload JSON diagnostic only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mux-en-hop-native-scratch-diagnostic
+          path: /tmp/mux-en-hop-native.json
+          if-no-files-found: ignore
