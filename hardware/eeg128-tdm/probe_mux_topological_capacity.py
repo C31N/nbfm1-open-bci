@@ -14,6 +14,7 @@ import math
 import tempfile
 import zipfile
 from pathlib import Path
+from typing import Any
 
 from shapely.geometry import LineString, box
 from shapely.ops import unary_union
@@ -44,7 +45,9 @@ FLAGS = dict(
 )
 
 
-def read_slices(domain, obstacles, x0, x1, low, high, increment=.2):
+def read_slices(domain: Any, obstacles: list[Any], x0: float, x1: float,
+                low: float, high: float, increment: float = .2
+                ) -> list[dict[str, Any]]:
     """Exact Shapely vertical cut geometry; finite sampling is only a bound."""
     if not (x0 < x1 and low < high and increment > 0):
         raise ValueError("Invalid cross-section range")
@@ -82,7 +85,7 @@ def read_slices(domain, obstacles, x0, x1, low, high, increment=.2):
     return rows
 
 
-def capacity(board):
+def capacity(board: Any) -> dict[str, Any]:
     import pcbnew
     from route_targeted_closure import routing_domain, xy
     if not pcbnew.Version().startswith("8.0.9"):
@@ -183,7 +186,7 @@ def capacity(board):
     )
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--archive", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
