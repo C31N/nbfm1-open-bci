@@ -519,6 +519,27 @@ def mux_en_bcu_via_hop(board: Any, zone: Any) -> dict[str, Any]:
                 west_xy = tuple(pair["west_via_xy_mm"])
                 east_xy = tuple(pair["east_via_xy_mm"])
                 power_fcu = power_fcu_obstacles(board)
+                # The ordinary 0.15-mm signal obstacle sweep alone is
+                # insufficient: apply the mandatory 0.505-mm power fence
+                # before claiming a connected F.Cu source/target fanout.
+                strict_fcu = wide_region.difference(
+                    unary_union([trial_walls[0], power_fcu])
+                ).buffer(-.000005)
+                strict_parts = polygons(strict_fcu)
+
+                def strict_index(point: tuple[float, float]
+                                 ) -> int | None:
+                    p = Point(point)
+                    return next((i for i, poly in enumerate(strict_parts)
+                                 if poly.covers(p)), None)
+
+                trial["strict_505_FCu_fanout_components"] = {
+                    "source": strict_index(TERMINALS["MUX_EN"][0]),
+                    "west_via": strict_index(west_xy),
+                    "east_via": strict_index(east_xy),
+                    "target": strict_index(TERMINALS["MUX_EN"][1]),
+                    "strict_505_clearance_applied": True,
+                }
                 empty = GeometryCollection()
                 stages: list[dict[str, Any]] = []
                 routes = (
@@ -553,8 +574,6 @@ def mux_en_bcu_via_hop(board: Any, zone: Any) -> dict[str, Any]:
                             if path_ok else None),
                         "candidate_not_native_DRC_qualified": True,
                     })
-                    if not path_ok:
-                        break
                 trial["three_leg_mesh_proposal"] = {
                     "source_net": "MUX_EN",
                     "chosen_west_xy_mm": list(west_xy),
