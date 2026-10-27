@@ -540,6 +540,36 @@ def mux_en_bcu_via_hop(board: Any, zone: Any) -> dict[str, Any]:
                     "target": strict_index(TERMINALS["MUX_EN"][1]),
                     "strict_505_clearance_applied": True,
                 }
+                strict_source = strict_index(TERMINALS["MUX_EN"][0])
+                strict_target = strict_index(TERMINALS["MUX_EN"][1])
+                strict_matches: list[dict[str, Any]] = []
+                east_by_bcu: dict[int, list[float]] = {}
+                if strict_target is not None:
+                    for candidate_east in samples["east"]:
+                        p = candidate_east["xy_mm"]
+                        if strict_index(p) != strict_target:
+                            continue
+                        c = in_component(p)
+                        if c is not None:
+                            east_by_bcu.setdefault(c, p)
+                if strict_source is not None:
+                    for candidate_west in samples["west"]:
+                        p = candidate_west["xy_mm"]
+                        if strict_index(p) != strict_source:
+                            continue
+                        c = in_component(p)
+                        if c is not None and c in east_by_bcu:
+                            strict_matches.append({
+                                "west_via_xy_mm": p,
+                                "east_via_xy_mm": east_by_bcu[c],
+                                "shared_BCu_component": c,
+                            })
+                trial["strict_505_joint_pairs_count"] = len(strict_matches)
+                trial["strict_505_joint_pair_examples"] = strict_matches[:8]
+                trial["strict_505_power_gate_mathematically_required"] = True
+                if strict_matches:
+                    west_xy = tuple(strict_matches[0]["west_via_xy_mm"])
+                    east_xy = tuple(strict_matches[0]["east_via_xy_mm"])
                 empty = GeometryCollection()
                 stages: list[dict[str, Any]] = []
                 routes = (
@@ -556,7 +586,15 @@ def mux_en_bcu_via_hop(board: Any, zone: Any) -> dict[str, Any]:
                      box(33.0, 32.0, 52.0, 44.0),
                      [power_fcu, empty]),
                 )
-                for label, a, b, layers, bounds, exclusion in routes:
+                if not strict_matches:
+                    stages.append({
+                        "leg": "strict_505_power_fanout_gate",
+                        "path_found": False,
+                        "candidate_vertices": None,
+                        "candidate_not_native_DRC_qualified": True,
+                    })
+                for label, a, b, layers, bounds, exclusion in (
+                        routes if strict_matches else ()):
                     local = wide_region.intersection(bounds)
                     candidate = mesh_route(
                         board, a, b, code, layers, power, local,
