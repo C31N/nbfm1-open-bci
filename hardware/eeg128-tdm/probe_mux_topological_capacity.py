@@ -468,12 +468,52 @@ def mux_en_bcu_via_hop(board: Any, zone: Any) -> dict[str, Any]:
             west_ids.discard(None)
             east_ids.discard(None)
             common = sorted(west_ids & east_ids)
+            trial_fcu = wide_region.difference(
+                trial_walls[0]).buffer(-.000005)
+            fcu_parts = polygons(trial_fcu)
+
+            def fcu_component(point: tuple[float, float] | list[float]
+                              ) -> int | None:
+                p = Point(point)
+                return next((i for i, poly in enumerate(fcu_parts)
+                             if poly.covers(p)), None)
+
+            source_fcu_id = fcu_component(TERMINALS["MUX_EN"][0])
+            target_fcu_id = fcu_component(TERMINALS["MUX_EN"][1])
+            continuous: list[dict[str, Any]] = []
+            if source_fcu_id is not None and target_fcu_id is not None:
+                for west_candidate in samples["west"]:
+                    wp = west_candidate["xy_mm"]
+                    if fcu_component(wp) != source_fcu_id:
+                        continue
+                    w_bcu = in_component(wp)
+                    if w_bcu is None:
+                        continue
+                    for east_candidate in samples["east"]:
+                        ep = east_candidate["xy_mm"]
+                        if (fcu_component(ep) != target_fcu_id or
+                                in_component(ep) != w_bcu):
+                            continue
+                        continuous.append({
+                            "west_via_xy_mm": wp,
+                            "east_via_xy_mm": ep,
+                            "same_BCu_free_component": w_bcu,
+                            "source_FCu_free_component": source_fcu_id,
+                            "target_FCu_free_component": target_fcu_id,
+                            "route_native_DRC_qualified": False,
+                        })
             trial.update({
                 "BCu_free_component_count": len(trial_components),
                 "west_component_ids": sorted(west_ids),
                 "east_component_ids": sorted(east_ids),
                 "same_BCu_component_now_possible": bool(common),
                 "common_BCu_component_ids": common,
+                "EN_source_FCu_component_id": source_fcu_id,
+                "EN_target_FCu_component_id": target_fcu_id,
+                "joint_FCu_source_BCu_FCu_target_candidate_count": (
+                    len(continuous)),
+                "joint_FCu_BCu_component_examples": continuous[:6],
+                "straight_S2_S3_unchanged_in_model": True,
             })
         finally:
             for track in removed:
