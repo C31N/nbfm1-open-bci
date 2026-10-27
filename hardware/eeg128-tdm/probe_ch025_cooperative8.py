@@ -581,6 +581,107 @@ def attempt(work: Path, schedule: tuple[str, ...],
             })
             report["joint_mux_conflict_feedback"] = feedback
             _write_child_progress(progress_path, report)
+        # Hard-constrained coupled trial: the surviving S2 and S3 traces
+        # become *actual* F.Cu obstacles while EN searches. Soft penalties
+        # alone failed to prevent 0-mm copper intersections in Probe #16.
+        # The two temporary control tracks are rolled back in all paths.
+        locked_result: list[dict[str, Any]] = []
+        if (not proposal["plans"] and pools["MUX_S2"]
+                and pools["MUX_S3"]
+                and time.monotonic() < order_deadline - 15.0):
+            from shapely.geometry import LineString as JointLine
+            first = pools["MUX_S2"][0]["path"]
+            second = pools["MUX_S3"][0]["path"]
+            separation = JointLine(
+                [(v[1], v[2]) for v in first]).distance(JointLine(
+                    [(v[1], v[2]) for v in second]))
+            if separation >= .30001:
+                stage("native_hard_locked_S2_S3_joint_EN_search")
+                temp_uuids: list[str] = []
+                try:
+                    permanent = {
+                        t.m_Uuid.AsString() for t in board.GetTracks()
+                    }
+                    for name, path in (
+                            ("MUX_S2", first), ("MUX_S3", second)):
+                        if any(v[0] != 0 for v in path):
+                            raise RuntimeError("Locked MUX track not F.Cu")
+                        add_mesh_path(
+                            board, path, board.FindNet(name).GetNetCode(),
+                            (pcbnew.F_Cu, pcbnew.B_Cu))
+                    new_items = [
+                        t for t in board.GetTracks()
+                        if t.m_Uuid.AsString() not in permanent
+                    ]
+                    if (not new_items or
+                            any(t.GetNetname() not in
+                                {"MUX_S2", "MUX_S3"} or
+                                t.GetLayer() != pcbnew.F_Cu or
+                                isinstance(t, (pcbnew.PCB_VIA, pcbnew.PCB_ARC))
+                                for t in new_items)):
+                        raise RuntimeError(
+                            "Hard-locked trial inserted unintended copper")
+                    temp_uuids = [t.m_Uuid.AsString() for t in new_items]
+                    # The original pads/vias are NEVER moved or disconnected.
+                    for window in (6.0, 10.0):
+                        if time.monotonic() >= order_deadline - 6.0:
+                            break
+                        path, detail = candidate_route(
+                            board, "MUX_EN", originals["MUX_EN"],
+                            power, fixed_power, guard, window, [],
+                            1.0, order_deadline)
+                        locked_result.append({
+                            "status": "hard_obstacle_EN_probe",
+                            "margin_mm": window,
+                            "source_drc_qualified": False,
+                            "result": detail,
+                            "found": path is not None,
+                        })
+                        if path is None:
+                            continue
+                        trial_pools = {
+                            name: list(pools[name]) for name in TRIPLET
+                        }
+                        trial_pools["MUX_EN"].append({
+                            "path": path, "solver": "S2_S3_hard_obstacles",
+                            "native_DRC_qualified": False,
+                        })
+                        tested = coupled_candidates(
+                            trial_pools, maximum_combinations=512,
+                            maximum_plans=4)
+                        if tested["plans"]:
+                            pools = trial_pools
+                            proposal = tested
+                            break
+                finally:
+                    copper = {
+                        t.m_Uuid.AsString(): t for t in board.GetTracks()
+                    }
+                    for uid in temp_uuids:
+                        t = copper.get(uid)
+                        if (t is None or uid in fixed_ids or
+                                t.GetLayer() != pcbnew.F_Cu or
+                                t.GetNetname() not in
+                                {"MUX_S2", "MUX_S3"}):
+                            raise RuntimeError(
+                                "Unsafe hard-obstacle cleanup: " + uid)
+                        board.Remove(t)
+                    if {
+                        t.m_Uuid.AsString() for t in board.GetTracks()
+                    } != permanent:
+                        raise RuntimeError(
+                            "Hard-obstacle trial did not restore board")
+                    if unchanged_fingerprints(board) != fingerprints:
+                        raise RuntimeError(
+                            "Hard-obstacle trial touched native pad/via/zone")
+                report["joint_mux_hard_obstacle_repair"] = locked_result
+                _write_child_progress(progress_path, report)
+            else:
+                locked_result.append({
+                    "status": "S2_S3_not_mutually_legal",
+                    "separation_mm": round(separation, 9),
+                })
+                report["joint_mux_hard_obstacle_repair"] = locked_result
         joint_cache["result"] = proposal
         report["joint_mux_optimisation"] = {
             key: val for key, val in proposal.items() if key != "plans"
