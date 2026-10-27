@@ -85,6 +85,70 @@ def read_slices(domain: Any, obstacles: list[Any], x0: float, x1: float,
     return rows
 
 
+
+def assess_straight_bundle(domain: Any,
+                           retained: list[tuple[Any, dict[str, Any]]]
+                           ) -> dict[str, Any]:
+    """Prove or reject the immutable-copper straight three-lane candidate.
+
+    Existing same-net copper may connect at an endpoint, but foreign copper
+    must not intersect the clearance-expanded candidate centreline. All
+    selected temporary original tracks are excluded by the caller. This is
+    only a read-only candidate classification; filled zones and native DRC
+    remain separate release gates.
+    """
+    lines = {net: LineString(TERMINALS[net]) for net in TRIPLET}
+    pairwise = {
+        a + ":" + b: round(lines[a].distance(lines[b]), 9)
+        for i, a in enumerate(TRIPLET)
+        for b in TRIPLET[i + 1:]
+    }
+    rows = []
+    for net in TRIPLET:
+        line = lines[net]
+        hits = []
+        for geom, entry in retained:
+            if entry["net"] == net or not geom.intersects(line):
+                continue
+            contact = geom.intersection(line)
+            spot = contact.representative_point()
+            hits.append(dict(
+                uuid=entry["uuid"], net=entry["net"],
+                protected=entry["protected"], kind=entry["kind"],
+                contact_xy_mm=[round(spot.x, 6), round(spot.y, 6)],
+            ))
+        hits.sort(key=lambda x: (not x["protected"],
+                                 x["net"], x["uuid"]))
+        rows.append(dict(
+            net=net, original_start_xy_mm=list(TERMINALS[net][0]),
+            original_end_xy_mm=list(TERMINALS[net][1]),
+            straight_length_mm=round(line.length, 6),
+            board_edge_valid=bool(domain.covers(line)),
+            fixed_copper_blocker_count=len(hits),
+            protected_blocker_count=sum(x["protected"] for x in hits),
+            blocking_original_uuids=hits[:32],
+            blocker_list_truncated=len(hits) > 32,
+        ))
+    separated = all(distance >= MIN_CENTER_SEPARATION_MM
+                    for distance in pairwise.values())
+    clear = separated and all(row["board_edge_valid"] and
+                              row["fixed_copper_blocker_count"] == 0
+                              for row in rows)
+    return dict(
+        status=("flat_three_lane_candidate_prequalified_only"
+                if clear else "flat_three_lane_candidate_blocked"),
+        candidate_lines=rows, pairwise_centerline_distances_mm=pairwise,
+        pairwise_separation_pass=separated,
+        static_copper_straight_bundle_feasible=clear,
+        additional_mesh_turns_needed=not clear,
+        model_is_FCu_polygon_geometry_only=True,
+        verified_full_native_DRC=False, native_parity_qualified=False,
+        complete_eight_net_qualified=False,
+        allowed_CH022_closure=False, checkpoint_promotion_allowed=False,
+        fabrication_release=False,
+    )
+
+
 def capacity(board: Any) -> dict[str, Any]:
     import pcbnew
     from route_targeted_closure import routing_domain, xy
@@ -125,6 +189,7 @@ def capacity(board: Any) -> dict[str, Any]:
                          dict(uuid=t.m_Uuid.AsString(), net=t.GetNetname(),
                               kind="fixed_ch025", protected=True)))
     domain = routing_domain(board, WIDTH_MM/2, EDGE_CLEARANCE_MM)
+    flat_bundle = assess_straight_bundle(domain, retained)
     left = max(min(a[0], b[0]) for a, b in TERMINALS.values()) + .2
     right = min(max(a[0], b[0]) for a, b in TERMINALS.values()) - .2
     mid_y = sum((a[1]+b[1])/2 for a,b in TERMINALS.values())/3
@@ -176,7 +241,7 @@ def capacity(board: Any) -> dict[str, Any]:
         selected_original_tracks_excluded=len(excluded_uuids),
         included_fixed_obstacle_count=len(retained),
         immutable_vias_verified=True,
-        triplet=list(TRIPLET), x_interval_mm=[round(left,6),round(right,6)],
+        triplet=list(TRIPLET), flat_bundle=flat_bundle, x_interval_mm=[round(left,6),round(right,6)],
         y_center_mm=round(mid_y,6), bands=bands,
         full_FCu_global_impossibility_proven=False,
         complete_three_net_route_proven=False,
