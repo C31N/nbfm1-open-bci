@@ -298,6 +298,7 @@ def qualify(archive: Path) -> dict[str, Any]:
         "F_Cu_source_optimization": None,
         "CH019_BCu_reconnected_scratch": False,
         "L3_loss_contours": [], "L3_gain_contours": [],
+        "L3_phase_deltas": [],
         "L3_unchanged_baseline_repeat": None,
         "L3_exact_native_polygon_ring_identity": False,
     }
@@ -362,9 +363,30 @@ def qualify(archive: Path) -> dict[str, Any]:
             "before_signature": base_signature,
             "repeat_signature": repeat_signature,
         }
+        def record_phase(label: str) -> None:
+            # Deliberately fill every staged scratch state, but never save
+            # an intermediate PCB or treat its DRC as a qualified route.
+            pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+            filled = pcbnew.SHAPE_POLY_SET(
+                zone.GetFilledPolysList(pcbnew.In2_Cu))
+            difference = exact_native_difference(before_zone, filled)
+            signature = native_polygon_ring_digest(filled)
+            out["L3_phase_deltas"].append({
+                "stage": label,
+                "loss_mm2": difference["loss_native_mm2"],
+                "gain_mm2": difference["gain_native_mm2"],
+                "loss_outlines": difference["loss_native_outlines"],
+                "gain_outlines": difference["gain_native_outlines"],
+                "same_exact_native_rings_as_original": (
+                    signature == base_signature),
+                "native_3V3A_filled": True,
+                "approved": False,
+            })
+
         board.Remove(originals[EN])
         board.Remove(ch019)
         out["CH019_original_track_removed_on_scratch"] = True
+        record_phase("removed_original_MUX_EN_and_CH019_only")
         source_path, source_optim = optimize_fcu_source(
             board, netcode, L1_SOURCE)
         out["F_Cu_source_optimization"] = source_optim
@@ -374,9 +396,11 @@ def qualify(archive: Path) -> dict[str, Any]:
                 (L1_TARGET, pcbnew.F_Cu)):
             for start, end in zip(segment, segment[1:]):
                 make_track(board, start, end, netcode, .15, layer)
+        record_phase("new_MUX_EN_tracks_without_new_vias")
         make_via(board, WEST, netcode, .65)
         make_via(board, EAST, netcode, .65)
         out["new_vias_added_scratch_only"] = True
+        record_phase("new_MUX_EN_tracks_with_both_vias_without_CH019")
         from analyze_ch025_l3_native_refill import filled
         restore = propose_ch019_bcu_restitution(
             board, xy(ch019.GetStart()), xy(ch019.GetEnd()),
@@ -389,6 +413,7 @@ def qualify(archive: Path) -> dict[str, Any]:
                 make_track(board, start, end, restore_code, .15,
                            pcbnew.B_Cu)
             out["CH019_BCu_reconnected_scratch"] = True
+        record_phase("CH019_restitution_after_MUX_EN_via_hop")
         after = track_inventory(board)
         for uid, item in existing.items():
             if uid not in {
