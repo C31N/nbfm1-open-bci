@@ -89,6 +89,155 @@ def approved_geometry() -> dict[str, Any]:
     }
 
 
+
+
+def polygon_contours(polyset: Any,
+                     vias: tuple[tuple[float, float], ...]
+                     ) -> list[dict[str, Any]]:
+    """Locate exact KiCad IU delta contours, without rounding the gate."""
+    from shapely.geometry import Point, Polygon
+    from route_targeted_closure import xy
+
+    result: list[dict[str, Any]] = []
+    for index in range(polyset.OutlineCount()):
+        outline = polyset.Outline(index)
+        points = [xy(outline.CPoint(i))
+                  for i in range(outline.PointCount())]
+        if len(points) < 3:
+            raise RuntimeError("Malformed L3 difference contour")
+        shape = Polygon(points)
+        if shape.is_empty or not shape.is_valid:
+            raise RuntimeError("Invalid native L3 difference polygon")
+        result.append({
+            "bounds_mm": [round(v, 9) for v in shape.bounds],
+            "polygon_area_mm2": shape.area,
+            "vertex_count": len(points),
+            "distance_to_west_via_mm": shape.distance(Point(vias[0])),
+            "distance_to_east_via_mm": shape.distance(Point(vias[1])),
+            "sample_points_mm": [list(p) for p in points[:6]],
+        })
+    return result
+
+
+def optimize_fcu_source(board: Any, code: int,
+                        path: tuple[tuple[float, float], ...]
+                        ) -> tuple[tuple[tuple[float, float], ...],
+                                   dict[str, Any]]:
+    """Reduce only verified visibility corners without changing fixed nets."""
+    import pcbnew
+    from shapely.geometry import LineString, box
+    from shapely.ops import unary_union
+    from route_targeted_closure import obstacles, routing_domain
+    from probe_ch025_fcu_l3_exact import power_fcu_obstacles
+
+    domain = routing_domain(board, .075, .25)
+    region = domain.intersection(box(20.0, 31.0, 48.0, 45.0))
+    walls, _ = obstacles(
+        board, code, .15, .15, region, .65,
+        (pcbnew.F_Cu, pcbnew.B_Cu))
+    free = region.difference(unary_union([
+        walls[0], power_fcu_obstacles(board)])).buffer(-.000005)
+    length = lambda pts: sum(  # noqa: E731
+        math.dist(a, b) for a, b in zip(pts, pts[1:]))
+    baseline = length(path)
+    # The numerical fallback retains the already tested full path.
+    if not all(free.covers(LineString([a, b]))
+               for a, b in zip(path, path[1:])):
+        return path, {
+            "status": "original_path_not_inside_strict_model",
+            "original_mm": baseline,
+            "candidate_mm": baseline,
+            "shortened": False,
+        }
+    result: list[tuple[float, float]] = [path[0]]
+    idx = 0
+    while idx < len(path) - 1:
+        farthest = next((
+            end for end in range(len(path) - 1, idx, -1)
+            if free.covers(LineString([path[idx], path[end]]))
+        ), idx + 1)
+        result.append(path[farthest])
+        idx = farthest
+    proposed = tuple(result)
+    improved = length(proposed) + .000001 < baseline
+    return (proposed if improved else path), {
+        "status": ("strict_visibility_shortcut_found"
+                   if improved else "no_strict_visibility_shortcut"),
+        "original_mm": baseline,
+        "candidate_mm": length(proposed) if improved else baseline,
+        "shortened": improved,
+        "waypoints": len(proposed if improved else path),
+        "native_DRC_qualified": False,
+    }
+
+
+def propose_ch019_bcu_restitution(board: Any, source: tuple[float, float],
+                                 target: tuple[float, float],
+                                 power: Any) -> dict[str, Any]:
+    """Read-only B.Cu geometry on scratch, after the EN hop occupies copper."""
+    import pcbnew
+    from shapely.geometry import Point, box
+    from escape_mesh_505 import mesh_route, polygons
+    from route_targeted_closure import obstacles, routing_domain
+    from analyze_ch025_bcu_cut_uuids import survey as gap_survey
+
+    code = board.FindNet(CH019).GetNetCode()
+    domain = routing_domain(board, .075, .25)
+    corridor = domain.intersection(box(
+        min(source[0], target[0]) - 9,
+        min(source[1], target[1]) - 9,
+        max(source[0], target[0]) + 9,
+        max(source[1], target[1]) + 9))
+    walls, _ = obstacles(
+        board, code, .15, .15, corridor, .65,
+        (pcbnew.B_Cu, pcbnew.F_Cu))
+    free = corridor.difference(walls[0]).buffer(-.000005)
+    parts = polygons(free)
+
+    def component(p: tuple[float, float]) -> int | None:
+        return next((i for i, shape in enumerate(parts)
+                     if shape.covers(Point(p))), None)
+
+    source_id, target_id = component(source), component(target)
+    report: dict[str, Any] = {
+        "source_mm": list(source), "target_mm": list(target),
+        "BCu_source_component": source_id,
+        "BCu_target_component": target_id,
+        "BCu_same_component": (
+            source_id is not None and source_id == target_id),
+        "B_Cu_route_proven_by_native_DRC": False,
+        "In1_Cu_used": False,
+        "path_found": False, "path": None,
+    }
+    if source_id is None or target_id is None:
+        report["status"] = "CH019_original_endpoint_outside_BCu_free"
+        return report
+    if source_id != target_id:
+        report["status"] = "CH019_BCu_component_separated_after_EN_hop"
+        report["blocking_UUID_inventory"] = gap_survey(
+            board, parts[source_id], parts[target_id],
+            target_net=CH019)
+        return report
+    trial = mesh_route(
+        board, source, target, code,
+        (pcbnew.B_Cu, pcbnew.F_Cu), power, corridor,
+        start_layer=0, goal_layer=0, allow_vias=False)
+    if (trial is None or len(trial) < 2
+            or trial[0] != (0, *source)
+            or trial[-1] != (0, *target)
+            or any(p[0] != 0 for p in trial)):
+        report["status"] = "CH019_native_mesh_BCu_candidate_missing"
+        return report
+    points = [tuple(p[1:]) for p in trial]
+    report.update({
+        "status": "CH019_BCu_mesh_found_unqualified",
+        "path_found": True, "path": [list(p) for p in points],
+        "length_mm": sum(
+            math.dist(a, b) for a, b in zip(points, points[1:])),
+        "candidate_waypoints": len(points),
+    })
+    return report
+
 def qualify(archive: Path) -> dict[str, Any]:
     """Diagnostic only: do not return an accepted PCB or manufacture."""
     import pcbnew
@@ -107,6 +256,10 @@ def qualify(archive: Path) -> dict[str, Any]:
         "CH019_original_track_restituted": False,
         "source_board_unmodified": False,
         "candidate_geometry": approved_geometry(),
+        "CH019_restitution_geometry": None,
+        "F_Cu_source_optimization": None,
+        "CH019_BCu_reconnected_scratch": False,
+        "L3_loss_contours": [], "L3_gain_contours": [],
     }
     if not pcbnew.Version().startswith("8.0.9"):
         raise RuntimeError("Pinned KiCad 8.0.9 required")
@@ -154,8 +307,11 @@ def qualify(archive: Path) -> dict[str, Any]:
         board.Remove(originals[EN])
         board.Remove(ch019)
         out["CH019_original_track_removed_on_scratch"] = True
+        source_path, source_optim = optimize_fcu_source(
+            board, netcode, L1_SOURCE)
+        out["F_Cu_source_optimization"] = source_optim
         for segment, layer in (
-                (L1_SOURCE, pcbnew.F_Cu),
+                (source_path, pcbnew.F_Cu),
                 (L4_MIDDLE, pcbnew.B_Cu),
                 (L1_TARGET, pcbnew.F_Cu)):
             for start, end in zip(segment, segment[1:]):
@@ -163,6 +319,18 @@ def qualify(archive: Path) -> dict[str, Any]:
         make_via(board, WEST, netcode, .65)
         make_via(board, EAST, netcode, .65)
         out["new_vias_added_scratch_only"] = True
+        from analyze_ch025_l3_native_refill import filled
+        restore = propose_ch019_bcu_restitution(
+            board, xy(ch019.GetStart()), xy(ch019.GetEnd()),
+            filled(zone))
+        out["CH019_restitution_geometry"] = restore
+        if restore["path_found"]:
+            restore_code = board.FindNet(CH019).GetNetCode()
+            coordinates = [tuple(p) for p in restore["path"]]
+            for start, end in zip(coordinates, coordinates[1:]):
+                make_track(board, start, end, restore_code, .15,
+                           pcbnew.B_Cu)
+            out["CH019_BCu_reconnected_scratch"] = True
         after = track_inventory(board)
         for uid, item in existing.items():
             if uid not in {
@@ -189,6 +357,14 @@ def qualify(archive: Path) -> dict[str, Any]:
         out["L3_gain_native_mm2"] = delta["gain_native_mm2"]
         out["L3_loss_native_outlines"] = delta["loss_native_outlines"]
         out["L3_gain_native_outlines"] = delta["gain_native_outlines"]
+        out["L3_loss_contours"] = polygon_contours(
+            delta["loss_polyset"], (WEST, EAST))
+        out["L3_gain_contours"] = polygon_contours(
+            delta["gain_polyset"], (WEST, EAST))
+        out["L3_delta_near_vias_only"] = all(
+            min(d["distance_to_west_via_mm"],
+                d["distance_to_east_via_mm"]) < 1.0
+            for d in out["L3_loss_contours"] + out["L3_gain_contours"])
         out["native_L3_exact_qualified"] = delta["native_both_empty"]
         pcbnew.SaveBoard(str(pcb_path), board)
         # The original project .kicad_pro snapshot is preserved by native().
@@ -217,7 +393,15 @@ def qualify(archive: Path) -> dict[str, Any]:
             ARCHIVE_SHA256)
         # A non-restituted CH019 cut makes a checkpoint promotion illegal
         # regardless of DRC, 136-airwire count or L3 status.
-        out["status"] = "scratch_MUX_EN_hop_native_diagnostic_unqualified"
+        out["status"] = (
+            "scratch_MUX_EN_CH019_joint_native_unqualified"
+            if out["CH019_BCu_reconnected_scratch"] else
+            "scratch_MUX_EN_hop_CH019_BCu_not_reconnected")
+        out["CH019_BCu_native_DRC_clean"] = (
+            out["CH019_BCu_reconnected_scratch"]
+            and "CH019_N_MUX" not in out["regressed_nets"]
+            and not out["CH019_unconnected_samples"]
+            and out["native_DRC_qualified"])
     return out
 
 

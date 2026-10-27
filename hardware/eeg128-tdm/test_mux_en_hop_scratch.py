@@ -21,6 +21,21 @@ class ScratchNativeContract(unittest.TestCase):
         self.assertIn("regressed_nets", source)
         self.assertIn("CH019_original_track_restituted", source)
 
+    def test_new_ch019_and_fcu_diagnostics_are_fail_closed(self) -> None:
+        from probe_mux_en_hop_scratch import FLAGS, approved_geometry
+        geometry = approved_geometry()
+        self.assertEqual(geometry["new_vias_mm"],
+                         [[29.75, 38.5], [36.75, 34.0]])
+        self.assertEqual(geometry["B_Cu_waypoints"], 3)
+        self.assertFalse(FLAGS["CH019_restitution_qualified"])
+        self.assertFalse(FLAGS["fabrication_release"])
+        source = TARGET.read_text()
+        for token in ("propose_ch019_bcu_restitution",
+                      "optimize_fcu_source", "polygon_contours",
+                      "L3_delta_near_vias_only",
+                      "CH019_BCu_native_DRC_clean"):
+            self.assertIn(token, source)
+
     def test_explicit_no_acceptance_or_manufacturing(self) -> None:
         source = TARGET.read_text()
         self.assertIn('"fabrication_release": False', source)
