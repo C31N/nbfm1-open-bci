@@ -4,7 +4,7 @@
 import unittest
 from shapely.geometry import box
 from probe_mux_topological_capacity import (
-    read_slices, MIN_CENTER_SEPARATION_MM, FLAGS, assess_straight_bundle, assess_en_bypass,
+    read_slices, MIN_CENTER_SEPARATION_MM, FLAGS, assess_straight_bundle, assess_en_bypass, via_side,
 )
 
 
@@ -74,6 +74,15 @@ class LocalCapacityTests(unittest.TestCase):
         self.assertTrue(result["all_bands_disconnected"])
         self.assertFalse(result["global_board_topological_impossibility_proven"])
 
+
+    def test_via_hop_pad_clearance_boundaries(self) -> None:
+        # 0.65-mm via copper radius plus immutable 0.505-mm power gap.
+        self.assertEqual(via_side(32.0, 33.0, 34.0), "west")
+        self.assertEqual(via_side(35.0, 33.0, 34.0), "east")
+        self.assertEqual(via_side(32.17, 33.0, 34.0),
+                         "power_pad_exclusion")
+        self.assertEqual(via_side(34.83, 33.0, 34.0),
+                         "power_pad_exclusion")
 
     def test_no_zero_height_or_bad_steps(self) -> None:
         with self.assertRaises(ValueError):

@@ -231,6 +231,159 @@ def assess_en_bypass(domain: Any,
     )
 
 
+
+
+def via_side(x: float, left: float, right: float) -> str:
+    """A 0.65-mm drill landing must clear the power pad by 0.505 mm."""
+    radius = 0.325
+    if x + radius + .505 < left:
+        return "west"
+    if x - radius - .505 > right:
+        return "east"
+    return "power_pad_exclusion"
+
+
+def mux_en_bcu_via_hop(board: Any, zone: Any) -> dict[str, Any]:
+    """Read-only existing-via inventory and two-side through-via windows.
+
+    Uses KiCad native track/pad/zone geometry, not a saved routing candidate.
+    B.Cu polygon connectivity does not imply an executable native route.
+    """
+    import pcbnew
+    from shapely.geometry import LineString, Point, box
+    from shapely.ops import unary_union
+    from escape_mesh_505 import polygons
+    from route_targeted_closure import (
+        xy, obstacles, pad_copper_shape, routing_domain,
+    )
+    from analyze_ch025_l3_native_refill import filled
+    from probe_ch025_cooperative8 import (
+        CH027_ALT_VIA, unchanged_fingerprints,
+    )
+
+    snapshot = unchanged_fingerprints(board)
+    pads = [pad for footprint in board.GetFootprints()
+            for pad in footprint.Pads()
+            if pad.m_Uuid.AsString() ==
+            "5be286e6-1938-4e59-b1de-fce18e9c3615"]
+    if len(pads) != 1 or pads[0].GetNetname() != "3V3A":
+        raise ValueError("Pinned 3V3A pad changed")
+    power_pad = pad_copper_shape(pads[0], pcbnew.F_Cu)
+    left, _, right, _ = power_pad.bounds
+    vias = [t for t in board.GetTracks()
+            if isinstance(t, pcbnew.PCB_VIA)]
+    if not any(v.m_Uuid.AsString() == CH027_ALT_VIA
+               and v.GetNetname() == "CH027_N_MUX" for v in vias):
+        raise ValueError("Protected CH027 via changed")
+    power = filled(zone)
+    if power.is_empty or not power.is_valid:
+        raise ValueError("Pinned saved L3 copper unavailable")
+    legal = routing_domain(board, .325, .25)
+    region = legal.intersection(box(26.2, 34.5, 45.5, 40.5))
+    code = board.FindNet("MUX_EN").GetNetCode()
+    walls, via_block = obstacles(
+        board, code, .15, .15, region, .65,
+        (pcbnew.F_Cu, pcbnew.B_Cu))
+    # New vias cross F.Cu, In1.Cu, In2.Cu, and B.Cu. Never use In1
+    # for traces and never carve power copper to justify a candidate.
+    guards = [LineString(TERMINALS[name]).buffer(.325 + .075 + .15 + .00001)
+              for name in ("MUX_S2", "MUX_S3")]
+    blocked = unary_union([
+        via_block, power.buffer(.325 + .505 + .00001),
+        power_pad.buffer(.325 + .505 + .00001), *guards,
+    ])
+    via_free = region.difference(blocked).buffer(-.000005)
+    fcu_free = region.difference(walls[0]).buffer(-.000005)
+    bcu_free = region.difference(walls[1]).buffer(-.000005)
+    components = polygons(bcu_free)
+
+    def component(point: tuple[float, float]) -> int | None:
+        p = Point(point)
+        return next((i for i, shape in enumerate(components)
+                     if shape.covers(p)), None)
+
+    retained = [
+        {"uuid": via.m_Uuid.AsString(),
+         "xy_mm": list(xy(via.GetPosition())),
+         "side": via_side(xy(via.GetPosition())[0], left, right),
+         "through": via.GetViaType() == pcbnew.VIATYPE_THROUGH,
+         "BCu_component": component(xy(via.GetPosition())),
+         "source_target_connected_after_ripup": False}
+        for via in vias if via.GetNetname() == "MUX_EN"
+    ]
+    samples: dict[str, list[dict[str, Any]]] = {"west": [], "east": []}
+    for xi in range(65):
+        x = round(27.5 + xi * .25, 6)
+        side = via_side(x, left, right)
+        if side not in samples:
+            continue
+        for yi in range(19):
+            y = round(35.0 + yi * .25, 6)
+            point = Point(x, y)
+            if not (via_free.covers(point) and fcu_free.covers(point)
+                    and bcu_free.covers(point)):
+                continue
+            index = component((x, y))
+            if index is None:
+                continue
+            samples[side].append({
+                "xy_mm": [x, y], "BCu_component": index,
+                "distance_to_original_EN_mm": round(abs(y - 37.1976), 6),
+                "native_DRC_qualified": False,
+            })
+    for side in samples:
+        samples[side].sort(key=lambda value: (
+            value["distance_to_original_EN_mm"], value["xy_mm"]))
+    east = {}
+    for row in samples["east"]:
+        east.setdefault(row["BCu_component"], row)
+    pairs = []
+    for west in samples["west"]:
+        other = east.get(west["BCu_component"])
+        if other is None:
+            continue
+        direct = LineString((west["xy_mm"], other["xy_mm"]))
+        pairs.append({
+            "west_xy_mm": west["xy_mm"],
+            "east_xy_mm": other["xy_mm"],
+            "BCu_component": west["BCu_component"],
+            "direct_BCu_clear": bcu_free.covers(direct),
+            "distance_mm": round(direct.length, 6),
+            "BCu_mesh_DRC_and_L3_exact_not_proven": True,
+        })
+    pairs.sort(key=lambda item: (
+        not item["direct_BCu_clear"], item["distance_mm"],
+        item["west_xy_mm"]))
+    if unchanged_fingerprints(board) != snapshot:
+        raise RuntimeError("Protected original pads, vias, zones modified")
+    return {
+        "status": "native_read_only_mux_en_bcu_via_window_inventory",
+        "existing_same_net_vias": sorted(retained,
+                                         key=lambda v: v["uuid"]),
+        "new_via_windows_sampled": {
+            k: len(v) for k, v in samples.items()},
+        "via_samples": {k: v[:12] for k, v in samples.items()},
+        "same_BCu_component_pairs": len(pairs),
+        "proposed_BCu_via_pairs": pairs[:12],
+        "power_pad_uuid": "5be286e6-1938-4e59-b1de-fce18e9c3615",
+        "power_pad_bounds_mm": [round(v, 6) for v in power_pad.bounds],
+        "CH027_via_fixed": CH027_ALT_VIA,
+        "S2_S3_straight_reservations": True,
+        "existing_BCu_zone_pours_not_independently_qualified": True,
+        "new_vias_placed": False,
+        "FCu_to_BCu_transition_DRC_qualified": False,
+        "L3_power_loss_zero_qualified": False,
+        "L3_power_gain_zero_qualified": False,
+        "original_copper_changed": False,
+        "sampling_step_mm": .25,
+        "via_diameter_mm": .65,
+        "power_clearance_mm": .505,
+        "In1_Cu_used": False,
+        "accepted": False, "fabrication_release": False,
+        "routing_completed": False,
+    }
+
+
 def capacity(board: Any) -> dict[str, Any]:
     import pcbnew
     from route_targeted_closure import routing_domain, xy
@@ -273,6 +426,7 @@ def capacity(board: Any) -> dict[str, Any]:
     domain = routing_domain(board, WIDTH_MM/2, EDGE_CLEARANCE_MM)
     flat_bundle = assess_straight_bundle(domain, retained)
     en_bypass = assess_en_bypass(domain, retained)
+    en_via_hop = mux_en_bcu_via_hop(board, zone)
     left = max(min(a[0], b[0]) for a, b in TERMINALS.values()) + .2
     right = min(max(a[0], b[0]) for a, b in TERMINALS.values()) - .2
     mid_y = sum((a[1]+b[1])/2 for a,b in TERMINALS.values())/3
@@ -325,7 +479,7 @@ def capacity(board: Any) -> dict[str, Any]:
         included_fixed_obstacle_count=len(retained),
         immutable_vias_verified=True,
         triplet=list(TRIPLET), flat_bundle=flat_bundle,
-        en_bypass=en_bypass, x_interval_mm=[round(left,6),round(right,6)],
+        en_bypass=en_bypass, EN_BCu_via_hop=en_via_hop, x_interval_mm=[round(left,6),round(right,6)],
         y_center_mm=round(mid_y,6), bands=bands,
         full_FCu_global_impossibility_proven=False,
         complete_three_net_route_proven=False,
