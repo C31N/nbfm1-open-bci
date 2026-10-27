@@ -334,6 +334,41 @@ def survey_reused_west_via(board: Any, power: Any,
         fcufree, source, existing_west)
     report["west_to_east_BCu_connected"] = connected(
         bcufree, existing_west, target_east)
+    report["expanded_BCu_windows"] = []
+    if not report["west_to_east_BCu_connected"]:
+        from analyze_ch025_bcu_cut_uuids import survey as gap_survey
+        for label, bounds in (
+                ("regional", (15.0, 21.0, 52.0, 57.0)),
+                ("extended", (11.0, 12.0, 68.0, 74.0))):
+            alternative = domain.intersection(box(*bounds))
+            layer_walls, _ = obstacles(
+                board, en_code, .15, .15, alternative, .65,
+                (pcbnew.B_Cu, pcbnew.F_Cu))
+            free = alternative.difference(
+                layer_walls[0]).buffer(-.000005)
+            parts = polygons(free)
+            src_part = next((i for i, p in enumerate(parts)
+                             if p.covers(Point(existing_west))), None)
+            dst_part = next((i for i, p in enumerate(parts)
+                             if p.covers(Point(target_east))), None)
+            same = src_part is not None and src_part == dst_part
+            row: dict[str, Any] = {
+                "name": label, "bounds_mm": list(bounds),
+                "source_component": src_part,
+                "target_component": dst_part,
+                "BCu_connected": same,
+                "native_DRC_qualified": False,
+            }
+            if (label == "extended" and not same
+                    and src_part is not None and dst_part is not None):
+                row["blocking_UUID_inventory"] = gap_survey(
+                    board, parts[src_part], parts[dst_part],
+                    target_net=EN)
+            report["expanded_BCu_windows"].append(row)
+            if same:
+                report["west_to_east_BCu_connected"] = True
+                bcuregion = alternative
+                break
     if not (report["source_FCu_connected"] and
             report["west_to_east_BCu_connected"]):
         report["status"] = "reused_west_component_path_missing"
