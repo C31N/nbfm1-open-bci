@@ -187,11 +187,23 @@ def qualify(archive: Path) -> dict[str, Any]:
         delta = exact_native_difference(before_zone, after_zone)
         out["L3_loss_native_mm2"] = delta["loss_native_mm2"]
         out["L3_gain_native_mm2"] = delta["gain_native_mm2"]
+        out["L3_loss_native_outlines"] = delta["loss_native_outlines"]
+        out["L3_gain_native_outlines"] = delta["gain_native_outlines"]
         out["native_L3_exact_qualified"] = delta["native_both_empty"]
         pcbnew.SaveBoard(str(pcb_path), board)
         # The original project .kicad_pro snapshot is preserved by native().
         post = native(pcb_path, root / "candidate-drc.json")
         out["candidate_native_metrics"] = metrics(post)
+        out["candidate_native_violations"] = [
+            {"type": v.get("type"), "severity": v.get("severity"),
+             "description": v.get("description"),
+             "items": v.get("items", [])[:8]}
+            for v in post.get("violations", [])[:16]
+        ]
+        out["CH019_unconnected_samples"] = [
+            v for v in post.get("unconnected_items", [])
+            if "CH019_N_MUX" in json.dumps(v)
+        ][:8]
         from native_connectivity import regressed_nets
         out["regressed_nets"] = regressed_nets(initial, post)
         out["native_DRC_qualified"] = (
