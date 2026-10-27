@@ -8,6 +8,7 @@ from typing import Any
 
 from ch025_mux_joint import (
     TRIPLET, MIN_CENTER_SEPARATION_MM, coupled_candidates,
+    inverse_locked_trial_schedules,
 )
 
 
@@ -83,6 +84,19 @@ class CoupledMuxTests(unittest.TestCase):
         pools["MUX_S2"]=[{"path":[(1,0.,0.),(1,5.,1.)]}]
         with self.assertRaises(ValueError):
             coupled_candidates(pools)
+
+    def test_inverse_mux_order_s3_first_is_deterministic(self) -> None:
+        plans = inverse_locked_trial_schedules(3)
+        self.assertEqual(
+            plans,
+            ((0, ("MUX_S3", "MUX_S2")),
+             (1, ("MUX_S3", "MUX_S2")),
+             (0, ("MUX_S2", "MUX_S3")),
+             (1, ("MUX_S2", "MUX_S3"))),
+        )
+        self.assertEqual(inverse_locked_trial_schedules(0), ())
+        with self.assertRaises(ValueError):
+            inverse_locked_trial_schedules(5)
 
     def test_missing_network_never_promoted(self) -> None:
         result=coupled_candidates({

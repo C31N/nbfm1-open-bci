@@ -712,15 +712,19 @@ def attempt(work: Path, schedule: tuple[str, ...],
         if (not proposal["plans"] and pools["MUX_EN"]
                 and time.monotonic() < order_deadline - 18.0):
             stage("native_EN_locked_negotiated_S2_S3_reroute")
-        for en_index, en_candidate in enumerate(pools["MUX_EN"][:2]):
+        from ch025_mux_joint import inverse_locked_trial_schedules
+        for en_index, repair_order in inverse_locked_trial_schedules(
+                len(pools["MUX_EN"])):
             if proposal["plans"] or time.monotonic() >= order_deadline - 18.0:
                 break
+            en_candidate = pools["MUX_EN"][en_index]
             snapshot = {
                 t.m_Uuid.AsString() for t in board.GetTracks()
             }
             staged_copper: list[str] = []
             local = {
                 "EN_candidate_index": en_index,
+                "repair_order": list(repair_order),
                 "status": "EN_first_joint_retry",
                 "routing_trials": [],
                 "qualified_joint_triple": False,
@@ -729,17 +733,17 @@ def attempt(work: Path, schedule: tuple[str, ...],
                 chosen: dict[str, Any] = {
                     "MUX_EN": en_candidate["path"],
                 }
-                for net in ("MUX_EN", "MUX_S2", "MUX_S3"):
+                for net in ("MUX_EN", *repair_order):
                     if net != "MUX_EN":
                         selected_path = None
-                        for window in (3.0, 6.0):
+                        for window in (3.0, 6.0, 10.0):
                             if time.monotonic() >= order_deadline - 9.0:
                                 break
                             path, detail = candidate_route(
                                 board, net, originals[net],
                                 power, fixed_power, guard,
                                 window, [], 1.0, order_deadline,
-                                prefer_exact_mesh=(window == 3.0))
+                                prefer_exact_mesh=(window <= 6.0))
                             local["routing_trials"].append({
                                 "net": net, "window_mm": window,
                                 "found": path is not None,

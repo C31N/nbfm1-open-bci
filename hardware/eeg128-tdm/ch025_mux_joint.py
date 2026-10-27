@@ -18,6 +18,25 @@ TRIPLET: tuple[str, str, str] = ("MUX_EN", "MUX_S2", "MUX_S3")
 MIN_CENTER_SEPARATION_MM = .30001
 
 
+def inverse_locked_trial_schedules(
+    en_candidates: int,
+) -> tuple[tuple[int, tuple[str, str]], ...]:
+    """Bounded deterministic opposite-order search for locked EN copper.
+
+    The previously unsuccessful S2-first direction remains a regression
+    control, but S3-first is tried ahead of it, because native Probe #19
+    showed S2 succeeds before S3 whereas S3 then has no F.Cu escape.
+    """
+    if not 0 <= en_candidates <= 4:
+        raise ValueError("Invalid number of immutable MUX_EN candidates")
+    count = min(2, en_candidates)
+    return tuple(
+        (index, order)
+        for order in (("MUX_S3", "MUX_S2"), ("MUX_S2", "MUX_S3"))
+        for index in range(count)
+    )
+
+
 def coupled_candidates(
     pools: dict[str, list[dict[str, Any]]],
     *, maximum_combinations: int = 256,
