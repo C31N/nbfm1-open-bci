@@ -398,6 +398,7 @@ def qualify(archive: Path) -> dict[str, Any]:
                 make_track(board, start, end, netcode, .15, layer)
         record_phase("new_MUX_EN_tracks_without_new_vias")
         make_via(board, WEST, netcode, .65)
+        record_phase("new_MUX_EN_tracks_with_west_via_only")
         make_via(board, EAST, netcode, .65)
         out["new_vias_added_scratch_only"] = True
         record_phase("new_MUX_EN_tracks_with_both_vias_without_CH019")
