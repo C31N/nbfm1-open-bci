@@ -385,7 +385,7 @@ def native_staged_mux_corridor_inventory(board: Any, name: str,
     original vias and protected nets without moving any item. Offset
     corridors are diagnostic only and do not assert electrical closure.
     """
-    from shapely.geometry import LineString, Point
+    from shapely.geometry import LineString
     from shapely.ops import nearest_points
     from analyze_ch025_fcu_blocker_uuids import copper_shapes
     from route_targeted_closure import xy, routing_domain
