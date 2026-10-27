@@ -4,7 +4,7 @@
 import unittest
 from shapely.geometry import box
 from probe_mux_topological_capacity import (
-    read_slices, MIN_CENTER_SEPARATION_MM, FLAGS, assess_straight_bundle,
+    read_slices, MIN_CENTER_SEPARATION_MM, FLAGS, assess_straight_bundle, assess_en_bypass,
 )
 
 
@@ -53,6 +53,27 @@ class LocalCapacityTests(unittest.TestCase):
             next(row for row in report["candidate_lines"]
                  if row["net"] == "MUX_EN")["protected_blocker_count"], 0)
         self.assertFalse(report["checkpoint_promotion_allowed"])
+
+    def test_en_bypass_unobstructed_component(self) -> None:
+        domain = box(0, 0, 100, 100)
+        result = assess_en_bypass(domain, [])
+        self.assertTrue(all(
+            row["source_and_target_in_same_component"]
+            for row in result["bands"]))
+        self.assertFalse(result["accepted"])
+        self.assertFalse(result["fabrication_release"])
+
+    def test_en_bypass_with_full_height_cut(self) -> None:
+        domain = box(0, 0, 100, 100)
+        # A protected full-height static cut blocks every *surveyed* band;
+        # no global-board impossibility is inferred.
+        retained = [(box(33, 20, 34, 60),
+                     dict(net="3V3A", kind="pad",
+                          uuid="synthetic-power-cut", protected=True))]
+        result = assess_en_bypass(domain, retained)
+        self.assertTrue(result["all_bands_disconnected"])
+        self.assertFalse(result["global_board_topological_impossibility_proven"])
+
 
     def test_no_zero_height_or_bad_steps(self) -> None:
         with self.assertRaises(ValueError):

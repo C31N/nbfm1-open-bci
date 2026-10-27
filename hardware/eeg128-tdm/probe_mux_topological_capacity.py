@@ -149,6 +149,88 @@ def assess_straight_bundle(domain: Any,
     )
 
 
+
+def assess_en_bypass(domain: Any,
+                     retained: list[tuple[Any, dict[str, Any]]]
+                     ) -> dict[str, Any]:
+    """Read-only connectivity of the EN free-space with S2/S3 kept straight.
+
+    Polygon connectivity is a necessary *topological* condition for a legal
+    route in a chosen rectangular band, not a routed copper or DRC proof.
+    The S2 and S3 tracks are hypothetical fixed obstacles, never written.
+    """
+    from shapely.geometry import Point, Polygon
+
+    src = Point(TERMINALS["MUX_EN"][0])
+    dst = Point(TERMINALS["MUX_EN"][1])
+    s2 = LineString(TERMINALS["MUX_S2"])
+    s3 = LineString(TERMINALS["MUX_S3"])
+    locked_guards = [
+        path.buffer(WIDTH_MM / 2 + CLEARANCE_MM + .00001)
+        for path in (s2, s3)
+    ]
+    mx = (TERMINALS["MUX_EN"][0][1] +
+          TERMINALS["MUX_S2"][0][1] +
+          TERMINALS["MUX_S3"][0][1]) / 3
+    west = min(p[0] for p in TERMINALS["MUX_EN"]) - 1.0
+    east = max(p[0] for p in TERMINALS["MUX_EN"]) + 1.0
+    pad = next((shape for shape, entry in retained
+                if entry["uuid"] ==
+                "5be286e6-1938-4e59-b1de-fce18e9c3615"), None)
+    bands: list[dict[str, Any]] = []
+    for halfheight in (1.5, 3.0, 5.0):
+        local = box(west, mx - halfheight,
+                    east, mx + halfheight).intersection(domain)
+        blockers = [
+            shape.intersection(local) for shape, entry in retained
+            if entry["net"] != "MUX_EN" and shape.intersects(local)
+        ]
+        blocked = unary_union([*blockers, *locked_guards])
+        available = local.difference(blocked).buffer(-.000005)
+        if available.geom_type == "Polygon":
+            components = [available]
+        elif available.geom_type == "MultiPolygon":
+            components = list(available.geoms)
+        elif available.geom_type == "GeometryCollection":
+            components = [g for g in available.geoms
+                          if isinstance(g, Polygon)]
+        else:
+            components = []
+        connected = any(part.covers(src) and part.covers(dst)
+                        for part in components)
+        bands.append(dict(
+            halfheight_mm=halfheight,
+            y_range_mm=[round(mx - halfheight, 6),
+                        round(mx + halfheight, 6)],
+            fixed_copper_obstacle_count=len(blockers),
+            free_components=len(components),
+            source_in_free_space=any(part.covers(src)
+                                     for part in components),
+            target_in_free_space=any(part.covers(dst)
+                                     for part in components),
+            source_and_target_in_same_component=connected,
+            straight_S2_S3_copper_held_fixed=True,
+            guaranteed_trace_construction=False,
+            native_DRC_qualified=False,
+        ))
+    return dict(
+        status="en_fixed_s2_s3_bypass_component_survey",
+        source_anchors_unchanged=True,
+        S2_S3_reserved_without_PCB_changes=True,
+        power_pad_UUID="5be286e6-1938-4e59-b1de-fce18e9c3615",
+        power_pad_clearance_envelope_bounds_mm=(
+            [round(x, 6) for x in pad.bounds] if pad is not None else None),
+        bands=bands,
+        all_bands_disconnected=all(
+            not band["source_and_target_in_same_component"]
+            for band in bands),
+        global_board_topological_impossibility_proven=False,
+        byte_identical_replay_proven=False,
+        allowed_CH022_closure=False,
+        accepted=False, fabrication_release=False,
+    )
+
+
 def capacity(board: Any) -> dict[str, Any]:
     import pcbnew
     from route_targeted_closure import routing_domain, xy
@@ -190,6 +272,7 @@ def capacity(board: Any) -> dict[str, Any]:
                               kind="fixed_ch025", protected=True)))
     domain = routing_domain(board, WIDTH_MM/2, EDGE_CLEARANCE_MM)
     flat_bundle = assess_straight_bundle(domain, retained)
+    en_bypass = assess_en_bypass(domain, retained)
     left = max(min(a[0], b[0]) for a, b in TERMINALS.values()) + .2
     right = min(max(a[0], b[0]) for a, b in TERMINALS.values()) - .2
     mid_y = sum((a[1]+b[1])/2 for a,b in TERMINALS.values())/3
@@ -241,7 +324,8 @@ def capacity(board: Any) -> dict[str, Any]:
         selected_original_tracks_excluded=len(excluded_uuids),
         included_fixed_obstacle_count=len(retained),
         immutable_vias_verified=True,
-        triplet=list(TRIPLET), flat_bundle=flat_bundle, x_interval_mm=[round(left,6),round(right,6)],
+        triplet=list(TRIPLET), flat_bundle=flat_bundle,
+        en_bypass=en_bypass, x_interval_mm=[round(left,6),round(right,6)],
         y_center_mm=round(mid_y,6), bands=bands,
         full_FCu_global_impossibility_proven=False,
         complete_three_net_route_proven=False,
