@@ -178,6 +178,7 @@ def candidate_route(board: Any, name: str, segment: Any,
     from route_targeted_closure import (
         obstacles, routing_domain, search, xy,
     )
+    from ch025_mux_joint import MIN_CENTER_SEPARATION_MM
 
     start, end = ((SRC, DST) if name == NET else
                   (xy(segment.GetStart()), CH027_ALT_TARGET)
@@ -203,6 +204,7 @@ def candidate_route(board: Any, name: str, segment: Any,
         row["reason"] = "empty_legal_region"
         return None, row
     future = []
+    hard_future_corridors = []
     for future_name, foreign in unplaced:
         if future_name == name:
             continue
@@ -210,8 +212,20 @@ def candidate_route(board: Any, name: str, segment: Any,
                 (xy(foreign.GetStart()), CH027_ALT_TARGET)
                 if future_name == "CH027_N_MUX" else
                 (xy(foreign.GetStart()), xy(foreign.GetEnd())))
-        future.append(LineString([a, b]).buffer(.55))
+        segment_line = LineString([a, b])
+        future.append(segment_line.buffer(.55))
+        # Exact 0.30001-mm inter-signal centreline reservation is enabled
+        # ONLY for native EN-locked first-net negotiation. It protects the
+        # not-yet-placed net's direct anchor corridor during mesh search.
+        hard_future_corridors.append(segment_line.buffer(MIN_CENTER_SEPARATION_MM))
     future_reserved = unary_union(future) if future else GeometryCollection()
+    hard_future = (
+        unary_union(hard_future_corridors)
+        if prefer_exact_mesh and unplaced else GeometryCollection()
+    )
+    row["hard_future_corridor_reserved"] = (
+        bool(prefer_exact_mesh and unplaced)
+    )
     guard = unary_union([power_obstacles, via_guard.buffer(.075)])
     # Repel candidate routes from previously sampled paths of THIS net.
     # This is a soft cost, never an exemption from actual copper clearance.
@@ -239,7 +253,8 @@ def candidate_route(board: Any, name: str, segment: Any,
             board, start, end, board.FindNet(name).GetNetCode(),
             (pcbnew.F_Cu, pcbnew.B_Cu), power, region,
             start_layer=0, goal_layer=0, allow_vias=False,
-            extra_obstacles=[guard, GeometryCollection()])
+            extra_obstacles=[
+                unary_union([guard, hard_future]), GeometryCollection()])
         if route is not None and any(p[0] != 0 for p in route):
             raise RuntimeError("Exact MUX mesh unexpectedly changed layer")
         if route is not None:
@@ -283,7 +298,8 @@ def candidate_route(board: Any, name: str, segment: Any,
         .15, .15, region, .60,
         (pcbnew.F_Cu, pcbnew.B_Cu),
     )[0][0]
-    free = region.difference(unary_union([blocked, guard])).buffer(-.000005)
+    free = region.difference(unary_union([
+        blocked, guard, hard_future])).buffer(-.000005)
     coords = [(float(v[1]), float(v[2])) for v in route]
     path = [coords[0]]
     i = 0
@@ -739,14 +755,32 @@ def attempt(work: Path, schedule: tuple[str, ...],
                         for window in (3.0, 6.0, 10.0):
                             if time.monotonic() >= order_deadline - 9.0:
                                 break
+                            # Negotiated corridor: if another MUX
+                            # signal is still missing, reserve its native
+                            # direct-anchor corridor during this trial.
+                            # This remains a SOFT preference; final exact
+                            # copper obstacles and DRC are unmodified.
+                            pending_next = [
+                                (other, originals[other])
+                                for other in repair_order
+                                if other != net and other not in chosen
+                            ]
+                            reserve_weight = (
+                                (2.0 if en_index == 0 else 10.0)
+                                if pending_next else 1.0
+                            )
                             path, detail = candidate_route(
                                 board, net, originals[net],
                                 power, fixed_power, guard,
-                                window, [], 1.0, order_deadline,
+                                window, pending_next,
+                                reserve_weight, order_deadline,
                                 prefer_exact_mesh=(window <= 6.0))
                             local["routing_trials"].append({
                                 "net": net, "window_mm": window,
                                 "found": path is not None,
+                                "future_corridor_reserved": [
+                                    other for other, _ in pending_next],
+                                "reservation_weight": reserve_weight,
                                 "diagnostic": detail,
                             })
                             _write_child_progress(progress_path, {
@@ -760,6 +794,10 @@ def attempt(work: Path, schedule: tuple[str, ...],
                             local["status"] = net + "_unroutable_against_locked_bundle"
                             break
                         chosen[net] = selected_path
+                        # Exact path coordinates allow the next diagnosis to
+                        # identify which detour consumed the other corridor.
+                        local.setdefault("selected_paths", {})[net] = [
+                            list(point) for point in selected_path]
                     before_temp = {
                         t.m_Uuid.AsString() for t in board.GetTracks()
                     }
