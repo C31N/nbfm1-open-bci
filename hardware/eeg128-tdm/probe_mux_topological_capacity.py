@@ -575,7 +575,7 @@ def mux_en_bcu_via_hop(board: Any, zone: Any) -> dict[str, Any]:
                 routes = (
                     ("source_FCu", source_xy, west_xy,
                      (pcbnew.F_Cu, pcbnew.B_Cu),
-                     box(22.5, 32.0, 34.0, 44.0),
+                     box(21.0, 22.0, 54.0, 54.0),
                      [power_fcu, empty]),
                     ("middle_BCu", west_xy, east_xy,
                      (pcbnew.B_Cu, pcbnew.F_Cu),
