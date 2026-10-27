@@ -413,6 +413,75 @@ def mux_en_bcu_via_hop(board: Any, zone: Any) -> dict[str, Any]:
             "native_DRC_qualified": False,
             "zero_L3_area_change_qualified": False,
         })
+    # Reversible in-memory blocker ablation only. The two UUIDs were
+    # discovered by native #9 B.Cu nearest-component copper inventory.
+    # They remain original board tracks after every diagnostic trial.
+    from probe_ch025_fcu_l3_exact import track_inventory
+    track_baseline = track_inventory(board)
+    candidate_uuids = (
+        "0832ca70-347c-5b2d-b8d9-c8fff7096f8a",
+        "a88ddd54-bc3b-5d5b-8373-21b6b963ae3d",
+    )
+    all_tracks = {track.m_Uuid.AsString(): track
+                  for track in board.GetTracks()}
+    candidate_tracks = []
+    for uid in candidate_uuids:
+        target = all_tracks.get(uid)
+        if (target is None or target.GetNetname() != "CH019_N_MUX"
+                or target.GetLayer() != pcbnew.B_Cu
+                or isinstance(target, (pcbnew.PCB_VIA, pcbnew.PCB_ARC))):
+            raise RuntimeError("Native CH019_N_MUX B.Cu UUID identity drift")
+        candidate_tracks.append(target)
+    virtual_restitutions: list[dict[str, Any]] = []
+    wide_region = legal.intersection(box(23.0, 24.0, 49.0, 51.0))
+    for selection in ((0,), (1,), (0, 1)):
+        removed = [candidate_tracks[i] for i in selection]
+        trial = {
+            "temporarily_absent_UUIDs": [
+                t.m_Uuid.AsString() for t in removed],
+            "restored": False,
+            "CH019_N_MUX_reconnected_after_relocation_proven": False,
+            "MUX_EN_fcu_to_bcu_qualified": False,
+            "native_DRC_qualified": False,
+            "L3_exact_gate_qualified": False,
+            "candidate_applied_to_checkpoint": False,
+        }
+        for track in removed:
+            board.Remove(track)
+        try:
+            trial_walls, _ = obstacles(
+                board, code, .15, .15, wide_region, .65,
+                (pcbnew.F_Cu, pcbnew.B_Cu))
+            free_trial = wide_region.difference(
+                trial_walls[1]).buffer(-.000005)
+            trial_components = polygons(free_trial)
+
+            def in_component(point: list[float]) -> int | None:
+                p = Point(point)
+                return next((i for i, poly in enumerate(trial_components)
+                             if poly.covers(p)), None)
+
+            west_ids = {in_component(s["xy_mm"])
+                        for s in samples["west"]}
+            east_ids = {in_component(s["xy_mm"])
+                        for s in samples["east"]}
+            west_ids.discard(None)
+            east_ids.discard(None)
+            common = sorted(west_ids & east_ids)
+            trial.update({
+                "BCu_free_component_count": len(trial_components),
+                "west_component_ids": sorted(west_ids),
+                "east_component_ids": sorted(east_ids),
+                "same_BCu_component_now_possible": bool(common),
+                "common_BCu_component_ids": common,
+            })
+        finally:
+            for track in removed:
+                board.Add(track)
+            trial["restored"] = track_inventory(board) == track_baseline
+            if not trial["restored"]:
+                raise RuntimeError("CH019 temporary B.Cu cut not restored")
+        virtual_restitutions.append(trial)
     if unchanged_fingerprints(board) != snapshot:
         raise RuntimeError("Protected original pads, vias, zones modified")
     return {
@@ -425,6 +494,7 @@ def mux_en_bcu_via_hop(board: Any, zone: Any) -> dict[str, Any]:
         "same_BCu_component_pairs": len(pairs),
         "expanded_BCu_component_survey": expanded,
         "proposed_BCu_via_pairs": pairs[:12],
+        "virtual_CH019_N_MUX_BCu_cut_trials": virtual_restitutions,
         "power_pad_uuid": "5be286e6-1938-4e59-b1de-fce18e9c3615",
         "power_pad_bounds_mm": [round(v, 6) for v in power_pad.bounds],
         "CH027_via_fixed": CH027_ALT_VIA,
