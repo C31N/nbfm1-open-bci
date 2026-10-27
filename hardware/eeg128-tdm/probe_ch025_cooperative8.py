@@ -161,7 +161,8 @@ def candidate_route(board: Any, name: str, segment: Any,
                     unplaced: list[tuple[str, Any]],
                     bias: float, deadline: float,
                     diverse_paths: list[Any] | None = None,
-                    hot_spots: list[Any] | None = None
+                    hot_spots: list[Any] | None = None,
+                    prefer_exact_mesh: bool = False
                     ) -> tuple[Any | None, dict[str, Any]]:
     """Bounded A* search with F.Cu congestion costs and exact polygon checking.
 
@@ -225,17 +226,36 @@ def candidate_route(board: Any, name: str, segment: Any,
     # Grid A* soft costs never override the final hard geometry rules.
     raster_mm = .15 if margin <= 3.0 else .20
     row["grid_mm"] = raster_mm
-    route = search(
-        board, start, end, board.FindNet(name).GetNetCode(),
-        .15, .15, both_layers=False, margin=margin,
-        step=raster_mm, max_nodes=18000,
-        deadline=min(deadline, time.monotonic() + 8.0),
-        start_layer=0, goal_layer=0,
-        layers=(pcbnew.F_Cu, pcbnew.B_Cu),
-        cost_regions=((0, guard, 250.0),
-                      (0, future_reserved, bias)) + extra_costs,
-    )
-    row["route_solver"] = "bounded_astar"
+    route = None
+    if prefer_exact_mesh:
+        if name != "MUX_EN":
+            raise ValueError("Exact mesh priority restricted to MUX_EN")
+        # This is executed with temporary S2/S3 PCB tracks ALREADY inserted.
+        # Native obstacle construction therefore treats their real copper
+        # as hard constraints, unlike a cost-only A* preference.
+        from escape_mesh_505 import mesh_route
+        row["native_hard_obstacle_mesh_attempted"] = True
+        route = mesh_route(
+            board, start, end, board.FindNet(name).GetNetCode(),
+            (pcbnew.F_Cu, pcbnew.B_Cu), power, region,
+            start_layer=0, goal_layer=0, allow_vias=False,
+            extra_obstacles=[guard, GeometryCollection()])
+        if route is not None and any(p[0] != 0 for p in route):
+            raise RuntimeError("Exact MUX mesh unexpectedly changed layer")
+        if route is not None:
+            row["route_solver"] = "native_hard_copper_visibility_mesh"
+    if route is None:
+        route = search(
+            board, start, end, board.FindNet(name).GetNetCode(),
+            .15, .15, both_layers=False, margin=margin,
+            step=raster_mm, max_nodes=18000,
+            deadline=min(deadline, time.monotonic() + 8.0),
+            start_layer=0, goal_layer=0,
+            layers=(pcbnew.F_Cu, pcbnew.B_Cu),
+            cost_regions=((0, guard, 250.0),
+                          (0, future_reserved, bias)) + extra_costs,
+        )
+        row["route_solver"] = "bounded_astar"
     if not route and name == NET and margin >= 6.0:
         # Exact-geometry mesh is a fallback only for the long CH025 span:
         # its original 16-vertex corridor was proven feasible with neighbors
@@ -629,9 +649,11 @@ def attempt(work: Path, schedule: tuple[str, ...],
                         path, detail = candidate_route(
                             board, "MUX_EN", originals["MUX_EN"],
                             power, fixed_power, guard, window, [],
-                            1.0, order_deadline)
+                            1.0, order_deadline,
+                            prefer_exact_mesh=(window == 6.0))
                         locked_result.append({
                             "status": "hard_obstacle_EN_probe",
+                            "exact_mesh_requested": window == 6.0,
                             "margin_mm": window,
                             "source_drc_qualified": False,
                             "result": detail,
