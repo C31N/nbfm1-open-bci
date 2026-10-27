@@ -507,6 +507,69 @@ def mux_en_bcu_via_hop(board: Any, zone: Any) -> dict[str, Any]:
                         "target_FCu_free_component": target_fcu_id,
                         "route_native_DRC_qualified": False,
                     })
+            # One bounded read-only native-geometry mesh proposal, evaluated
+            # only after all three source/layer/target components coexist.
+            if selection == (0,) and continuous:
+                from escape_mesh_505 import mesh_route
+                from probe_ch025_fcu_l3_exact import power_fcu_obstacles
+                from shapely.geometry import GeometryCollection
+                source_xy = TERMINALS["MUX_EN"][0]
+                target_xy = TERMINALS["MUX_EN"][1]
+                pair = continuous[0]
+                west_xy = tuple(pair["west_via_xy_mm"])
+                east_xy = tuple(pair["east_via_xy_mm"])
+                power_fcu = power_fcu_obstacles(board)
+                empty = GeometryCollection()
+                stages: list[dict[str, Any]] = []
+                routes = (
+                    ("source_FCu", source_xy, west_xy,
+                     (pcbnew.F_Cu, pcbnew.B_Cu),
+                     box(22.5, 32.0, 34.0, 44.0),
+                     [power_fcu, empty]),
+                    ("middle_BCu", west_xy, east_xy,
+                     (pcbnew.B_Cu, pcbnew.F_Cu),
+                     box(21.0, 22.0, 54.0, 54.0),
+                     [empty, power_fcu]),
+                    ("target_FCu", east_xy, target_xy,
+                     (pcbnew.F_Cu, pcbnew.B_Cu),
+                     box(33.0, 32.0, 52.0, 44.0),
+                     [power_fcu, empty]),
+                )
+                for label, a, b, layers, bounds, exclusion in routes:
+                    local = wide_region.intersection(bounds)
+                    candidate = mesh_route(
+                        board, a, b, code, layers, power, local,
+                        start_layer=0, goal_layer=0, allow_vias=False,
+                        extra_obstacles=exclusion)
+                    path_ok = (
+                        candidate is not None and len(candidate) >= 2
+                        and all(p[0] == 0 for p in candidate)
+                        and math.dist(candidate[0][1:], a) <= .000002
+                        and math.dist(candidate[-1][1:], b) <= .000002)
+                    stages.append({
+                        "leg": label, "path_found": path_ok,
+                        "candidate_vertices": (
+                            [list(point) for point in candidate]
+                            if path_ok else None),
+                        "candidate_not_native_DRC_qualified": True,
+                    })
+                    if not path_ok:
+                        break
+                trial["three_leg_mesh_proposal"] = {
+                    "source_net": "MUX_EN",
+                    "chosen_west_xy_mm": list(west_xy),
+                    "chosen_east_xy_mm": list(east_xy),
+                    "stages": stages,
+                    "all_three_mesh_paths_found": (
+                        len(stages) == 3 and
+                        all(s["path_found"] for s in stages)),
+                    "routing_completed": False,
+                    "new_vias_written_to_board": False,
+                    "CH019_restitution_qualified": False,
+                    "L3_native_zero_area_qualified": False,
+                    "native_DRC_qualified": False,
+                    "schematic_parity_qualified": False,
+                }
             trial.update({
                 "BCu_free_component_count": len(trial_components),
                 "west_component_ids": sorted(west_ids),
