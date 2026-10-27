@@ -354,6 +354,48 @@ def mux_en_bcu_via_hop(board: Any, zone: Any) -> dict[str, Any]:
     pairs.sort(key=lambda item: (
         not item["direct_BCu_clear"], item["distance_mm"],
         item["west_xy_mm"]))
+    # Escalate only the B.Cu connectivity window. Existing F.Cu via samples
+    # remain pinned; a wider B.Cu component is not native DRC proof.
+    expanded: list[dict[str, Any]] = []
+    for label, bounds in (
+            ("local_6mm", (26.2, 34.5, 45.5, 40.5)),
+            ("expanded_13mm", (25.0, 31.0, 47.0, 44.0)),
+            ("expanded_27mm", (23.0, 24.0, 49.0, 51.0))):
+        wide_region = legal.intersection(box(*bounds))
+        wide_walls, _ = obstacles(
+            board, code, .15, .15, wide_region, .65,
+            (pcbnew.F_Cu, pcbnew.B_Cu))
+        wide_free = wide_region.difference(wide_walls[1]).buffer(-.000005)
+        wide_components = polygons(wide_free)
+
+        def wide_index(point: list[float]) -> int | None:
+            p = Point(point)
+            return next((i for i, g in enumerate(wide_components)
+                         if g.covers(p)), None)
+
+        western = [(entry, wide_index(entry["xy_mm"]))
+                   for entry in samples["west"]]
+        eastern = [(entry, wide_index(entry["xy_mm"]))
+                   for entry in samples["east"]]
+        match = next((
+            (w, e, wi) for w, wi in western for e, ei in eastern
+            if wi is not None and wi == ei
+        ), None)
+        expanded.append({
+            "window_name": label,
+            "bounds_mm": list(bounds),
+            "free_BCu_components": len(wide_components),
+            "west_components": sorted({
+                index for _, index in western if index is not None}),
+            "east_components": sorted({
+                index for _, index in eastern if index is not None}),
+            "same_free_BCu_component_found": match is not None,
+            "example_west_east_mm": (
+                [match[0]["xy_mm"], match[1]["xy_mm"]]
+                if match is not None else None),
+            "native_DRC_qualified": False,
+            "zero_L3_area_change_qualified": False,
+        })
     if unchanged_fingerprints(board) != snapshot:
         raise RuntimeError("Protected original pads, vias, zones modified")
     return {
@@ -364,6 +406,7 @@ def mux_en_bcu_via_hop(board: Any, zone: Any) -> dict[str, Any]:
             k: len(v) for k, v in samples.items()},
         "via_samples": {k: v[:12] for k, v in samples.items()},
         "same_BCu_component_pairs": len(pairs),
+        "expanded_BCu_component_survey": expanded,
         "proposed_BCu_via_pairs": pairs[:12],
         "power_pad_uuid": "5be286e6-1938-4e59-b1de-fce18e9c3615",
         "power_pad_bounds_mm": [round(v, 6) for v in power_pad.bounds],
