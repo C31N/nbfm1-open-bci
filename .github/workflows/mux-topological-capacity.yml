@@ -1,0 +1,68 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+name: Native MUX topological F.Cu capacity gate
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/ch025-fcu-l3-exact-2026-10-21]
+    paths:
+      - ".github/workflows/mux-topological-capacity.yml"
+      - "hardware/eeg128-tdm/probe_mux_topological_capacity.py"
+      - "hardware/eeg128-tdm/test_mux_topological_capacity.py"
+permissions:
+  contents: read
+jobs:
+  survey:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    container:
+      image: kicad/kicad@sha256:5716d82aa247abdbe512650eb4e8fce5a4031cbbef0a2c8df83208a69fef87b2
+      options: --user 0:0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Native KiCad and Shapely
+        run: |
+          set -eu
+          test "$(kicad-cli version)" = "8.0.9"
+          apt-get -o Acquire::Retries=3 update
+          DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 install -y --no-install-recommends python3-shapely python3-pip python3-numpy
+          /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
+          /usr/bin/python3 -c 'import pcbnew,shapely; assert pcbnew.Version().startswith("8.0.9") and shapely.__version__=="2.1.2"'
+      - name: Test fail-closed three-lane bound
+        run: |
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_mux_topological_capacity.py -v
+      - name: Read-only SHA-pinned 139 PCB cross-section survey
+        timeout-minutes: 15
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_mux_topological_capacity.py \
+            --archive hardware/eeg128-tdm/engineering/block2-ch019-electrode-closed139.zip \
+            --output /tmp/mux-capacity-native.json
+      - name: Enforce all release and manufacturing gates
+        run: |
+          /usr/bin/python3 - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path("/tmp/mux-capacity-native.json").read_text())
+          assert x["source_archive_sha256"]=="f022d711bf860c6ec9383dae6f511c41189bf7348035d8d1e5e0e0ca6bcd6d1b"
+          assert x["source_pcb_sha256"]=="f2780989e2dee6233f207df1f420f7e89d8e855493eb6b1e7fb731d4a4dda1ea"
+          assert x["baseline_airwires"]==139
+          assert x["terminal_geometry_verified"] is True
+          assert x["selected_original_tracks_excluded"]==8
+          assert len(x["bands"])==4
+          assert all(not x[k] for k in (
+              "accepted","routing_completed","fabrication_release",
+              "manufacturing_files","manufacturing_export_invoked",
+              "checkpoint_promoted","independent_replay_verified",
+              "native_DRC_qualified","native_parity_pass",
+              "source_copper_modified","In1_Cu_used"))
+          assert all(b["upper_bound_minimum_slots"]>=0 for b in x["bands"])
+          assert not list(Path("/tmp").rglob("*.gbr"))
+          assert not list(Path("/tmp").rglob("*.drl"))
+          print([(b["halfheight_mm"],b["upper_bound_minimum_slots"]) for b in x["bands"]])
+          PY
+      - name: Upload diagnostic JSON only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mux-topological-fcu-capacity-native
+          path: /tmp/mux-capacity-native.json
+          if-no-files-found: ignore
