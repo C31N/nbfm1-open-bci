@@ -299,6 +299,7 @@ def qualify(archive: Path) -> dict[str, Any]:
         "CH019_BCu_reconnected_scratch": False,
         "L3_loss_contours": [], "L3_gain_contours": [],
         "L3_phase_deltas": [],
+        "L3_west_via_position_probes": [],
         "L3_unchanged_baseline_repeat": None,
         "L3_exact_native_polygon_ring_identity": False,
     }
@@ -399,6 +400,50 @@ def qualify(archive: Path) -> dict[str, Any]:
         record_phase("new_MUX_EN_tracks_without_new_vias")
         make_via(board, WEST, netcode, .65)
         record_phase("new_MUX_EN_tracks_with_west_via_only")
+        # Each offset is purely a temporary L3 refill probe; the connected
+        # signal-track endpoints deliberately stay at the original WEST.
+        # Therefore these offsets are NOT DRC-qualified routing candidates.
+        from route_targeted_closure import vector
+        west_matches = [
+            t for t in board.GetTracks()
+            if isinstance(t, pcbnew.PCB_VIA)
+            and t.GetNetCode() == netcode
+            and xy(t.GetPosition()) == WEST
+        ]
+        if len(west_matches) != 1:
+            raise RuntimeError("New west EN via not uniquely identifiable")
+        west_via = west_matches[0]
+        offsets = (
+            (-.001, 0.0), (.001, 0.0),
+            (0.0, -.001), (0.0, .001),
+            (-.005, 0.0), (.005, 0.0),
+            (0.0, -.005), (0.0, .005),
+        )
+        try:
+            for dx, dy in offsets:
+                position = (round(WEST[0] + dx, 6),
+                            round(WEST[1] + dy, 6))
+                west_via.SetPosition(vector(position))
+                pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+                poly = pcbnew.SHAPE_POLY_SET(
+                    zone.GetFilledPolysList(pcbnew.In2_Cu))
+                delta = exact_native_difference(before_zone, poly)
+                out["L3_west_via_position_probes"].append({
+                    "offset_mm": [dx, dy],
+                    "position_mm": list(position),
+                    "loss_mm2": delta["loss_native_mm2"],
+                    "gain_mm2": delta["gain_native_mm2"],
+                    "native_both_empty": delta["native_both_empty"],
+                    "exact_native_rings_equal": (
+                        native_polygon_ring_digest(poly) == base_signature),
+                    "signal_tracks_reconnected": False,
+                    "native_DRC_qualified": False,
+                })
+        finally:
+            west_via.SetPosition(vector(WEST))
+            pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+            if xy(west_via.GetPosition()) != WEST:
+                raise RuntimeError("West via position rollback failed")
         make_via(board, EAST, netcode, .65)
         out["new_vias_added_scratch_only"] = True
         record_phase("new_MUX_EN_tracks_with_both_vias_without_CH019")
