@@ -28,7 +28,7 @@ from route_targeted_closure import (
 )
 from probe_mux_topological_capacity import TERMINALS
 
-WEST = (28.5, 35.5)
+WEST = (28.5, 33.75)
 EAST = (36.75, 34.0)
 CUT = "0832ca70-347c-5b2d-b8d9-c8fff7096f8a"
 EN = "MUX_EN"
@@ -175,6 +175,7 @@ def grid_candidates(board: Any, *, bounds: tuple[float, float, float, float] = (
     out["west_via_candidate_area_mm2"] = west_patch.area
     out["east_via_candidate_area_mm2"] = east_patch.area
     out["shared_FCu_components_from_exact_polygon_overlay"] = []
+    out["shared_FCu_overlay_pair_diagnostics"] = []
     for f_index, component in enumerate(fcu_parts):
         w_patch = west_patch.intersection(component).buffer(-.005)
         e_patch = east_patch.intersection(component).buffer(-.005)
@@ -185,11 +186,27 @@ def grid_candidates(board: Any, *, bounds: tuple[float, float, float, float] = (
         wpt, ept = w_patch.representative_point(), e_patch.representative_point()
         wa = (round(wpt.x, 6), round(wpt.y, 6))
         eb = (round(ept.x, 6), round(ept.y, 6))
-        if (math.dist(wa, WEST) < .9 or
-                math.dist(eb, EAST) < .9 or
-                math.dist(wa, eb) < .8 or
-                not allowed.covers(Point(wa)) or
-                not allowed.covers(Point(eb))):
+        min_via_centre_distance = .80001
+        result = {
+            "fcu_component": f_index,
+            "west_bridge_xy_mm": list(wa),
+            "east_bridge_xy_mm": list(eb),
+            "from_main_west_via_mm": math.dist(wa, WEST),
+            "from_main_east_via_mm": math.dist(eb, EAST),
+            "between_bridge_vias_mm": math.dist(wa, eb),
+            "west_patch_area_mm2": w_patch.area,
+            "east_patch_area_mm2": e_patch.area,
+            "both_covers_legal_via_region": (
+                allowed.covers(Point(wa)) and
+                allowed.covers(Point(eb))),
+        }
+        out["shared_FCu_overlay_pair_diagnostics"].append(result)
+        if (result["from_main_west_via_mm"] < min_via_centre_distance
+                or result["from_main_east_via_mm"] <
+                min_via_centre_distance
+                or result["between_bridge_vias_mm"] <
+                min_via_centre_distance
+                or not result["both_covers_legal_via_region"]):
             continue
         if any(c["via_1_xy_mm"] == list(wa) and
                c["via_2_xy_mm"] == list(eb) for c in candidates):
