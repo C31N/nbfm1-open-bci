@@ -20,7 +20,9 @@ class CH027AnnulusScratchContract(unittest.TestCase):
                          '"routing_completed": False',
                          '"checkpoint_promoted": False',
                          "TemporaryDirectory", "LANDING",
-                         "scratchdir.mkdir()", "shutil.copyfile"):
+                         "scratchdir.mkdir()", "shutil.copyfile",
+                         "S0_original_corridor_reserved",
+                         "reserved_S0_line", "7.0"):
             self.assertIn(required, source)
         for banned in ("ExportGerbers", "ExportDrill",
                        "generate_manufacturing", "In1_Cu)"):

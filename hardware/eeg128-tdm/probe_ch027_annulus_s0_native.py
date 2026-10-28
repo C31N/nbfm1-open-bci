@@ -43,17 +43,28 @@ NO_RELEASE = {
 
 def routed(board: Any, source: tuple[float, float],
            target: tuple[float, float], code: int,
-           power: Any, label: str) -> tuple[list[Any] | None, dict[str, Any]]:
+           power: Any, label: str,
+           reserved_S0_line: tuple[Any, Any] | None = None
+           ) -> tuple[list[Any] | None, dict[str, Any]]:
     import pcbnew
-    from shapely.geometry import GeometryCollection, box
+    from shapely.geometry import GeometryCollection, LineString, box
+    from shapely.ops import unary_union
     domain = routing_domain(board, .075, .25)
     result: dict[str, Any] = {
         "name": label, "source_mm": list(source), "target_mm": list(target),
         "candidate_FCu_only": True, "new_vias": False,
         "native_DRC_qualified": False, "attempts": [],
+        "S0_original_corridor_reserved": reserved_S0_line is not None,
     }
     guard = power_fcu_obstacles(board)
-    for margin in (2.0, 4.0):
+    if reserved_S0_line is not None:
+        # Two original S0 endpoints are immutable. Reserve 0.15mm trace
+        # plus 0.15mm clearance plus 0.075mm CH027 half-width.
+        # This is a prospective routing exclusion, not a DRC exemption.
+        guard = unary_union([
+            guard, LineString(reserved_S0_line).buffer(.22500001)])
+    margins = (2.0, 4.0, 7.0) if reserved_S0_line else (2.0, 4.0)
+    for margin in margins:
         region = domain.intersection(box(
             min(source[0], target[0]) - margin,
             min(source[1], target[1]) - margin,
@@ -123,7 +134,11 @@ def run(candidate: Path) -> dict[str, Any]:
             out["status"] = "native_baseline_gate_failed"
             return out
 
-        for index, order in enumerate((S0_UUIDS, S0_UUIDS[::-1])):
+        schedules = (
+            (S0_UUIDS, False), (S0_UUIDS[::-1], False),
+            (S0_UUIDS, True), (S0_UUIDS[::-1], True),
+        )
+        for index, (order, reserve_S0) in enumerate(schedules):
             board = pcbnew.LoadBoard(str(original))
             before = track_inventory(board)
             protected = unchanged_fingerprints(board)
@@ -153,6 +168,7 @@ def run(candidate: Path) -> dict[str, Any]:
                 zone.GetFilledPolysList(pcbnew.In2_Cu))
             row: dict[str, Any] = {
                 "order": list(order), "status": "not_started",
+                "S0_long_corridor_reserved_before_CH027": reserve_S0,
                 "scratch_only": True, "no_new_vias": True,
                 "candidate_native_DRC_qualified": False,
                 "accepted": False, "fabrication_release": False,
@@ -163,8 +179,14 @@ def run(candidate: Path) -> dict[str, Any]:
             power = filled(zone)
             ch027_code = board.FindNet(CH027).GetNetCode()
             start = xy(current[CUT].GetStart())
+            corridor_track = current[S0_UUIDS[0]]
+            reservation = (
+                (xy(corridor_track.GetStart()),
+                 xy(corridor_track.GetEnd()))
+                if reserve_S0 else None)
             proposed, detail = routed(
-                board, start, LANDING, ch027_code, power, "CH027_FCu_annulus")
+                board, start, LANDING, ch027_code, power,
+                "CH027_FCu_annulus", reserved_S0_line=reservation)
             row["routes"].append(detail)
             if proposed is None:
                 row["status"] = "CH027_annulus_FCu_mesh_missing"
