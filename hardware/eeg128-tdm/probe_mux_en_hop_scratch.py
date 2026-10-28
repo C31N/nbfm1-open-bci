@@ -711,9 +711,40 @@ def survey_exact_west_bcu_uuid_barrier(board: Any) -> dict[str, Any]:
                         "Block-2 virtual cut failed exact original restitution")
                 row["all_original_tracks_restored"] = True
             trials.append(row)
+    # Full native board outline: determine whether a remote B.Cu detour
+    # exists that avoids every protected original VCM and Block-1 obstacle.
+    # This is a connectivity bound, never a DRC-complete copper route.
+    whole_domain = routing_domain(board, .325, .25)
+    global_walls, _ = obstacles(
+        board, en_code, .15, .15, whole_domain, .65,
+        (pcbnew.B_Cu, pcbnew.F_Cu))
+    global_free = whole_domain.difference(
+        global_walls[0]).buffer(-.000005)
+    global_parts = polygons(global_free)
+    global_east = index(global_parts, EAST)
+    global_rows = [{
+        "west_xy_mm": list(west),
+        "west_component": index(global_parts, west),
+        "same_whole_board_BCu_component_as_east": (
+            global_east is not None
+            and index(global_parts, west) == global_east),
+    } for west in west_sites]
+    global_detour = {
+        "scope": "full_native_board_edge_outline",
+        "bounds_mm": list(whole_domain.bounds),
+        "BCu_component_count": len(global_parts),
+        "east_component": global_east,
+        "west_sites": global_rows,
+        "at_least_one_global_BCu_component_connected": any(
+            row["same_whole_board_BCu_component_as_east"]
+            for row in global_rows),
+        "native_DRC_qualified": False,
+        "manufacturing_export_allowed": False,
+    }
     if track_inventory(board) != before:
         raise RuntimeError("Original B.Cu track inventory changed")
     return {
+        "global_protected_BCu_detour_survey": global_detour,
         "status": "read_only_BCu_UUID_matrix_and_reversible_probes",
         "window_bounds_mm": list(region.bounds),
         "west_site_count": len(west_sites),
