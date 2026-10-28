@@ -92,7 +92,7 @@ def routed(board: Any, source: tuple[float, float],
     return None, result
 
 
-def run(candidate: Path) -> dict[str, Any]:
+def run(candidate: Path, order_index: int) -> dict[str, Any]:
     import pcbnew
     out: dict[str, Any] = {
         **NO_RELEASE, "status": "not_started",
@@ -142,7 +142,11 @@ def run(candidate: Path) -> dict[str, Any]:
         # an earlier BOARD is garbage-collected before a later load.
         # Retain every disposable board until the temporary workspace exits.
         retained_boards: list[Any] = []
+        if order_index not in range(len(schedules)):
+            raise ValueError('Unreviewed isolated routing order')
         for index, (order, reserve_S0) in enumerate(schedules):
+            if index != order_index:
+                continue
             board = pcbnew.LoadBoard(str(original))
             retained_boards.append(board)
             before = track_inventory(board)
@@ -285,8 +289,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--candidate", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument('--order-index', type=int, choices=(0, 1, 2, 3), required=True)
     args = parser.parse_args()
-    report = run(args.candidate)
+    report = run(args.candidate, args.order_index)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps({"status": report["status"],

@@ -49,9 +49,12 @@ jobs:
         timeout-minutes: 12
         run: |
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch027_annulus_s0_native.py -v
-          /usr/bin/python3 hardware/eeg128-tdm/probe_ch027_annulus_s0_native.py \
-            --candidate /tmp/engineering-only.zip \
-            --output /tmp/CH027-S0-native-trial.json
+          for index in 0 1 2 3; do
+            /usr/bin/python3 hardware/eeg128-tdm/probe_ch027_annulus_s0_native.py \
+              --candidate /tmp/engineering-only.zip \
+              --order-index "$index" \
+              --output "/tmp/CH027-S0-native-trial-$index.json"
+          done
       - name: Enforce no release and protected immutability
         run: |
           /usr/bin/python3 - <<'PY'
@@ -59,11 +62,13 @@ jobs:
           from pathlib import Path
           d=json.loads(Path('/tmp/CH025-CH027-via-survey.json').read_text())
           assert d['source_PCB_untouched']
-          s=json.loads(Path('/tmp/CH027-S0-native-trial.json').read_text())
-          assert s['original_candidate_unchanged']
-          assert s['native_139_baseline'] == {'violations':0,'warnings':0,'unconnected':139}
-          for k in ('accepted','fabrication_release','manufacturing_files','routing_completed','checkpoint_promoted','In1_Cu_used'):
-              assert s[k] is False, k
+          for i in range(4):
+              s=json.loads(Path(f'/tmp/CH027-S0-native-trial-{i}.json').read_text())
+              assert s['original_candidate_unchanged']
+              assert s['native_139_baseline'] == {'violations':0,'warnings':0,'unconnected':139}
+              assert len(s['trials']) == 1
+              for k in ('accepted','fabrication_release','manufacturing_files','routing_completed','checkpoint_promoted','In1_Cu_used'):
+                  assert s[k] is False, k
           assert d['original_tracks_restored']
           assert d['cooperative_all_originals_restored']
           assert len(d['cooperative_removed_originals_only_topology'])==2
@@ -91,5 +96,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ch027-s0-annulus-native-scratch-report
-          path: /tmp/CH027-S0-native-trial.json
+          path: /tmp/CH027-S0-native-trial-*.json
           if-no-files-found: ignore
