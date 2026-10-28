@@ -11,7 +11,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import math
 import shutil
 import tempfile
 from pathlib import Path
@@ -233,8 +232,11 @@ def run(candidate: Path) -> dict[str, Any]:
                     base_in1, polygon_snapshot(board, pcbnew.In1_Cu))
                 row["L3_exact_zero"] = every_zero(delta_l3)
                 row["In1_exact_zero"] = every_zero(delta_in1)
+                native_3v3a = exact_native_difference(
+                    base_l3[ZONE],
+                    polygon_snapshot(board, pcbnew.In2_Cu)[ZONE])
                 row["native_3V3A_delta"] = {
-                    k: delta_l3[ZONE][k]
+                    k: native_3v3a[k]
                     for k in ("loss_native_mm2", "gain_native_mm2",
                               "native_both_empty")}
                 if not (row["L3_exact_zero"] and row["In1_exact_zero"]):
