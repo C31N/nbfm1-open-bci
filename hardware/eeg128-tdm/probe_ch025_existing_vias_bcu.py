@@ -153,6 +153,78 @@ def precise_bcu_barrier_inventory(board: Any, parts: list[Any],
     }
 
 
+def bcu_alternative_component_graph(board: Any, parts: list[Any],
+                                    source_index: int, target_index: int
+                                    ) -> dict[str, Any]:
+    """Bounded topology-only survey of locally adjacent BCu free islands.
+
+    Never authorizes removal of protected copper; transition edges are
+    ONLY gap/proximity hypotheses, not electrically valid copper routes.
+    """
+    from heapq import heappop, heappush
+    from shapely.strtree import STRtree
+
+    tree = STRtree(parts)
+    candidates: list[tuple[float, int, int]] = []
+    for i, poly in enumerate(parts):
+        for idx in tree.query(poly.buffer(1.0)):
+            j = int(idx)
+            if j <= i:
+                continue
+            distance = float(poly.distance(parts[j]))
+            if 0 < distance <= 1.0:
+                candidates.append((distance, i, j))
+    candidates.sort()
+    max_scan = 120
+    edges = []
+    graph: dict[int, list[tuple[int, int, float]]] = {}
+    for distance, a, b in candidates[:max_scan]:
+        row = precise_bcu_barrier_inventory(board, parts, a, b)
+        item = {
+            "components": [a, b],
+            "gap_mm": round(distance, 9),
+            "from_mm": row["from_mm"], "to_mm": row["to_mm"],
+            "eligible_UUIDs": row["eligible_UUIDs"],
+            "immutable_count": row["immutable_count"],
+            "protected_transition": bool(row["immutable_count"]),
+            "native_DRC_qualified": False,
+        }
+        edge_id = len(edges)
+        edges.append(item)
+        if not item["protected_transition"]:
+            cost = 1 + 10 * len(item["eligible_UUIDs"]) + distance
+            graph.setdefault(a, []).append((b, edge_id, cost))
+            graph.setdefault(b, []).append((a, edge_id, cost))
+    frontier: list[tuple[float, int, tuple[int, ...]]] = [
+        (0.0, source_index, ())]
+    best: dict[int, float] = {}
+    candidate_path = []
+    while frontier:
+        score, node, path = heappop(frontier)
+        if node in best and best[node] <= score:
+            continue
+        best[node] = score
+        if node == target_index:
+            candidate_path = [edges[k] for k in path]
+            break
+        for other, edge_id, cost in graph.get(node, []):
+            if score + cost < best.get(other, float("inf")):
+                heappush(frontier, (score + cost, other,
+                                    (*path, edge_id)))
+    return {
+        "evaluated_gap_count": len(edges),
+        "candidate_gap_count": len(candidates),
+        "survey_truncated": len(candidates) > max_scan,
+        "unprotected_transition_count": sum(
+            not row["protected_transition"] for row in edges),
+        "route_of_free_islands_found": bool(candidate_path),
+        "unprotected_transition_path": candidate_path,
+        "nearby_transitions": edges[:30],
+        "topology_only_not_physical_route": True,
+        "native_DRC_qualified": False,
+    }
+
+
 def run(candidate: Path) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import GeometryCollection, Point, box
@@ -176,6 +248,7 @@ def run(candidate: Path) -> dict[str, Any]:
         "BCu_component_count": 0,
         "BCu_direct_component_pair_count": 0,
         "BCu_gap_barrier_inventory": None,
+        "BCu_alternative_component_graph": None,
         "micro_ripup_trial": {
             "performed": False, "restored": True,
             "new_vias": False, "DRC_qualified": False,
@@ -275,6 +348,9 @@ def run(candidate: Path) -> dict[str, Any]:
             raise RuntimeError("Bestands-Vias outside BCu free-space polygon")
         report["BCu_gap_barrier_inventory"] = precise_bcu_barrier_inventory(
             board, parts, source_component, target_component)
+        report["BCu_alternative_component_graph"] = (
+            bcu_alternative_component_graph(
+                board, parts, source_component, target_component))
         # Micro-selective candidate screening is deliberately fail-closed:
         # moving any protected copper is prohibited, even on a scratch board.
         barrier = report["BCu_gap_barrier_inventory"]

@@ -17,6 +17,8 @@ class TestExistingCH025Vias(unittest.TestCase):
                       "unchanged_fingerprints(board)",
                       "BCu_gap_barrier_inventory",
                       "precise_bcu_barrier_inventory",
+                      "bcu_alternative_component_graph",
+                      "topology_only_not_physical_route",
                       "micro_ripup_trial", "immutable_do_not_ripup",
                       "proposed_BCu_neighbor_restitution",
                       "original_track_ids",
