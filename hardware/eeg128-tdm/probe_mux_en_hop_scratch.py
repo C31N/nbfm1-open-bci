@@ -580,6 +580,165 @@ def survey_native_exact_west_mesh(board: Any, power: Any,
         else "at_least_one_mesh_segment_missing")
     return report
 
+
+
+def survey_exact_west_bcu_uuid_barrier(board: Any) -> dict[str, Any]:
+    """Native-geometry UUID matrix; no original Block-1 copper can be moved.
+
+    The clearance-expanded Shapely model is a diagnostic, not a replacement
+    for KiCad's native DRC. Virtual Block-2 track cuts are ALWAYS restored.
+    """
+    import re
+    from itertools import combinations
+    import pcbnew
+    from shapely.geometry import Point, box
+    from escape_mesh_505 import polygons
+    from analyze_ch025_bcu_cut_uuids import survey as gap_survey
+    from route_targeted_closure import obstacles, routing_domain
+    from probe_ch025_fcu_l3_exact import track_inventory
+
+    west_sites = (
+        (28.5, 35.5), (32.25, 35.5), (28.5, 35.25),
+        (28.5, 35.0), (28.5, 34.75), (28.5, 34.5),
+        (28.5, 34.25), (28.5, 34.0), (28.5, 33.75),
+    )
+    region = routing_domain(board, .325, .25).intersection(
+        box(19.0, 22.0, 55.0, 56.0))
+    en_code = board.FindNet(EN).GetNetCode()
+    tracks = {t.m_Uuid.AsString(): t for t in board.GetTracks()}
+    protected_names = (
+        "VCM", "AGND", "3V3", "GND", "VCC", "VDD", "VREG",
+        "CH017_N", "CH019_P", "CH021_P", "CH024_P", "CH026_P",
+    )
+
+    def classify(obj: dict[str, Any]) -> str:
+        net = obj["net"]
+        if obj["kind"] != "track":
+            return "protected_original_via_or_pad_or_arc"
+        m = re.match(r"^CH(\d{3})_", net)
+        if m is not None and int(m.group(1)) < 16:
+            return "protected_block_1"
+        if net.startswith(protected_names):
+            return "protected_original_net"
+        if m is not None and 16 <= int(m.group(1)) <= 31:
+            if net.endswith("_MUX"):
+                return "conditional_block_2_track_needs_restitution"
+        return "protected_unreviewed_or_other_original"
+
+    def components() -> list[Any]:
+        walls, _ = obstacles(
+            board, en_code, .15, .15, region, .65,
+            (pcbnew.B_Cu, pcbnew.F_Cu))
+        return polygons(region.difference(walls[0]).buffer(-.000005))
+
+    def index(parts: list[Any], point: tuple[float, float]
+              ) -> int | None:
+        p = Point(point)
+        return next((i for i, part in enumerate(parts)
+                     if part.covers(p)), None)
+
+    parts = components()
+    target_idx = index(parts, EAST)
+    rows: list[dict[str, Any]] = []
+    all_objects: dict[str, dict[str, Any]] = {}
+    for west in west_sites:
+        source_idx = index(parts, west)
+        row: dict[str, Any] = {
+            "west_xy_mm": list(west),
+            "east_xy_mm": list(EAST),
+            "west_component": source_idx, "east_component": target_idx,
+            "same_BCu_component": (
+                source_idx is not None and source_idx == target_idx),
+            "native_DRC_qualified": False,
+        }
+        if (source_idx is not None and target_idx is not None
+                and source_idx != target_idx):
+            gap = gap_survey(
+                board, parts[source_idx], parts[target_idx],
+                target_net=EN)
+            row["nearest_component_gap"] = gap["BCu_gap"]
+            row["not_global_minimum_cut_proof"] = True
+            for obj in gap["nearby_objects"]:
+                obj = {**obj, "engineering_classification": classify(obj),
+                       "clearance_model_only_not_native_DRC": True}
+                all_objects.setdefault(obj["uuid"], obj)
+            row["near_gap_UUIDs"] = [
+                obj["uuid"] for obj in gap["nearby_objects"][:30]]
+        rows.append(row)
+    matrix = sorted(all_objects.values(), key=lambda x: (
+        x["distance_to_cut_mm"], x["net"], x["uuid"]))
+    movable = [obj for obj in matrix
+               if obj["engineering_classification"] ==
+               "conditional_block_2_track_needs_restitution"
+               and obj["uuid"] in tracks
+               and tracks[obj["uuid"]].GetLayer() == pcbnew.B_Cu
+               and not isinstance(
+                   tracks[obj["uuid"]], (pcbnew.PCB_VIA, pcbnew.PCB_ARC))]
+    # The three closest candidate UUIDs are only screened, never routed or
+    # retained. This test does NOT grant permission to move their originals.
+    selected = movable[:3]
+    before = track_inventory(board)
+    trials: list[dict[str, Any]] = []
+    for count in range(1, min(2, len(selected)) + 1):
+        for subset in combinations(selected, count):
+            selected_tracks = [tracks[obj["uuid"]] for obj in subset]
+            row = {
+                "virtual_cut_UUIDs": [
+                    t.m_Uuid.AsString() for t in selected_tracks],
+                "affected_nets": sorted(
+                    {t.GetNetname() for t in selected_tracks}),
+                "protected_block_1_moved": False,
+                "copper_writes_to_source": False,
+                "native_DRC_qualified": False,
+                "all_original_tracks_restored": False,
+            }
+            try:
+                for item in selected_tracks:
+                    board.Remove(item)
+                trial_parts = components()
+                east_component = index(trial_parts, EAST)
+                row["connected_west_sites_mm"] = [
+                    list(west) for west in west_sites
+                    if east_component is not None
+                    and index(trial_parts, west) == east_component]
+                row["BCu_connection_opened"] = bool(
+                    row["connected_west_sites_mm"])
+            finally:
+                for item in selected_tracks:
+                    board.Add(item)
+                if track_inventory(board) != before:
+                    raise RuntimeError(
+                        "Block-2 virtual cut failed exact original restitution")
+                row["all_original_tracks_restored"] = True
+            trials.append(row)
+    if track_inventory(board) != before:
+        raise RuntimeError("Original B.Cu track inventory changed")
+    return {
+        "status": "read_only_BCu_UUID_matrix_and_reversible_probes",
+        "window_bounds_mm": list(region.bounds),
+        "west_site_count": len(west_sites),
+        "east_site_xy_mm": list(EAST),
+        "BCu_free_components": len(parts),
+        "nine_west_site_matrix": rows,
+        "nearest_cut_UUID_matrix": matrix[:80],
+        "objects_beyond_first_80": max(0, len(matrix) - 80),
+        "conditional_block_2_UUIDs": [x["uuid"] for x in movable],
+        "protected_original_UUIDs": [
+            x["uuid"] for x in matrix if x["engineering_classification"]
+            != "conditional_block_2_track_needs_restitution"],
+        "reversible_Block_2_cuts": trials,
+        "Block_1_and_VCM_unchanged": True,
+        "original_tracks_exactly_restored": True,
+        "no_In1_Cu_used": True,
+        "no_original_vias_or_pads_changed": True,
+        "native_DRC_qualified": False,
+        "L3_combined_exact_zero_qualified": False,
+        "accepted": False,
+        "fabrication_release": False,
+        "routing_completed": False,
+        "note": "A nearest polygon gap is not a certified global minimum cut",
+    }
+
 def qualify(archive: Path) -> dict[str, Any]:
     """Diagnostic only: do not return an accepted PCB or manufacture."""
     import pcbnew
@@ -607,6 +766,7 @@ def qualify(archive: Path) -> dict[str, Any]:
         "existing_west_via_geometry": None,
         "secondary_existing_west_via_geometry": None,
         "native_exact_west_via_mesh_geometry": None,
+        "native_exact_west_bcu_uuid_barrier": None,
         "native_west_via_alternate_positions": [],
         "L3_unchanged_baseline_repeat": None,
         "L3_exact_native_polygon_ring_identity": False,
@@ -762,6 +922,8 @@ def qualify(archive: Path) -> dict[str, Any]:
                 virtual_block1_cut_audit=False))
         out["native_exact_west_via_mesh_geometry"] = (
             survey_native_exact_west_mesh(board, filled(zone)))
+        out["native_exact_west_bcu_uuid_barrier"] = (
+            survey_exact_west_bcu_uuid_barrier(board))
         source_path, source_optim = optimize_fcu_source(
             board, netcode, L1_SOURCE)
         out["F_Cu_source_optimization"] = source_optim
