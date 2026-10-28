@@ -278,8 +278,11 @@ def native_polygon_ring_digest(polyset: Any) -> dict[str, Any]:
 
 
 
-def survey_reused_west_via(board: Any, power: Any,
-                           ) -> dict[str, Any]:
+def survey_reused_west_via(
+        board: Any, power: Any, *,
+        existing_west: tuple[float, float] = (21.945, 37.6933),
+        via_uuid: str = "c327c9cb-0509-46fc-b340-06bbd6a58962",
+        virtual_block1_cut_audit: bool = True) -> dict[str, Any]:
     """Read-only source-F.Cu/B.Cu proposal using an EXISTING MUX_EN via."""
     import pcbnew
     from shapely.geometry import GeometryCollection, Point, box
@@ -287,7 +290,6 @@ def survey_reused_west_via(board: Any, power: Any,
     from probe_ch025_fcu_l3_exact import power_fcu_obstacles
     from route_targeted_closure import obstacles, routing_domain
 
-    existing_west = (21.945, 37.6933)
     target_east = EAST
     en_code = board.FindNet(EN).GetNetCode()
     candidates = [v for v in board.GetTracks()
@@ -295,8 +297,8 @@ def survey_reused_west_via(board: Any, power: Any,
                   and v.GetNetCode() == en_code
                   and xy(v.GetPosition()) == existing_west]
     report: dict[str, Any] = {
-        "existing_west_via_uuid":
-            "c327c9cb-0509-46fc-b340-06bbd6a58962",
+        "existing_west_via_uuid": via_uuid,
+        "existing_west_via_xy_mm": list(existing_west),
         "source_FCu_connected": False,
         "west_to_east_BCu_connected": False,
         "reuse_all_original_via_copper": True,
@@ -313,8 +315,8 @@ def survey_reused_west_via(board: Any, power: Any,
         report["status"] = "reviewed_retained_west_via_missing"
         return report
     domain = routing_domain(board, .075, .25)
-    fcuregion = domain.intersection(box(19.0, 31.0, 32.0, 45.0))
-    bcuregion = domain.intersection(box(18.0, 28.0, 44.0, 49.0))
+    fcuregion = domain.intersection(box(17.0, 30.0, 33.0, 56.0))
+    bcuregion = domain.intersection(box(17.0, 26.0, 45.0, 58.0))
     fcuwalls, _ = obstacles(
         board, en_code, .15, .15, fcuregion, .65,
         (pcbnew.F_Cu, pcbnew.B_Cu))
@@ -375,6 +377,11 @@ def survey_reused_west_via(board: Any, power: Any,
         # on this disposable PCB instance, inspect connectivity, and put
         # the exact same original PCB_TRACK objects back on EVERY exit.
         # Block-1 CH000 and CH013 originals remain production-immutable.
+        if not virtual_block1_cut_audit:
+            report["status"] = "reused_west_component_path_missing"
+            report["virtual_Block1_copper_cuts"] = []
+            report["all_original_Block1_immutability_enforced"] = True
+            return report
         from itertools import combinations
         from probe_ch025_fcu_l3_exact import track_inventory
         immutable_candidates = {
@@ -481,6 +488,7 @@ def qualify(archive: Path) -> dict[str, Any]:
         "L3_phase_deltas": [],
         "L3_west_via_position_probes": [],
         "existing_west_via_geometry": None,
+        "secondary_existing_west_via_geometry": None,
         "L3_unchanged_baseline_repeat": None,
         "L3_exact_native_polygon_ring_identity": False,
     }
@@ -572,6 +580,12 @@ def qualify(archive: Path) -> dict[str, Any]:
         from analyze_ch025_l3_native_refill import filled
         out["existing_west_via_geometry"] = survey_reused_west_via(
             board, filled(zone))
+        out["secondary_existing_west_via_geometry"] = (
+            survey_reused_west_via(
+                board, filled(zone),
+                existing_west=(23.1106, 50.456),
+                via_uuid="d7c677dd-0d10-488d-b622-e47c674608f2",
+                virtual_block1_cut_audit=False))
         source_path, source_optim = optimize_fcu_source(
             board, netcode, L1_SOURCE)
         out["F_Cu_source_optimization"] = source_optim
