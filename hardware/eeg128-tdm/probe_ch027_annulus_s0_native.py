@@ -63,7 +63,14 @@ def routed(board: Any, source: tuple[float, float],
         # This is a prospective routing exclusion, not a DRC exemption.
         guard = unary_union([
             guard, LineString(reserved_S0_line).buffer(.22500001)])
-    margins = (2.0, 4.0, 7.0) if reserved_S0_line else (2.0, 4.0)
+    # The >13-mm MUX_S0 segment can require a larger lateral dogleg:
+    # reserve its endpoints and seek a complete F.Cu bypass around CH027.
+    if reserved_S0_line is not None:
+        margins = (2.0, 4.0, 7.0)
+    elif label == "MUX_S0_" + S0_UUIDS[0]:
+        margins = (2.0, 4.0, 7.0, 10.0, 14.0)
+    else:
+        margins = (2.0, 4.0)
     for margin in margins:
         region = domain.intersection(box(
             min(source[0], target[0]) - margin,
@@ -202,6 +209,19 @@ def run(candidate: Path, order_index: int) -> dict[str, Any]:
                 board, start, LANDING, ch027_code, power,
                 "CH027_FCu_annulus", reserved_S0_line=reservation)
             row["routes"].append(detail)
+            if proposed is not None:
+                from shapely.geometry import LineString, MultiPoint, Point
+                candidate_line = LineString([pt[1:] for pt in proposed])
+                s0_start, s0_end = frozen_endpoints[S0_UUIDS[0]]
+                intersections = candidate_line.intersection(
+                    LineString((s0_start, s0_end)))
+                crossings = (
+                    [intersections] if isinstance(intersections, Point)
+                    else [g for g in getattr(intersections, "geoms", ())
+                          if isinstance(g, Point)])
+                row["CH027_crossings_with_original_S0_mm"] = [
+                    [round(p.x, 6), round(p.y, 6)]
+                    for p in sorted(crossings, key=lambda p: (p.x, p.y))]
             if proposed is None:
                 row["status"] = "CH027_annulus_FCu_mesh_missing"
                 out["trials"].append(row)

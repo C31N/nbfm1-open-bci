@@ -24,7 +24,8 @@ class CH027AnnulusScratchContract(unittest.TestCase):
                          "frozen_endpoints", "order_index not in range(len(schedules))",
                          "retained_boards.append(board)",
                          "S0_original_corridor_reserved",
-                         "reserved_S0_line", "7.0"):
+                         "reserved_S0_line", "7.0", "14.0",
+                         "CH027_crossings_with_original_S0_mm"):
             self.assertIn(required, source)
         for banned in ("ExportGerbers", "ExportDrill",
                        "generate_manufacturing", "In1_Cu)"):
