@@ -1,0 +1,67 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+name: Native MUX EN FCu bridge multihop survey
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/ch025-fcu-l3-exact-2026-10-21]
+    paths:
+      - ".github/workflows/mux-en-multihop-survey.yml"
+      - "hardware/eeg128-tdm/probe_mux_en_multihop.py"
+      - "hardware/eeg128-tdm/test_mux_en_multihop.py"
+permissions:
+  contents: read
+jobs:
+  survey:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    container:
+      image: kicad/kicad@sha256:5716d82aa247abdbe512650eb4e8fce5a4031cbbef0a2c8df83208a69fef87b2
+      options: --user 0:0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned native KiCad 8.0.9 geometry runtime
+        run: |
+          set -eu
+          test "$(kicad-cli version)" = "8.0.9"
+          apt-get -o Acquire::Retries=3 update
+          DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 install -y --no-install-recommends python3-shapely python3-pip python3-numpy
+          /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
+          /usr/bin/python3 -c 'import pcbnew,shapely; assert pcbnew.Version().startswith("8.0.9") and shapely.__version__=="2.1.2"'
+      - name: Verify restrictive survey code contract
+        run: |
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_mux_en_multihop.py -v
+      - name: Survey native FCu BC u crossing and cumulative exact L3 fill
+        timeout-minutes: 18
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_mux_en_multihop.py \
+            --archive hardware/eeg128-tdm/engineering/block2-ch019-electrode-closed139.zip \
+            --output /tmp/mux-en-multihop-native.json
+      - name: Assert fail-closed with exact source restitution
+        run: |
+          /usr/bin/python3 - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path('/tmp/mux-en-multihop-native.json').read_text())
+          assert x['source_archive_sha256']=='f022d711bf860c6ec9383dae6f511c41189bf7348035d8d1e5e0e0ca6bcd6d1b'
+          assert x['source_pcb_sha256']=='f2780989e2dee6233f207df1f420f7e89d8e855493eb6b1e7fb731d4a4dda1ea'
+          for p in ('source_PCB_untouched', 'original_track_inventory_restored',
+                    'protected_original_fingerprint_unchanged',
+                    'native_L3_control_exact_zero','new_vias_reversible'):
+              assert x[p] is True,p
+          for p in ('accepted','routing_completed','fabrication_release',
+                    'manufacturing_files','checkpoint_promoted',
+                    'native_DRC_qualified','schematic_parity_qualified',
+                    'independent_replay_verified','In1_Cu_used'):
+              assert x[p] is False,p
+          assert not list(Path('/tmp').rglob('*.gbr'))
+          assert not list(Path('/tmp').rglob('*.drl'))
+          print(x['topology']['status'],
+                x['topology']['candidate_pair_count_before_cap'])
+          PY
+      - name: Publish JSON diagnosis only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mux-en-multihop-native-topology-json
+          path: /tmp/mux-en-multihop-native.json
+          if-no-files-found: ignore
