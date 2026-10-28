@@ -186,6 +186,37 @@ def graph_components(board: Any, net: str, source: tuple[float, float],
                 left, right = ("F", fp), ("B", bp)
                 edges[left].append((right, entry))
                 edges[right].append((left, entry))
+    # Independent exact polygon overlap screen. A 0.5-mm raster can miss
+    # small via landing islands. For each legal FCu footprint, query only
+    # overlapping BCu components using native-outline Shapely geometry.
+    # Require 0.005-mm interior slack; this is NOT an added DRC waiver.
+    exact_pairs: list[dict[str, Any]] = []
+    for fi, fgeom in enumerate(fparts):
+        fp = allowed.intersection(fgeom)
+        if fp.is_empty or fp.area < 0.000001:
+            continue
+        for bidx in btree.query(fp):
+            bi = int(bidx)
+            overlap = fp.intersection(bparts[bi]).buffer(-.005)
+            if overlap.is_empty or overlap.area < 0.000001:
+                continue
+            pt = overlap.representative_point()
+            px, py = round(pt.x, 6), round(pt.y, 6)
+            check = Point(px, py)
+            if not (allowed.covers(check)
+                    and fgeom.covers(check)
+                    and bparts[bi].covers(check)):
+                continue
+            entry = {"xy_mm": [px, py],
+                     "FCu_component": fi, "BCu_component": bi,
+                     "preexisting": False,
+                     "found_by_exact_polygon_overlap": True,
+                     "landing_interior_area_mm2": round(
+                         overlap.area, 9)}
+            exact_pairs.append(entry)
+            left, right = ("F", fi), ("B", bi)
+            edges[left].append((right, entry))
+            edges[right].append((left, entry))
     # Graph BFS minimizes the number of additional layer transitions;
     # each edge represents a via site, NOT a fully routed copper path.
     start_node = ("F", fsource)
@@ -211,6 +242,11 @@ def graph_components(board: Any, net: str, source: tuple[float, float],
         "topological_via_paths": paths,
         "minimum_transition_count": len(found) if paths else None,
         "new_legal_via_sites_sampled": len(sites),
+        "exact_polygon_via_component_pairs": len(exact_pairs),
+        "exact_polygon_via_pair_inventory": sorted(
+            exact_pairs, key=lambda d: (
+                -d["landing_interior_area_mm2"],
+                d["FCu_component"], d["BCu_component"]))[:80],
         "existing_same_net_vias": existing[:40],
         "existing_CH027_anchor_preserved": any(
             row["uuid"] == CH027_ALT_VIA for row in existing
