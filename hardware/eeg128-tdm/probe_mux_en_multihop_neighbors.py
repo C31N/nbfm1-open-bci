@@ -154,7 +154,45 @@ def probe(candidate: Path) -> dict[str, Any]:
                         and domain.covers(Point(goal))):
                     row["status"] = "terminal_outside_board_edge_domain"
                 else:
-                    for margin in (3.0, 6.0):
+                    if name in (NET, "CH027_N_MUX"):
+                        # Whole native Edge.Cuts domain is a necessary
+                        # topological feasibility bound, never a DRC proof.
+                        from shapely.ops import unary_union
+                        from escape_mesh_505 import polygons
+                        from route_targeted_closure import obstacles
+                        full_walls, _ = obstacles(
+                            board, original.GetNetCode(), .15, .15, domain,
+                            .65, (pcbnew.F_Cu, pcbnew.B_Cu))
+                        entire_fcu = domain.difference(
+                            unary_union([
+                                full_walls[0], power_fcu_obstacles(board)])
+                        ).buffer(-.000005)
+                        components = polygons(entire_fcu)
+                        source_id = next(
+                            (i for i, p in enumerate(components)
+                             if p.covers(Point(source))), None)
+                        target_id = next(
+                            (i for i, p in enumerate(components)
+                             if p.covers(Point(goal))), None)
+                        row["full_board_FCu_components"] = len(components)
+                        row["full_board_source_component"] = source_id
+                        row["full_board_target_component"] = target_id
+                        row["full_board_same_component"] = (
+                            source_id is not None
+                            and source_id == target_id)
+                    margins = ((3.0, 6.0, 10.0)
+                               if name in (NET, "CH027_N_MUX")
+                               else (3.0, 6.0))
+                    for margin in margins:
+                        if (name in (NET, "CH027_N_MUX")
+                                and margin > 6.0
+                                and row.get("full_board_same_component")
+                                is False):
+                            row["attempts"].append({
+                                "margin_mm": margin,
+                                "route_found": False, "vertex_count": 0,
+                                "skip_reason": "whole_board_FCu_disconnected"})
+                            break
                         region = domain.intersection(
                             box(min(source[0], goal[0]) - margin,
                                 min(source[1], goal[1]) - margin,
