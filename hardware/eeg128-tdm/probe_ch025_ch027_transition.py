@@ -247,6 +247,10 @@ def graph_components(board: Any, net: str, source: tuple[float, float],
             exact_pairs, key=lambda d: (
                 -d["landing_interior_area_mm2"],
                 d["FCu_component"], d["BCu_component"]))[:80],
+        "direct_source_to_target_BCu_via_sites": [
+            item for item in [*sites, *exact_pairs]
+            if item["FCu_component"] == fsource
+            and item["BCu_component"] == btarget][:200],
         "existing_same_net_vias": existing[:40],
         "existing_CH027_anchor_preserved": any(
             row["uuid"] == CH027_ALT_VIA for row in existing
@@ -439,6 +443,7 @@ def run(source_archive: Path) -> dict[str, Any]:
             "source_FCu_leg_found": False,
             "existing_via_BCu_leg_found": False,
             "native_DRC_qualified": False,
+            "native_L3_via_site_trials": [],
             "originals_all_restituted": False,
             "only_four_reviewed_FCu_tracks_virtually_absent": True,
             "no_In1_Cu": True, "accepted": False,
@@ -460,79 +465,119 @@ def run(source_archive: Path) -> dict[str, Any]:
                     topology["new_legal_via_sites_sampled"],
                 "exact_polygon_via_component_pairs":
                     topology.get("exact_polygon_via_component_pairs", 0),
+                "number_of_direct_via_sites": len(
+                    topology.get("direct_source_to_target_BCu_via_sites", [])),
             }
-            paths = topology["topological_via_paths"]
-            if (paths and len(paths[0]) == 1
-                    and not paths[0][0]["preexisting"]):
-                at = tuple(paths[0][0]["xy_mm"])
-                trial["new_via_xy_mm"] = list(at)
+            sites = topology.get(
+                "direct_source_to_target_BCu_via_sites", [])
+            if not sites:
+                trial["status"] = "no_one_via_path_with_CH025_original_present"
+            else:
+                # The first 0.5mm-raster site had tiny nonzero L3 deltas.
+                # Select spatially diverse legal sites, never adjust copper.
+                by_coord = {tuple(entry["xy_mm"]): entry
+                            for entry in sites
+                            if not entry["preexisting"]}
+                ordered = sorted(by_coord, key=lambda p: (
+                    math.dist(p, source) + math.dist(p, target), p))
+                sample_count = min(18, len(ordered))
+                ranked = sorted({
+                    round(i * (len(ordered) - 1) /
+                          max(sample_count - 1, 1))
+                    for i in range(sample_count)})
+                shortlist = [ordered[index] for index in ranked]
                 code = board.FindNet(net).GetNetCode()
                 original_vias = {
                     t.m_Uuid.AsString() for t in board.GetTracks()
                     if isinstance(t, pcbnew.PCB_VIA)}
-                make_via(board, at, code, .65)
-                new_vias = [t for t in board.GetTracks()
+                for at in shortlist:
+                    try:
+                        make_via(board, at, code, .65)
+                        new_vias = [
+                            t for t in board.GetTracks()
                             if isinstance(t, pcbnew.PCB_VIA)
                             and t.m_Uuid.AsString() not in original_vias]
-                if len(new_vias) != 1:
-                    raise RuntimeError("CH027 one-via scratch identity drift")
-                created = new_vias[0]
-                pcbnew.ZONE_FILLER(board).Fill(board.Zones())
-                after_l3 = pcbnew.SHAPE_POLY_SET(
-                    zone.GetFilledPolysList(pcbnew.In2_Cu))
-                diff = exact_native_difference(l3_baseline, after_l3)
-                trial["native_L3_loss_mm2"] = diff["loss_native_mm2"]
-                trial["native_L3_gain_mm2"] = diff["gain_native_mm2"]
-                trial["native_L3_both_exactly_zero"] = (
-                    diff["native_both_empty"])
-                if diff["native_both_empty"]:
-                    power = filled(zone)
-                    area = routing_domain(board, .075, .25)
-                    legs = [
-                        ("source_FCu", source, at,
-                         (pcbnew.F_Cu, pcbnew.B_Cu),
-                         [power_fcu_obstacles(board),
-                          GeometryCollection()]),
-                        ("target_BCu", at, target,
-                         (pcbnew.B_Cu, pcbnew.F_Cu),
-                         [power_via_guard(board, pcbnew.B_Cu),
-                          GeometryCollection()]),
-                    ]
-                    for label, a, b, layers, guard in legs:
-                        proposed = None
-                        for margin in (3.0, 6.0, 10.0):
-                            search = area.intersection(box(
-                                min(a[0], b[0]) - margin,
-                                min(a[1], b[1]) - margin,
-                                max(a[0], b[0]) + margin,
-                                max(a[1], b[1]) + margin))
-                            proposal = mesh_route(
-                                board, a, b, code, layers, power, search,
-                                start_layer=0, goal_layer=0, allow_vias=False,
-                                extra_obstacles=guard)
-                            if (proposal and len(proposal) >= 2
-                                    and tuple(proposal[0]) == (0, *a)
-                                    and tuple(proposal[-1]) == (0, *b)
-                                    and all(point[0] == 0
-                                            for point in proposal)):
-                                proposed = proposal
-                                break
-                        trial[label + "_vertices"] = (
-                            [list(x) for x in proposed]
-                            if proposed else None)
-                        trial[label + "_found"] = bool(proposed)
-                    trial["source_FCu_leg_found"] = (
-                        trial["source_FCu_found"])
-                    trial["existing_via_BCu_leg_found"] = (
-                        trial["target_BCu_found"])
-                trial["status"] = (
-                    "one_via_L3_exact_and_both_mesh_legs_proposed_only"
-                    if (trial["native_L3_both_exactly_zero"]
-                        and trial["source_FCu_leg_found"]
-                        and trial["existing_via_BCu_leg_found"])
-                    else "one_via_or_signal_leg_gate_missing")
-            else:
-                trial["status"] = "no_one_via_path_with_CH025_original_present"
+                        if len(new_vias) != 1:
+                            raise RuntimeError(
+                                "CH027 single new-via identity drift")
+                        created = new_vias[0]
+                        pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+                        candidate_l3 = pcbnew.SHAPE_POLY_SET(
+                            zone.GetFilledPolysList(pcbnew.In2_Cu))
+                        diff = exact_native_difference(
+                            l3_baseline, candidate_l3)
+                        trial["native_L3_via_site_trials"].append({
+                            "xy_mm": list(at),
+                            "loss_native_mm2": diff["loss_native_mm2"],
+                            "gain_native_mm2": diff["gain_native_mm2"],
+                            "exact_native_both_empty": diff["native_both_empty"],
+                            "native_DRC_qualified": False,
+                        })
+                        if diff["native_both_empty"]:
+                            trial["new_via_xy_mm"] = list(at)
+                            trial["native_L3_loss_mm2"] = 0.0
+                            trial["native_L3_gain_mm2"] = 0.0
+                            trial["native_L3_both_exactly_zero"] = True
+                            # Find copper paths only once a zero-delta
+                            # trial is identified; still do not write PCB.
+                            power = filled(zone)
+                            area = routing_domain(board, .075, .25)
+                            legs = [
+                                ("source_FCu", source, at,
+                                 (pcbnew.F_Cu, pcbnew.B_Cu),
+                                 [power_fcu_obstacles(board),
+                                  GeometryCollection()]),
+                                ("target_BCu", at, target,
+                                 (pcbnew.B_Cu, pcbnew.F_Cu),
+                                 [power_via_guard(board, pcbnew.B_Cu),
+                                  GeometryCollection()]),
+                            ]
+                            for label, a, b, layers, guard in legs:
+                                proposal = None
+                                for margin in (3.0, 6.0, 10.0):
+                                    search = area.intersection(box(
+                                        min(a[0], b[0]) - margin,
+                                        min(a[1], b[1]) - margin,
+                                        max(a[0], b[0]) + margin,
+                                        max(a[1], b[1]) + margin))
+                                    route = mesh_route(
+                                        board, a, b, code, layers, power,
+                                        search, start_layer=0, goal_layer=0,
+                                        allow_vias=False,
+                                        extra_obstacles=guard)
+                                    if (route and len(route) >= 2
+                                            and tuple(route[0]) == (0, *a)
+                                            and tuple(route[-1]) == (0, *b)
+                                            and all(p[0] == 0 for p in route)):
+                                        proposal = route
+                                        break
+                                trial[label + "_vertices"] = (
+                                    [list(x) for x in proposal]
+                                    if proposal else None)
+                                trial[label + "_found"] = bool(proposal)
+                            trial["source_FCu_leg_found"] = (
+                                trial["source_FCu_found"])
+                            trial["existing_via_BCu_leg_found"] = (
+                                trial["target_BCu_found"])
+                            trial["status"] = (
+                                "one_via_exact_zero_and_two_mesh_legs_only"
+                                if (trial["source_FCu_leg_found"]
+                                    and trial["existing_via_BCu_leg_found"])
+                                else "exact_zero_via_but_copper_leg_missing")
+                            break
+                    finally:
+                        if created is not None:
+                            board.Remove(created)
+                            created = None
+                        pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+                        restored_l3 = pcbnew.SHAPE_POLY_SET(
+                            zone.GetFilledPolysList(pcbnew.In2_Cu))
+                        if not exact_native_difference(
+                                l3_baseline, restored_l3)["native_both_empty"]:
+                            raise RuntimeError(
+                                "CH027 site trial failed exact native L3 rollback")
+                if not trial["native_L3_both_exactly_zero"]:
+                    trial["status"] = "all_sampled_one_via_L3_gates_failed"
         finally:
             if created is not None:
                 board.Remove(created)
