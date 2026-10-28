@@ -1,0 +1,69 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+name: Native CH025 exact-zero via-site screen
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/ch025-fcu-l3-exact-2026-10-21]
+    paths:
+      - ".github/workflows/ch025-neutral-via-sites.yml"
+      - "hardware/eeg128-tdm/probe_ch025_neutral_via_sites.py"
+      - "hardware/eeg128-tdm/test_ch025_neutral_via_sites.py"
+permissions:
+  contents: read
+jobs:
+  exact-zero:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    container:
+      image: kicad/kicad@sha256:5716d82aa247abdbe512650eb4e8fce5a4031cbbef0a2c8df83208a69fef87b2
+      options: --user 0:0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Native KiCad 8.0.9 with Shapely 2.1.2
+        run: |
+          set -eu
+          test "$(kicad-cli version)" = "8.0.9"
+          apt-get -o Acquire::Retries=3 update
+          DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 install -y --no-install-recommends python3-shapely python3-pip python3-numpy
+          /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
+          /usr/bin/python3 -c 'import pcbnew,shapely;assert pcbnew.Version().startswith("8.0.9") and shapely.__version__=="2.1.2"'
+      - name: Static fail-closed test
+        run: |
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_neutral_via_sites.py -v
+      - name: Recreate byte-pinned engineering-only MUX_EN CH019 candidate
+        timeout-minutes: 8
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_mux_en_multihop_route.py \
+            --archive hardware/eeg128-tdm/engineering/block2-ch019-electrode-closed139.zip \
+            --output /tmp/CH025-base.json \
+            --candidate-output /tmp/CH025-engineering-only.zip
+      - name: Native CH025 exact L3 and In1 zone-fill site and pair screen
+        timeout-minutes: 11
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_ch025_neutral_via_sites.py \
+            --candidate /tmp/CH025-engineering-only.zip \
+            --output /tmp/CH025-neutral-via-screen.json
+      - name: Verify unchanged protected source and no PCB release
+        run: |
+          /usr/bin/python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('/tmp/CH025-neutral-via-screen.json').read_text())
+          assert r['source_archive_unchanged']
+          assert r['baseline_native_DRC']=={'violations':0,'warnings':0,'unconnected':139}
+          assert r['L3_control_exact_zero'] and r['In1_control_exact_zero']
+          assert r['protected_originals_restituted']
+          for k in ('accepted','routing_completed','fabrication_release',
+                    'manufacturing_files','checkpoint_promoted','In1_Cu_used',
+                    'physical_route_qualified','DRC_of_new_copper_qualified'):
+              assert r[k] is False, k
+          assert not list(Path('/tmp').rglob('*.gbr'))
+          assert not list(Path('/tmp').rglob('*.drl'))
+          PY
+      - name: Publish report JSON only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ch025-native-exact-zero-via-screen
+          path: /tmp/CH025-neutral-via-screen.json
+          if-no-files-found: ignore
