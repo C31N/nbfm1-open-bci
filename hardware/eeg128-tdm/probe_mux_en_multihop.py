@@ -24,7 +24,7 @@ from probe_ch025_cooperative8 import pinned_items, unchanged_fingerprints
 from probe_ch025_fcu_l3_exact import track_inventory, power_fcu_obstacles
 from analyze_ch025_l3_precision_mask import exact_native_difference
 from route_targeted_closure import (
-    obstacles, routing_domain, make_via, xy,
+    obstacles, routing_domain, make_via,
 )
 from probe_mux_topological_capacity import TERMINALS
 
@@ -48,7 +48,7 @@ FLAGS = {
 def grid_candidates(board: Any) -> dict[str, Any]:
     """Build two native BCu components and their shared reachable FCu island."""
     import pcbnew
-    from shapely.geometry import GeometryCollection, Point, LineString, box
+    from shapely.geometry import Point, LineString, box
     from shapely.ops import unary_union
     from shapely.prepared import prep
     from escape_mesh_505 import polygons
