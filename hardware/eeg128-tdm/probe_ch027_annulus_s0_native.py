@@ -210,7 +210,7 @@ def run(candidate: Path, order_index: int) -> dict[str, Any]:
                 "CH027_FCu_annulus", reserved_S0_line=reservation)
             row["routes"].append(detail)
             if proposed is not None:
-                from shapely.geometry import LineString, MultiPoint, Point
+                from shapely.geometry import LineString, Point
                 candidate_line = LineString([pt[1:] for pt in proposed])
                 s0_start, s0_end = frozen_endpoints[S0_UUIDS[0]]
                 intersections = candidate_line.intersection(
