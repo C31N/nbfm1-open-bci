@@ -10,7 +10,7 @@ FILE=Path(__file__).with_name("probe_mux_en_multihop.py")
 
 
 class MultihopFailClosed(unittest.TestCase):
-    def test_syntax_and_completeness(self):
+    def test_syntax_and_completeness(self) -> None:
         src=FILE.read_text()
         module=ast.parse(src)
         names={n.name for n in module.body if isinstance(n,ast.FunctionDef)}
@@ -22,7 +22,7 @@ class MultihopFailClosed(unittest.TestCase):
         self.assertIn("MUX_S2",src)
         self.assertIn("MUX_S3",src)
 
-    def test_no_manufacturing_or_promotion(self):
+    def test_no_manufacturing_or_promotion(self) -> None:
         src=FILE.read_text()
         for forbidden in ("ExportGerbers","ExportDrill","ExportBOM",
                           "fabrication_release\": True",

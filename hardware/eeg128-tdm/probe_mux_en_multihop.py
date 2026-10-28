@@ -45,7 +45,7 @@ FLAGS = {
 }
 
 
-def grid_candidates(board: Any) -> dict[str, Any]:
+def grid_candidates(board: Any, *, bounds: tuple[float, float, float, float] = (25.0, 28.5, 44.0, 43.0), sample_step: float = .25) -> dict[str, Any]:
     """Build two native BCu components and their shared reachable FCu island."""
     import pcbnew
     from shapely.geometry import Point, LineString, box
@@ -55,7 +55,7 @@ def grid_candidates(board: Any) -> dict[str, Any]:
 
     en = board.FindNet(EN).GetNetCode()
     area = routing_domain(board, .325, .25).intersection(
-        box(25.0, 28.5, 44.0, 43.0))
+        box(*bounds))
     layers = (pcbnew.F_Cu, pcbnew.B_Cu)
     trace_walls, via_obstacles = obstacles(
         board, en, .15, .15, area, .65, layers)
@@ -84,7 +84,7 @@ def grid_candidates(board: Any) -> dict[str, Any]:
     out: dict[str, Any] = {
         "search_area_bounds_mm": list(area.bounds),
         "west_xy_mm": list(WEST), "east_xy_mm": list(EAST),
-        "sample_step_mm": .25,
+        "sample_step_mm": sample_step,
         "fcu_free_components": len(fcu_parts),
         "bcu_free_components": len(bcu_parts),
         "west_bcu_component": source_bcu,
@@ -117,10 +117,10 @@ def grid_candidates(board: Any) -> dict[str, Any]:
     allowed = prep(all_new_via_free)
     per_fcu: dict[int, dict[str, list[tuple[float, float]]]] = {}
     count = 0
-    for iy in range(58):
-        y = round(28.75 + iy * .25, 6)
-        for ix in range(75):
-            x = round(25.25 + ix * .25, 6)
+    for iy in range(int((bounds[3] - bounds[1]) / sample_step)):
+        y = round(bounds[1] + sample_step / 2 + iy * sample_step, 6)
+        for ix in range(int((bounds[2] - bounds[0]) / sample_step)):
+            x = round(bounds[0] + sample_step / 2 + ix * sample_step, 6)
             point = (x, y)
             if not allowed.covers(Point(point)):
                 continue
@@ -192,7 +192,8 @@ def run(archive: Path) -> dict[str, Any]:
         "native_L3_control_exact_zero": False,
         "native_139_baseline_qualified": False,
         "new_vias_reversible": False,
-        "topology": None, "native_L3_pair_trials": [],
+        "topology": None, "local_topology": None,
+        "global_window_used": False, "native_L3_pair_trials": [],
     }
     if not pcbnew.Version().startswith("8.0.9"):
         raise RuntimeError("KiCad 8.0.9 required")
@@ -233,7 +234,15 @@ def run(archive: Path) -> dict[str, Any]:
         board.Remove(original_en)
         board.Remove(ch019)
         try:
-            output["topology"] = grid_candidates(board)
+            output["local_topology"] = grid_candidates(board)
+            output["topology"] = output["local_topology"]
+            if not output["topology"]["geometric_multihop_possible"]:
+                # Extend FCu around reserved S2/S3 endpoints without
+                # moving any original VCM or Block-1 copper.
+                output["topology"] = grid_candidates(
+                    board, bounds=(18.0, 21.0, 55.0, 65.0),
+                    sample_step=.5)
+                output["global_window_used"] = True
             proposals = output["topology"]["candidate_via_pairs"][:8]
             for item in proposals:
                 # Test the FOUR new vias TOGETHER; independently clean
