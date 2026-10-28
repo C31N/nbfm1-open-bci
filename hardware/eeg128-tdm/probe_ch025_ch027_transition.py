@@ -77,7 +77,8 @@ def power_via_guard(board: Any, layer: int) -> Any:
 
 def graph_components(board: Any, net: str, source: tuple[float, float],
                      target: tuple[float, float], *,
-                     target_layer: str = "F") -> dict[str, Any]:
+                     target_layer: str = "F",
+                     sample_step_mm: float = .5) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import Point, box
     from shapely.strtree import STRtree
@@ -85,6 +86,8 @@ def graph_components(board: Any, net: str, source: tuple[float, float],
     from escape_mesh_505 import polygons
     from route_targeted_closure import obstacles, routing_domain
 
+    if not .10 <= sample_step_mm <= .5:
+        raise ValueError("Invalid via grid precision")
     en = board.FindNet(net).GetNetCode()
     domain = routing_domain(board, .075, .25)
     via_domain = routing_domain(board, .325, .25)
@@ -113,6 +116,7 @@ def graph_components(board: Any, net: str, source: tuple[float, float],
         raise ValueError("Only F.Cu and B.Cu terminal targets permitted")
     no_new_via = {
         "target_layer": "F.Cu" if target_layer == "F" else "B.Cu",
+        "via_grid_precision_mm": sample_step_mm,
         "source_xy_mm": list(source), "target_xy_mm": list(target),
         "search_region_mm": list(region.bounds),
         "FCu_components": len(fparts), "BCu_components": len(bparts),
@@ -167,7 +171,7 @@ def graph_components(board: Any, net: str, source: tuple[float, float],
     else:
         a, b, c, d = allowed.bounds
         sites = []
-        step = .5
+        step = sample_step_mm
         for i in range(int(math.ceil((c-a)/step))):
             px = round(a + (i+.5)*step, 6)
             for j in range(int(math.ceil((d-b)/step))):
@@ -457,7 +461,8 @@ def run(source_archive: Path) -> dict[str, Any]:
             source = xy(movable[net].GetStart())
             target = xy(current[CH027_ALT_VIA].GetPosition())
             topology = graph_components(
-                board, net, source, target, target_layer="B")
+                board, net, source, target, target_layer="B",
+                sample_step_mm=.25)
             trial["four_track_virtual_cut_topology"] = {
                 "status": topology["status"],
                 "paths": topology["topological_via_paths"][:2],
@@ -478,14 +483,15 @@ def run(source_archive: Path) -> dict[str, Any]:
                 by_coord = {tuple(entry["xy_mm"]): entry
                             for entry in sites
                             if not entry["preexisting"]}
+                from shapely.geometry import Point
+                power_shape = filled(zone)
                 ordered = sorted(by_coord, key=lambda p: (
+                    -round(power_shape.distance(Point(p)), 7),
                     math.dist(p, source) + math.dist(p, target), p))
-                sample_count = min(18, len(ordered))
-                ranked = sorted({
-                    round(i * (len(ordered) - 1) /
-                          max(sample_count - 1, 1))
-                    for i in range(sample_count)})
-                shortlist = [ordered[index] for index in ranked]
+                sample_count = min(24, len(ordered))
+                shortlist = ordered[:sample_count]
+                trial["sampled_sites_sorted_by_power_zone_distance"] = True
+                trial["sample_step_mm"] = .25
                 code = board.FindNet(net).GetNetCode()
                 original_vias = {
                     t.m_Uuid.AsString() for t in board.GetTracks()
