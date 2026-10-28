@@ -138,8 +138,13 @@ def run(candidate: Path) -> dict[str, Any]:
             (S0_UUIDS, False), (S0_UUIDS[::-1], False),
             (S0_UUIDS, True), (S0_UUIDS[::-1], True),
         )
+        # KiCad 8 SWIG BOARD_ITEM references may become dangling when
+        # an earlier BOARD is garbage-collected before a later load.
+        # Retain every disposable board until the temporary workspace exits.
+        retained_boards: list[Any] = []
         for index, (order, reserve_S0) in enumerate(schedules):
             board = pcbnew.LoadBoard(str(original))
+            retained_boards.append(board)
             before = track_inventory(board)
             protected = unchanged_fingerprints(board)
             current = {t.m_Uuid.AsString(): t for t in board.GetTracks()}
