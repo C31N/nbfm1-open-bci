@@ -9,7 +9,7 @@ from pathlib import Path
 FILE=Path(__file__).with_name("probe_mux_en_multihop_replay.py")
 
 class ReplayAuditContract(unittest.TestCase):
-    def test_requires_two_independent_runs_and_original_sha(self):
+    def test_requires_two_independent_runs_and_original_sha(self) -> None:
         source=FILE.read_text()
         names={item.name for item in ast.parse(source).body
                if isinstance(item, ast.FunctionDef)}
@@ -20,7 +20,7 @@ class ReplayAuditContract(unittest.TestCase):
                       'native_L3_both_difference_sets_empty'):
             self.assertIn(token, source)
 
-    def test_fail_closed_on_nonidentical_replay(self):
+    def test_fail_closed_on_nonidentical_replay(self) -> None:
         source=FILE.read_text()
         self.assertIn('"independent_replay_bytes_differ_fail_closed"',source)
         self.assertIn('"fabrication_release": False',source)
