@@ -463,6 +463,123 @@ def survey_reused_west_via(
         else "reused_west_mesh_missing")
     return report
 
+
+
+def survey_native_exact_west_mesh(board: Any, power: Any,
+                                  ) -> dict[str, Any]:
+    """Screen only west-via locations already proven L3-neutral individually.
+
+    Both MUX_S2 and MUX_S3 are reserved as fixed straight F.Cu guard traces.
+    Route proposals are read-only and NOT a coupled-L3 or native DRC proof.
+    """
+    import pcbnew
+    from shapely.geometry import GeometryCollection, LineString, Point, box
+    from shapely.ops import unary_union
+    from escape_mesh_505 import mesh_route, polygons
+    from probe_ch025_fcu_l3_exact import power_fcu_obstacles
+    from probe_mux_topological_capacity import TERMINALS
+    from route_targeted_closure import obstacles, routing_domain
+
+    candidates = (
+        (28.5, 35.5), (32.25, 35.5),
+        (28.5, 35.25), (28.5, 35.0),
+        (28.5, 34.75), (28.5, 34.5),
+        (28.5, 34.25), (28.5, 34.0), (28.5, 33.75),
+    )
+    code = board.FindNet(EN).GetNetCode()
+    domain = routing_domain(board, .325, .25)
+    fregion = domain.intersection(box(19.0, 29.0, 52.0, 49.0))
+    bregion = domain.intersection(box(19.0, 22.0, 55.0, 56.0))
+    fobs, _ = obstacles(
+        board, code, .15, .15, fregion, .65,
+        (pcbnew.F_Cu, pcbnew.B_Cu))
+    bobs, _ = obstacles(
+        board, code, .15, .15, bregion, .65,
+        (pcbnew.B_Cu, pcbnew.F_Cu))
+    powerfcu = power_fcu_obstacles(board)
+    controls = unary_union([
+        LineString(TERMINALS[name]).buffer(.075 + .15 + .00001)
+        for name in ("MUX_S2", "MUX_S3")
+    ])
+    fblock = unary_union([fobs[0], powerfcu, controls])
+    ffree = fregion.difference(fblock).buffer(-.000005)
+    bfree = bregion.difference(bobs[0]).buffer(-.000005)
+    fparts = polygons(ffree)
+    bparts = polygons(bfree)
+
+    def same_component(parts: list[Any], a: tuple[float, float],
+                       b: tuple[float, float]) -> bool:
+        return any(p.covers(Point(a)) and p.covers(Point(b))
+                   for p in parts)
+
+    source = L1_SOURCE[0]
+    east = EAST
+    target = L1_TARGET[-1]
+    target_ok = same_component(fparts, east, target)
+    items: list[dict[str, Any]] = []
+    for west in candidates:
+        fcusrc = same_component(fparts, source, west)
+        bcu = same_component(bparts, west, east)
+        items.append({
+            "west_via_xy_mm": list(west),
+            "source_FCu_connected_with_S2_S3_reserved": fcusrc,
+            "middle_BCu_connected": bcu,
+            "east_FCu_target_connected_with_S2_S3_reserved": target_ok,
+            "three_layers_topologically_available": (
+                fcusrc and bcu and target_ok),
+            "individual_native_L3_loss_gain_exactly_zero": True,
+            "combined_two_via_L3_gate_qualified": False,
+            "native_DRC_qualified": False,
+            "CH019_restitution_qualified": False,
+        })
+    report: dict[str, Any] = {
+        "status": "native_exact_west_via_pair_geometry_only",
+        "candidates": items,
+        "joint_topological_candidates": sum(
+            1 for item in items
+            if item["three_layers_topologically_available"]),
+        "S2_S3_reserved_unchanged": True,
+        "new_west_vias_created": False,
+        "F_Cu_and_B_Cu_paths": None,
+        "acceptance_allowed": False,
+        "fabrication_release": False,
+    }
+    first = next((item for item in items
+                  if item["three_layers_topologically_available"]), None)
+    if first is None:
+        return report
+    west = tuple(first["west_via_xy_mm"])
+    guard_f = unary_union([powerfcu, controls])
+    proposed = []
+    for name, a, b, layers, region, guards in (
+            ("source_FCu", source, west,
+             (pcbnew.F_Cu, pcbnew.B_Cu), fregion,
+             [guard_f, GeometryCollection()]),
+            ("middle_BCu", west, east,
+             (pcbnew.B_Cu, pcbnew.F_Cu), bregion,
+             [GeometryCollection(), guard_f]),
+            ("target_FCu", east, target,
+             (pcbnew.F_Cu, pcbnew.B_Cu), fregion,
+             [guard_f, GeometryCollection()])):
+        route = mesh_route(
+            board, a, b, code, layers, power, region,
+            start_layer=0, goal_layer=0, allow_vias=False,
+            extra_obstacles=guards)
+        correct = (route is not None and len(route) >= 2
+                   and route[0] == (0, *a)
+                   and route[-1] == (0, *b)
+                   and all(point[0] == 0 for point in route))
+        proposed.append({
+            "segment": name, "mesh_path_found": correct,
+            "vertices": [list(p) for p in route] if correct else None,
+        })
+    report["F_Cu_and_B_Cu_paths"] = proposed
+    report["status"] = (
+        "all_three_mesh_segments_proposed_not_native_qualified"
+        if all(p["mesh_path_found"] for p in proposed)
+        else "at_least_one_mesh_segment_missing")
+    return report
+
 def qualify(archive: Path) -> dict[str, Any]:
     """Diagnostic only: do not return an accepted PCB or manufacture."""
     import pcbnew
@@ -489,6 +606,7 @@ def qualify(archive: Path) -> dict[str, Any]:
         "L3_west_via_position_probes": [],
         "existing_west_via_geometry": None,
         "secondary_existing_west_via_geometry": None,
+        "native_exact_west_via_mesh_geometry": None,
         "native_west_via_alternate_positions": [],
         "L3_unchanged_baseline_repeat": None,
         "L3_exact_native_polygon_ring_identity": False,
@@ -642,6 +760,8 @@ def qualify(archive: Path) -> dict[str, Any]:
                 existing_west=(23.1106, 50.456),
                 via_uuid="d7c677dd-0d10-488d-b622-e47c674608f2",
                 virtual_block1_cut_audit=False))
+        out["native_exact_west_via_mesh_geometry"] = (
+            survey_native_exact_west_mesh(board, filled(zone)))
         source_path, source_optim = optimize_fcu_source(
             board, netcode, L1_SOURCE)
         out["F_Cu_source_optimization"] = source_optim
