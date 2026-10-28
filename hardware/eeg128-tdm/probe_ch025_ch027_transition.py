@@ -274,6 +274,49 @@ def graph_components(board: Any, net: str, source: tuple[float, float],
     ftarget = component_index(ftree, fparts, Point(target))
     bsource = component_index(btree, bparts, Point(source))
     btarget = component_index(btree, bparts, Point(target))
+    existing_target_via = [
+        item for item in board.GetTracks()
+        if (isinstance(item, pcbnew.PCB_VIA)
+            and item.GetNetname() == net
+            and math.dist(xy(item.GetPosition()), target) < .000001)
+    ]
+    # A trace may terminate against the existing via's F.Cu annulus without
+    # reaching the via centre. This is a geometric screen, NEVER a native DRC
+    # proof or permission to change the original via or any foreign copper.
+    target_via_fcu_contact = {
+        "existing_same_net_via_at_target": len(existing_target_via) == 1,
+        "existing_via_uuid": (existing_target_via[0].m_Uuid.AsString()
+                              if len(existing_target_via) == 1 else None),
+        "source_reaches_existing_via_FCu_copper": False,
+        "copper_contact_components": [],
+        "new_vias_required_by_this_screen": False,
+        "native_DRC_qualified": False,
+        "full_board_replay_qualified": False,
+    }
+    if len(existing_target_via) == 1:
+        via = existing_target_via[0]
+        via_radius_mm = pcbnew.ToMM(via.GetWidth()) / 2
+        # A 0.01-mm inward margin provides non-tangent copper intersection.
+        overlap_disk = Point(target).buffer(
+            max(0.0, via_radius_mm - .01), quad_segs=64)
+        for index, component in enumerate(fparts):
+            patch = component.intersection(overlap_disk)
+            if patch.is_empty or patch.area <= .000001:
+                continue
+            at = patch.representative_point()
+            target_via_fcu_contact["copper_contact_components"].append({
+                "component": index,
+                "sample_xy_mm": [round(at.x, 6), round(at.y, 6)],
+                "overlap_area_mm2": round(patch.area, 9),
+                "source_same_component": index == fsource,
+                "proposed_copper_contact_only": True,
+            })
+            if index == fsource:
+                target_via_fcu_contact[
+                    "source_reaches_existing_via_FCu_copper"] = True
+    target_via_fcu_contact["copper_contact_components"].sort(
+        key=lambda row: (not row["source_same_component"],
+                         -row["overlap_area_mm2"], row["component"]))
     if target_layer not in ("F", "B"):
         raise ValueError("Only F.Cu and B.Cu terminal targets permitted")
     no_new_via = {
@@ -290,6 +333,7 @@ def graph_components(board: Any, net: str, source: tuple[float, float],
             fsource is not None and fsource == ftarget),
         "same_BCu_component_if_existing_vias_at_both_endpoints": (
             bsource is not None and bsource == btarget),
+        "existing_target_via_FCu_copper_contact": target_via_fcu_contact,
     }
     if fsource is None or (ftarget if target_layer == "F" else btarget) is None:
         return {
@@ -642,6 +686,15 @@ def run(source_archive: Path) -> dict[str, Any]:
                         topo.get("component_cut_diagnostic", {}).get("minimum_same_layer_gap"),
                     "topological_path_count": len(
                         topo["topological_via_paths"]),
+                    "existing_target_via_FCu_copper_contact":
+                        topo["existing_target_via_FCu_copper_contact"],
+                    "topological_via_paths_preview":
+                        topo["topological_via_paths"][:2],
+                    "new_via_absence_not_demonstrated": any(
+                        not item.get("preexisting", False)
+                        for path in topo["topological_via_paths"][:2]
+                        for item in path),
+
                     "only_in_memory": True,
                     "unapproved_originals_physically_modified": False,
                     "new_vias_added": False,
