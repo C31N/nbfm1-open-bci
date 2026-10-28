@@ -315,11 +315,20 @@ def run(candidate: Path) -> dict[str, Any]:
                 if (candidate_path is not None and len(candidate_path) >= 2
                         and all(x[0] == 0 for x in candidate_path)):
                     micro["proposed_BCu_CH025_path"] = True
+                    original_track_ids = {
+                        track.m_Uuid.AsString()
+                        for track in board.GetTracks()}
                     for first, second in zip(
                             candidate_path, candidate_path[1:]):
-                        temporary_tracks.append(make_track(
+                        make_track(
                             board, tuple(first[1:]), tuple(second[1:]),
-                            code, .15, pcbnew.B_Cu))
+                            code, .15, pcbnew.B_Cu)
+                    # make_track returns None: capture only actual SWIG
+                    # PCB_TRACK items, and remove those before restitution.
+                    temporary_tracks = [
+                        track for track in board.GetTracks()
+                        if track.m_Uuid.AsString()
+                        not in original_track_ids]
                     # Independent same-layer restitution must fit AFTER CH025.
                     replacement = mesh_route(
                         board, endpoints[0], endpoints[1],

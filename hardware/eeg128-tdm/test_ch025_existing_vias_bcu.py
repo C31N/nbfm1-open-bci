@@ -19,6 +19,8 @@ class TestExistingCH025Vias(unittest.TestCase):
                       "precise_bcu_barrier_inventory",
                       "micro_ripup_trial", "immutable_do_not_ripup",
                       "proposed_BCu_neighbor_restitution",
+                      "original_track_ids",
+                      "temporary_tracks = [",
                       '"fabrication_release": False',
                       '"accepted": False', "TemporaryDirectory"):
             self.assertIn(value, text)
