@@ -1,0 +1,71 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+name: Native CH025 CH027 multilayer transition topology
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/ch025-fcu-l3-exact-2026-10-21]
+    paths:
+      - ".github/workflows/ch025-ch027-transition-topology.yml"
+      - "hardware/eeg128-tdm/probe_ch025_ch027_transition.py"
+      - "hardware/eeg128-tdm/test_ch025_ch027_transition.py"
+permissions:
+  contents: read
+jobs:
+  survey:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    container:
+      image: kicad/kicad@sha256:5716d82aa247abdbe512650eb4e8fce5a4031cbbef0a2c8df83208a69fef87b2
+      options: --user 0:0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pinned native KiCad 8.0.9 and Shapely 2.1.2
+        run: |
+          set -eu
+          test "$(kicad-cli version)" = "8.0.9"
+          apt-get -o Acquire::Retries=3 update
+          DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 install -y --no-install-recommends python3-shapely python3-pip python3-numpy
+          /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
+          /usr/bin/python3 -c 'import pcbnew, shapely; assert pcbnew.Version().startswith("8.0.9") and shapely.__version__=="2.1.2"'
+      - name: Static fail-closed contract
+        run: |
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch025_ch027_transition.py -v
+      - name: Recreate byte-pinned MUX_EN CH019 candidate
+        timeout-minutes: 8
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_mux_en_multihop_route.py \
+            --archive hardware/eeg128-tdm/engineering/block2-ch019-electrode-closed139.zip \
+            --output /tmp/en-route.json \
+            --candidate-output /tmp/engineering-only.zip
+      - name: Native FCu BCu via graph without changing original copper
+        timeout-minutes: 11
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_ch025_ch027_transition.py \
+            --candidate /tmp/engineering-only.zip \
+            --output /tmp/CH025-CH027-via-survey.json
+      - name: Enforce no release and protected immutability
+        run: |
+          /usr/bin/python3 - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('/tmp/CH025-CH027-via-survey.json').read_text())
+          assert d['source_PCB_untouched']
+          assert d['original_tracks_restored']
+          assert d['CH019_MUX_EN_frozen']
+          assert d['protected_vias_pads_zones_unchanged']
+          assert d['L3_native_control_exact_zero']
+          assert len(d['net_trials']) == 2
+          for k in ('accepted','routing_completed','fabrication_release',
+                    'manufacturing_files','all_eight_mux_qualified',
+                    'CH022_qualified','schematic_parity_qualified','In1_Cu_used'):
+              assert d[k] is False, k
+          assert not list(Path('/tmp').rglob('*.gbr'))
+          assert not list(Path('/tmp').rglob('*.drl'))
+          PY
+      - name: Upload topology JSON only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ch025-ch027-native-via-transition-graph
+          path: /tmp/CH025-CH027-via-survey.json
+          if-no-files-found: ignore

@@ -1,0 +1,27 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+"""Static release checks for CH025/CH027 transition graph discovery."""
+from __future__ import annotations
+import ast
+from pathlib import Path
+import unittest
+
+SOURCE = Path(__file__).with_name("probe_ch025_ch027_transition.py")
+
+class CH025CH027TransitionContract(unittest.TestCase):
+    def test_protected_native_probe(self) -> None:
+        source = SOURCE.read_text()
+        funcs = {n.name for n in ast.parse(source).body
+                 if isinstance(n, ast.FunctionDef)}
+        self.assertTrue({"run", "graph_components",
+                         "power_via_guard", "main"} <= funcs)
+        for token in ("PINNED_CANDIDATE_SHA", "CH027_ALT_VIA",
+                      "CH019_MUX_EN_frozen", "original_tracks_restored",
+                      "power_via_copper_clearance_mm", "native_L3_full_route_qualified"):
+            self.assertIn(token, source)
+        for forbidden in ("SaveBoard(", "ExportGerbers",
+                          "ExportDrill", "fabrication_release\": True"):
+            self.assertNotIn(forbidden, source)
+
+if __name__ == "__main__":
+    unittest.main()
