@@ -595,6 +595,73 @@ def run(source_archive: Path) -> dict[str, Any]:
                 raise RuntimeError(
                     "Coupled virtual ripup did not restore exact originals")
             out["cooperative_all_originals_restored"] = True
+
+        # Targeted virtual test of the exact UUIDs reported by probe #10.
+        # This NEVER authorizes changing S3 or the second S0 original:
+        # no copper is created, and every UUID is restored before exit.
+        out["virtual_specific_gap_cuts"] = []
+        additional_targets = (
+            ("CH025_N_MUX", (
+                (CUT, "CH025_N_MUX", pcbnew.In2_Cu),
+                ("5086ca27-2c22-448d-a5e4-22e598d226d3",
+                 "MUX_S3", pcbnew.F_Cu)),
+             (49.45, 14.90), (36.105, 48.85)),
+            ("CH027_N_MUX", (
+                ("81777460-c80a-48c9-8608-bae0dd42ee2f",
+                 "CH027_N_MUX", pcbnew.F_Cu),
+                ("ff9f490d-9f0d-4dc1-96a8-089ed3689134",
+                 "MUX_S0", pcbnew.F_Cu),
+                ("8a8a90ef-22d5-4e06-96d9-93c2d001cb17",
+                 "MUX_S0", pcbnew.F_Cu)),
+             xy(movable["CH027_N_MUX"].GetStart()),
+             xy(current[CH027_ALT_VIA].GetPosition())),
+        )
+        for tested_net, cut_specs, test_start, test_end in additional_targets:
+            cuts = []
+            for uid, expected_net, expected_layer in cut_specs:
+                item = current.get(uid)
+                if (item is None or item.GetNetname() != expected_net
+                        or item.GetLayer() != expected_layer
+                        or isinstance(item, (pcbnew.PCB_VIA, pcbnew.PCB_ARC))):
+                    raise RuntimeError("Unreviewed virtual cut UUID: " + uid)
+                cuts.append(item)
+            for item in cuts:
+                board.Remove(item)
+            try:
+                topo = graph_components(board, tested_net, test_start, test_end,
+                                        target_layer="F")
+                row = {
+                    "net": tested_net,
+                    "virtual_removed_UUIDs": [item.m_Uuid.AsString()
+                                              for item in cuts],
+                    "source_FCu_connected_to_target":
+                        topo["source_FCu_connected_to_target"],
+                    "topological_status": topo["status"],
+                    "minimum_same_layer_gap":
+                        topo["component_cut_diagnostic"]["minimum_same_layer_gap"],
+                    "topological_path_count": len(
+                        topo["topological_via_paths"]),
+                    "only_in_memory": True,
+                    "unapproved_originals_physically_modified": False,
+                    "new_vias_added": False,
+                    "no_In1_Cu": True,
+                    "native_DRC_qualified": False,
+                    "full_block_replay_qualified": False,
+                    "checkpoint_promoted": False,
+                    "accepted": False,
+                    "fabrication_release": False,
+                }
+                out["virtual_specific_gap_cuts"].append(row)
+            finally:
+                for item in cuts:
+                    board.Add(item)
+                if track_inventory(board) != originals:
+                    raise RuntimeError(
+                        "UUID gap cut failed exact original restitution")
+                if unchanged_fingerprints(board) != fingerprint:
+                    raise RuntimeError(
+                        "UUID gap cut changed protected physical fingerprint")
+        out["virtual_specific_gap_cuts_all_restituted"] = True
         # After the cooperative feasibility result, restore CH025's
         # original In2.Cu segment and temporarily remove ONLY four FCu
         # editable originals. Check whether CH027's single new through

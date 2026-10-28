@@ -30,6 +30,9 @@ class CH025CH027TransitionContract(unittest.TestCase):
         self.assertIn('"immutable_do_not_ripup"', source)
         self.assertIn('"ripup_authorized": False', source)
         self.assertIn('"native_DRC_qualified": False', source)
+        self.assertIn('"virtual_specific_gap_cuts"', source)
+        self.assertIn('"virtual_specific_gap_cuts_all_restituted"', source)
+        self.assertIn('"unapproved_originals_physically_modified": False', source)
         for forbidden in ("SaveBoard(", "ExportGerbers",
                           "ExportDrill", "fabrication_release\": True"):
             self.assertNotIn(forbidden, source)
