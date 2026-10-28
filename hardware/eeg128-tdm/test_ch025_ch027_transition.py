@@ -25,6 +25,11 @@ class CH025CH027TransitionContract(unittest.TestCase):
                       '"native_DRC_qualified": False',
                       '"exact_L3_qualified": False'):
             self.assertIn(token, source)
+        self.assertIn("def gap_blocker_inventory", source)
+        self.assertIn('"gap_blocker_inventory"', source)
+        self.assertIn('"immutable_do_not_ripup"', source)
+        self.assertIn('"ripup_authorized": False', source)
+        self.assertIn('"native_DRC_qualified": False', source)
         for forbidden in ("SaveBoard(", "ExportGerbers",
                           "ExportDrill", "fabrication_release\": True"):
             self.assertNotIn(forbidden, source)

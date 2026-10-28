@@ -106,6 +106,104 @@ def component_cut_diagnostic(
     return result
 
 
+
+def gap_blocker_inventory(board: Any, net: str, gap: dict[str, Any] | None) -> dict[str, Any]:
+    """Original-copper UUID proximity, not an authorized ripup or native DRC."""
+    import pcbnew
+    from shapely.geometry import LineString, Point, box
+    from route_targeted_closure import POWER, ANALOG_REFERENCE, pad_copper_shape
+
+    if gap is None:
+        return {"status": "no_disconnected_gap", "layers": {},
+                "native_DRC_qualified": False}
+    a, b = tuple(gap["from_xy_mm"]), tuple(gap["to_xy_mm"])
+    segment = LineString((a, b))
+    allowed = {
+        uid: name for uid, name in NEIGHBORS.items()
+        if name in ("MUX_S0", "MUX_S1", "CH030_P_MUX")
+    }
+    rows: dict[str, list[dict[str, Any]]] = {"F.Cu": [], "B.Cu": []}
+
+    def add(uid: str, name: str, kind: str, shape: Any,
+            layers: tuple[str, ...], reference: str | None = None,
+            endpoints: list[list[float]] | None = None) -> None:
+        if name == net:
+            return
+        movable = (kind == "track" and allowed.get(uid) == name
+                   and layers == ("F.Cu",))
+        for layer in layers:
+            # Conserve native search clearance; L3 power is a separate gate.
+            pad = (.505 + .075 if name in POWER and layer == "F.Cu"
+                   else max(.15, .20 if name in POWER | ANALOG_REFERENCE
+                            else .15) + .075 - 1e-9)
+            envelope = shape.buffer(pad)
+            dist = segment.distance(envelope)
+            if dist > .100001:
+                continue
+            rows[layer].append({
+                "uuid": uid, "net": name, "kind": kind,
+                "reference": reference, "layer": layer,
+                "original_endpoints_mm": endpoints,
+                "envelope_intersects_gap": bool(envelope.intersects(segment)),
+                "distance_from_gap_mm": round(dist, 9),
+                "classification": ("reviewed_Block2_FCu_track_candidate"
+                                   if movable else "immutable_do_not_ripup"),
+                "ripup_authorized": False,
+            })
+
+    for t in board.GetTracks():
+        via = isinstance(t, pcbnew.PCB_VIA)
+        arc = isinstance(t, pcbnew.PCB_ARC)
+        if via:
+            shape = Point(xy(t.GetPosition())).buffer(
+                pcbnew.ToMM(t.GetWidth()) / 2)
+            layers = ("F.Cu", "B.Cu")
+        elif t.GetLayer() in (pcbnew.F_Cu, pcbnew.B_Cu):
+            layers = (("F.Cu",) if t.GetLayer() == pcbnew.F_Cu
+                      else ("B.Cu",))
+            if arc:
+                bb = t.GetBoundingBox()
+                shape = box(pcbnew.ToMM(bb.GetX()), pcbnew.ToMM(bb.GetY()),
+                            pcbnew.ToMM(bb.GetRight()),
+                            pcbnew.ToMM(bb.GetBottom()))
+            else:
+                shape = LineString((xy(t.GetStart()), xy(t.GetEnd()))).buffer(
+                    pcbnew.ToMM(t.GetWidth()) / 2)
+        else:
+            continue
+        ends = (None if via or arc else
+                [list(xy(t.GetStart())), list(xy(t.GetEnd()))])
+        add(t.m_Uuid.AsString(), t.GetNetname(),
+            "via" if via else "arc" if arc else "track",
+            shape, layers, endpoints=ends)
+    for fp in board.GetFootprints():
+        for pad in fp.Pads():
+            for label, layer in (("F.Cu", pcbnew.F_Cu),
+                                 ("B.Cu", pcbnew.B_Cu)):
+                if pad.IsOnLayer(layer):
+                    add(pad.m_Uuid.AsString(), pad.GetNetname(), "pad",
+                        pad_copper_shape(pad, layer), (label,),
+                        reference=fp.GetReference() + "." + pad.GetNumber())
+
+    for layer in rows:
+        rows[layer].sort(key=lambda r: (
+            not r["envelope_intersects_gap"], r["distance_from_gap_mm"],
+            r["classification"] != "immutable_do_not_ripup", r["uuid"]))
+    active = [r for r in rows[gap["layer"]] if r["envelope_intersects_gap"]]
+    return {
+        "status": "native_object_proximity_not_causal_proof",
+        "gap_layer": gap["layer"],
+        "gap_start_xy_mm": list(a), "gap_end_xy_mm": list(b),
+        "layers": rows,
+        "gap_layer_intersecting_uuids": [r["uuid"] for r in active],
+        "gap_layer_immutable_count": sum(
+            r["classification"] == "immutable_do_not_ripup" for r in active),
+        "candidate_movable_uuid_whitelist": allowed,
+        "physical_route_verified": False, "native_DRC_qualified": False,
+        "routing_completed": False, "fabrication_release": False,
+    }
+
+
 def power_via_guard(board: Any, layer: int) -> Any:
     """0.505-mm copper-to-copper power clearance for 0.65-mm via centres."""
     import pcbnew
@@ -433,6 +531,9 @@ def run(source_archive: Path) -> dict[str, Any]:
                 result = graph_components(
                     board, net, start, end,
                     target_layer="B" if net == "CH027_N_MUX" else "F")
+                result["gap_blocker_inventory"] = gap_blocker_inventory(
+                    board, net,
+                    result["component_cut_diagnostic"]["minimum_same_layer_gap"])
                 if net == "CH027_N_MUX":
                     result["original_reviewed_FCu_landing_mm"] = (
                         list(CH027_ALT_TARGET))
@@ -475,6 +576,9 @@ def run(source_archive: Path) -> dict[str, Any]:
                 evidence = graph_components(
                     board, net, source, target,
                     target_layer="B" if net == "CH027_N_MUX" else "F")
+                evidence["gap_blocker_inventory"] = gap_blocker_inventory(
+                    board, net,
+                    evidence["component_cut_diagnostic"]["minimum_same_layer_gap"])
                 evidence["net"] = net
                 evidence["virtually_removed_UUIDs"] = [
                     t.m_Uuid.AsString() for t in joint]
