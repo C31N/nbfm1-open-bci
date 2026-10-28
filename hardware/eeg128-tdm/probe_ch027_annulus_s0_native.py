@@ -166,6 +166,13 @@ def run(candidate: Path) -> dict[str, Any]:
             pcbnew.ZONE_FILLER(board).Fill(board.Zones())
             l3_before = pcbnew.SHAPE_POLY_SET(
                 zone.GetFilledPolysList(pcbnew.In2_Cu))
+            # SWIG BOARD_ITEM pointers must never be dereferenced after
+            # board.Remove(): freeze exact original start/end coordinates.
+            frozen_endpoints = {
+                uid: (xy(current[uid].GetStart()),
+                      xy(current[uid].GetEnd()))
+                for uid in chosen
+            }
             row: dict[str, Any] = {
                 "order": list(order), "status": "not_started",
                 "S0_long_corridor_reserved_before_CH027": reserve_S0,
@@ -178,11 +185,9 @@ def run(candidate: Path) -> dict[str, Any]:
                 board.Remove(current[uid])
             power = filled(zone)
             ch027_code = board.FindNet(CH027).GetNetCode()
-            start = xy(current[CUT].GetStart())
-            corridor_track = current[S0_UUIDS[0]]
+            start = frozen_endpoints[CUT][0]
             reservation = (
-                (xy(corridor_track.GetStart()),
-                 xy(corridor_track.GetEnd()))
+                frozen_endpoints[S0_UUIDS[0]]
                 if reserve_S0 else None)
             proposed, detail = routed(
                 board, start, LANDING, ch027_code, power,
@@ -198,9 +203,9 @@ def run(candidate: Path) -> dict[str, Any]:
 
             all_s0_restored = True
             for uid in order:
-                item = current[uid]
+                source, destination = frozen_endpoints[uid]
                 proposed, detail = routed(
-                    board, xy(item.GetStart()), xy(item.GetEnd()),
+                    board, source, destination,
                     board.FindNet(S0).GetNetCode(), power,
                     "MUX_S0_" + uid)
                 row["routes"].append(detail)
