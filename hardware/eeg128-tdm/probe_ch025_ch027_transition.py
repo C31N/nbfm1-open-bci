@@ -76,7 +76,8 @@ def power_via_guard(board: Any, layer: int) -> Any:
 
 
 def graph_components(board: Any, net: str, source: tuple[float, float],
-                     target: tuple[float, float]) -> dict[str, Any]:
+                     target: tuple[float, float], *,
+                     target_layer: str = "F") -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import Point, box
     from shapely.strtree import STRtree
@@ -108,7 +109,11 @@ def graph_components(board: Any, net: str, source: tuple[float, float],
     ftarget = component_index(ftree, fparts, Point(target))
     bsource = component_index(btree, bparts, Point(source))
     btarget = component_index(btree, bparts, Point(target))
+    if target_layer not in ("F", "B"):
+        raise ValueError("Only F.Cu and B.Cu terminal targets permitted")
     no_new_via = {
+        "target_layer": "F.Cu" if target_layer == "F" else "B.Cu",
+        "source_xy_mm": list(source), "target_xy_mm": list(target),
         "search_region_mm": list(region.bounds),
         "FCu_components": len(fparts), "BCu_components": len(bparts),
         "source_FCu_component": fsource,
@@ -120,7 +125,7 @@ def graph_components(board: Any, net: str, source: tuple[float, float],
         "same_BCu_component_if_existing_vias_at_both_endpoints": (
             bsource is not None and bsource == btarget),
     }
-    if fsource is None or ftarget is None:
+    if fsource is None or (ftarget if target_layer == "F" else btarget) is None:
         return {
             **no_new_via, "status": "FCu_terminal_not_free",
             "topological_via_paths": [], "existing_same_net_vias": [],
@@ -183,7 +188,8 @@ def graph_components(board: Any, net: str, source: tuple[float, float],
                 edges[right].append((left, entry))
     # Graph BFS minimizes the number of additional layer transitions;
     # each edge represents a via site, NOT a fully routed copper path.
-    start_node, finish_node = ("F", fsource), ("F", ftarget)
+    start_node = ("F", fsource)
+    finish_node = ("F", ftarget) if target_layer == "F" else ("B", btarget)
     frontier = deque([(start_node, [])])
     visited: set[tuple[str, int]] = {start_node}
     paths = []
@@ -306,10 +312,21 @@ def run(source_archive: Path) -> dict[str, Any]:
                 start, end = (49.45, 14.90), (36.105, 48.85)
             else:
                 start = xy(original.GetStart())
-                end = CH027_ALT_TARGET
+                # Use the UUID-pinned PHYSICAL B.Cu via, not the legacy
+                # nearby proposed F.Cu landing point CH027_ALT_TARGET.
+                end = xy(current[CH027_ALT_VIA].GetPosition())
             board.Remove(original)
             try:
-                result = graph_components(board, net, start, end)
+                result = graph_components(
+                    board, net, start, end,
+                    target_layer="B" if net == "CH027_N_MUX" else "F")
+                if net == "CH027_N_MUX":
+                    result["original_reviewed_FCu_landing_mm"] = (
+                        list(CH027_ALT_TARGET))
+                    result["protected_actual_BCu_via_xy_mm"] = list(end)
+                    result["reviewed_landing_to_physical_via_mm"] = (
+                        math.dist(CH027_ALT_TARGET, end))
+                    result["protected_CH027_via_position_was_modified"] = False
                 result["net"] = net
                 result["original_cut_UUID"] = original.m_Uuid.AsString()
                 result["original_copper_removed_only_on_scratch"] = True
