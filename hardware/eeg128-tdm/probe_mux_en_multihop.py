@@ -167,6 +167,47 @@ def grid_candidates(board: Any, *, bounds: tuple[float, float, float, float] = (
                     "L3_combined_gate_qualified": False,
                     "all_three_copper_paths_DRC_qualified": False,
                 })
+    # Polygon-intersection search is independent of grid alignment: a
+    # 0.5-mm raster can miss sub-millimetre via windows. Both landing
+    # patches must share one truly connected FCu polygon.
+    west_patch = all_new_via_free.intersection(bcu_parts[source_bcu])
+    east_patch = all_new_via_free.intersection(bcu_parts[target_bcu])
+    out["west_via_candidate_area_mm2"] = west_patch.area
+    out["east_via_candidate_area_mm2"] = east_patch.area
+    out["shared_FCu_components_from_exact_polygon_overlay"] = []
+    for f_index, component in enumerate(fcu_parts):
+        w_patch = west_patch.intersection(component).buffer(-.005)
+        e_patch = east_patch.intersection(component).buffer(-.005)
+        if w_patch.area <= 1e-9 or e_patch.area <= 1e-9:
+            continue
+        out["shared_FCu_components_from_exact_polygon_overlay"].append(
+            f_index)
+        wpt, ept = w_patch.representative_point(), e_patch.representative_point()
+        wa = (round(wpt.x, 6), round(wpt.y, 6))
+        eb = (round(ept.x, 6), round(ept.y, 6))
+        if (math.dist(wa, WEST) < .9 or
+                math.dist(eb, EAST) < .9 or
+                math.dist(wa, eb) < .8 or
+                not allowed.covers(Point(wa)) or
+                not allowed.covers(Point(eb))):
+            continue
+        if any(c["via_1_xy_mm"] == list(wa) and
+               c["via_2_xy_mm"] == list(eb) for c in candidates):
+            continue
+        candidates.append({
+            "via_1_xy_mm": list(wa),
+            "via_2_xy_mm": list(eb),
+            "shared_FCu_free_component": f_index,
+            "west_BCu_component": source_bcu,
+            "east_BCu_component": target_bcu,
+            "straight_line_lower_bound_mm": round(
+                math.dist(WEST, wa) + math.dist(wa, eb)
+                + math.dist(eb, EAST), 6),
+            "L3_individual_vias_qualified": False,
+            "L3_combined_gate_qualified": False,
+            "all_three_copper_paths_DRC_qualified": False,
+            "found_by_exact_polygon_overlay": True,
+        })
     candidates.sort(key=lambda c: (
         c["straight_line_lower_bound_mm"], c["via_1_xy_mm"],
         c["via_2_xy_mm"]))
