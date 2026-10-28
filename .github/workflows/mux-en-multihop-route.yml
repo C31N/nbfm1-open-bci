@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+name: Native MUX EN four-via multihop scratch route
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/ch025-fcu-l3-exact-2026-10-21]
+    paths:
+      - ".github/workflows/mux-en-multihop-route.yml"
+      - "hardware/eeg128-tdm/probe_mux_en_multihop_route.py"
+      - "hardware/eeg128-tdm/test_mux_en_multihop_route.py"
+permissions:
+  contents: read
+jobs:
+  scratch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    container:
+      image: kicad/kicad@sha256:5716d82aa247abdbe512650eb4e8fce5a4031cbbef0a2c8df83208a69fef87b2
+      options: --user 0:0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native KiCad 8.0.9 and Shapely 2.1.2
+        run: |
+          set -eu
+          test "$(kicad-cli version)" = "8.0.9"
+          apt-get -o Acquire::Retries=3 update
+          DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 install -y --no-install-recommends python3-shapely python3-pip python3-numpy
+          /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
+          /usr/bin/python3 -c 'import pcbnew,shapely; assert pcbnew.Version().startswith("8.0.9") and shapely.__version__=="2.1.2"'
+      - name: Fail-closed static contract
+        run: |
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_mux_en_multihop_route.py -v
+      - name: Route five signal legs and CH019 on disposable native PCB
+        timeout-minutes: 25
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_mux_en_multihop_route.py \
+            --archive hardware/eeg128-tdm/engineering/block2-ch019-electrode-closed139.zip \
+            --output /tmp/mux-en-four-via-route.json
+      - name: Enforce no release and no manufacturing exports
+        run: |
+          /usr/bin/python3 - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('/tmp/mux-en-four-via-route.json').read_text())
+          assert d['source_139_PCB_untouched']
+          for key in ('accepted','routing_completed','fabrication_release',
+                      'manufacturing_files','schematic_parity_qualified',
+                      'independent_replay_verified','checkpoint_promoted',
+                      'In1_Cu_used'):
+              assert d[key] is False, key
+          assert d['native_139_baseline']=={
+              'violations':0,'warnings':0,'unconnected':139}
+          assert not list(Path('/tmp').rglob('*.gbr'))
+          assert not list(Path('/tmp').rglob('*.drl'))
+          print(d['status'], d.get('candidate_native_DRC'))
+          PY
+      - name: Upload JSON diagnostic only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mux-en-four-via-native-scratch-json
+          path: /tmp/mux-en-four-via-route.json
+          if-no-files-found: ignore
