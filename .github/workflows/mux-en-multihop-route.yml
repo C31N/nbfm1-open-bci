@@ -35,7 +35,8 @@ jobs:
         run: |
           /usr/bin/python3 hardware/eeg128-tdm/probe_mux_en_multihop_route.py \
             --archive hardware/eeg128-tdm/engineering/block2-ch019-electrode-closed139.zip \
-            --output /tmp/mux-en-four-via-route.json
+            --output /tmp/mux-en-four-via-route.json \
+            --candidate-output /tmp/mux-en-unaccepted-engineering-source.zip
       - name: Enforce no release and no manufacturing exports
         run: |
           /usr/bin/python3 - <<'PY'
@@ -59,5 +60,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mux-en-four-via-native-scratch-json
-          path: /tmp/mux-en-four-via-route.json
+          path: |
+            /tmp/mux-en-four-via-route.json
+            /tmp/mux-en-unaccepted-engineering-source.zip
           if-no-files-found: ignore

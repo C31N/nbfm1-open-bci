@@ -88,7 +88,7 @@ def find_leg(board: Any, en: int, power: Any, name: str,
     }
 
 
-def run(archive: Path) -> dict[str, Any]:
+def run(archive: Path, candidate_output: Path | None = None) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import LineString, box
     from shapely.ops import unary_union
@@ -113,6 +113,10 @@ def run(archive: Path) -> dict[str, Any]:
         "full_MUX_EN_multihop_routed_on_scratch": False,
         "CH019_BCu_restituted_on_scratch": False,
         "leg_diagnostics": [],
+        "engineering_candidate_source_archive_sha256": None,
+        "engineering_candidate_PCB_sha256": None,
+        "engineering_candidate_not_a_checkpoint": True,
+        "no_manufacturing_exports_invoked": True,
     }
     if not pcbnew.Version().startswith("8.0.9"):
         raise RuntimeError("Native KiCad 8.0.9 is required")
@@ -222,6 +226,8 @@ def run(archive: Path) -> dict[str, Any]:
                 make_track(board, a, b, ch019_code, .15, pcbnew.B_Cu)
             out["CH019_BCu_restituted_on_scratch"] = True
             out["CH019_BCu_restitution_vertices"] = len(coordinates)
+            out["CH019_BCu_restitution_path_mm"] = [
+                list(point) for point in coordinates]
             out["CH019_BCu_restitution_length_mm"] = sum(
                 math.dist(a, b) for a, b in zip(
                     coordinates, coordinates[1:]))
@@ -271,6 +277,32 @@ def run(archive: Path) -> dict[str, Any]:
                 "full_MUX_EN_CH019_scratch_native_DRC_pass_no_promotion"
                 if out["candidate_native_DRC_qualified"]
                 else "full_MUX_EN_CH019_scratch_native_DRC_failed")
+            if out["candidate_native_DRC_qualified"] and candidate_output:
+                candidate_output.parent.mkdir(parents=True, exist_ok=True)
+                audit = {
+                    "accepted": False,
+                    "routing_completed": False,
+                    "fabrication_release": False,
+                    "source_archive_sha256": ARCHIVE_SHA256,
+                    "source_pcb_sha256": BOARD_SHA256,
+                    "native_DRC": out["candidate_native_DRC"],
+                    "native_L3_loss_mm2": out["native_L3_loss_mm2"],
+                    "native_L3_gain_mm2": out["native_L3_gain_mm2"],
+                    "routing_replay_byteidentical_verified": False,
+                    "only_engineering_source_files": True,
+                }
+                with zipfile.ZipFile(
+                        candidate_output, "w",
+                        compression=zipfile.ZIP_DEFLATED) as bundle:
+                    for member in MEMBERS:
+                        bundle.write(root / member, arcname=member)
+                    bundle.writestr(
+                        "NO_RELEASE_ENGINEERING_ONLY.json",
+                        json.dumps(audit, indent=2) + "\n")
+                out["engineering_candidate_PCB_sha256"] = (
+                    hashlib.sha256(pcb_path.read_bytes()).hexdigest())
+                out["engineering_candidate_source_archive_sha256"] = (
+                    hashlib.sha256(candidate_output.read_bytes()).hexdigest())
         finally:
             # All writes were restricted to the TemporaryDirectory
             # board instance and never persist to the source ZIP.
@@ -284,8 +316,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--archive", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--candidate-output", type=Path, default=None)
     args = parser.parse_args()
-    result = run(args.archive)
+    result = run(args.archive, args.candidate_output)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps({
