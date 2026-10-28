@@ -1,0 +1,74 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+name: Native CH027 isolated S0 physical FCu trial
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/ch025-fcu-l3-exact-2026-10-21]
+    paths:
+      - ".github/workflows/ch027-s0-isolated-native.yml"
+      - "hardware/eeg128-tdm/probe_ch027_annulus_s0_native.py"
+      - "hardware/eeg128-tdm/test_ch027_annulus_s0_native.py"
+permissions:
+  contents: read
+jobs:
+  isolated:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    container:
+      image: kicad/kicad@sha256:5716d82aa247abdbe512650eb4e8fce5a4031cbbef0a2c8df83208a69fef87b2
+      options: --user 0:0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify pinned native KiCad 8.0.9 and Shapely 2.1.2
+        run: |
+          set -eu
+          test "$(kicad-cli version)" = "8.0.9"
+          apt-get -o Acquire::Retries=3 update
+          DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 install -y --no-install-recommends python3-shapely python3-pip python3-numpy
+          /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
+          /usr/bin/python3 -c 'import pcbnew,shapely;assert pcbnew.Version().startswith("8.0.9") and shapely.__version__=="2.1.2"'
+      - name: Static no-release S0 scratch contract
+        run: |
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_ch027_annulus_s0_native.py -v
+      - name: Recreate byte-locked 139 MUX_EN and CH019 candidate
+        timeout-minutes: 8
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_mux_en_multihop_route.py \
+            --archive hardware/eeg128-tdm/engineering/block2-ch019-electrode-closed139.zip \
+            --output /tmp/CH027-S0-base.json \
+            --candidate-output /tmp/CH027-S0-base.zip
+      - name: Run four isolated CH027 and S0 scratch route orders
+        timeout-minutes: 12
+        run: |
+          set -eu
+          for index in 0 1 2 3; do
+            /usr/bin/python3 hardware/eeg128-tdm/probe_ch027_annulus_s0_native.py \
+              --candidate /tmp/CH027-S0-base.zip \
+              --order-index "$index" \
+              --output "/tmp/CH027-S0-native-trial-$index.json"
+          done
+      - name: Verify no release and locked engineering candidate
+        run: |
+          /usr/bin/python3 - <<'PY'
+          import json
+          from pathlib import Path
+          files=sorted(Path('/tmp').glob('CH027-S0-native-trial-[0-3].json'))
+          assert len(files)==4
+          for f in files:
+              d=json.loads(f.read_text())
+              assert d['original_candidate_unchanged']
+              assert d['native_139_baseline']=={'violations':0,'warnings':0,'unconnected':139}
+              assert len(d['trials'])==1
+              for k in ('accepted','routing_completed','fabrication_release',
+                        'manufacturing_files','checkpoint_promoted','In1_Cu_used'):
+                  assert d[k] is False, k
+          assert not list(Path('/tmp').rglob('*.gbr'))
+          assert not list(Path('/tmp').rglob('*.drl'))
+          PY
+      - name: Publish four reports only, never PCB
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ch027-s0-four-isolated-physical-trials
+          path: /tmp/CH027-S0-native-trial-*.json
+          if-no-files-found: ignore
