@@ -15,7 +15,7 @@ class CH025CH027TransitionContract(unittest.TestCase):
                  if isinstance(n, ast.FunctionDef)}
         self.assertTrue({"run", "graph_components",
                          "power_via_guard", "main"} <= funcs)
-        for token in ("PINNED_CANDIDATE_SHA", "CH027_ALT_VIA", "cooperative_all_originals_restored",
+        for token in ("PINNED_CANDIDATE_SHA", "CH027_ALT_VIA", "cooperative_all_originals_restored", "CH027_one_via_native_L3_and_mesh_trial",
                       "CH019_MUX_EN_frozen", "original_tracks_restored",
                       "power_via_copper_clearance_mm", "native_L3_full_route_qualified"):
             self.assertIn(token, source)

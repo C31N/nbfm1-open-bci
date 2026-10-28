@@ -53,6 +53,7 @@ jobs:
           assert d['original_tracks_restored']
           assert d['cooperative_all_originals_restored']
           assert len(d['cooperative_removed_originals_only_topology'])==2
+          assert d['CH027_one_via_native_L3_and_mesh_trial']['originals_all_restituted']
           assert d['CH019_MUX_EN_frozen']
           assert d['protected_vias_pads_zones_unchanged']
           assert d['L3_native_control_exact_zero']
