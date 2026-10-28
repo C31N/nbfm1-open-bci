@@ -371,6 +371,66 @@ def survey_reused_west_via(board: Any, power: Any,
                 break
     if not (report["source_FCu_connected"] and
             report["west_to_east_BCu_connected"]):
+        # Diagnostic ONLY: ablate the three UUID-identified Block-1 tracks
+        # on this disposable PCB instance, inspect connectivity, and put
+        # the exact same original PCB_TRACK objects back on EVERY exit.
+        # Block-1 CH000 and CH013 originals remain production-immutable.
+        from itertools import combinations
+        from probe_ch025_fcu_l3_exact import track_inventory
+        immutable_candidates = {
+            "5b448238-a106-4c62-b852-f8d8a6eb1a91": "CH000_P_MUX",
+            "8419cda3-2d4e-40b5-930b-6d9e9cc754a9": "CH000_P_MUX",
+            "1570f16b-6e01-4e4d-9ec1-45cdfae30b58": "CH013_N_MUX",
+        }
+        by_uuid = {track.m_Uuid.AsString(): track
+                   for track in board.GetTracks()}
+        original_inventory = track_inventory(board)
+        matched: list[Any] = []
+        for uid, name in immutable_candidates.items():
+            track = by_uuid.get(uid)
+            if (track is None or track.GetNetname() != name
+                    or isinstance(track, (pcbnew.PCB_VIA, pcbnew.PCB_ARC))
+                    or track.GetLayer() != pcbnew.B_Cu):
+                raise RuntimeError(
+                    "Protected Block-1 original copper identity changed")
+            matched.append(track)
+        report["virtual_Block1_copper_cuts"] = []
+        domain_global = routing_domain(board, .075, .25)
+        region_global = domain_global.intersection(
+            box(11.0, 12.0, 68.0, 74.0))
+        for count in range(1, len(matched) + 1):
+            for indices in combinations(range(len(matched)), count):
+                temporary = [matched[i] for i in indices]
+                row: dict[str, Any] = {
+                    "virtually_absent_UUIDs": [
+                        t.m_Uuid.AsString() for t in temporary],
+                    "immutable_Block1_tracks_relocated": False,
+                    "all_original_tracks_restored": False,
+                    "DRC_qualified": False,
+                    "power_L3_qualified": False,
+                    "checkpoint_accepted": False,
+                    "production_copper_modification_allowed": False,
+                }
+                for track in temporary:
+                    board.Remove(track)
+                try:
+                    foreign, _ = obstacles(
+                        board, en_code, .15, .15, region_global, .65,
+                        (pcbnew.B_Cu, pcbnew.F_Cu))
+                    free_global = region_global.difference(
+                        foreign[0]).buffer(-.000005)
+                    row["BCu_connected_if_original_tracks_absent"] = connected(
+                        free_global, existing_west, target_east)
+                finally:
+                    for track in temporary:
+                        board.Add(track)
+                    row["all_original_tracks_restored"] = (
+                        track_inventory(board) == original_inventory)
+                    if not row["all_original_tracks_restored"]:
+                        raise RuntimeError(
+                            "Immutable Block-1 scratch replay restoration failed")
+                report["virtual_Block1_copper_cuts"].append(row)
+        report["Block1_CH000_CH013_tracks_must_remain_immutable"] = True
         report["status"] = "reused_west_component_path_missing"
         return report
     fcu = mesh_route(
