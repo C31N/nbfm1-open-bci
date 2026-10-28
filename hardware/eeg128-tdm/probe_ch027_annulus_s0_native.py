@@ -12,6 +12,7 @@ import argparse
 import hashlib
 import json
 import math
+import shutil
 from pathlib import Path
 import tempfile
 from typing import Any
@@ -215,7 +216,11 @@ def run(candidate: Path) -> dict[str, Any]:
                 row["status"] = "native_L3_exact_zero_failed"
                 out["trials"].append(row)
                 continue
-            scratch = root / ("CH027_S0_order_" + str(index) + ".kicad_pcb")
+            scratchdir = root / ("CH027_S0_order_" + str(index))
+            scratchdir.mkdir()
+            for member in MEMBERS[1:]:
+                shutil.copyfile(root / member, scratchdir / member)
+            scratch = scratchdir / MEMBERS[0]
             pcbnew.SaveBoard(str(scratch), board)
             post = native(scratch, root / ("post-" + str(index) + ".json"))
             row["candidate_native_DRC"] = metrics(post)

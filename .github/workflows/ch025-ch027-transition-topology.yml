@@ -85,11 +85,11 @@ jobs:
         with:
           name: ch025-ch027-native-via-transition-graph
           path: /tmp/CH025-CH027-via-survey.json
+          if-no-files-found: ignore
       - name: Upload CH027 S0 physical scratch report only
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ch027-s0-annulus-native-scratch-report
           path: /tmp/CH027-S0-native-trial.json
-          if-no-files-found: ignore
           if-no-files-found: ignore
