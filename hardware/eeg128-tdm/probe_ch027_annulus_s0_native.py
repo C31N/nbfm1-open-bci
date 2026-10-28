@@ -34,6 +34,17 @@ CUT = "81777460-c80a-48c9-8608-bae0dd42ee2f"
 S0_UUIDS = ("ff9f490d-9f0d-4dc1-96a8-089ed3689134",
             "8a8a90ef-22d5-4e06-96d9-93c2d001cb17")
 LANDING = (32.548019, 47.819777)
+# All points are strictly inside the copper annulus of the existing,
+# immutable 0.65-mm via 1c642f97 at (32.6993, 47.9596).
+CH027_VIA_LANDINGS_MM = (
+    LANDING,
+    (32.5114, 47.8912),
+    (32.4993, 47.9596),
+    (32.5993, 47.7864),
+    (32.6993, 47.7596),
+    (32.6260, 47.7735),
+    (32.5250, 47.8596),
+)
 NO_RELEASE = {
     "accepted": False, "routing_completed": False,
     "fabrication_release": False, "manufacturing_files": False,
@@ -261,10 +272,24 @@ def run(candidate: Path, order_index: int) -> dict[str, Any]:
                     frozen_endpoints[S0_UUIDS[0]]
                     if reserve_S0 else None)
 
-            proposed, detail = routed(
-                board, start, LANDING, ch027_code, power,
-                "CH027_FCu_annulus", reserved_S0_line=reservation)
-            row["routes"].append(detail)
+            proposed = None
+            # Bounded backtracking: preserve the complete S0 dogleg,
+            # then test distinct same-via copper-annulus landing points.
+            # The via, original tracks, and all foreign copper are immutable.
+            contacts = (CH027_VIA_LANDINGS_MM if coupled else (LANDING,))
+            for contact in contacts:
+                if math.dist(xy(via.GetPosition()), contact) >= (
+                        pcbnew.ToMM(via.GetWidth()) / 2 - .01):
+                    raise RuntimeError("Unreviewed CH027 annulus contact")
+                trial, detail = routed(
+                    board, start, contact, ch027_code, power,
+                    "CH027_FCu_annulus", reserved_S0_line=reservation)
+                detail["existing_via_contact_mm"] = list(contact)
+                row["routes"].append(detail)
+                if trial is not None:
+                    proposed = trial
+                    row["CH027_selected_via_contact_mm"] = list(contact)
+                    break
             if proposed is not None:
                 from shapely.geometry import LineString, Point
                 candidate_line = LineString([pt[1:] for pt in proposed])

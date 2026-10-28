@@ -28,6 +28,8 @@ class CH027AnnulusScratchContract(unittest.TestCase):
                          "coupled_multicommodity_search",
                          "S0_dynamic_dogleg_waypoint_mm",
                          "S0_WAYPOINTS_MM", "tuple(range(12))",
+                         "CH027_VIA_LANDINGS_MM",
+                         "CH027_selected_via_contact_mm",
                          "CH027_crossings_with_original_S0_mm"):
             self.assertIn(required, source)
         for banned in ("ExportGerbers", "ExportDrill",
