@@ -224,12 +224,60 @@ def grid_candidates(board: Any, *, bounds: tuple[float, float, float, float] = (
             "L3_combined_gate_qualified": False,
             "all_three_copper_paths_DRC_qualified": False,
             "found_by_exact_polygon_overlay": True,
+            "survey_priority": 0,
         })
+        # The representative B via is topologically valid, but its
+        # native L3 refill may be nonzero. Search alternate B centres
+        # throughout the SAME FCu polygon and east BCu component.
+        x0, y0, x1, y1 = e_patch.bounds
+        alternate_b: list[tuple[float, float]] = []
+        interval = .25
+        for ix in range(int(math.ceil((x1 - x0) / interval))):
+            x = round(x0 + (ix + .5) * interval, 6)
+            for iy in range(int(math.ceil((y1 - y0) / interval))):
+                y = round(y0 + (iy + .5) * interval, 6)
+                p = (x, y)
+                if (math.dist(p, EAST) <= min_via_centre_distance
+                        or math.dist(p, wa) <= min_via_centre_distance
+                        or not e_patch.covers(Point(p))
+                        or not allowed.covers(Point(p))):
+                    continue
+                alternate_b.append(p)
+        alternate_b.sort(key=lambda p: (math.dist(p, EAST), p))
+        result["number_of_alternative_B_sites_0p25mm"] = len(
+            alternate_b)
+        number = min(17, len(alternate_b))
+        if number:
+            indexes = sorted({
+                int(round(rank * (len(alternate_b) - 1) /
+                          max(1, number - 1))) for rank in range(number)
+            })
+            for priority, index in enumerate(indexes, start=1):
+                alternate = alternate_b[index]
+                if alternate == eb:
+                    continue
+                candidates.append({
+                    "via_1_xy_mm": list(wa),
+                    "via_2_xy_mm": list(alternate),
+                    "shared_FCu_free_component": f_index,
+                    "west_BCu_component": source_bcu,
+                    "east_BCu_component": target_bcu,
+                    "straight_line_lower_bound_mm": round(
+                        math.dist(WEST, wa) + math.dist(wa, alternate)
+                        + math.dist(alternate, EAST), 6),
+                    "L3_individual_vias_qualified": False,
+                    "L3_combined_gate_qualified": False,
+                    "all_three_copper_paths_DRC_qualified": False,
+                    "found_by_exact_polygon_overlay": True,
+                    "alternative_inner_B_position": True,
+                    "survey_priority": priority,
+                })
     candidates.sort(key=lambda c: (
+        c.get("survey_priority", 0),
         c["straight_line_lower_bound_mm"], c["via_1_xy_mm"],
         c["via_2_xy_mm"]))
     out["candidate_pair_count_before_cap"] = len(candidates)
-    out["candidate_via_pairs"] = candidates[:12]
+    out["candidate_via_pairs"] = candidates[:20]
     out["geometric_multihop_possible"] = len(candidates) > 0
     out["status"] = (
         "native_polygon_FCu_bridge_candidates_unqualified"
@@ -302,7 +350,7 @@ def run(archive: Path) -> dict[str, Any]:
                     board, bounds=(18.0, 21.0, 55.0, 65.0),
                     sample_step=.5)
                 output["global_window_used"] = True
-            proposals = output["topology"]["candidate_via_pairs"][:8]
+            proposals = output["topology"]["candidate_via_pairs"][:20]
             if proposals:
                 first = proposals[0]
                 inner_a = tuple(first["via_1_xy_mm"])
