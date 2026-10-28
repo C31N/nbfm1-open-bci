@@ -637,8 +637,9 @@ def run(source_archive: Path) -> dict[str, Any]:
                     "source_FCu_connected_to_target":
                         topo["source_FCu_connected_to_target"],
                     "topological_status": topo["status"],
+                    "terminal_window_qualified": "component_cut_diagnostic" in topo,
                     "minimum_same_layer_gap":
-                        topo["component_cut_diagnostic"]["minimum_same_layer_gap"],
+                        topo.get("component_cut_diagnostic", {}).get("minimum_same_layer_gap"),
                     "topological_path_count": len(
                         topo["topological_via_paths"]),
                     "only_in_memory": True,
