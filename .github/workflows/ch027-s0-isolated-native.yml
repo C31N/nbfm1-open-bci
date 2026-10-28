@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-name: Native CH027 isolated S0 physical FCu trial
+name: Native CH027 S0 coupled dynamic FCu route
 on:
   workflow_dispatch:
   push:
@@ -41,7 +41,7 @@ jobs:
         timeout-minutes: 12
         run: |
           set -eu
-          for index in 0 1 2 3; do
+          for index in 4 5 6 7 8 9 10 11; do
             /usr/bin/python3 hardware/eeg128-tdm/probe_ch027_annulus_s0_native.py \
               --candidate /tmp/CH027-S0-base.zip \
               --order-index "$index" \
@@ -52,8 +52,8 @@ jobs:
           /usr/bin/python3 - <<'PY'
           import json
           from pathlib import Path
-          files=sorted(Path('/tmp').glob('CH027-S0-native-trial-[0-3].json'))
-          assert len(files)==4
+          files=sorted(Path('/tmp').glob('CH027-S0-native-trial-*.json'))
+          assert len(files)==8
           for f in files:
               d=json.loads(f.read_text())
               assert d['original_candidate_unchanged']
@@ -69,6 +69,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ch027-s0-four-isolated-physical-trials
+          name: ch027-s0-coupled-multicommodity-eight-seeds
           path: /tmp/CH027-S0-native-trial-*.json
           if-no-files-found: ignore

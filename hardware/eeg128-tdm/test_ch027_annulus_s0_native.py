@@ -25,6 +25,9 @@ class CH027AnnulusScratchContract(unittest.TestCase):
                          "retained_boards.append(board)",
                          "S0_original_corridor_reserved",
                          "reserved_S0_line", "7.0", "14.0",
+                         "coupled_multicommodity_search",
+                         "S0_dynamic_dogleg_waypoint_mm",
+                         "S0_WAYPOINTS_MM", "tuple(range(12))",
                          "CH027_crossings_with_original_S0_mm"):
             self.assertIn(required, source)
         for banned in ("ExportGerbers", "ExportDrill",

@@ -141,9 +141,19 @@ def run(candidate: Path, order_index: int) -> dict[str, Any]:
             out["status"] = "native_baseline_gate_failed"
             return out
 
+        # Eight coupled multi-commodity trials: route a topologically
+        # different S0 dogleg first, then CH027, and backtrack on failure.
+        # One KiCad instance per order via the workflow's process boundary.
+        S0_WAYPOINTS_MM = (
+            (32.0, 46.3), (35.0, 46.3),
+            (38.0, 46.3), (41.0, 46.3),
+            (32.0, 48.6), (35.0, 48.6),
+            (38.0, 48.6), (41.0, 48.6),
+        )
         schedules = (
             (S0_UUIDS, False), (S0_UUIDS[::-1], False),
             (S0_UUIDS, True), (S0_UUIDS[::-1], True),
+            *((S0_UUIDS, False) for _ in S0_WAYPOINTS_MM),
         )
         # KiCad 8 SWIG BOARD_ITEM references may become dangling when
         # an earlier BOARD is garbage-collected before a later load.
@@ -201,10 +211,56 @@ def run(candidate: Path, order_index: int) -> dict[str, Any]:
                 board.Remove(current[uid])
             power = filled(zone)
             ch027_code = board.FindNet(CH027).GetNetCode()
+            s0_code = board.FindNet(S0).GetNetCode()
             start = frozen_endpoints[CUT][0]
-            reservation = (
-                frozen_endpoints[S0_UUIDS[0]]
-                if reserve_S0 else None)
+            coupled = index >= 4
+            all_s0_restored = True
+
+            if coupled:
+                # Backtracking over eight distinct S0 homotopy seeds.
+                # A waypoint changes path topology; no original segment is
+                # retained merely as an obstacle. Never add new vias.
+                waypoint = S0_WAYPOINTS_MM[index - 4]
+                row["coupled_multicommodity_search"] = True
+                row["S0_dynamic_dogleg_waypoint_mm"] = list(waypoint)
+                s0_start, s0_end = frozen_endpoints[S0_UUIDS[0]]
+                for leg_index, (a, b) in enumerate((
+                        (s0_start, waypoint), (waypoint, s0_end))):
+                    proposal, detail = routed(
+                        board, a, b, s0_code, power,
+                        "MUX_S0_long_leg_" + str(leg_index))
+                    row["routes"].append(detail)
+                    if proposal is None:
+                        row["status"] = "S0_dynamic_dogleg_mesh_missing"
+                        all_s0_restored = False
+                        break
+                    for pt, nxt in zip(proposal, proposal[1:]):
+                        make_track(board, tuple(pt[1:]), tuple(nxt[1:]),
+                                   s0_code, .15, pcbnew.F_Cu)
+                if all_s0_restored:
+                    short_start, short_end = frozen_endpoints[S0_UUIDS[1]]
+                    proposal, detail = routed(
+                        board, short_start, short_end, s0_code, power,
+                        "MUX_S0_short_restitution")
+                    row["routes"].append(detail)
+                    if proposal is None:
+                        row["status"] = "S0_short_mesh_missing_after_dogleg"
+                        all_s0_restored = False
+                    else:
+                        for pt, nxt in zip(proposal, proposal[1:]):
+                            make_track(board, tuple(pt[1:]),
+                                       tuple(nxt[1:]), s0_code, .15,
+                                       pcbnew.F_Cu)
+                if not all_s0_restored:
+                    out["trials"].append(row)
+                    continue
+                reservation = None
+            else:
+                row["coupled_multicommodity_search"] = False
+                reservation = (
+                    frozen_endpoints[S0_UUIDS[0]]
+                    if reserve_S0 else None)
+
             proposed, detail = routed(
                 board, start, LANDING, ch027_code, power,
                 "CH027_FCu_annulus", reserved_S0_line=reservation)
@@ -230,22 +286,21 @@ def run(candidate: Path, order_index: int) -> dict[str, Any]:
                 make_track(board, tuple(a[1:]), tuple(b[1:]),
                            ch027_code, .15, pcbnew.F_Cu)
 
-            all_s0_restored = True
-            for uid in order:
-                source, destination = frozen_endpoints[uid]
-                proposed, detail = routed(
-                    board, source, destination,
-                    board.FindNet(S0).GetNetCode(), power,
-                    "MUX_S0_" + uid)
-                row["routes"].append(detail)
-                if proposed is None:
-                    all_s0_restored = False
-                    row["status"] = "MUX_S0_restitution_mesh_missing"
-                    break
-                for a, b in zip(proposed, proposed[1:]):
-                    make_track(board, tuple(a[1:]), tuple(b[1:]),
-                               board.FindNet(S0).GetNetCode(),
-                               .15, pcbnew.F_Cu)
+            if not coupled:
+                for uid in order:
+                    source, destination = frozen_endpoints[uid]
+                    proposed, detail = routed(
+                        board, source, destination,
+                        s0_code, power, "MUX_S0_" + uid)
+                    row["routes"].append(detail)
+                    if proposed is None:
+                        all_s0_restored = False
+                        row["status"] = "MUX_S0_restitution_mesh_missing"
+                        break
+                    for a, b in zip(proposed, proposed[1:]):
+                        make_track(board, tuple(a[1:]),
+                                   tuple(b[1:]), s0_code,
+                                   .15, pcbnew.F_Cu)
             if not all_s0_restored:
                 out["trials"].append(row)
                 continue
@@ -309,7 +364,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--candidate", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument('--order-index', type=int, choices=(0, 1, 2, 3), required=True)
+    parser.add_argument('--order-index', type=int, choices=tuple(range(12)), required=True)
     args = parser.parse_args()
     report = run(args.candidate, args.order_index)
     args.output.parent.mkdir(parents=True, exist_ok=True)
