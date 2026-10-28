@@ -273,6 +273,8 @@ def run(source_archive: Path) -> dict[str, Any]:
         "protected_vias_pads_zones_unchanged": False,
         "L3_native_control_exact_zero": False,
         "net_trials": [],
+        "cooperative_removed_originals_only_topology": [],
+        "cooperative_all_originals_restored": False,
     }
     if not pcbnew.Version().startswith("8.0.9"):
         raise RuntimeError("Native KiCad 8.0.9 required")
@@ -372,6 +374,48 @@ def run(source_archive: Path) -> dict[str, Any]:
                 board.Add(original)
                 if track_inventory(board) != originals:
                     raise RuntimeError("Scratch copper restitution failed")
+        # Deliberately remove ONLY five reviewed editable original segments
+        # together, without writing any new copper. This tests whether a
+        # coupled reroute could unlock CH025 and CH027. MUX_EN, CH019, S2/S3
+        # and every protected Block-1/VCM original remain in place.
+        other_names = {"MUX_S0", "MUX_S1", "CH030_P_MUX"}
+        removable_other = [
+            current[uid] for uid, net in NEIGHBORS.items()
+            if net in other_names]
+        joint = [movable[NET], movable["CH027_N_MUX"],
+                 *removable_other]
+        if len(joint) != 5 or len({t.m_Uuid.AsString() for t in joint}) != 5:
+            raise RuntimeError("Invalid five-track cooperative cut identities")
+        if any(t.GetNetname() not in {
+                NET, "CH027_N_MUX", *other_names} for t in joint):
+            raise RuntimeError("Protected network selected for virtual cut")
+        for track in joint:
+            board.Remove(track)
+        try:
+            for net in TARGETS:
+                source = ((49.45, 14.90) if net == NET
+                          else xy(movable[net].GetStart()))
+                target = ((36.105, 48.85) if net == NET
+                          else xy(current[CH027_ALT_VIA].GetPosition()))
+                evidence = graph_components(
+                    board, net, source, target,
+                    target_layer="B" if net == "CH027_N_MUX" else "F")
+                evidence["net"] = net
+                evidence["virtually_removed_UUIDs"] = [
+                    t.m_Uuid.AsString() for t in joint]
+                evidence["only_reviewed_Block_2_removables"] = True
+                evidence["CH019_MUX_EN_frozen"] = True
+                evidence["no_concurrent_schematic_parity_claim"] = True
+                evidence["new_copper_not_placed"] = True
+                out["cooperative_removed_originals_only_topology"].append(
+                    evidence)
+        finally:
+            for track in joint:
+                board.Add(track)
+            if track_inventory(board) != originals:
+                raise RuntimeError(
+                    "Coupled virtual ripup did not restore exact originals")
+            out["cooperative_all_originals_restored"] = True
         out["original_tracks_restored"] = (
             track_inventory(board) == originals)
         out["protected_vias_pads_zones_unchanged"] = (
