@@ -488,9 +488,11 @@ def run(source_archive: Path) -> dict[str, Any]:
                 ordered = sorted(by_coord, key=lambda p: (
                     -round(power_shape.distance(Point(p)), 7),
                     math.dist(p, source) + math.dist(p, target), p))
-                sample_count = min(24, len(ordered))
+                sample_count = min(64, len(ordered))
                 shortlist = ordered[:sample_count]
                 trial["sampled_sites_sorted_by_power_zone_distance"] = True
+                trial["L3_trial_count_limit"] = 64
+                trial["all_topological_direct_sites_considered"] = (len(ordered) <= 64)
                 trial["sample_step_mm"] = .25
                 code = board.FindNet(net).GetNetCode()
                 original_vias = {
