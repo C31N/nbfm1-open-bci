@@ -489,6 +489,7 @@ def qualify(archive: Path) -> dict[str, Any]:
         "L3_west_via_position_probes": [],
         "existing_west_via_geometry": None,
         "secondary_existing_west_via_geometry": None,
+        "native_west_via_alternate_positions": [],
         "L3_unchanged_baseline_repeat": None,
         "L3_exact_native_polygon_ring_identity": False,
     }
@@ -577,6 +578,61 @@ def qualify(archive: Path) -> dict[str, Any]:
         board.Remove(ch019)
         out["CH019_original_track_removed_on_scratch"] = True
         record_phase("removed_original_MUX_EN_and_CH019_only")
+        # All positions were identified by the read-only native F.Cu/B.Cu
+        # via-window screen. These probes check L3 polygon parity ONLY.
+        # They do not constitute routed or DRC-qualified west-via sites.
+        west_locations = (
+            (29.75, 38.5), (29.75, 38.75),
+            (28.5, 35.5), (32.25, 35.5),
+            (28.5, 35.25), (28.5, 35.0),
+            (28.5, 34.75), (28.5, 34.5),
+            (28.5, 34.25), (28.5, 34.0),
+            (28.5, 33.75),
+        )
+        for location in west_locations:
+            original_via_ids = {
+                t.m_Uuid.AsString() for t in board.GetTracks()
+                if isinstance(t, pcbnew.PCB_VIA)
+            }
+            make_via(board, location, netcode, .65)
+            placed = [t for t in board.GetTracks()
+                      if isinstance(t, pcbnew.PCB_VIA)
+                      and t.m_Uuid.AsString() not in original_via_ids]
+            if (len(placed) != 1
+                    or xy(placed[0].GetPosition()) != location
+                    or placed[0].GetNetname() != EN):
+                raise RuntimeError("Scratch west-via trial not isolated")
+            try:
+                pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+                tested = pcbnew.SHAPE_POLY_SET(
+                    zone.GetFilledPolysList(pcbnew.In2_Cu))
+                diff = exact_native_difference(before_zone, tested)
+                out["native_west_via_alternate_positions"].append({
+                    "xy_mm": list(location),
+                    "native_L3_loss_mm2": diff["loss_native_mm2"],
+                    "native_L3_gain_mm2": diff["gain_native_mm2"],
+                    "both_exactly_zero": diff["native_both_empty"],
+                    "native_ring_identity": (
+                        native_polygon_ring_digest(tested) ==
+                        base_signature),
+                    "no_original_net_moved": True,
+                    "route_formed": False,
+                    "native_DRC_qualified": False,
+                    "accepted": False,
+                    "fabrication_release": False,
+                })
+            finally:
+                board.Remove(placed[0])
+                pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+                recovered = pcbnew.SHAPE_POLY_SET(
+                    zone.GetFilledPolysList(pcbnew.In2_Cu))
+                if not exact_native_difference(
+                        before_zone, recovered)["native_both_empty"]:
+                    raise RuntimeError("Native L3 west trial rollback not exact")
+                if any(t.m_Uuid.AsString() not in original_via_ids
+                       for t in board.GetTracks()
+                       if isinstance(t, pcbnew.PCB_VIA)):
+                    raise RuntimeError("Scratch west trial left a new via")
         from analyze_ch025_l3_native_refill import filled
         out["existing_west_via_geometry"] = survey_reused_west_via(
             board, filled(zone))
