@@ -21,6 +21,8 @@ class MultiHopScratchContract(unittest.TestCase):
                        "CH027_fixed_via_unchanged",
                        "schematic_parity_qualified",
                        "independent_replay_verified",
+                       "canonicalize_new_copper_uuids",
+                       "raw_PCB_geometry_unchanged_except_new_UUID_atoms",
                        "native(", "regressed_nets"):
             self.assertIn(marker,code)
     def test_no_release_or_manufacture(self) -> None:

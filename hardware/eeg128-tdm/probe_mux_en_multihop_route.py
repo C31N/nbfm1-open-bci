@@ -46,6 +46,74 @@ NO_RELEASE = {
 }
 
 
+def canonicalize_new_copper_uuids(
+        board: Any, pcb_path: Path,
+        protected_original_uuids: set[str]) -> dict[str, Any]:
+    """Deterministic UUIDv5 for *only* the 22 newly generated scratch items.
+
+    KiCad 8's SWIG BOARD_ITEM exposes m_Uuid for reading but not SetUuid;
+    rewrite exact single-occurrence UUID atoms in the serialized scratch
+    board, never an original PCB or source archive. Native KiCad reload,
+    refill, DRC, and independent second-run byte comparison remain mandatory.
+    """
+    import uuid
+
+    items = [item for item in board.GetTracks()
+             if item.m_Uuid.AsString() not in protected_original_uuids]
+    if len(items) != 22:
+        raise RuntimeError("Reviewed MUX_EN and CH019 new-object count drift")
+    geometries = []
+    for item in items:
+        geometry = (
+            item.GetNetname(), int(item.GetLayer()),
+            tuple(xy(item.GetStart())), tuple(xy(item.GetEnd())),
+            int(item.GetWidth()), type(item).__name__,
+        )
+        geometries.append((geometry, item.m_Uuid.AsString()))
+    if len({geo for geo, _ in geometries}) != len(geometries):
+        raise RuntimeError("Ambiguous duplicate scratch copper geometry")
+    original_text = pcb_path.read_text()
+    normalized = original_text
+    generated_uuids: set[str] = set()
+    namespace = uuid.UUID(BOARD_SHA256[:32])
+    for geometry, old_id in sorted(geometries, key=lambda value: value[0]):
+        identity = uuid.uuid5(
+            namespace, "MUX_EN_CH019_PINNED_139|" +
+            json.dumps(geometry, separators=(",", ":")))
+        new_id = str(identity)
+        old_atom = '(uuid "' + old_id + '")'
+        new_atom = '(uuid "' + new_id + '")'
+        if (old_id in protected_original_uuids
+                or new_id in protected_original_uuids
+                or new_id in generated_uuids
+                or original_text.count(old_atom) != 1
+                or original_text.count(new_atom) != 0):
+            raise RuntimeError("Unsafe or ambiguous scratch UUID rebind")
+        normalized = normalized.replace(old_atom, new_atom, 1)
+        generated_uuids.add(new_id)
+    if normalized == original_text:
+        raise RuntimeError("New scratch UUID canonicalization was a no-op")
+    pcb_path.write_text(normalized)
+    # Reversing only the UUID atoms must reproduce the complete original
+    # serialized PCB byte for byte; no copper geometry is touched here.
+    verification = normalized
+    for geometry, old_id in sorted(geometries, key=lambda value: value[0]):
+        new_id = str(uuid.uuid5(
+            namespace, "MUX_EN_CH019_PINNED_139|" +
+            json.dumps(geometry, separators=(",", ":"))))
+        verification = verification.replace(
+            '(uuid "' + new_id + '")',
+            '(uuid "' + old_id + '")', 1)
+    if verification != original_text:
+        raise RuntimeError("Scratch UUID-only serialization gate failed")
+    return {
+        "scratch_new_copper_UUID_count": len(items),
+        "deterministic_UUIDs_unique": len(generated_uuids) == len(items),
+        "raw_PCB_geometry_unchanged_except_new_UUID_atoms": True,
+        "original_copper_UUIDs_untouched": True,
+    }
+
+
 def find_leg(board: Any, en: int, power: Any, name: str,
              start: tuple[float, float], target: tuple[float, float],
              layer: int, bounds: tuple[float, float, float, float],
@@ -111,6 +179,7 @@ def run(archive: Path, candidate_output: Path | None = None) -> dict[str, Any]:
         "native_L3_gain_mm2": None,
         "native_L3_both_difference_sets_empty": False,
         "full_MUX_EN_multihop_routed_on_scratch": False,
+        "deterministic_scratch_UUID_audit": None,
         "CH019_BCu_restituted_on_scratch": False,
         "leg_diagnostics": [],
         "engineering_candidate_source_archive_sha256": None,
@@ -265,6 +334,9 @@ def run(archive: Path, candidate_output: Path | None = None) -> dict[str, Any]:
                 out["status"] = "route_refill_L3_exact_gate_failed"
                 return out
             pcbnew.SaveBoard(str(pcb_path), board)
+            out["deterministic_scratch_UUID_audit"] = (
+                canonicalize_new_copper_uuids(
+                    board, pcb_path, set(current_tracks)))
             post = native(pcb_path, root / "candidate-native-DRC.json")
             out["candidate_native_DRC"] = metrics(post)
             out["candidate_regressed_nets"] = regressed_nets(
