@@ -19,6 +19,12 @@ class CH025CH027TransitionContract(unittest.TestCase):
                       "CH019_MUX_EN_frozen", "original_tracks_restored",
                       "power_via_copper_clearance_mm", "native_L3_full_route_qualified"):
             self.assertIn(token, source)
+        self.assertIn("def component_cut_diagnostic", source)
+        self.assertIn('"component_cut_diagnostic"', source)
+        for token in ('"not_a_legal_route": True',
+                      '"native_DRC_qualified": False',
+                      '"exact_L3_qualified": False'):
+            self.assertIn(token, source)
         for forbidden in ("SaveBoard(", "ExportGerbers",
                           "ExportDrill", "fabrication_release\": True"):
             self.assertNotIn(forbidden, source)

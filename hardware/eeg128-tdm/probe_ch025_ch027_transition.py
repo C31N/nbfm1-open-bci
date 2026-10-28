@@ -42,6 +42,70 @@ def component_index(tree: Any, parts: list[Any], point: Any) -> int | None:
                  if parts[int(i)].covers(point)), None)
 
 
+
+def component_cut_diagnostic(
+        edges: dict, source: tuple[str, int], target: tuple[str, int],
+        fparts: list, bparts: list) -> dict[str, Any]:
+    """Graph partition and shortest same-layer gap; NOT a routing/DRC proof."""
+    from shapely.ops import nearest_points
+
+    def flood(root: tuple[str, int]) -> set[tuple[str, int]]:
+        queue = deque([root])
+        seen = {root}
+        while queue:
+            for neighbor, _ in edges.get(queue.popleft(), ()):
+                if neighbor not in seen:
+                    seen.add(neighbor)
+                    queue.append(neighbor)
+        return seen
+
+    left, right = flood(source), flood(target)
+
+    def partition(nodes: set[tuple[str, int]]) -> dict[str, list[int]]:
+        return {
+            "F.Cu": sorted(i for layer, i in nodes if layer == "F"),
+            "B.Cu": sorted(i for layer, i in nodes if layer == "B"),
+        }
+
+    result = {
+        "status": ("connected_topology_only" if target in left
+                   else "disconnected_component_graph"),
+        "source_reachable": partition(left),
+        "target_reachable": partition(right),
+        "minimum_same_layer_gap": None,
+        "native_DRC_qualified": False,
+        "protected_restitution_qualified": False,
+        "exact_L3_qualified": False,
+        "not_a_legal_route": True,
+    }
+    if target in left:
+        return result
+    best = None
+    for layer, label, components in (
+            ("F", "F.Cu", fparts), ("B", "B.Cu", bparts)):
+        for i in sorted(idx for lay, idx in left if lay == layer):
+            for j in sorted(idx for lay, idx in right if lay == layer):
+                if i == j:
+                    continue
+                distance = components[i].distance(components[j])
+                rank = (round(distance, 9), label, i, j)
+                if best is None or rank < best[0]:
+                    best = (rank, label, components, i, j)
+    if best is not None:
+        _, label, components, i, j = best
+        a, b = nearest_points(components[i], components[j])
+        result["minimum_same_layer_gap"] = {
+            "layer": label,
+            "source_component": i,
+            "target_component": j,
+            "distance_mm": round(a.distance(b), 9),
+            "from_xy_mm": [round(a.x, 6), round(a.y, 6)],
+            "to_xy_mm": [round(b.x, 6), round(b.y, 6)],
+            "barrier_objects_not_yet_qualified": True,
+        }
+    return result
+
+
 def power_via_guard(board: Any, layer: int) -> Any:
     """0.505-mm copper-to-copper power clearance for 0.65-mm via centres."""
     import pcbnew
@@ -244,6 +308,8 @@ def graph_components(board: Any, net: str, source: tuple[float, float],
             "multilayer_topology_proposed_not_DRC_qualified" if paths
             else "no_four_via_or_existing_via_component_path_in_window"),
         "topological_via_paths": paths,
+        "component_cut_diagnostic": component_cut_diagnostic(
+            edges, start_node, finish_node, fparts, bparts),
         "minimum_transition_count": len(found) if paths else None,
         "new_legal_via_sites_sampled": len(sites),
         "exact_polygon_via_component_pairs": len(exact_pairs),
