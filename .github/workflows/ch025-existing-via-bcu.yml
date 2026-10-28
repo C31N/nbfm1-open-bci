@@ -54,6 +54,10 @@ jobs:
           assert d['protected_originals_preserved']
           assert d['new_via_count']==0
           assert len(d['existing_CH025_vias'])==4
+          assert d['BCu_gap_barrier_inventory'] is not None
+          assert d['micro_ripup_trial']['restored']
+          assert not d['micro_ripup_trial']['DRC_qualified']
+          assert not d['micro_ripup_trial']['physical_closure_qualified']
           for k in ('accepted','fabrication_release','routing_completed',
                     'checkpoint_promoted','manufacturing_files','In1_Cu_used'):
               assert d[k] is False, k

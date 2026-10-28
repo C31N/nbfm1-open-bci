@@ -15,6 +15,10 @@ class TestExistingCH025Vias(unittest.TestCase):
                       "native_DRC_qualified", "exact_native_difference",
                       "In1_exact_zero", "L3_exact_zero",
                       "unchanged_fingerprints(board)",
+                      "BCu_gap_barrier_inventory",
+                      "precise_bcu_barrier_inventory",
+                      "micro_ripup_trial", "immutable_do_not_ripup",
+                      "proposed_BCu_neighbor_restitution",
                       '"fabrication_release": False',
                       '"accepted": False', "TemporaryDirectory"):
             self.assertIn(value, text)

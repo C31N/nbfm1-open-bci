@@ -65,6 +65,94 @@ def bcu_power_copper_guard(board: Any) -> Any:
                     pad, pcbnew.B_Cu).buffer(.505 + .075))
     return unary_union(shapes) if shapes else Point().buffer(0)
 
+def precise_bcu_barrier_inventory(board: Any, parts: list[Any],
+                                  source_index: int, target_index: int
+                                  ) -> dict[str, Any]:
+    """Identify native UUID blockers at a polygon-gap, never authorize
+    protected copper ripup. Geometric screening is not a causal DRC proof.
+    """
+    import pcbnew
+    import re
+    from shapely.geometry import LineString, Point, box
+    from shapely.ops import nearest_points
+
+    a, b = nearest_points(parts[source_index], parts[target_index])
+    gap = LineString((a, b))
+    # 0.225 mm captures a 0.15-mm trace plus 0.15-mm clearance
+    # for proximity only; actual KiCad DRC remains mandatory.
+    corridor = gap.buffer(.225)
+    rows: list[dict[str, Any]] = []
+
+    def record(uid: str, net: str, kind: str, copper: Any,
+               layer: str) -> None:
+        if net == NET:
+            return
+        distance = float(gap.distance(copper))
+        if not copper.intersects(corridor):
+            return
+        eligible = (kind == "track" and layer == "B.Cu"
+                    and re.fullmatch(
+                        r"CH0(?:1[6-9]|2[0-9]|3[01])_.*", net) is not None
+                    and net not in POWER and net not in (
+                        "VCM", "MUX_EN", "AGND", "MUX_S0"))
+        rows.append({
+            "uuid": uid, "net": net, "kind": kind, "layer": layer,
+            "distance_to_gap_mm": round(distance, 9),
+            "intersects_225um_survey_corridor": True,
+            "classification": ("reviewed_Block2_BCu_track_candidate"
+                               if eligible else "immutable_do_not_ripup"),
+            "micro_ripup_candidate": bool(eligible),
+            "DRC_qualified": False,
+        })
+
+    for track in board.GetTracks():
+        uid = track.m_Uuid.AsString()
+        net = track.GetNetname()
+        if isinstance(track, pcbnew.PCB_VIA):
+            copper = Point(xy(track.GetPosition())).buffer(
+                pcbnew.ToMM(track.GetWidth()) / 2)
+            record(uid, net, "via", copper, "through")
+        elif track.GetLayer() == pcbnew.B_Cu:
+            if isinstance(track, pcbnew.PCB_ARC):
+                bb = track.GetBoundingBox()
+                copper = box(
+                    pcbnew.ToMM(bb.GetX()), pcbnew.ToMM(bb.GetY()),
+                    pcbnew.ToMM(bb.GetRight()),
+                    pcbnew.ToMM(bb.GetBottom()))
+                record(uid, net, "arc", copper, "B.Cu")
+            else:
+                copper = LineString((
+                    xy(track.GetStart()), xy(track.GetEnd()))).buffer(
+                    pcbnew.ToMM(track.GetWidth()) / 2)
+                record(uid, net, "track", copper, "B.Cu")
+    for footprint in board.GetFootprints():
+        for pad in footprint.Pads():
+            if pad.IsOnLayer(pcbnew.B_Cu):
+                record(pad.m_Uuid.AsString(), pad.GetNetname(),
+                       "pad", pad_copper_shape(pad, pcbnew.B_Cu),
+                       "B.Cu")
+    rows.sort(key=lambda x: (x["distance_to_gap_mm"],
+                             x["classification"] !=
+                             "immutable_do_not_ripup", x["uuid"]))
+    allowed = [x for x in rows if x["micro_ripup_candidate"]]
+    immutable = [x for x in rows if not x["micro_ripup_candidate"]]
+    return {
+        "source_component": source_index,
+        "target_component": target_index,
+        "minimum_gap_mm": round(float(a.distance(b)), 9),
+        "from_mm": [round(a.x, 6), round(a.y, 6)],
+        "to_mm": [round(b.x, 6), round(b.y, 6)],
+        "blocker_count": len(rows),
+        "immutable_count": len(immutable),
+        "eligible_Block2_track_count": len(allowed),
+        "eligible_UUIDs": [x["uuid"] for x in allowed],
+        "nearby_immutable_UUIDs": [x["uuid"] for x in immutable],
+        "nearest_barrier_objects": rows[:45],
+        "native_DRC_qualified": False,
+        "causal_copper_removal_verified": False,
+    }
+
+
 def run(candidate: Path) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import GeometryCollection, Point, box
@@ -87,6 +175,12 @@ def run(candidate: Path) -> dict[str, Any]:
         "existing_CH025_vias": [],
         "BCu_component_count": 0,
         "BCu_direct_component_pair_count": 0,
+        "BCu_gap_barrier_inventory": None,
+        "micro_ripup_trial": {
+            "performed": False, "restored": True,
+            "new_vias": False, "DRC_qualified": False,
+            "physical_closure_qualified": False,
+        },
     }
     if not pcbnew.Version().startswith("8.0.9"):
         raise RuntimeError("Pinned KiCad 8.0.9 required")
@@ -169,6 +263,99 @@ def run(candidate: Path) -> dict[str, Any]:
                           if x["uuid"] == b)["BCu_annulus_components"]))
             for a in (SRC_VIA, SRC_ALT_VIA)
             for b in (DST_VIA, DST_ALT_VIA))
+        source_component = next(
+            x["BCu_centre_component"]
+            for x in report["existing_CH025_vias"]
+            if x["uuid"] == SRC_VIA)
+        target_component = next(
+            x["BCu_centre_component"]
+            for x in report["existing_CH025_vias"]
+            if x["uuid"] == DST_VIA)
+        if source_component is None or target_component is None:
+            raise RuntimeError("Bestands-Vias outside BCu free-space polygon")
+        report["BCu_gap_barrier_inventory"] = precise_bcu_barrier_inventory(
+            board, parts, source_component, target_component)
+        # Micro-selective candidate screening is deliberately fail-closed:
+        # moving any protected copper is prohibited, even on a scratch board.
+        barrier = report["BCu_gap_barrier_inventory"]
+        micro = report["micro_ripup_trial"]
+        if (barrier["immutable_count"] == 0
+                and barrier["eligible_Block2_track_count"] == 1):
+            uid = barrier["eligible_UUIDs"][0]
+            eligible = tracks[uid]
+            if (eligible.GetLayer() != pcbnew.B_Cu
+                    or isinstance(eligible, (pcbnew.PCB_VIA, pcbnew.PCB_ARC))):
+                raise RuntimeError("Block2 candidate changed identity")
+            endpoints = (xy(eligible.GetStart()), xy(eligible.GetEnd()))
+            signal_name = eligible.GetNetname()
+            micro.update(
+                performed=True, removed_UUID=uid,
+                moved_signal=signal_name,
+                original_endpoints_mm=[list(x) for x in endpoints],
+                proposed_BCu_CH025_path=False,
+                proposed_BCu_neighbor_restitution=False,
+                restored=False)
+            board.Remove(eligible)
+            temporary_tracks: list[Any] = []
+            try:
+                if unchanged_fingerprints(board) != protected:
+                    raise RuntimeError("Ripup changed protected pad/via/zone")
+                # A single reversible rip-up; CH025 is routed from existing
+                # through-via to existing through-via. No via placement.
+                candidate_path = mesh_route(
+                    board, positions[SRC_VIA], positions[DST_VIA], code,
+                    (pcbnew.B_Cu, pcbnew.F_Cu),
+                    filled(next(z for z in board.Zones()
+                                if z.m_Uuid.AsString() == ZONE)),
+                    region, start_layer=0, goal_layer=0,
+                    allow_vias=False,
+                    extra_obstacles=[
+                        bcu_power_copper_guard(board),
+                        GeometryCollection()])
+                if (candidate_path is not None and len(candidate_path) >= 2
+                        and all(x[0] == 0 for x in candidate_path)):
+                    micro["proposed_BCu_CH025_path"] = True
+                    for first, second in zip(
+                            candidate_path, candidate_path[1:]):
+                        temporary_tracks.append(make_track(
+                            board, tuple(first[1:]), tuple(second[1:]),
+                            code, .15, pcbnew.B_Cu))
+                    # Independent same-layer restitution must fit AFTER CH025.
+                    replacement = mesh_route(
+                        board, endpoints[0], endpoints[1],
+                        board.FindNet(signal_name).GetNetCode(),
+                        (pcbnew.B_Cu, pcbnew.F_Cu),
+                        filled(next(z for z in board.Zones()
+                                    if z.m_Uuid.AsString() == ZONE)),
+                        region, start_layer=0, goal_layer=0,
+                        allow_vias=False,
+                        extra_obstacles=[
+                            bcu_power_copper_guard(board),
+                            GeometryCollection()])
+                    if (replacement is not None and len(replacement) >= 2
+                            and all(x[0] == 0 for x in replacement)):
+                        micro["proposed_BCu_neighbor_restitution"] = True
+                        micro["new_neighbor_path_mm"] = [
+                            list(x) for x in replacement]
+            finally:
+                for item in temporary_tracks:
+                    board.Remove(item)
+                board.Add(eligible)
+                if track_inventory(board) != before:
+                    raise RuntimeError("Micro ripup fails exact track restore")
+                if unchanged_fingerprints(board) != protected:
+                    raise RuntimeError("Protected copper changed after micro trial")
+                pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+                if not (every_zero(polygon_delta(
+                        base_in1, polygon_snapshot(board, pcbnew.In1_Cu)))
+                        and every_zero(polygon_delta(
+                            base_l3, polygon_snapshot(board, pcbnew.In2_Cu)))):
+                    raise RuntimeError("In1 or L3 changed in scratch rollback")
+                micro["restored"] = True
+        else:
+            micro["not_attempted_reason"] = (
+                "protected_barriers_present" if barrier["immutable_count"]
+                else "not_exactly_one_reviewed_Block2_BCu_track")
         # No new layer changes are allowed; F.Cu is explicitly an unused
         # second routing mesh layer needed by the two-layer mesh library.
         guard_fcu = GeometryCollection()
