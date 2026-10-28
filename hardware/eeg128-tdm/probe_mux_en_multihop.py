@@ -252,6 +252,7 @@ def run(archive: Path) -> dict[str, Any]:
         "new_vias_reversible": False,
         "topology": None, "local_topology": None,
         "global_window_used": False, "native_L3_pair_trials": [],
+        "native_L3_individual_via_stage_trials": [],
     }
     if not pcbnew.Version().startswith("8.0.9"):
         raise RuntimeError("KiCad 8.0.9 required")
@@ -302,6 +303,63 @@ def run(archive: Path) -> dict[str, Any]:
                     sample_step=.5)
                 output["global_window_used"] = True
             proposals = output["topology"]["candidate_via_pairs"][:8]
+            if proposals:
+                first = proposals[0]
+                inner_a = tuple(first["via_1_xy_mm"])
+                inner_b = tuple(first["via_2_xy_mm"])
+                for stage, sites in (
+                    ("original_outer_WEST_EAST_only", (WEST, EAST)),
+                    ("outer_WEST_EAST_plus_inner_A",
+                     (WEST, EAST, inner_a)),
+                    ("outer_WEST_EAST_plus_inner_B",
+                     (WEST, EAST, inner_b)),
+                ):
+                    baseline_uuids = {
+                        t.m_Uuid.AsString() for t in board.GetTracks()
+                        if isinstance(t, pcbnew.PCB_VIA)
+                    }
+                    created = []
+                    try:
+                        for site in sites:
+                            make_via(board, site, en, .65)
+                            new = [
+                                t for t in board.GetTracks()
+                                if isinstance(t, pcbnew.PCB_VIA)
+                                and t.m_Uuid.AsString() not in baseline_uuids
+                                and t not in created]
+                            if len(new) != 1:
+                                raise RuntimeError(
+                                    "Staged scratch via identity drift")
+                            created.append(new[0])
+                        pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+                        snapshot = pcbnew.SHAPE_POLY_SET(
+                            zone.GetFilledPolysList(pcbnew.In2_Cu))
+                        difference = exact_native_difference(
+                            before_l3, snapshot)
+                        output["native_L3_individual_via_stage_trials"].append({
+                            "stage": stage,
+                            "sites_mm": [list(pos) for pos in sites],
+                            "loss_native_mm2": difference["loss_native_mm2"],
+                            "gain_native_mm2": difference["gain_native_mm2"],
+                            "exact_native_both_empty": (
+                                difference["native_both_empty"]),
+                            "native_DRC_qualified": False,
+                        })
+                    finally:
+                        for via in created:
+                            board.Remove(via)
+                        pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+                        recovered = pcbnew.SHAPE_POLY_SET(
+                            zone.GetFilledPolysList(pcbnew.In2_Cu))
+                        if not exact_native_difference(
+                                before_l3, recovered)["native_both_empty"]:
+                            raise RuntimeError(
+                                "Staged scratch 3V3A rollback not exact")
+                        if {t.m_Uuid.AsString() for t in board.GetTracks()
+                                if isinstance(t, pcbnew.PCB_VIA)} != (
+                                baseline_uuids):
+                            raise RuntimeError(
+                                "Staged scratch Via UUID rollback failed")
             for item in proposals:
                 # Test the FOUR new vias TOGETHER; independently clean
                 # sites do not imply that combined L3 zone stays unchanged.
