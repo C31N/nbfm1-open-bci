@@ -55,6 +55,8 @@ jobs:
           assert d['new_via_count']==0
           assert len(d['existing_CH025_vias'])==4
           assert d['BCu_gap_barrier_inventory'] is not None
+          assert d['BCu_reversible_Block2_victim_subsets']['case_count']==7
+          assert d['BCu_reversible_Block2_victim_subsets']['all_originals_restituted']
           assert d['BCu_alternative_component_graph'] is not None
           g=d['BCu_alternative_component_graph']
           assert not g['survey_truncated']

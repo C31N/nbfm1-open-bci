@@ -255,6 +255,98 @@ def bcu_alternative_component_graph(board: Any, parts: list[Any],
     }
 
 
+def screen_reversible_bcu_victims(
+        board: Any, positions: dict[str, tuple[float, float]],
+        region: Any, code: int, original: dict[str, Any],
+        protected: dict[str, Any]) -> dict[str, Any]:
+    """Probe ONLY reviewed B.Cu Block2 tracks, restoring every UUID.
+
+    This tests B.Cu annulus component reachability, NOT a physical route.
+    VCM, all vias, BANK1, pads, zones, MUX_EN and Block1 remain untouched.
+    """
+    import itertools
+    import pcbnew
+    from shapely.geometry import Point
+    from shapely.ops import unary_union
+    from route_targeted_closure import obstacles
+
+    eligible = {
+        "1af03929-f221-4ea1-ab5e-ddff36173f8f": "MUX_S1",
+        "d290f858-1074-4d29-ba47-ef2b8dd84658": "MUX_S2",
+        "b452e6ba-e3e6-4670-a83d-48fb38f528de": "CH027_N_MUX",
+    }
+    locked = {tr.m_Uuid.AsString(): tr for tr in board.GetTracks()}
+    for uid, net in eligible.items():
+        track = locked.get(uid)
+        if (track is None or track.GetNetname() != net
+                or track.GetLayer() != pcbnew.B_Cu
+                or isinstance(track, (pcbnew.PCB_VIA, pcbnew.PCB_ARC))):
+            raise RuntimeError("Unreviewed Block2 B.Cu cut " + uid)
+    rows = []
+    source_vias = (SRC_VIA, SRC_ALT_VIA)
+    target_vias = (DST_VIA, DST_ALT_VIA)
+    ids = tuple(eligible)
+    for size in (1, 2, 3):
+        for subset in itertools.combinations(ids, size):
+            row: dict[str, Any] = {
+                "virtually_removed_UUIDs": list(subset),
+                "nets": [eligible[uid] for uid in subset],
+                "restored_originals": False,
+                "physical_route_qualified": False,
+                "no_new_vias": True,
+                "In1_Cu_used": False,
+            }
+            for uid in subset:
+                board.Remove(locked[uid])
+            try:
+                if unchanged_fingerprints(board) != protected:
+                    raise RuntimeError("Protected vias/pads/zones touched")
+                foreign, _ = obstacles(
+                    board, code, .15, .15, region, .65,
+                    (pcbnew.B_Cu, pcbnew.F_Cu))
+                free = region.difference(unary_union([
+                    foreign[0], bcu_power_copper_guard(board)])).buffer(-.000005)
+                regions = polygons(free)
+                contacts = {}
+                for uid in (*source_vias, *target_vias):
+                    annulus = Point(positions[uid]).buffer(.315)
+                    contacts[uid] = [
+                        index for index, area in enumerate(regions)
+                        if area.intersection(annulus).area > .000001]
+                pairs = [
+                    {"source_UUID": source, "target_UUID": target,
+                     "free_components": sorted(set(contacts[source])
+                                               & set(contacts[target]))}
+                    for source in source_vias for target in target_vias
+                ]
+                row["BCu_free_components"] = len(regions)
+                row["via_pair_reachability"] = pairs
+                row["geometric_pair_connected"] = any(
+                    pair["free_components"] for pair in pairs)
+                row["status"] = (
+                    "geometric_path_only_needs_native_reroute"
+                    if row["geometric_pair_connected"] else
+                    "VCM_protected_BCu_partition_remains")
+            finally:
+                for uid in subset:
+                    board.Add(locked[uid])
+                if track_inventory(board) != original:
+                    raise RuntimeError("BCu trial failed exact track rollback")
+                if unchanged_fingerprints(board) != protected:
+                    raise RuntimeError("BCu trial changed protected geometry")
+                row["restored_originals"] = True
+            rows.append(row)
+    return {
+        "case_count": len(rows),
+        "all_originals_restituted": all(r["restored_originals"] for r in rows),
+        "any_geometric_pair_connected": any(
+            r["geometric_pair_connected"] for r in rows),
+        "native_DRC_qualified": False,
+        "virtual_ripup_only": True,
+        "victim_subsets": rows,
+    }
+
+
 def run(candidate: Path) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import GeometryCollection, Point, box
@@ -279,6 +371,7 @@ def run(candidate: Path) -> dict[str, Any]:
         "BCu_direct_component_pair_count": 0,
         "BCu_gap_barrier_inventory": None,
         "BCu_alternative_component_graph": None,
+        "BCu_reversible_Block2_victim_subsets": None,
         "micro_ripup_trial": {
             "performed": False, "restored": True,
             "new_vias": False, "DRC_qualified": False,
@@ -381,6 +474,9 @@ def run(candidate: Path) -> dict[str, Any]:
         report["BCu_alternative_component_graph"] = (
             bcu_alternative_component_graph(
                 board, parts, source_component, target_component))
+        report["BCu_reversible_Block2_victim_subsets"] = (
+            screen_reversible_bcu_victims(
+                board, positions, region, code, original, protected))
         # Micro-selective candidate screening is deliberately fail-closed:
         # moving any protected copper is prohibited, even on a scratch board.
         barrier = report["BCu_gap_barrier_inventory"]

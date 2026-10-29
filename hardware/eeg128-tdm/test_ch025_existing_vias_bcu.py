@@ -18,6 +18,8 @@ class TestExistingCH025Vias(unittest.TestCase):
                       "BCu_gap_barrier_inventory",
                       "precise_bcu_barrier_inventory",
                       "bcu_alternative_component_graph",
+                      "screen_reversible_bcu_victims",
+                      "BCu_reversible_Block2_victim_subsets",
                       "topology_only_not_physical_route",
                       "source_frontier_protected_examples",
                       "source_reachable_components",
