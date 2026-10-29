@@ -187,6 +187,36 @@ def run(candidate: Path, net: str, output: Path) -> dict[str, Any]:
         selection = [uid for _, uid in victims[:4]]
         combinations = [(uid,) for uid in selection]
         combinations += list(itertools.combinations(selection, 2))[:6]
+        # The first trial cohort proved 30 singleton/pair cuts cannot
+        # open FCu. Four S-bus obstacles cross all three native MUX
+        # airwires. Trial triples/quadruple ONLY on the exact reviewed
+        # UUID of each Block2 S0/S1/S2/S3 track, then fully rollback.
+        bus = {
+            name: next((uid for _, uid in victims
+                        if source_tracks[uid].GetNetname() == name), None)
+            for name in ("MUX_S0", "MUX_S1", "MUX_S2", "MUX_S3")
+        }
+        report["cooperative_bus_quads"] = bus
+        for group in (
+                ("MUX_S0", "MUX_S1", "MUX_S2"),
+                ("MUX_S0", "MUX_S1", "MUX_S3"),
+                ("MUX_S0", "MUX_S2", "MUX_S3"),
+                ("MUX_S1", "MUX_S2", "MUX_S3"),
+                ("MUX_S0", "MUX_S1", "MUX_S2", "MUX_S3")):
+            if all(bus[name] is not None for name in group):
+                combinations.append(tuple(bus[name] for name in group))
+        # On CH028/29 there are two nearby MUX_S2 tracks. Their own
+        # cooperative four-S cuts are distinct and worth checking.
+        s2_alternates = [
+            uid for _, uid in victims
+            if source_tracks[uid].GetNetname() == "MUX_S2"]
+        if (len(s2_alternates) >= 2
+                and all(bus[name] is not None for name in (
+                    "MUX_S0", "MUX_S1", "MUX_S3"))):
+            combinations.append((
+                bus["MUX_S0"], bus["MUX_S1"],
+                s2_alternates[1], bus["MUX_S3"]))
+        combinations = list(dict.fromkeys(combinations))
         report["selected_trial_count"] = len(combinations)
         report["source_net_existing_vias"] = [
             item.m_Uuid.AsString() for item in board.GetTracks()

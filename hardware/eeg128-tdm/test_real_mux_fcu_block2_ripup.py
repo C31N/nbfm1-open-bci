@@ -15,6 +15,7 @@ class TestBlock2FcuRipup(unittest.TestCase):
             "IMMUTABLE_NETS", "movable(", "CH025_N_MUX",
             "CH027_N_MUX", "CH022_N_ELECTRODE", "MUX_EN",
             "100pct_restituted", "all_originals_restituted",
+            "cooperative_bus_quads",
             "native_In1_exact", "native_L3_exact",
             "candidate_native_DRC_pass", "regressed_nets",
             "new_via_count", "no_new_vias",
