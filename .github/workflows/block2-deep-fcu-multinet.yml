@@ -1,0 +1,83 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+name: Native Block2 deep FCu coupled 136 no-release experiment
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/ch025-fcu-l3-exact-2026-10-21]
+    paths:
+      - ".github/workflows/block2-deep-fcu-multinet.yml"
+      - "hardware/eeg128-tdm/probe_block2_deep_fcu_multinet.py"
+      - "hardware/eeg128-tdm/test_block2_deep_fcu_multinet.py"
+permissions:
+  contents: read
+jobs:
+  coupled:
+    strategy:
+      fail-fast: false
+      matrix:
+        cohort: [N28N29N30, N20P20N24, P18P24N30]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 21
+    container:
+      image: kicad/kicad@sha256:5716d82aa247abdbe512650eb4e8fce5a4031cbbef0a2c8df83208a69fef87b2
+      options: --user 0:0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare pinned KiCad 8.0.9 and geometry dependencies
+        run: |
+          set -eu
+          test "$(kicad-cli version)" = "8.0.9"
+          apt-get -o Acquire::Retries=3 update
+          DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 install -y --no-install-recommends python3-shapely python3-pip python3-numpy
+          /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
+      - name: Guard native source, exact power and no-release policy
+        run: |
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_deep_fcu_multinet.py -v
+      - name: Reproduce source pinned 139 MUX_EN engineering candidate
+        timeout-minutes: 8
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_mux_en_multihop_route.py \
+            --archive hardware/eeg128-tdm/engineering/block2-ch019-electrode-closed139.zip \
+            --output /tmp/deep139-base.json \
+            --candidate-output /tmp/deep139-base.zip
+      - name: Three-net bounded FCu topological cuts and native 136 gate
+        timeout-minutes: 10
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_block2_deep_fcu_multinet.py \
+            --candidate /tmp/deep139-base.zip \
+            --cohort ${{ matrix.cohort }} \
+            --output /tmp/deep-Block2-${{ matrix.cohort }}.json
+      - name: Validate exact original rollback and permanent release lock
+        run: |
+          COHORT=${{ matrix.cohort }} /usr/bin/python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          d=json.loads(Path('/tmp/deep-Block2-'+os.environ['COHORT']+'.json').read_text())
+          assert d['baseline_DRC']=={
+              'violations':0,'warnings':0,'unconnected':139}
+          assert d['source_archive_unchanged']
+          assert d['all_originals_restituted']
+          assert d['In1_exact_after_rollback'] and d['L3_exact_after_rollback']
+          assert d['no_protected_net_copper_moved']
+          assert d['new_vias_added']==0
+          for trial in d['trials']:
+              if 'not_executed_reason' in trial:
+                  continue
+              assert trial['restored_originals']
+              assert trial['native_L3_exact'] and trial['native_In1_exact']
+              assert trial['new_vias']==0
+          for lock in ('accepted','routing_completed','fabrication_release',
+                       'manufacturing_files','checkpoint_promoted',
+                       'independent_replay_verified',
+                       'schematic_parity_qualified','In1_Cu_used'):
+              assert d[lock] is False, lock
+          assert not list(Path('/tmp').rglob('*.gbr'))
+          assert not list(Path('/tmp').rglob('*.drl'))
+          PY
+      - name: Upload diagnostic JSON on all outcomes including timeout
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Block2-deep-FCu-${{ matrix.cohort }}
+          path: /tmp/deep-Block2-${{ matrix.cohort }}.json
+          if-no-files-found: ignore
