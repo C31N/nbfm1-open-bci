@@ -51,6 +51,7 @@ CASE_VICTIMS = (
     (S0_UUIDS[0], CH030),
     (*S0_UUIDS, S1), (*S0_UUIDS, CH030),
     (S1, *S0_UUIDS), (S1, *S0_UUIDS),
+    (S1, *S0_UUIDS), (S1, *S0_UUIDS),
 )
 FLAGS = {
     "accepted": False, "routing_completed": False,
@@ -85,6 +86,7 @@ def run(candidate: Path, index: int, report_path: Path | None = None) -> dict[st
         "topology_only": True,
         "FCu_reachability": [],
         "new_track_count": 0,
+        "original_S0_segments_reinserted_for_native_DRC": [],
     }
     def save_progress(stage: str) -> None:
         out["last_native_stage"] = stage
@@ -172,6 +174,7 @@ def run(candidate: Path, index: int, report_path: Path | None = None) -> dict[st
         out["selected_originals_verified"] = True
         for uid in selected:
             board.Remove(current[uid])
+        reinserted_original: set[str] = set()
         try:
             save_progress("virtual_micro_ripup_started")
             save_progress("protected_fingerprint_read_started")
@@ -245,10 +248,17 @@ def run(candidate: Path, index: int, report_path: Path | None = None) -> dict[st
                 # but restitution must succeed for any accepted proposal.
                 s1_soft_guard = LineString(
                     endpoint_map[S1]).buffer(.32)
+                original_S0_soft_guard = unary_union([
+                    LineString(endpoint_map[uid]).buffer(.32)
+                    for uid in S0_UUIDS])
                 cost_regions = (
+                    ((0, s1_soft_guard, 60.0),
+                     (0, original_S0_soft_guard, 70.0))
+                    if index == 11 else
                     ((0, s1_soft_guard, 60.0),)
                     if index == 9 else ())
-                out["S1_soft_reservation_applied"] = index == 9
+                out["S1_soft_reservation_applied"] = index in (9, 11)
+                out["S0_soft_reservation_applied"] = index == 11
                 out["victim_restitution_order"] = list(victims)
                 save_progress("S1_restitution_priority_selected")
                 proposal = search(
@@ -266,6 +276,15 @@ def run(candidate: Path, index: int, report_path: Path | None = None) -> dict[st
                              layers=(pcbnew.F_Cu, pcbnew.B_Cu))
                     full_restitution = True
                     for uid in victims:
+                        # Native trial: retain the exact pre-existing copper
+                        # for both MUX_S0 tracks; reject through native DRC
+                        # if the new CH027/S1 copper is not compatible.
+                        if index in (10, 11) and uid in S0_UUIDS:
+                            board.Add(current[uid])
+                            reinserted_original.add(uid)
+                            out["original_S0_segments_reinserted_for_native_DRC"].append(uid)
+                            save_progress("original_S0_copper_reinserted")
+                            continue
                         start, end = endpoint_map[uid]
                         victim_code = board.FindNet(
                             current[uid].GetNetname()).GetNetCode()
@@ -334,6 +353,8 @@ def run(candidate: Path, index: int, report_path: Path | None = None) -> dict[st
             for tr in extra_tracks:
                 board.Remove(tr)
             for uid in selected:
+                if uid in reinserted_original:
+                    board.Remove(current[uid])
                 board.Add(current[uid])
             if track_inventory(board) != initial:
                 raise RuntimeError("Original tracks not exactly restituted")

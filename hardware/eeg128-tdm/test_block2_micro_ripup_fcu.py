@@ -23,6 +23,8 @@ class TestMicroRipupFCu(unittest.TestCase):
             "CH027_Astar_proposal", "bounded_CH027_FCu_Astar_started",
             "S1_soft_reservation_applied",
             "victim_restitution_order", "cost_regions=cost_regions",
+            "reinserted_original", "original_S0_copper_reinserted",
+            "original_S0_segments_reinserted_for_native_DRC",
             "native_DRC_qualified",
             "protected_originals_restituted",
             '"fabrication_release": False', '"accepted": False',
