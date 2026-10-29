@@ -97,7 +97,9 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
         **LOCK, "cohort": cohort, "targets": list(targets),
         "status": "starting", "baseline_DRC": None,
         "all_bbox_FCu_inventory": [], "trials": [],
-        "qualified_136": False, "all_originals_restituted": False,
+        "qualified_136": False,
+        "any_native_net_reduction_qualified": False,
+        "all_originals_restituted": False,
         "In1_exact_after_rollback": False,
         "L3_exact_after_rollback": False,
         "source_archive_unchanged": False,
@@ -251,6 +253,8 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
                 "removed_nets": sorted({
                     source_tracks[uid].GetNetname() for uid in subset}),
                 "all_three_free_components_connected": False,
+                "reachable_targets": [],
+                "candidate_native_net_reduction_qualified": False,
                 "target_net_routed": [],
                 "victim_restitution": [],
                 "native_DRC": None,
@@ -280,15 +284,20 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
                         board, positions[name][0], positions[name][1],
                         board.FindNet(name).GetNetCode(), region, guard)
                     for name in targets}
-                row["all_three_free_components_connected"] = all(
-                    v["same_component"] for v in
-                    row["after_cut_components"].values())
+                row["reachable_targets"] = [
+                    name for name in targets
+                    if row["after_cut_components"][name]["same_component"]]
+                row["all_three_free_components_connected"] = (
+                    len(row["reachable_targets"]) == 3)
                 progress("deep_cut_three_target_FCu_component_screen_complete")
-                if not row["all_three_free_components_connected"]:
+                if not row["reachable_targets"]:
                     row["status"] = "deep_cut_still_topologically_partitioned"
                     continue
+                # A single truly open MUX pair must first pass KiCad's
+                # native 138 gate before three independent closures can
+                # form a candidate for the stricter 136 replay gate.
                 success = True
-                for name in targets:
+                for name in row["reachable_targets"]:
                     if time.monotonic() >= global_end:
                         success = False
                         row["target_failure"] = "global_deadline"
@@ -381,19 +390,26 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
                     name: airwire_counts(post).get(name, 0)
                     for name in targets}
                 row["net_regressions"] = regressed_nets(baseline, post)
-                row["candidate_136_qualified"] = (
+                row["candidate_native_net_reduction_qualified"] = (
                     row["native_DRC"] == {
                         "violations": 0, "warnings": 0,
-                        "unconnected": 136}
+                        "unconnected": 139 - len(row["target_net_routed"])}
                     and all(count == 0
                             for count in row["native_target_open"].values())
                     and not row["net_regressions"])
+                row["candidate_136_qualified"] = (
+                    row["candidate_native_net_reduction_qualified"]
+                    and len(row["target_net_routed"]) == 3)
                 row["status"] = (
                     "native_136_drc_candidate_only_not_replay_qualified"
                     if row["candidate_136_qualified"]
-                    else "joint_136_native_DRC_or_connectivity_rejected")
-                progress("native_three_net_136_DRC_result_persisted")
+                    else "native_partial_copper_candidate_not_released"
+                    if row["candidate_native_net_reduction_qualified"]
+                    else "joint_native_DRC_or_connectivity_rejected")
+                progress("native_individual_or_three_net_DRC_result_persisted")
                 report["qualified_136"] |= row["candidate_136_qualified"]
+                report["any_native_net_reduction_qualified"] |= (
+                    row["candidate_native_net_reduction_qualified"])
             finally:
                 # Exact rollback of any added tracks and original victim UUIDs.
                 for item in list(board.GetTracks()):
@@ -437,6 +453,8 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
         report["status"] = (
             "candidate_136_only_not_accepted_without_parity_replay"
             if report["qualified_136"]
+            else "native_partial_reduction_only_no_release"
+            if report["any_native_net_reduction_qualified"]
             else "deep_multinet_corridor_not_136_native_qualified")
     report["source_archive_unchanged"] = (
         hashlib.sha256(candidate.read_bytes()).hexdigest() ==

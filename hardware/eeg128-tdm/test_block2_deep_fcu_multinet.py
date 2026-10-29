@@ -15,6 +15,7 @@ class DeepBlock2Test(unittest.TestCase):
             "MUX_EN", "full_eight_net_bbox_mm",
             "all_bbox_FCu_inventory", "deep_cut_order_UUIDs",
             "after_cut_components", "victim_restitution",
+            "reachable_targets", "candidate_native_net_reduction_qualified",
             "same_free_component", "add_path",
             "native_target_open", "unconnected\": 136",
             "regressed_nets", "exact_native_difference",
