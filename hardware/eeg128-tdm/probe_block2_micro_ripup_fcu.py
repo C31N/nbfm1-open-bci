@@ -16,14 +16,14 @@ import json
 import math
 import shutil
 import tempfile
+import time
 from pathlib import Path
 from typing import Any
 import zipfile
 
 from analyze_ch025_fcu_blocker_uuids import ARCHIVE_SHA256, MEMBERS
-from analyze_ch025_l3_native_refill import filled
 from analyze_ch025_l3_precision_mask import exact_native_difference
-from escape_mesh_505 import mesh_route, polygons
+from escape_mesh_505 import polygons
 from native_connectivity import regressed_nets
 from probe_ch025_cooperative8 import (
     CH027_ALT_VIA, unchanged_fingerprints,
@@ -37,7 +37,7 @@ from probe_ch027_annulus_s0_native import (
 )
 from probe_mux_en_multihop_neighbors import PINNED_CANDIDATE_SHA
 from route_targeted_closure import (
-    make_track, metrics, native, obstacles, routing_domain, xy,
+    add_path, search, metrics, native, obstacles, routing_domain, xy,
 )
 
 S1 = "2ac3aecb-9a62-4bc7-846a-75a782ad0474"
@@ -60,7 +60,7 @@ FLAGS = {
 
 def run(candidate: Path, index: int, report_path: Path | None = None) -> dict[str, Any]:
     import pcbnew
-    from shapely.geometry import GeometryCollection, Point, box
+    from shapely.geometry import Point, box
     from shapely.ops import unary_union
     from shapely.strtree import STRtree
 
@@ -228,42 +228,46 @@ def run(candidate: Path, index: int, report_path: Path | None = None) -> dict[st
                     + sum(len(r.coords) for r in shape.interiors))
                 out["selected_component_vertices"] = vertices
                 save_progress("CH027_topological_reachability_recorded")
-                if vertices <= 700:
-                    save_progress("bounded_native_FCu_mesh_started")
-                    proposal = mesh_route(
-                        board, immutable_start, reachable_contact, start_code,
-                        (pcbnew.F_Cu, pcbnew.B_Cu), filled(zone), region,
-                        start_layer=0, goal_layer=0, allow_vias=False,
-                        extra_obstacles=[guard, GeometryCollection()])
-                    if (proposal is not None and len(proposal) >= 2
-                            and all(pt[0] == 0 for pt in proposal)):
-                        out["CH027_mesh_proposal"] = [list(p) for p in proposal]
-                        for a, b in zip(proposal, proposal[1:]):
-                            make_track(board, tuple(a[1:]),
-                                       tuple(b[1:]), start_code,
-                                       .15, pcbnew.F_Cu)
-                        full_restitution = True
-                        for uid in victims:
-                            start, end = endpoint_map[uid]
-                            victim_code = board.FindNet(
-                                current[uid].GetNetname()).GetNetCode()
-                            replacement = mesh_route(
-                                board, start, end, victim_code,
-                                (pcbnew.F_Cu, pcbnew.B_Cu), filled(zone),
-                                region, start_layer=0, goal_layer=0,
-                                allow_vias=False,
-                                extra_obstacles=[
-                                    power_fcu_obstacles(board),
-                                    GeometryCollection()])
-                            if (replacement is None or len(replacement) < 2
-                                    or any(pt[0] != 0 for pt in replacement)):
-                                full_restitution = False
-                                out["failed_victim_restitution"] = uid
-                                break
-                            for a, b in zip(replacement, replacement[1:]):
-                                make_track(board, tuple(a[1:]),
-                                           tuple(b[1:]), victim_code,
-                                           .15, pcbnew.F_Cu)
+                # A bounded deterministic single-layer A* replaces the
+                # 9238-vertex Delaunay mesh that exceeded its complexity cap.
+                # The original copper changes remain confined to reviewed
+                # net UUIDs. Native DRC is mandatory for final geometry.
+                save_progress("bounded_CH027_FCu_Astar_started")
+                proposal = search(
+                    board, immutable_start, reachable_contact, start_code,
+                    .15, .15, False, 4.5, step=.18,
+                    max_nodes=40000, deadline=time.monotonic() + 24,
+                    start_layer=0, goal_layer=0,
+                    layers=(pcbnew.F_Cu, pcbnew.B_Cu))
+                if (proposal is not None and len(proposal) >= 2
+                        and all(pt[0] == 0 for pt in proposal)):
+                    out["CH027_Astar_proposal"] = [list(p) for p in proposal]
+                    save_progress("CH027_FCu_Astar_geometry_found")
+                    add_path(board, proposal, start_code, .15,
+                             layers=(pcbnew.F_Cu, pcbnew.B_Cu))
+                    full_restitution = True
+                    for uid in victims:
+                        start, end = endpoint_map[uid]
+                        victim_code = board.FindNet(
+                            current[uid].GetNetname()).GetNetCode()
+                        out["active_victim_restitution_UUID"] = uid
+                        save_progress("bounded_FCu_neighbor_Astar_started")
+                        replacement = search(
+                            board, start, end, victim_code,
+                            .15, .15, False, 5.0, step=.18,
+                            max_nodes=45000,
+                            deadline=time.monotonic() + 22,
+                            start_layer=0, goal_layer=0,
+                            layers=(pcbnew.F_Cu, pcbnew.B_Cu))
+                        if (replacement is None or len(replacement) < 2
+                                or any(pt[0] != 0 for pt in replacement)):
+                            full_restitution = False
+                            out["failed_victim_restitution"] = uid
+                            save_progress("victim_restitution_search_failed")
+                            break
+                        add_path(board, replacement, victim_code, .15,
+                                 layers=(pcbnew.F_Cu, pcbnew.B_Cu))
+                        save_progress("victim_FCu_track_added")
                         out["complete_restitution_geometry_found"] = (
                             full_restitution)
                         if full_restitution:
