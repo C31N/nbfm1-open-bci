@@ -1,0 +1,73 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+name: Native Block2 micro-ripup FCu coupled restitution
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/ch025-fcu-l3-exact-2026-10-21]
+    paths:
+      - ".github/workflows/block2-micro-ripup-fcu.yml"
+      - "hardware/eeg128-tdm/probe_block2_micro_ripup_fcu.py"
+      - "hardware/eeg128-tdm/test_block2_micro_ripup_fcu.py"
+permissions:
+  contents: read
+jobs:
+  isolate:
+    strategy:
+      fail-fast: false
+      matrix:
+        case: [0, 1, 2, 3, 4, 5, 6, 7]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 19
+    container:
+      image: kicad/kicad@sha256:5716d82aa247abdbe512650eb4e8fce5a4031cbbef0a2c8df83208a69fef87b2
+      options: --user 0:0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare pinned KiCad and Shapely
+        run: |
+          set -eu
+          test "$(kicad-cli version)" = "8.0.9"
+          apt-get -o Acquire::Retries=3 update
+          DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 install -y --no-install-recommends python3-shapely python3-pip python3-numpy
+          /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
+      - name: Static fail-closed micro-ripup contract
+        run: |
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_micro_ripup_fcu.py -v
+      - name: Recreate pinned 139 candidate
+        timeout-minutes: 8
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_mux_en_multihop_route.py \
+            --archive hardware/eeg128-tdm/engineering/block2-ch019-electrode-closed139.zip \
+            --output /tmp/block2-micro-base.json \
+            --candidate-output /tmp/block2-micro-base.zip
+      - name: Native isolated micro-ripup topology and restitution
+        timeout-minutes: 8
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_block2_micro_ripup_fcu.py \
+            --candidate /tmp/block2-micro-base.zip \
+            --output /tmp/block2-micro-case-${{ matrix.case }}.json \
+            --case-index ${{ matrix.case }}
+      - name: Enforce original rollback and no release
+        run: |
+          CASE=${{ matrix.case }} /usr/bin/python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          d=json.loads(Path('/tmp/block2-micro-case-'+os.environ['CASE']+'.json').read_text())
+          assert d['source_archive_untouched']
+          assert d['baseline_native_DRC']=={'violations':0,'warnings':0,'unconnected':139}
+          assert d['protected_originals_restituted']
+          assert d['S0_originals_restituted']
+          assert d['no_new_vias']
+          for key in ('accepted','fabrication_release','routing_completed',
+                      'checkpoint_promoted','manufacturing_files','In1_Cu_used'):
+              assert d[key] is False, key
+          assert not list(Path('/tmp').rglob('*.gbr'))
+          assert not list(Path('/tmp').rglob('*.drl'))
+          PY
+      - name: Export diagnostic JSON only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: block2-micro-FCu-native-case-${{ matrix.case }}
+          path: /tmp/block2-micro-case-${{ matrix.case }}.json
+          if-no-files-found: ignore

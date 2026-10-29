@@ -1,0 +1,342 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+"""Bounded virtual Block2 micro-ripup, F.Cu reachability, guarded restitution.
+
+Native original is SHA-pinned. Only a fixed, reviewed UUID whitelist can be
+temporarily removed. All originals must be reinstalled byte-geometrically
+on rollback. Physical route qualification requires restoration of EVERY
+selected Block2 signal, exact L3, and native KiCad 8.0.9 DRC.
+Never promote a checkpoint or output fabrication assets.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import math
+import shutil
+import tempfile
+from pathlib import Path
+from typing import Any
+import zipfile
+
+from analyze_ch025_fcu_blocker_uuids import ARCHIVE_SHA256, MEMBERS
+from analyze_ch025_l3_native_refill import filled
+from analyze_ch025_l3_precision_mask import exact_native_difference
+from escape_mesh_505 import mesh_route, polygons
+from native_connectivity import regressed_nets
+from probe_ch025_cooperative8 import (
+    CH027_ALT_VIA, unchanged_fingerprints,
+)
+from probe_ch025_fcu_l3_exact import (
+    ZONE, track_inventory, power_fcu_obstacles,
+)
+from probe_ch025_neighbor_restitution7 import NEIGHBORS
+from probe_ch027_annulus_s0_native import (
+    CH027, CUT, S0_UUIDS, CH027_VIA_LANDINGS_MM,
+)
+from probe_mux_en_multihop_neighbors import PINNED_CANDIDATE_SHA
+from route_targeted_closure import (
+    make_track, metrics, native, obstacles, routing_domain, xy,
+)
+
+S1 = "2ac3aecb-9a62-4bc7-846a-75a782ad0474"
+S2 = "d63cd5b4-9b79-4d97-8e66-1895bb81d615"
+CH030 = "3a4fd855-0c62-4287-b912-c9d8725d2b24"
+# Initial three trials retain original long S0 and all its existing copper.
+# Subsequent trials remove S0-long ONLY on scratch and require restitution.
+CASE_VICTIMS = (
+    (S1,), (S2,), (CH030,),
+    (S0_UUIDS[0], S1), (S0_UUIDS[0], S2),
+    (S0_UUIDS[0], CH030),
+    (*S0_UUIDS, S1), (*S0_UUIDS, CH030),
+)
+FLAGS = {
+    "accepted": False, "routing_completed": False,
+    "fabrication_release": False, "manufacturing_files": False,
+    "checkpoint_promoted": False, "schematic_parity_qualified": False,
+    "independent_replay_verified": False, "In1_Cu_used": False,
+}
+
+def run(candidate: Path, index: int) -> dict[str, Any]:
+    import pcbnew
+    from shapely.geometry import GeometryCollection, Point, box
+    from shapely.ops import unary_union
+    from shapely.strtree import STRtree
+
+    if index not in range(len(CASE_VICTIMS)):
+        raise ValueError("Unreviewed micro-ripup order")
+    victims = CASE_VICTIMS[index]
+    out: dict[str, Any] = {
+        **FLAGS, "status": "not_started",
+        "case_index": index, "selected_UUIDs": list(victims),
+        "source_archive_untouched": False,
+        "baseline_native_DRC": None,
+        "protected_originals_restituted": False,
+        "S0_originals_restituted": False,
+        "native_3V3A_loss_mm2": None,
+        "native_3V3A_gain_mm2": None,
+        "native_3V3A_exact_zero": False,
+        "native_DRC_qualified": False,
+        "complete_restitution_geometry_found": False,
+        "native_CH027_closed": False,
+        "no_new_vias": True,
+        "topology_only": True,
+        "FCu_reachability": [],
+        "new_track_count": 0,
+    }
+    if not pcbnew.Version().startswith("8.0.9"):
+        raise RuntimeError("Native KiCad 8.0.9 required")
+    locked_hash = hashlib.sha256(candidate.read_bytes()).hexdigest()
+    with tempfile.TemporaryDirectory(prefix="block2-micro-ripup-") as tmp:
+        folder = Path(tmp)
+        with zipfile.ZipFile(candidate) as z:
+            if set(z.namelist()) != (
+                    set(MEMBERS) | {"NO_RELEASE_ENGINEERING_ONLY.json"}):
+                raise RuntimeError("Unreviewed engineering input members")
+            audit = json.loads(z.read("NO_RELEASE_ENGINEERING_ONLY.json"))
+            if audit.get("source_archive_sha256") != ARCHIVE_SHA256:
+                raise RuntimeError("Pinned 139 source identity mismatch")
+            if any(audit.get(k) is not False
+                   for k in ("accepted", "fabrication_release",
+                             "routing_completed",
+                             "routing_replay_byteidentical_verified")):
+                raise RuntimeError("Unsafe engineering input release state")
+            for name in MEMBERS:
+                (folder / name).write_bytes(z.read(name))
+        pcb_path = folder / MEMBERS[0]
+        if hashlib.sha256(pcb_path.read_bytes()).hexdigest() != PINNED_CANDIDATE_SHA:
+            raise RuntimeError("Pinned MUX_EN/CH019 board mismatch")
+        baseline = native(pcb_path, folder / "baseline-native.json")
+        out["baseline_native_DRC"] = metrics(baseline)
+        if out["baseline_native_DRC"] != {
+                "violations": 0, "warnings": 0, "unconnected": 139}:
+            out["status"] = "baseline_139_gate_failed"
+            return out
+        board = pcbnew.LoadBoard(str(pcb_path))
+        initial = track_inventory(board)
+        protected = unchanged_fingerprints(board)
+        existing_ids = set(initial)
+        current = {t.m_Uuid.AsString(): t for t in board.GetTracks()}
+        selected = (CUT, *victims)
+        if len(set(selected)) != len(selected):
+            raise RuntimeError("Duplicate original selected")
+        via = current.get(CH027_ALT_VIA)
+        if not isinstance(via, pcbnew.PCB_VIA) or via.GetNetname() != CH027:
+            raise RuntimeError("Existing CH027 via changed")
+        via_pos = xy(via.GetPosition())
+        via_radius = pcbnew.ToMM(via.GetWidth()) / 2
+        immutable_start = None
+        endpoint_map: dict[str, tuple[Any, Any]] = {}
+        for uid in selected:
+            tr = current.get(uid)
+            expected = (
+                CH027 if uid == CUT else
+                "MUX_S0" if uid in S0_UUIDS else NEIGHBORS[uid])
+            if (tr is None or tr.GetNetname() != expected
+                    or tr.GetLayer() != pcbnew.F_Cu
+                    or isinstance(tr, (pcbnew.PCB_VIA, pcbnew.PCB_ARC))):
+                raise RuntimeError("Unreviewed original UUID " + uid)
+            endpoint_map[uid] = (
+                xy(tr.GetStart()), xy(tr.GetEnd()))
+            if uid == CUT:
+                immutable_start = endpoint_map[uid][0]
+        assert immutable_start is not None
+        zone = next((z for z in board.Zones()
+                     if z.m_Uuid.AsString() == ZONE
+                     and z.GetNetname() == "3V3A"
+                     and z.IsOnLayer(pcbnew.In2_Cu)), None)
+        if zone is None:
+            raise RuntimeError("Protected In2 3V3A zone absent")
+        pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+        original_l3 = pcbnew.SHAPE_POLY_SET(
+            zone.GetFilledPolysList(pcbnew.In2_Cu))
+        start_code = board.FindNet(CH027).GetNetCode()
+        domain = routing_domain(board, .075, .25)
+        # Only short-window contours are used for this diagnostic.
+        region = domain.intersection(box(
+            min(immutable_start[0], via_pos[0]) - 4.5,
+            min(immutable_start[1], via_pos[1]) - 4.5,
+            max(immutable_start[0], via_pos[0]) + 4.5,
+            max(immutable_start[1], via_pos[1]) + 4.5))
+        initial_count = len(existing_ids)
+        pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+        out["selected_originals_verified"] = True
+        for uid in selected:
+            board.Remove(current[uid])
+        try:
+            if unchanged_fingerprints(board) != protected:
+                raise RuntimeError("Immutable via, pad or zone changed")
+            if any(track_inventory(board).get(uid) != val
+                   for uid, val in initial.items()
+                   if uid not in selected):
+                raise RuntimeError("Unselected original changed")
+            foreign, _ = obstacles(
+                board, start_code, .15, .15, region, .60,
+                (pcbnew.F_Cu, pcbnew.B_Cu))
+            guard = power_fcu_obstacles(board)
+            free = region.difference(
+                unary_union([foreign[0], guard])).buffer(-.000005)
+            parts = polygons(free)
+            tree = STRtree(parts)
+
+            def component(pt: tuple[float, float]) -> int | None:
+                point = Point(pt)
+                return next((int(i) for i in tree.query(point)
+                             if parts[int(i)].covers(point)), None)
+
+            source_part = component(immutable_start)
+            reachable_contact = None
+            for contact in CH027_VIA_LANDINGS_MM:
+                if math.dist(via_pos, contact) >= via_radius - .01:
+                    raise RuntimeError("Contact not inside unchanged via")
+                target_part = component(contact)
+                linked = (source_part is not None
+                          and source_part == target_part)
+                out["FCu_reachability"].append({
+                    "contact_mm": list(contact),
+                    "source_part": source_part,
+                    "target_part": target_part,
+                    "same_free_FCu_component": linked,
+                })
+                if linked and reachable_contact is None:
+                    reachable_contact = contact
+            out["free_FCu_component_count"] = len(parts)
+            out["source_free_FCu_component"] = source_part
+            out["geometric_contact_reachable"] = (
+                reachable_contact is not None)
+            if reachable_contact is None:
+                out["status"] = "virtual_cuts_do_not_open_CH027_FCu"
+            else:
+                out["status"] = "CH027_FCu_component_open_only_topology"
+                out["chosen_contact_mm"] = list(reachable_contact)
+                # Triangulate only an already connected, local, simple
+                # polygon. This is a hard budget, NOT a negative route proof.
+                shape = parts[source_part]
+                vertices = (
+                    len(shape.exterior.coords)
+                    + sum(len(r.coords) for r in shape.interiors))
+                out["selected_component_vertices"] = vertices
+                if vertices <= 700:
+                    proposal = mesh_route(
+                        board, immutable_start, reachable_contact, start_code,
+                        (pcbnew.F_Cu, pcbnew.B_Cu), filled(zone), region,
+                        start_layer=0, goal_layer=0, allow_vias=False,
+                        extra_obstacles=[guard, GeometryCollection()])
+                    if (proposal is not None and len(proposal) >= 2
+                            and all(pt[0] == 0 for pt in proposal)):
+                        out["CH027_mesh_proposal"] = [list(p) for p in proposal]
+                        for a, b in zip(proposal, proposal[1:]):
+                            make_track(board, tuple(a[1:]),
+                                       tuple(b[1:]), start_code,
+                                       .15, pcbnew.F_Cu)
+                        full_restitution = True
+                        for uid in victims:
+                            start, end = endpoint_map[uid]
+                            victim_code = board.FindNet(
+                                current[uid].GetNetname()).GetNetCode()
+                            replacement = mesh_route(
+                                board, start, end, victim_code,
+                                (pcbnew.F_Cu, pcbnew.B_Cu), filled(zone),
+                                region, start_layer=0, goal_layer=0,
+                                allow_vias=False,
+                                extra_obstacles=[
+                                    power_fcu_obstacles(board),
+                                    GeometryCollection()])
+                            if (replacement is None or len(replacement) < 2
+                                    or any(pt[0] != 0 for pt in replacement)):
+                                full_restitution = False
+                                out["failed_victim_restitution"] = uid
+                                break
+                            for a, b in zip(replacement, replacement[1:]):
+                                make_track(board, tuple(a[1:]),
+                                           tuple(b[1:]), victim_code,
+                                           .15, pcbnew.F_Cu)
+                        out["complete_restitution_geometry_found"] = (
+                            full_restitution)
+                        if full_restitution:
+                            pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+                            delta = exact_native_difference(
+                                original_l3,
+                                pcbnew.SHAPE_POLY_SET(
+                                    zone.GetFilledPolysList(pcbnew.In2_Cu)))
+                            out["native_3V3A_loss_mm2"] = (
+                                delta["loss_native_mm2"])
+                            out["native_3V3A_gain_mm2"] = (
+                                delta["gain_native_mm2"])
+                            out["native_3V3A_exact_zero"] = (
+                                delta["native_both_empty"])
+                            if delta["native_both_empty"]:
+                                scratch_dir = folder / "scratch"
+                                scratch_dir.mkdir()
+                                for name in MEMBERS[1:]:
+                                    shutil.copyfile(folder / name,
+                                                    scratch_dir / name)
+                                scratch = scratch_dir / MEMBERS[0]
+                                pcbnew.SaveBoard(str(scratch), board)
+                                post = native(scratch, folder / "post.json")
+                                out["native_post_DRC"] = metrics(post)
+                                out["regressed_nets"] = regressed_nets(
+                                    baseline, post)
+                                out["native_DRC_qualified"] = (
+                                    metrics(post)["violations"] == 0
+                                    and metrics(post)["warnings"] == 0
+                                    and metrics(post)["unconnected"] < 139
+                                    and not out["regressed_nets"])
+                                out["native_CH027_closed"] = (
+                                    out["native_DRC_qualified"])
+                                out["status"] = (
+                                    "native_CH027_and_all_victims_DRC_qualified"
+                                    if out["native_DRC_qualified"] else
+                                    "post_native_DRC_or_connectivity_failed")
+        finally:
+            extra_tracks = [
+                item for item in board.GetTracks()
+                if item.m_Uuid.AsString() not in existing_ids]
+            out["new_track_count"] = len(extra_tracks)
+            for tr in extra_tracks:
+                board.Remove(tr)
+            for uid in selected:
+                board.Add(current[uid])
+            if track_inventory(board) != initial:
+                raise RuntimeError("Original tracks not exactly restituted")
+            if unchanged_fingerprints(board) != protected:
+                raise RuntimeError("Protected vias pads or zones changed")
+            pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+            delta = exact_native_difference(
+                original_l3,
+                pcbnew.SHAPE_POLY_SET(
+                    zone.GetFilledPolysList(pcbnew.In2_Cu)))
+            if not delta["native_both_empty"]:
+                raise RuntimeError("Native L3 rollback not exact")
+            out["protected_originals_restituted"] = True
+            out["S0_originals_restituted"] = all(
+                track_inventory(board).get(uid) == initial[uid]
+                for uid in S0_UUIDS)
+        if not out["S0_originals_restituted"]:
+            raise RuntimeError("Unmodified S0 originals not restored")
+    out["source_archive_untouched"] = (
+        hashlib.sha256(candidate.read_bytes()).hexdigest() == locked_hash)
+    return out
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--candidate", type=Path, required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--case-index", type=int,
+                        choices=tuple(range(len(CASE_VICTIMS))),
+                        required=True)
+    args = parser.parse_args()
+    result = run(args.candidate, args.case_index)
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps(result, indent=2) + "\n")
+    print(json.dumps({
+        "status": result["status"],
+        "case": result["case_index"],
+        "contact_open": result.get("geometric_contact_reachable"),
+        "native_DRC_qualified": result["native_DRC_qualified"],
+        "accepted": False, "fabrication_release": False,
+    }))
+
+if __name__ == "__main__":
+    main()
