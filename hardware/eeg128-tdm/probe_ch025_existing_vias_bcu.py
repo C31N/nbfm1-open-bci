@@ -476,7 +476,7 @@ def run(candidate: Path) -> dict[str, Any]:
                 board, parts, source_component, target_component))
         report["BCu_reversible_Block2_victim_subsets"] = (
             screen_reversible_bcu_victims(
-                board, positions, region, code, original, protected))
+                board, positions, region, code, before, protected))
         # Micro-selective candidate screening is deliberately fail-closed:
         # moving any protected copper is prohibited, even on a scratch board.
         barrier = report["BCu_gap_barrier_inventory"]
