@@ -24,7 +24,7 @@ import zipfile
 from analyze_ch025_fcu_blocker_uuids import ARCHIVE_SHA256, MEMBERS
 from analyze_ch025_l3_precision_mask import exact_native_difference
 from escape_mesh_505 import polygons
-from native_connectivity import regressed_nets
+from native_connectivity import airwire_counts, regressed_nets
 from probe_ch025_cooperative8 import (
     CH027_ALT_VIA, unchanged_fingerprints,
 )
@@ -74,6 +74,11 @@ def run(candidate: Path, index: int, report_path: Path | None = None) -> dict[st
         "case_index": index, "selected_UUIDs": list(victims),
         "source_archive_untouched": False,
         "baseline_native_DRC": None,
+        "native_CH027_airwires_before": None,
+        "native_CH027_airwires_after": None,
+        "native_CH027_airwire_delta": None,
+        "native_CH027_open_item_details_before": [],
+        "native_CH027_open_item_details_after": [],
         "protected_originals_restituted": False,
         "S0_originals_restituted": False,
         "native_3V3A_loss_mm2": None,
@@ -119,6 +124,12 @@ def run(candidate: Path, index: int, report_path: Path | None = None) -> dict[st
             raise RuntimeError("Pinned MUX_EN/CH019 board mismatch")
         baseline = native(pcb_path, folder / "baseline-native.json")
         out["baseline_native_DRC"] = metrics(baseline)
+        out["native_CH027_airwires_before"] = airwire_counts(
+            baseline).get(CH027, 0)
+        out["native_CH027_open_item_details_before"] = [
+            item for item in baseline["unconnected_items"]
+            if any("[" + CH027 + "]" in line.get("description", "")
+                   for line in item.get("items", []))]
         save_progress("baseline_native_DRC_recorded")
         if out["baseline_native_DRC"] != {
                 "violations": 0, "warnings": 0, "unconnected": 139}:
@@ -332,6 +343,17 @@ def run(candidate: Path, index: int, report_path: Path | None = None) -> dict[st
                             pcbnew.SaveBoard(str(scratch), board)
                             post = native(scratch, folder / "post.json")
                             out["native_post_DRC"] = metrics(post)
+                            out["native_CH027_airwires_after"] = (
+                                airwire_counts(post).get(CH027, 0))
+                            out["native_CH027_airwire_delta"] = (
+                                out["native_CH027_airwires_after"] -
+                                out["native_CH027_airwires_before"])
+                            out["native_CH027_open_item_details_after"] = [
+                                item for item in post["unconnected_items"]
+                                if any("[" + CH027 + "]" in line.get(
+                                    "description", "")
+                                       for line in item.get("items", []))]
+                            save_progress("native_CH027_open_items_compared")
                             out["regressed_nets"] = regressed_nets(
                                 baseline, post)
                             out["native_DRC_qualified"] = (
