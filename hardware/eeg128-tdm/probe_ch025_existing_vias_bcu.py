@@ -156,7 +156,7 @@ def precise_bcu_barrier_inventory(board: Any, parts: list[Any],
 def bcu_alternative_component_graph(board: Any, parts: list[Any],
                                     source_index: int, target_index: int
                                     ) -> dict[str, Any]:
-    """Bounded topology-only survey of locally adjacent BCu free islands.
+    """Exhaustive topology-only survey of locally adjacent BCu free islands.
 
     Never authorizes removal of protected copper; transition edges are
     ONLY gap/proximity hypotheses, not electrically valid copper routes.
@@ -175,10 +175,12 @@ def bcu_alternative_component_graph(board: Any, parts: list[Any],
             if 0 < distance <= 1.0:
                 candidates.append((distance, i, j))
     candidates.sort()
-    max_scan = 120
+    # Examine EVERY geometrically adjacent gap, including longer ones.
+    # Previous 120-edge cap discarded 67 of 187 candidates and could hide
+    # a protected-free detour; a negative result was not exhaustive.
     edges = []
     graph: dict[int, list[tuple[int, int, float]]] = {}
-    for distance, a, b in candidates[:max_scan]:
+    for distance, a, b in candidates:
         row = precise_bcu_barrier_inventory(board, parts, a, b)
         item = {
             "components": [a, b],
@@ -211,10 +213,38 @@ def bcu_alternative_component_graph(board: Any, parts: list[Any],
             if score + cost < best.get(other, float("inf")):
                 heappush(frontier, (score + cost, other,
                                     (*path, edge_id)))
+    # Reachability and the immutable frontier from BOTH terminals,
+    # on the complete protected-free graph only.
+    def reachable(start: int) -> set[int]:
+        pending = [start]
+        found = set()
+        while pending:
+            node = pending.pop()
+            if node in found:
+                continue
+            found.add(node)
+            pending.extend(other for other, _, _ in graph.get(node, [])
+                           if other not in found)
+        return found
+
+    source_reach = reachable(source_index)
+    target_reach = reachable(target_index)
+    frontier_edges = [
+        e for e in edges
+        if e["protected_transition"] and (
+            (e["components"][0] in source_reach) !=
+            (e["components"][1] in source_reach))]
+    frontier_edges.sort(key=lambda row: (
+        row["immutable_count"], len(row["eligible_UUIDs"]),
+        row["gap_mm"], row["components"]))
     return {
         "evaluated_gap_count": len(edges),
         "candidate_gap_count": len(candidates),
-        "survey_truncated": len(candidates) > max_scan,
+        "survey_truncated": False,
+        "source_reachable_components": sorted(source_reach),
+        "target_reachable_components": sorted(target_reach),
+        "source_frontier_protected_count": len(frontier_edges),
+        "source_frontier_protected_examples": frontier_edges[:15],
         "unprotected_transition_count": sum(
             not row["protected_transition"] for row in edges),
         "route_of_free_islands_found": bool(candidate_path),

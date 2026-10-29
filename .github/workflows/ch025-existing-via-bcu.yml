@@ -55,6 +55,10 @@ jobs:
           assert d['new_via_count']==0
           assert len(d['existing_CH025_vias'])==4
           assert d['BCu_gap_barrier_inventory'] is not None
+          assert d['BCu_alternative_component_graph'] is not None
+          g=d['BCu_alternative_component_graph']
+          assert not g['survey_truncated']
+          assert g['evaluated_gap_count']==g['candidate_gap_count']
           assert d['micro_ripup_trial']['restored']
           assert not d['micro_ripup_trial']['DRC_qualified']
           assert not d['micro_ripup_trial']['physical_closure_qualified']
