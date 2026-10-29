@@ -1,0 +1,74 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+name: Native real open Block2 MUX FCu-only singles
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/ch025-fcu-l3-exact-2026-10-21]
+    paths:
+      - ".github/workflows/real-block2-open-mux.yml"
+      - "hardware/eeg128-tdm/probe_real_block2_open_mux.py"
+      - "hardware/eeg128-tdm/test_real_block2_open_mux.py"
+permissions:
+  contents: read
+jobs:
+  single-net:
+    strategy:
+      fail-fast: false
+      matrix:
+        net: [CH028_N_MUX, CH029_N_MUX, CH030_N_MUX]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 17
+    container:
+      image: kicad/kicad@sha256:5716d82aa247abdbe512650eb4e8fce5a4031cbbef0a2c8df83208a69fef87b2
+      options: --user 0:0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare native KiCad 8.0.9
+        run: |
+          set -eu
+          test "$(kicad-cli version)" = "8.0.9"
+          apt-get -o Acquire::Retries=3 update
+          DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 install -y --no-install-recommends python3-shapely python3-pip python3-numpy
+          /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
+      - name: Validate no-release FCu-only route contract
+        run: |
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_real_block2_open_mux.py -v
+      - name: Recreate SHA-pinned 139 engineering board
+        timeout-minutes: 8
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_mux_en_multihop_route.py \
+            --archive hardware/eeg128-tdm/engineering/block2-ch019-electrode-closed139.zip \
+            --output /tmp/real-mux-base.json \
+            --candidate-output /tmp/real-mux-base.zip
+      - name: Route real native single FCu airwire without new via
+        timeout-minutes: 7
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_real_block2_open_mux.py \
+            --candidate /tmp/real-mux-base.zip \
+            --net ${{ matrix.net }} \
+            --output /tmp/real-mux-${{ matrix.net }}.json
+      - name: Fail-closed baseline and source rollback
+        run: |
+          NET=${{ matrix.net }} /usr/bin/python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          d=json.loads(Path('/tmp/real-mux-'+os.environ['NET']+'.json').read_text())
+          assert d['native_139_baseline']=={
+              'violations':0,'warnings':0,'unconnected':139}
+          assert d['native_net_before']==1
+          assert d['original_copper_restituted']
+          assert d['source_archive_unchanged']
+          assert d['new_vias_added']==0
+          for key in ('accepted','routing_completed','fabrication_release',
+                      'manufacturing_files','checkpoint_promoted'):
+              assert d[key] is False, key
+          assert not list(Path('/tmp').rglob('*.gbr'))
+          assert not list(Path('/tmp').rglob('*.drl'))
+          PY
+      - name: Upload diagnostic JSON only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: real-Block2-MUX-${{ matrix.net }}-native
+          path: /tmp/real-mux-${{ matrix.net }}.json
+          if-no-files-found: ignore
