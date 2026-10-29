@@ -17,7 +17,7 @@ class DeepBlock2Test(unittest.TestCase):
             "after_cut_components", "victim_restitution",
             "reachable_targets", "candidate_native_net_reduction_qualified",
             "same_free_component", "add_path",
-            "native_target_open", "139 - len(row",,
+            "native_target_open", "139 - len(row",
             "regressed_nets", "exact_native_difference",
             "native_In1_exact", "native_L3_exact",
             "new_vias_added", "all_originals_restituted",
