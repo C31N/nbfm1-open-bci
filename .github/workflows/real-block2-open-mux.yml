@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        net: [CH028_N_MUX, CH029_N_MUX, CH030_N_MUX]
+        net: [CH018_P_MUX, CH020_N_MUX, CH020_P_MUX, CH024_N_MUX, CH024_P_MUX]
     runs-on: ubuntu-24.04
     timeout-minutes: 17
     container:

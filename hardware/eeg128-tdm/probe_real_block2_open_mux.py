@@ -32,7 +32,11 @@ from route_targeted_closure import (
     add_path, metrics, native, search,
 )
 
-NETS = ("CH028_N_MUX", "CH029_N_MUX", "CH030_N_MUX")
+NETS = (
+    "CH018_P_MUX", "CH020_N_MUX", "CH020_P_MUX",
+    "CH024_N_MUX", "CH024_P_MUX",
+    "CH028_N_MUX", "CH029_N_MUX", "CH030_N_MUX",
+)
 LOCK = {
     "accepted": False, "routing_completed": False,
     "fabrication_release": False, "manufacturing_files": False,
