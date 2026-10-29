@@ -45,6 +45,198 @@ NO_RELEASE = {
     "CH022_qualified": False, "native_136_qualified": False,
 }
 
+def in2_uuid_gap_inventory(
+        board: Any, parts: list[Any], source: int, target: int,
+        power: Any) -> dict[str, Any]:
+    """Nearest native In2 component gap with protected UUID inventory.
+
+    Proximity is a diagnostic, never a proof that a selected track caused
+    the partition. Power-fill remains immutable and cannot be ripped up.
+    """
+    import pcbnew
+    import re
+    from shapely.geometry import LineString, Point, box
+    from shapely.ops import nearest_points
+    from route_targeted_closure import pad_copper_shape
+
+    first, second = nearest_points(parts[source], parts[target])
+    gap = LineString((first, second))
+    corridor = gap.buffer(.225)
+    rows: list[dict[str, Any]] = []
+
+    def insert(uid: str, net: str, kind: str, shape: Any,
+               reference: str | None = None) -> None:
+        if net == NET or not shape.intersects(corridor):
+            return
+        movable = (
+            kind == "track"
+            and (re.fullmatch(r"CH0(?:1[6-9]|2[0-9]|3[01])_.*", net)
+                 is not None or net in ("MUX_S1", "MUX_S2", "MUX_S3"))
+            and net not in ("VCM", "AGND", "MUX_EN", "3V3A"))
+        rows.append({
+            "uuid": uid, "net": net, "kind": kind,
+            "footprint_reference": reference,
+            "distance_to_component_gap_mm": round(
+                float(shape.distance(gap)), 9),
+            "temporary_ripup_eligible": bool(movable),
+            "classification": (
+                "Block2_In2_track_only_conditional"
+                if movable else "protected_do_not_ripup"),
+            "native_DRC_qualified": False,
+        })
+
+    for item in board.GetTracks():
+        uid = item.m_Uuid.AsString()
+        net = item.GetNetname()
+        if isinstance(item, pcbnew.PCB_VIA):
+            geom = Point(xy(item.GetPosition())).buffer(
+                pcbnew.ToMM(item.GetWidth()) / 2)
+            insert(uid, net, "via", geom)
+        elif item.GetLayer() == pcbnew.In2_Cu:
+            if isinstance(item, pcbnew.PCB_ARC):
+                bounds = item.GetBoundingBox()
+                geom = box(pcbnew.ToMM(bounds.GetX()),
+                           pcbnew.ToMM(bounds.GetY()),
+                           pcbnew.ToMM(bounds.GetRight()),
+                           pcbnew.ToMM(bounds.GetBottom()))
+                insert(uid, net, "arc", geom)
+            else:
+                from shapely.geometry import LineString
+                geom = LineString((xy(item.GetStart()),
+                                   xy(item.GetEnd()))).buffer(
+                                       pcbnew.ToMM(item.GetWidth()) / 2)
+                insert(uid, net, "track", geom)
+    for footprint in board.GetFootprints():
+        for pad in footprint.Pads():
+            if pad.IsOnLayer(pcbnew.In2_Cu):
+                insert(pad.m_Uuid.AsString(), pad.GetNetname(), "pad",
+                       pad_copper_shape(pad, pcbnew.In2_Cu),
+                       footprint.GetReference())
+    rows.sort(key=lambda row: (
+        row["distance_to_component_gap_mm"], row["uuid"]))
+    power_overlap = power.buffer(.58).intersects(corridor)
+    return {
+        "source_In2_component": source,
+        "target_In2_component": target,
+        "minimum_gap_mm": round(float(first.distance(second)), 9),
+        "gap_from_xy_mm": [round(first.x, 6), round(first.y, 6)],
+        "gap_to_xy_mm": [round(second.x, 6), round(second.y, 6)],
+        "native_3V3A_power_buffer_intersects_gap": bool(power_overlap),
+        "protected_3V3A_is_unmodifiable": True,
+        "candidate_track_UUIDs": [
+            item["uuid"] for item in rows
+            if item["temporary_ripup_eligible"]],
+        "protected_copper_UUIDs": [
+            item["uuid"] for item in rows
+            if not item["temporary_ripup_eligible"]],
+        "reviewed_copper_objects": rows[:60],
+        "inventory_object_count": len(rows),
+        "physical_route_qualified": False,
+        "proof_of_causal_barrier": False,
+    }
+
+
+def reversible_in2_track_cut(
+        board: Any, eligible: list[str],
+        original: dict[str, Any], protected: dict[str, Any],
+        base_in1: dict[str, Any], baseline_L3: Any,
+        zone: Any, region: Any, positions: dict[str, Any],
+        power: Any) -> dict[str, Any]:
+    """Strict single-track isolated trial, no new via or protected edits.
+
+    Never route through changed 3V3A polygons; only report if same-net
+    existing-via annuli meet within an immutable free In2 component.
+    """
+    import pcbnew
+    from shapely.geometry import Point
+    from shapely.ops import unary_union
+    from probe_ch025_neutral_via_sites import (
+        polygon_snapshot, polygon_delta, every_zero)
+    from shapely.strtree import STRtree
+
+    out: dict[str, Any] = {
+        "selected_UUID": None,
+        "attempted": False,
+        "originals_restituted": True,
+        "protected_geometry_unchanged": True,
+        "native_In1_exact_after_rollback": False,
+        "native_L3_exact_after_rollback": False,
+        "all_4_vias_unchanged": False,
+        "geometrically_connected_after_cut": False,
+        "native_DRC_qualified": False,
+    }
+    # A single exact reviewed segment is the only first-stage cut.
+    if len(eligible) != 1:
+        out["not_attempted_reason"] = (
+            "no_eligible_In2_track" if not eligible
+            else "multiple_eligible_In2_tracks_need_independent_review")
+        return out
+    uid = eligible[0]
+    tracks = {item.m_Uuid.AsString(): item
+              for item in board.GetTracks()}
+    victim = tracks[uid]
+    if (victim.GetLayer() != pcbnew.In2_Cu
+            or isinstance(victim, (pcbnew.PCB_VIA, pcbnew.PCB_ARC))
+            or victim.GetNetname() in (
+                "VCM", "MUX_EN", "AGND", "3V3A")):
+        raise RuntimeError("In2 victim is not an approved signal track")
+    original_vias = {
+        key for key, t in tracks.items() if isinstance(t, pcbnew.PCB_VIA)}
+    out["selected_UUID"] = uid
+    out["attempted"] = True
+    board.Remove(victim)
+    try:
+        if unchanged_fingerprints(board) != protected:
+            raise RuntimeError("Protected pads/vias/zones mutated")
+        if any(track_inventory(board).get(k) != val
+               for k, val in original.items() if k != uid):
+            raise RuntimeError("Unselected original track changed")
+        code = board.FindNet(NET).GetNetCode()
+        foreign, _ = obstacles(
+            board, code, .15, .15, region, .65,
+            (pcbnew.In2_Cu, pcbnew.B_Cu))
+        free = region.difference(unary_union([
+            foreign[0], power.buffer(.58)])).buffer(-.000005)
+        candidate_regions = polygons(free)
+        tree = STRtree(candidate_regions)
+        contact = {}
+        for key in (*SOURCES, *TARGETS):
+            pad = Point(positions[key]).buffer(.29)
+            contact[key] = {
+                int(i) for i in tree.query(pad)
+                if candidate_regions[int(i)].intersects(pad)}
+        out["geometrically_connected_after_cut"] = any(
+            contact[a] & contact[b]
+            for a in SOURCES for b in TARGETS)
+        out["component_count_after_cut"] = len(candidate_regions)
+    finally:
+        board.Add(victim)
+        out["originals_restituted"] = track_inventory(board) == original
+        out["protected_geometry_unchanged"] = (
+            unchanged_fingerprints(board) == protected)
+        out["all_4_vias_unchanged"] = all(
+            k in {item.m_Uuid.AsString() for item in board.GetTracks()}
+            for k in (*SOURCES, *TARGETS))
+        pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+        out["native_In1_exact_after_rollback"] = every_zero(
+            polygon_delta(base_in1,
+                          polygon_snapshot(board, pcbnew.In1_Cu)))
+        out["native_L3_exact_after_rollback"] = (
+            exact_native_difference(
+                baseline_L3,
+                pcbnew.SHAPE_POLY_SET(
+                    zone.GetFilledPolysList(pcbnew.In2_Cu))
+            )["native_both_empty"])
+        if not all(out[key] for key in (
+                "originals_restituted",
+                "protected_geometry_unchanged",
+                "all_4_vias_unchanged",
+                "native_In1_exact_after_rollback",
+                "native_L3_exact_after_rollback")):
+            raise RuntimeError("Reversible In2 micro-ripup rollback failed")
+    return out
+
+
 def run(candidate: Path, report_path: Path) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import Point, box
@@ -66,6 +258,8 @@ def run(candidate: Path, report_path: Path) -> dict[str, Any]:
         "In2_power_buffer_mm": .58,
         "geometrically_connected_pairs": 0,
         "search_attempted": False,
+        "In2_candidate_gap_inventories": [],
+        "In2_reversible_micro_ripup_trials": [],
     }
 
     def save(stage: str) -> None:
@@ -192,6 +386,44 @@ def run(candidate: Path, report_path: Path) -> dict[str, Any]:
                 report["existing_via_pairs"].append(row)
         report["geometrically_connected_pairs"] = sum(
             x["geometrically_connected"] for x in report["existing_via_pairs"])
+        # Resolve both distinct source-to-target free-component gaps.
+        # This screen is a proximity inventory, NOT ripup authorization.
+        for target in sorted({
+                idx for row in report["existing_via_pairs"]
+                for idx in row["target_In2_components"]}):
+            source_ids = sorted({
+                idx for row in report["existing_via_pairs"]
+                for idx in row["source_In2_components"]})
+            if not source_ids:
+                raise RuntimeError("Missing source In2 free copper")
+            for source_idx in source_ids:
+                gap = in2_uuid_gap_inventory(
+                    board, components, source_idx, target, power)
+                report["In2_candidate_gap_inventories"].append(gap)
+                if (not gap["native_3V3A_power_buffer_intersects_gap"]
+                        and not gap["protected_copper_UUIDs"]
+                        and len(gap["candidate_track_UUIDs"]) == 1):
+                    trial = reversible_in2_track_cut(
+                        board, gap["candidate_track_UUIDs"],
+                        original, protected, base_in1, base_L3,
+                        zone, region, positions, power)
+                    trial["source_In2_component"] = source_idx
+                    trial["target_In2_component"] = target
+                    report["In2_reversible_micro_ripup_trials"].append(
+                        trial)
+                else:
+                    report["In2_reversible_micro_ripup_trials"].append({
+                        "source_In2_component": source_idx,
+                        "target_In2_component": target,
+                        "attempted": False,
+                        "native_DRC_qualified": False,
+                        "reason": (
+                            "protected_3V3A_or_other_copper_at_gap"
+                            if gap["native_3V3A_power_buffer_intersects_gap"]
+                            or gap["protected_copper_UUIDs"]
+                            else "requires_more_than_one_reviewed_In2_track"),
+                    })
+        save("In2_UUID_gap_and_reversible_copper_cut_screen_complete")
         save("In2_same_net_via_topology_complete")
         # Probe at most ONE reachable pair on the already-pinned PCB.
         # This search is native DRC gated; absence within deadline is NOT

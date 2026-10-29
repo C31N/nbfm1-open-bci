@@ -56,6 +56,10 @@ jobs:
           assert d['new_vias_added']==0
           assert len(d['existing_CH025_vias'])==4
           assert len(d['existing_via_pairs'])==4
+          assert len(d['In2_candidate_gap_inventories'])==2
+          assert len(d['In2_reversible_micro_ripup_trials'])==2
+          assert all(not x['native_DRC_qualified']
+                     for x in d['In2_reversible_micro_ripup_trials'])
           for key in ('accepted','fabrication_release','routing_completed',
                       'manufacturing_files','checkpoint_promoted',
                       'In1_Cu_used','native_136_qualified'):
