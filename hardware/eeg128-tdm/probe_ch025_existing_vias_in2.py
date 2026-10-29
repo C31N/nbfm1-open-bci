@@ -180,7 +180,7 @@ def reversible_in2_track_cut(
             or victim.GetNetname() in (
                 "VCM", "MUX_EN", "AGND", "3V3A")):
         raise RuntimeError("In2 victim is not an approved signal track")
-     out["selected_UUID"] = uid
+    out["selected_UUID"] = uid
     out["attempted"] = True
     board.Remove(victim)
     try:
