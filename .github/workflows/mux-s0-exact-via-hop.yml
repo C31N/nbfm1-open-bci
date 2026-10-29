@@ -1,0 +1,72 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+name: Native MUX S0 via-hop exact In1 L3 screen
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/ch025-fcu-l3-exact-2026-10-21]
+    paths:
+      - ".github/workflows/mux-s0-exact-via-hop.yml"
+      - "hardware/eeg128-tdm/probe_mux_s0_exact_via_hop.py"
+      - "hardware/eeg128-tdm/test_mux_s0_exact_via_hop.py"
+permissions:
+  contents: read
+jobs:
+  exact-site:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    container:
+      image: kicad/kicad@sha256:5716d82aa247abdbe512650eb4e8fce5a4031cbbef0a2c8df83208a69fef87b2
+      options: --user 0:0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare KiCad 8.0.9 and Shapely
+        run: |
+          set -eu
+          test "$(kicad-cli version)" = "8.0.9"
+          apt-get -o Acquire::Retries=3 update
+          DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 install -y --no-install-recommends python3-shapely python3-pip python3-numpy
+          /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
+          /usr/bin/python3 -c 'import pcbnew,shapely;assert pcbnew.Version().startswith("8.0.9") and shapely.__version__=="2.1.2"'
+      - name: Static no-release site safety
+        run: |
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_mux_s0_exact_via_hop.py -v
+      - name: Recreate locked MUX_EN CH019 139 candidate
+        timeout-minutes: 8
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_mux_en_multihop_route.py \
+            --archive hardware/eeg128-tdm/engineering/block2-ch019-electrode-closed139.zip \
+            --output /tmp/S0-base.json \
+            --candidate-output /tmp/S0-engineering-only.zip
+      - name: Native MUX S0 via-site and pair exact zone trial
+        timeout-minutes: 11
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_mux_s0_exact_via_hop.py \
+            --candidate /tmp/S0-engineering-only.zip \
+            --output /tmp/MUX-S0-native-via-hop-screen.json
+      - name: Fail-closed no-release and original-power gate
+        run: |
+          /usr/bin/python3 - <<'PY'
+          import json
+          from pathlib import Path
+          data=json.loads(Path('/tmp/MUX-S0-native-via-hop-screen.json').read_text())
+          assert data['source_archive_unchanged']
+          assert data['native_baseline']=={'violations':0,'warnings':0,'unconnected':139}
+          assert data['In1_refill_control_exact']
+          assert data['L3_refill_control_exact']
+          assert data['original_tracks_and_footprints_unchanged']
+          assert data['new_vias_retained']==0
+          assert len(data['tested_sites'])==data['candidate_site_count']
+          for key in ('accepted','routing_completed','fabrication_release',
+                      'manufacturing_files','checkpoint_promoted',
+                      'In1_Cu_used','native_S0_hop_route_qualified'):
+              assert data[key] is False, key
+          assert not list(Path('/tmp').rglob('*.gbr'))
+          assert not list(Path('/tmp').rglob('*.drl'))
+          PY
+      - name: Publish diagnostic JSON, no PCB
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MUX-S0-native-In1-L3-via-hop-sites
+          path: /tmp/MUX-S0-native-via-hop-screen.json
+          if-no-files-found: ignore
