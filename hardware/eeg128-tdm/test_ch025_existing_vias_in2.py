@@ -14,7 +14,7 @@ class TestCH025In2ExistingVias(unittest.TestCase):
             "pcbnew.In2_Cu", "pcbnew.In1_Cu",
             "power.buffer(.58)", "reserved_bottom=power.buffer(.505)",
             "SHAPE_POLY_SET", "exact_native_difference",
-            "source_originals_unchanged", "no_new_vias",
+            "source_originals_unchanged", "new_vias_added",
             "all_existing_vias_unchanged",
             "bounded_In2_A_star_started",
             "L3_exact_zero", "In1_exact_zero",
