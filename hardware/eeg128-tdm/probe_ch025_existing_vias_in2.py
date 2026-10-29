@@ -26,7 +26,7 @@ from analyze_ch025_l3_native_refill import filled
 from escape_mesh_505 import polygons
 from native_connectivity import regressed_nets
 from probe_ch025_cooperative8 import (
-    SRC_VIA, DST_VIA, unchanged_fingerprints,
+   SRC_VIA, DST_VIA, unchanged_fingerprints,
 )
 from probe_ch025_existing_vias_bcu import SRC_ALT_VIA, DST_ALT_VIA
 from probe_ch025_fcu_l3_exact import NET, ZONE, track_inventory
@@ -180,9 +180,7 @@ def reversible_in2_track_cut(
             or victim.GetNetname() in (
                 "VCM", "MUX_EN", "AGND", "3V3A")):
         raise RuntimeError("In2 victim is not an approved signal track")
-    original_vias = {
-        key for key, t in tracks.items() if isinstance(t, pcbnew.PCB_VIA)}
-    out["selected_UUID"] = uid
+     out["selected_UUID"] = uid
     out["attempted"] = True
     board.Remove(victim)
     try:

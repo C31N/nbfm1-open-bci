@@ -173,9 +173,15 @@ def run(candidate: Path, index: int, report_path: Path | None = None) -> dict[st
             board.Remove(current[uid])
         try:
             save_progress("virtual_micro_ripup_started")
-            if unchanged_fingerprints(board) != protected:
+            save_progress("protected_fingerprint_read_started")
+            post_protected = unchanged_fingerprints(board)
+            save_progress("protected_fingerprint_read_completed")
+            if post_protected != protected:
                 raise RuntimeError("Immutable via, pad or zone changed")
-            if any(track_inventory(board).get(uid) != val
+            save_progress("track_inventory_read_started")
+            inventory_after_cut = track_inventory(board)
+            save_progress("track_inventory_read_completed")
+            if any(inventory_after_cut.get(uid) != val
                    for uid, val in initial.items()
                    if uid not in selected):
                 raise RuntimeError("Unselected original changed")
