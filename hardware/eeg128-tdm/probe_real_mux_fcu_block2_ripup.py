@@ -16,7 +16,6 @@ import argparse
 import hashlib
 import itertools
 import json
-import math
 import re
 import shutil
 import tempfile
@@ -206,7 +205,8 @@ def run(candidate: Path, net: str, output: Path) -> dict[str, Any]:
                 "originals_restituted": False,
                 "candidate_native_DRC_pass": False,
                 "all_victim_nets_reconnected": False,
-                "new_via_count": 0, "In1_Cu_modified": False,
+                "new_via_count": 0, "no_new_vias": True,
+                "In1_Cu_modified": False,
                 "L3_exact_loss_gain_zero": False,
                 "accepted": False, "fabrication_release": False,
             }
