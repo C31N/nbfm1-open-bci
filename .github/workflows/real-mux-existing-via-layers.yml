@@ -1,0 +1,76 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+name: Native actual open Block2 MUX existing-vias three-layer
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/ch025-fcu-l3-exact-2026-10-21]
+    paths:
+      - ".github/workflows/real-mux-existing-via-layers.yml"
+      - "hardware/eeg128-tdm/probe_real_mux_existing_via_layers.py"
+      - "hardware/eeg128-tdm/test_real_mux_existing_via_layers.py"
+permissions:
+  contents: read
+jobs:
+  topology:
+    strategy:
+      fail-fast: false
+      matrix:
+        net: [CH018_P_MUX, CH020_N_MUX, CH020_P_MUX, CH024_N_MUX, CH024_P_MUX, CH028_N_MUX, CH029_N_MUX, CH030_N_MUX]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 19
+    container:
+      image: kicad/kicad@sha256:5716d82aa247abdbe512650eb4e8fce5a4031cbbef0a2c8df83208a69fef87b2
+      options: --user 0:0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pinned KiCad 8.0.9 and Shapely 2.1.2
+        run: |
+          set -eu
+          test "$(kicad-cli version)" = "8.0.9"
+          apt-get -o Acquire::Retries=3 update
+          DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 install -y --no-install-recommends python3-shapely python3-pip python3-numpy
+          /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
+      - name: Static protected-copper and release guard
+        run: |
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_real_mux_existing_via_layers.py -v
+      - name: Rebuild SHA-pinned 139 PCB MUX_EN and CH019
+        timeout-minutes: 8
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_mux_en_multihop_route.py \
+            --archive hardware/eeg128-tdm/engineering/block2-ch019-electrode-closed139.zip \
+            --output /tmp/existing-mux-base.json \
+            --candidate-output /tmp/existing-mux-base.zip
+      - name: Native same-net via FCu BCu In2 survey and bounded route
+        timeout-minutes: 8
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_real_mux_existing_via_layers.py \
+            --candidate /tmp/existing-mux-base.zip \
+            --net ${{ matrix.net }} \
+            --output /tmp/existing-mux-${{ matrix.net }}.json
+      - name: Strict no release / full native rollback
+        run: |
+          NET=${{ matrix.net }} /usr/bin/python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          d=json.loads(Path('/tmp/existing-mux-'+os.environ['NET']+'.json').read_text())
+          assert d['native_baseline']=={
+              'violations':0,'warnings':0,'unconnected':139}
+          assert d['original_archive_unchanged']
+          assert d['original_copper_restituted']
+          assert d['native_L3_exact_after_rollback']
+          assert d['native_In1_exact_after_rollback']
+          assert d['new_vias_added']==0
+          for key in ('accepted','routing_completed','fabrication_release',
+                      'manufacturing_files','checkpoint_promoted',
+                      'independent_replay_verified','In1_Cu_used'):
+              assert d[key] is False, key
+          assert not list(Path('/tmp').rglob('*.gbr'))
+          assert not list(Path('/tmp').rglob('*.drl'))
+          PY
+      - name: Save JSON diagnosis only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: existing-via-three-layer-${{ matrix.net }}
+          path: /tmp/existing-mux-${{ matrix.net }}.json
+          if-no-files-found: ignore
