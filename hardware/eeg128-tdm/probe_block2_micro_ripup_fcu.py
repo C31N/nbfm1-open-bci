@@ -89,7 +89,7 @@ def run(candidate: Path, index: int, report_path: Path | None = None) -> dict[st
         out["last_native_stage"] = stage
         if report_path is not None:
             report_path.parent.mkdir(parents=True, exist_ok=True)
-            report_path.write_text(json.dumps(out, indent=2) + "\\n")
+            report_path.write_text(json.dumps(out, indent=2) + "\n")
 
     save_progress("native_preflight")
     if not pcbnew.Version().startswith("8.0.9"):
