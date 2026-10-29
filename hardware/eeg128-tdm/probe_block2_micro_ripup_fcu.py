@@ -124,8 +124,20 @@ def run(candidate: Path, index: int, report_path: Path | None = None) -> dict[st
             raise RuntimeError("Pinned MUX_EN/CH019 board mismatch")
         baseline = native(pcb_path, folder / "baseline-native.json")
         out["baseline_native_DRC"] = metrics(baseline)
-        out["native_CH027_airwires_before"] = airwire_counts(
-            baseline).get(CH027, 0)
+        native_count_by_net = airwire_counts(baseline)
+        out["native_all_139_open_nets_before"] = dict(
+            sorted(native_count_by_net.items()))
+        out["native_explicit_target_counts_before"] = {
+            net: native_count_by_net.get(net, 0)
+            for net in (
+                "CH025_N_MUX", "CH027_N_MUX",
+                "CH022_N_ELECTRODE")}
+        out["native_open_Block2_MUX_nets_before"] = sorted(
+            net for net in native_count_by_net
+            if net.endswith("_MUX") and net.startswith(tuple(
+                f"CH{idx:03d}_" for idx in range(16, 32))))
+        out["native_CH027_airwires_before"] = native_count_by_net.get(
+            CH027, 0)
         out["native_CH027_open_item_details_before"] = [
             item for item in baseline["unconnected_items"]
             if any("[" + CH027 + "]" in line.get("description", "")
