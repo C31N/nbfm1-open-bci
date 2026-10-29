@@ -89,7 +89,6 @@ def native_open_positions(report: dict[str, Any]) -> dict[str, list[tuple[float,
 def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import LineString, box
-    from shapely.ops import unary_union
 
     if cohort not in COHORTS or not pcbnew.Version().startswith("8.0.9"):
         raise RuntimeError("Unsupported cohort or unpinned KiCad version")
