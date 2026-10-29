@@ -41,7 +41,7 @@ NO_RELEASE = {
     "independent_replay_verified": False,
 }
 
-def run(candidate: Path) -> dict[str, Any]:
+def run(candidate: Path, report_path: Path | None = None) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import GeometryCollection, Point, box
     from shapely.ops import unary_union
@@ -63,6 +63,13 @@ def run(candidate: Path) -> dict[str, Any]:
         "connectivity_prescreen_performed": True,
         "large_region_mesh_complexity_limit": 1900,
     }
+    def save_progress(stage: str) -> None:
+        out["last_native_stage"] = stage
+        if report_path is not None:
+            report_path.parent.mkdir(parents=True, exist_ok=True)
+            report_path.write_text(json.dumps(out, indent=2) + "\\n")
+
+    save_progress("native_preflight")
     if not pcbnew.Version().startswith("8.0.9"):
         raise RuntimeError("Pinned native KiCad 8.0.9 required")
     candidate_hash = hashlib.sha256(candidate.read_bytes()).hexdigest()
@@ -87,6 +94,7 @@ def run(candidate: Path) -> dict[str, Any]:
             raise RuntimeError("Protected MUX_EN/CH019 board digest mismatch")
         baseline = native(original, folder / "baseline.json")
         out["native_139_baseline"] = metrics(baseline)
+        save_progress("baseline_native_DRC_recorded")
         if out["native_139_baseline"] != {
                 "violations": 0, "warnings": 0, "unconnected": 139}:
             out["status"] = "baseline_139_gate_failed"
@@ -134,6 +142,9 @@ def run(candidate: Path) -> dict[str, Any]:
             if math.dist(center, contact) >= radius - .01:
                 raise RuntimeError("Landing outside existing via annulus")
             for margin in (8.0, 14.0, 25.0):
+                out["active_contact_mm"] = list(contact)
+                out["active_margin_mm"] = margin
+                save_progress("FCu_connected_component_screen_started")
                 region = domain.intersection(box(
                     min(start[0], contact[0]) - margin,
                     min(start[1], contact[1]) - margin,
@@ -166,7 +177,9 @@ def run(candidate: Path) -> dict[str, Any]:
                 mesh_screened = not connected
                 # Cap costly triangulation to avoid a timeout with NO JSON
                 # output. A cap is NOT a proof that the route cannot exist.
+                save_progress("FCu_component_screen_complete")
                 if connected and complexity <= 1900:
+                    save_progress("expensive_mesh_route_started")
                     path = mesh_route(
                         board, start, contact, code,
                         (pcbnew.F_Cu, pcbnew.B_Cu), power, region,
@@ -190,6 +203,7 @@ def run(candidate: Path) -> dict[str, Any]:
                     "new_vias": False,
                 }
                 out["attempts"].append(row)
+                save_progress("FCu_trial_recorded")
                 if not valid:
                     continue
                 row["path"] = [list(v) for v in path]
@@ -252,6 +266,7 @@ def run(candidate: Path) -> dict[str, Any]:
     out["source_archive_unchanged"] = (
         hashlib.sha256(candidate.read_bytes()).hexdigest() ==
         candidate_hash)
+    save_progress("native_trial_complete")
     return out
 
 def main() -> None:
@@ -259,7 +274,7 @@ def main() -> None:
     parser.add_argument("--candidate", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    result = run(args.candidate)
+    result = run(args.candidate, args.output)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps({

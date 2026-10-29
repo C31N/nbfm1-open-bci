@@ -58,7 +58,7 @@ FLAGS = {
     "independent_replay_verified": False, "In1_Cu_used": False,
 }
 
-def run(candidate: Path, index: int) -> dict[str, Any]:
+def run(candidate: Path, index: int, report_path: Path | None = None) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import GeometryCollection, Point, box
     from shapely.ops import unary_union
@@ -85,6 +85,13 @@ def run(candidate: Path, index: int) -> dict[str, Any]:
         "FCu_reachability": [],
         "new_track_count": 0,
     }
+    def save_progress(stage: str) -> None:
+        out["last_native_stage"] = stage
+        if report_path is not None:
+            report_path.parent.mkdir(parents=True, exist_ok=True)
+            report_path.write_text(json.dumps(out, indent=2) + "\\n")
+
+    save_progress("native_preflight")
     if not pcbnew.Version().startswith("8.0.9"):
         raise RuntimeError("Native KiCad 8.0.9 required")
     locked_hash = hashlib.sha256(candidate.read_bytes()).hexdigest()
@@ -109,6 +116,7 @@ def run(candidate: Path, index: int) -> dict[str, Any]:
             raise RuntimeError("Pinned MUX_EN/CH019 board mismatch")
         baseline = native(pcb_path, folder / "baseline-native.json")
         out["baseline_native_DRC"] = metrics(baseline)
+        save_progress("baseline_native_DRC_recorded")
         if out["baseline_native_DRC"] != {
                 "violations": 0, "warnings": 0, "unconnected": 139}:
             out["status"] = "baseline_139_gate_failed"
@@ -164,12 +172,14 @@ def run(candidate: Path, index: int) -> dict[str, Any]:
         for uid in selected:
             board.Remove(current[uid])
         try:
+            save_progress("virtual_micro_ripup_started")
             if unchanged_fingerprints(board) != protected:
                 raise RuntimeError("Immutable via, pad or zone changed")
             if any(track_inventory(board).get(uid) != val
                    for uid, val in initial.items()
                    if uid not in selected):
                 raise RuntimeError("Unselected original changed")
+            save_progress("foreign_copper_geometry_started")
             foreign, _ = obstacles(
                 board, start_code, .15, .15, region, .60,
                 (pcbnew.F_Cu, pcbnew.B_Cu))
@@ -184,6 +194,7 @@ def run(candidate: Path, index: int) -> dict[str, Any]:
                 return next((int(i) for i in tree.query(point)
                              if parts[int(i)].covers(point)), None)
 
+            save_progress("BCu_FCu_free_component_scan_complete")
             source_part = component(immutable_start)
             reachable_contact = None
             for contact in CH027_VIA_LANDINGS_MM:
@@ -216,7 +227,9 @@ def run(candidate: Path, index: int) -> dict[str, Any]:
                     len(shape.exterior.coords)
                     + sum(len(r.coords) for r in shape.interiors))
                 out["selected_component_vertices"] = vertices
+                save_progress("CH027_topological_reachability_recorded")
                 if vertices <= 700:
+                    save_progress("bounded_native_FCu_mesh_started")
                     proposal = mesh_route(
                         board, immutable_start, reachable_contact, start_code,
                         (pcbnew.F_Cu, pcbnew.B_Cu), filled(zone), region,
@@ -309,6 +322,7 @@ def run(candidate: Path, index: int) -> dict[str, Any]:
             if not delta["native_both_empty"]:
                 raise RuntimeError("Native L3 rollback not exact")
             out["protected_originals_restituted"] = True
+            save_progress("originals_and_L3_native_restituted")
             out["S0_originals_restituted"] = all(
                 track_inventory(board).get(uid) == initial[uid]
                 for uid in S0_UUIDS)
@@ -316,6 +330,7 @@ def run(candidate: Path, index: int) -> dict[str, Any]:
             raise RuntimeError("Unmodified S0 originals not restored")
     out["source_archive_untouched"] = (
         hashlib.sha256(candidate.read_bytes()).hexdigest() == locked_hash)
+    save_progress("micro_case_complete")
     return out
 
 def main() -> None:
@@ -326,7 +341,7 @@ def main() -> None:
                         choices=tuple(range(len(CASE_VICTIMS))),
                         required=True)
     args = parser.parse_args()
-    result = run(args.candidate, args.case_index)
+    result = run(args.candidate, args.case_index, args.output)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps({
