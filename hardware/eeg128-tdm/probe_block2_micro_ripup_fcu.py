@@ -268,43 +268,45 @@ def run(candidate: Path, index: int, report_path: Path | None = None) -> dict[st
                         add_path(board, replacement, victim_code, .15,
                                  layers=(pcbnew.F_Cu, pcbnew.B_Cu))
                         save_progress("victim_FCu_track_added")
-                        out["complete_restitution_geometry_found"] = (
-                            full_restitution)
-                        if full_restitution:
-                            pcbnew.ZONE_FILLER(board).Fill(board.Zones())
-                            delta = exact_native_difference(
-                                original_l3,
-                                pcbnew.SHAPE_POLY_SET(
-                                    zone.GetFilledPolysList(pcbnew.In2_Cu)))
-                            out["native_3V3A_loss_mm2"] = (
-                                delta["loss_native_mm2"])
-                            out["native_3V3A_gain_mm2"] = (
-                                delta["gain_native_mm2"])
-                            out["native_3V3A_exact_zero"] = (
-                                delta["native_both_empty"])
-                            if delta["native_both_empty"]:
-                                scratch_dir = folder / "scratch"
-                                scratch_dir.mkdir()
-                                for name in MEMBERS[1:]:
-                                    shutil.copyfile(folder / name,
-                                                    scratch_dir / name)
-                                scratch = scratch_dir / MEMBERS[0]
-                                pcbnew.SaveBoard(str(scratch), board)
-                                post = native(scratch, folder / "post.json")
-                                out["native_post_DRC"] = metrics(post)
-                                out["regressed_nets"] = regressed_nets(
-                                    baseline, post)
-                                out["native_DRC_qualified"] = (
-                                    metrics(post)["violations"] == 0
-                                    and metrics(post)["warnings"] == 0
-                                    and metrics(post)["unconnected"] < 139
-                                    and not out["regressed_nets"])
-                                out["native_CH027_closed"] = (
-                                    out["native_DRC_qualified"])
-                                out["status"] = (
-                                    "native_CH027_and_all_victims_DRC_qualified"
-                                    if out["native_DRC_qualified"] else
-                                    "post_native_DRC_or_connectivity_failed")
+                    out["complete_restitution_geometry_found"] = (
+                        full_restitution)
+                    if not full_restitution:
+                        out["status"] = "victim_FCu_restitution_incomplete"
+                    if full_restitution:
+                        pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+                        delta = exact_native_difference(
+                            original_l3,
+                            pcbnew.SHAPE_POLY_SET(
+                                zone.GetFilledPolysList(pcbnew.In2_Cu)))
+                        out["native_3V3A_loss_mm2"] = (
+                            delta["loss_native_mm2"])
+                        out["native_3V3A_gain_mm2"] = (
+                            delta["gain_native_mm2"])
+                        out["native_3V3A_exact_zero"] = (
+                            delta["native_both_empty"])
+                        if delta["native_both_empty"]:
+                            scratch_dir = folder / "scratch"
+                            scratch_dir.mkdir()
+                            for name in MEMBERS[1:]:
+                                shutil.copyfile(folder / name,
+                                                scratch_dir / name)
+                            scratch = scratch_dir / MEMBERS[0]
+                            pcbnew.SaveBoard(str(scratch), board)
+                            post = native(scratch, folder / "post.json")
+                            out["native_post_DRC"] = metrics(post)
+                            out["regressed_nets"] = regressed_nets(
+                                baseline, post)
+                            out["native_DRC_qualified"] = (
+                                metrics(post)["violations"] == 0
+                                and metrics(post)["warnings"] == 0
+                                and metrics(post)["unconnected"] < 139
+                                and not out["regressed_nets"])
+                            out["native_CH027_closed"] = (
+                                out["native_DRC_qualified"])
+                            out["status"] = (
+                                "native_CH027_and_all_victims_DRC_qualified"
+                                if out["native_DRC_qualified"] else
+                                "post_native_DRC_or_connectivity_failed")
         finally:
             extra_tracks = [
                 item for item in board.GetTracks()
