@@ -17,6 +17,10 @@ class TestCH027WideFCu(unittest.TestCase):
             "regressed_nets", "PINNED_CANDIDATE_SHA",
             '"fabrication_release": False', '"accepted": False',
             "25.0", "TemporaryDirectory",
+            "FCu_topologically_connected",
+            "mesh_skipped_complexity_budget",
+            "source_component", "target_component",
+            "connected and complexity <= 1900",
         ):
             self.assertIn(required, source)
         for banned in ("ExportGerbers", "ExportDrill",

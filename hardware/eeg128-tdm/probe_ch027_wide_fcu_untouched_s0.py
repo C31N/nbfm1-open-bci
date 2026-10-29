@@ -43,7 +43,11 @@ NO_RELEASE = {
 
 def run(candidate: Path) -> dict[str, Any]:
     import pcbnew
-    from shapely.geometry import GeometryCollection, box
+    from shapely.geometry import GeometryCollection, Point, box
+    from shapely.ops import unary_union
+    from shapely.strtree import STRtree
+    from route_targeted_closure import obstacles
+    from escape_mesh_505 import polygons
 
     out: dict[str, Any] = {
         **NO_RELEASE, "status": "not_started",
@@ -56,6 +60,8 @@ def run(candidate: Path) -> dict[str, Any]:
         "native_L3_exact_zero": False,
         "new_via_count": 0,
         "attempts": [],
+        "connectivity_prescreen_performed": True,
+        "large_region_mesh_complexity_limit": 1900,
     }
     if not pcbnew.Version().startswith("8.0.9"):
         raise RuntimeError("Pinned native KiCad 8.0.9 required")
@@ -133,17 +139,52 @@ def run(candidate: Path) -> dict[str, Any]:
                     min(start[1], contact[1]) - margin,
                     max(start[0], contact[0]) + margin,
                     max(start[1], contact[1]) + margin))
-                path = mesh_route(
-                    board, start, contact, code,
-                    (pcbnew.F_Cu, pcbnew.B_Cu), power, region,
-                    start_layer=0, goal_layer=0, allow_vias=False,
-                    extra_obstacles=[guard, GeometryCollection()])
+                # Cheap exact geometric reachability screen BEFORE expensive
+                # constrained Delaunay triangles. Existing S0/VCM/Block1
+                # copper remains a literal obstacle; no ripup is permitted.
+                foreign, _ = obstacles(
+                    board, code, .15, .15, region, .60,
+                    (pcbnew.F_Cu, pcbnew.B_Cu))
+                free_f = region.difference(unary_union([
+                    foreign[0], guard])).buffer(-.000005)
+                components = polygons(free_f)
+                tree = STRtree(components)
+                def component(point: tuple[float, float]) -> int | None:
+                    return next((int(idx) for idx in tree.query(Point(point))
+                                 if components[int(idx)].covers(Point(point))),
+                                None)
+                source_component = component(start)
+                target_component = component(contact)
+                connected = (
+                    source_component is not None
+                    and source_component == target_component)
+                complexity = sum(
+                    len(poly.exterior.coords) +
+                    sum(len(hole.coords) for hole in poly.interiors)
+                    for poly in components)
+                path = None
+                mesh_screened = not connected
+                # Cap costly triangulation to avoid a timeout with NO JSON
+                # output. A cap is NOT a proof that the route cannot exist.
+                if connected and complexity <= 1900:
+                    path = mesh_route(
+                        board, start, contact, code,
+                        (pcbnew.F_Cu, pcbnew.B_Cu), power, region,
+                        start_layer=0, goal_layer=0, allow_vias=False,
+                        extra_obstacles=[guard, GeometryCollection()])
                 valid = (
                     path is not None and len(path) >= 2
                     and all(vertex[0] == 0 for vertex in path))
                 row = {
                     "contact_mm": list(contact), "margin_mm": margin,
                     "FCu_only_path_found": bool(valid),
+                    "source_component": source_component,
+                    "target_component": target_component,
+                    "FCu_topologically_connected": bool(connected),
+                    "mesh_skipped_disconnected": bool(mesh_screened),
+                    "free_geometry_vertex_count": complexity,
+                    "mesh_skipped_complexity_budget": (
+                        connected and complexity > 1900),
                     "native_DRC_qualified": False,
                     "S0_original_tracks_untouched": True,
                     "new_vias": False,
