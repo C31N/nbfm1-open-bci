@@ -159,7 +159,6 @@ def run(candidate: Path, index: int) -> dict[str, Any]:
             min(immutable_start[1], via_pos[1]) - 4.5,
             max(immutable_start[0], via_pos[0]) + 4.5,
             max(immutable_start[1], via_pos[1]) + 4.5))
-        initial_count = len(existing_ids)
         pcbnew.ZONE_FILLER(board).Fill(board.Zones())
         out["selected_originals_verified"] = True
         for uid in selected:
