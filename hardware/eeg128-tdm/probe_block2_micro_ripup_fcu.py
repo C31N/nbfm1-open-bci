@@ -50,6 +50,7 @@ CASE_VICTIMS = (
     (S0_UUIDS[0], S1), (S0_UUIDS[0], S2),
     (S0_UUIDS[0], CH030),
     (*S0_UUIDS, S1), (*S0_UUIDS, CH030),
+    (S1, *S0_UUIDS), (S1, *S0_UUIDS),
 )
 FLAGS = {
     "accepted": False, "routing_completed": False,
@@ -60,7 +61,7 @@ FLAGS = {
 
 def run(candidate: Path, index: int, report_path: Path | None = None) -> dict[str, Any]:
     import pcbnew
-    from shapely.geometry import Point, box
+    from shapely.geometry import Point, box, LineString
     from shapely.ops import unary_union
     from shapely.strtree import STRtree
 
@@ -239,12 +240,24 @@ def run(candidate: Path, index: int, report_path: Path | None = None) -> dict[st
                 # The original copper changes remain confined to reviewed
                 # net UUIDs. Native DRC is mandatory for final geometry.
                 save_progress("bounded_CH027_FCu_Astar_started")
+                # Reserve S1's original corridor as a soft priority
+                # in alternate schedule 9; it is not protected copper
+                # but restitution must succeed for any accepted proposal.
+                s1_soft_guard = LineString(
+                    endpoint_map[S1]).buffer(.32)
+                cost_regions = (
+                    ((0, s1_soft_guard, 60.0),)
+                    if index == 9 else ())
+                out["S1_soft_reservation_applied"] = index == 9
+                out["victim_restitution_order"] = list(victims)
+                save_progress("S1_restitution_priority_selected")
                 proposal = search(
                     board, immutable_start, reachable_contact, start_code,
                     .15, .15, False, 4.5, step=.18,
                     max_nodes=40000, deadline=time.monotonic() + 24,
                     start_layer=0, goal_layer=0,
-                    layers=(pcbnew.F_Cu, pcbnew.B_Cu))
+                    layers=(pcbnew.F_Cu, pcbnew.B_Cu),
+                    cost_regions=cost_regions)
                 if (proposal is not None and len(proposal) >= 2
                         and all(pt[0] == 0 for pt in proposal)):
                     out["CH027_Astar_proposal"] = [list(p) for p in proposal]

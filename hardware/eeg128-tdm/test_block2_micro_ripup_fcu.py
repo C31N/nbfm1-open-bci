@@ -21,6 +21,8 @@ class TestMicroRipupFCu(unittest.TestCase):
             "unchanged_fingerprints(board) != protected",
             "max_nodes=40000", "regressed_nets",
             "CH027_Astar_proposal", "bounded_CH027_FCu_Astar_started",
+            "S1_soft_reservation_applied",
+            "victim_restitution_order", "cost_regions=cost_regions",
             "native_DRC_qualified",
             "protected_originals_restituted",
             '"fabrication_release": False', '"accepted": False',

@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        case: [6]
+        case: [8, 9]
     runs-on: ubuntu-24.04
     timeout-minutes: 19
     container:
