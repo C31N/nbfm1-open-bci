@@ -3,7 +3,7 @@ name: Native Block2 deep FCu coupled 136 no-release experiment
 on:
   workflow_dispatch:
   push:
-    branches: [codex/ch025-fcu-l3-exact-2026-10-21]
+    branches: [codex/ch025-fcu-l3-exact-2026-10-21, codex/block2-predictive-restitution-2026-10-30]
     paths:
       - ".github/workflows/block2-deep-fcu-multinet.yml"
       - "hardware/eeg128-tdm/probe_block2_deep_fcu_multinet.py"
