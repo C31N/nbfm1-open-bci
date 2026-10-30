@@ -404,7 +404,8 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
                     raise RuntimeError("Victim accounting incomplete")
                 progress("all_displaced_victims_accounted")
                 progress("native_original_inventory_check_started")
-                if any(track_inventory(board).get(k) != v
+                current_track_inventory = track_inventory(board)
+                if any(current_track_inventory.get(k) != v
                        for k, v in original_tracks.items()
                        if k not in subset):
                     raise RuntimeError("Unselected original copper changed")
