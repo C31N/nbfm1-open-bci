@@ -89,6 +89,7 @@ def native_open_positions(report: dict[str, Any]) -> dict[str, list[tuple[float,
 def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import LineString, box
+    from shapely.ops import unary_union
 
     if cohort not in COHORTS or not pcbnew.Version().startswith("8.0.9"):
         raise RuntimeError("Unsupported cohort or unpinned KiCad version")
@@ -106,8 +107,11 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
         "no_protected_net_copper_moved": False,
     }
 
+    native_start = time.monotonic()
     def progress(stage: str) -> None:
         report["last_completed_stage"] = stage
+        report.setdefault("stage_elapsed_seconds", {})[stage] = round(
+            time.monotonic() - native_start, 3)
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(json.dumps(report, indent=2) + "\n")
 
@@ -242,7 +246,7 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
                 board.FindNet(name).GetNetCode(), region, guard)
             for name, pts in positions.items() if name in targets}
         progress("original_three_net_FCu_components_recorded")
-        global_end = time.monotonic() + 210
+        global_end = time.monotonic() + 165
         for cut_size in (16, 32):
             subset = tuple(priority[:min(cut_size, len(priority))])
             if not subset or (report["trials"] and
@@ -293,6 +297,16 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
                 if not row["reachable_targets"]:
                     row["status"] = "deep_cut_still_topologically_partitioned"
                     continue
+                # Original victim corridors receive a soft reservation
+                # BEFORE target routing, rather than being displaced last.
+                victim_reservation = unary_union([
+                    LineString((
+                        xy(source_tracks[uid].GetStart()),
+                        xy(source_tracks[uid].GetEnd())
+                    )).buffer(.245)
+                    for uid in subset])
+                row["victim_corridors_pre_reserved"] = len(subset)
+                progress("victim_return_corridor_pre_reserved")
                 # A single truly open MUX pair must first pass KiCad's
                 # native 138 gate before three independent closures can
                 # form a candidate for the stricter 136 replay gate.
@@ -312,7 +326,8 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
                         step=.22, max_nodes=27000,
                         deadline=min(time.monotonic()+18, global_end),
                         start_layer=0, goal_layer=0,
-                        layers=(pcbnew.F_Cu, pcbnew.B_Cu))
+                        layers=(pcbnew.F_Cu, pcbnew.B_Cu),
+                        cost_regions=((0, victim_reservation, 35.0),))
                     if (proposal is None or len(proposal) < 2
                             or any(k[0] != 0 for k in proposal)):
                         success = False
@@ -325,38 +340,75 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
                 if not success:
                     row["status"] = "joint_three_target_Astar_incomplete"
                     continue
-                # Each victim is restored, by reroute or by reinstating
-                # original copper; native DRC vetoes collisions in either.
+                # Reinsert noncolliding original victims first: they
+                # reserve real copper corridors for the A* reroutes.
+                progress("victim_overlap_inventory_started")
+                new_targets = [
+                    tr for tr in board.GetTracks()
+                    if tr.m_Uuid.AsString() not in before_new
+                    and not isinstance(tr, pcbnew.PCB_VIA)
+                    and tr.GetLayer() == pcbnew.F_Cu]
+                if not new_targets:
+                    raise RuntimeError("No target FCu copper to qualify")
+                occupied = unary_union([
+                    LineString((
+                        xy(tr.GetStart()), xy(tr.GetEnd())
+                    )).buffer(pcbnew.ToMM(tr.GetWidth()) / 2 + .151)
+                    for tr in new_targets])
+                reroute = []
                 for uid in subset:
-                    item = source_tracks[uid]
-                    code = item.GetNetCode()
-                    progress("victim_restitution_in_progress")
-                    proposal = None
-                    if time.monotonic() + 1 < global_end:
-                        proposal = search(
-                            board, xy(item.GetStart()), xy(item.GetEnd()),
-                            code, .15, .15, False, 2.5,
-                            step=.25, max_nodes=16000,
-                            deadline=min(time.monotonic()+8, global_end),
+                    victim = source_tracks[uid]
+                    old_geom = LineString((
+                        xy(victim.GetStart()), xy(victim.GetEnd())
+                    )).buffer(pcbnew.ToMM(victim.GetWidth()) / 2)
+                    if old_geom.intersects(occupied):
+                        reroute.append(uid)
+                    else:
+                        board.Add(victim)
+                        reinserted.add(uid)
+                        row["victim_restitution"].append({
+                            "uuid": uid, "net": victim.GetNetname(),
+                            "strategy": "original_copper_pre_reserved"})
+                row["victim_reroute_UUIDs"] = list(reroute)
+                row["victims_preserved_original"] = len(reinserted)
+                progress("victim_original_corridors_restored")
+                for uid in reroute:
+                    victim = source_tracks[uid]
+                    report["active_victim_UUID"] = uid
+                    progress("victim_reroute_Astar_started")
+                    proposed = None
+                    if time.monotonic() + 2 < global_end:
+                        proposed = search(
+                            board, xy(victim.GetStart()),
+                            xy(victim.GetEnd()), victim.GetNetCode(),
+                            .15, .15, False, 2.5, step=.25,
+                            max_nodes=16000,
+                            deadline=min(time.monotonic()+7, global_end),
                             start_layer=0, goal_layer=0,
                             layers=(pcbnew.F_Cu, pcbnew.B_Cu))
-                    if (proposal is not None and len(proposal) >= 2
-                            and all(k[0] == 0 for k in proposal)):
-                        add_path(board, proposal, code, .15,
+                    if (proposed is not None and len(proposed) >= 2
+                            and all(point[0] == 0 for point in proposed)):
+                        add_path(board, proposed, victim.GetNetCode(), .15,
                                  layers=(pcbnew.F_Cu, pcbnew.B_Cu))
                         strategy = "new_FCu_trace"
                     else:
-                        board.Add(item)
+                        board.Add(victim)
                         reinserted.add(uid)
-                        strategy = "exact_original_reinserted_needs_DRC"
+                        strategy = "original_fallback_needs_native_DRC"
                     row["victim_restitution"].append({
-                        "uuid": uid, "net": item.GetNetname(),
+                        "uuid": uid, "net": victim.GetNetname(),
                         "strategy": strategy})
                     progress("single_victim_restituted")
+                report.pop("active_victim_UUID", None)
+                if len(row["victim_restitution"]) != len(subset):
+                    raise RuntimeError("Victim accounting incomplete")
+                progress("all_displaced_victims_accounted")
+                progress("native_original_inventory_check_started")
                 if any(track_inventory(board).get(k) != v
                        for k, v in original_tracks.items()
                        if k not in subset):
                     raise RuntimeError("Unselected original copper changed")
+                progress("native_original_inventory_check_complete")
                 if unchanged_fingerprints(board) != original_protected:
                     raise RuntimeError("Protected original copper changed")
                 added_vias = {
@@ -364,7 +416,9 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
                     if isinstance(item, pcbnew.PCB_VIA)}
                 if added_vias != original_vias:
                     raise RuntimeError("No-via invariant violated")
+                progress("candidate_zone_fill_started")
                 pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+                progress("candidate_zone_fill_complete")
                 delta = exact_native_difference(
                     base_L3, pcbnew.SHAPE_POLY_SET(
                         z.GetFilledPolysList(pcbnew.In2_Cu)))
@@ -384,7 +438,9 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
                     shutil.copyfile(root / member, scratch_dir / member)
                 scratch = scratch_dir / MEMBERS[0]
                 pcbnew.SaveBoard(str(scratch), board)
+                progress("candidate_fresh_native_DRC_started")
                 post = native(scratch, root / f"post-{cut_size}.json")
+                progress("candidate_fresh_native_DRC_complete")
                 row["native_DRC"] = metrics(post)
                 row["native_target_open"] = {
                     name: airwire_counts(post).get(name, 0)
@@ -411,6 +467,7 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
                 report["any_native_net_reduction_qualified"] |= (
                     row["candidate_native_net_reduction_qualified"])
             finally:
+                progress("rollback_original_copper_started")
                 # Exact rollback of any added tracks and original victim UUIDs.
                 for item in list(board.GetTracks()):
                     if item.m_Uuid.AsString() not in before_new:
