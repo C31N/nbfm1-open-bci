@@ -23,7 +23,7 @@ from native_connectivity import airwire_counts
 from probe_ch025_cooperative8 import unchanged_fingerprints
 from probe_ch025_fcu_l3_exact import power_fcu_obstacles, track_inventory
 from probe_block2_deep_fcu_multinet import (
-    OPEN, LOCK, movable, native_open_positions,
+    LOCK, movable, native_open_positions,
 )
 from probe_mux_en_multihop_neighbors import PINNED_CANDIDATE_SHA
 from probe_real_mux_fcu_block2_ripup import same_free_component
