@@ -525,35 +525,28 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
                 report["any_native_net_reduction_qualified"] |= (
                     row["candidate_native_net_reduction_qualified"])
             finally:
+                # KiCad 8.0.9 SWIG PCB_TRACK objects can become invalid
+                # after a failed tentative route. Never call Remove/Add on
+                # stale wrappers during rollback (observed native SIGSEGV 139).
+                # Only the scratch board was mutated; the pinned source on
+                # disk is authoritative. Reload it for EVERY trial outcome.
                 progress("rollback_original_copper_started")
-                if row.get("native_DRC") is not None:
-                    # Avoid touching potentially invalidated SWIG board
-                    # items after SaveBoard/native DRC on a scratch board.
-                    # Reopen the immutable pinned source and verify it.
-                    progress("pristine_native_board_reload_started")
-                    if hashlib.sha256(pcb_path.read_bytes()).hexdigest() != (
-                            PINNED_CANDIDATE_SHA):
-                        raise RuntimeError("Original disk source SHA drift")
-                    board = pcbnew.LoadBoard(str(pcb_path))
-                    z = next((zone for zone in board.Zones()
-                              if zone.m_Uuid.AsString() == ZONE
-                              and zone.GetNetname() == "3V3A"
-                              and zone.IsOnLayer(pcbnew.In2_Cu)), None)
-                    if z is None:
-                        raise RuntimeError("Protected zone absent in source")
-                    pcbnew.ZONE_FILLER(board).Fill(board.Zones())
-                    row["rollback_from_pristine_source"] = True
-                else:
-                    # No native scratch DRC occurred: UUID-safe rollback.
-                    for item in list(board.GetTracks()):
-                        if item.m_Uuid.AsString() not in before_new:
-                            board.Remove(item)
-                    for uid in subset:
-                        if uid in reinserted:
-                            board.Remove(source_tracks[uid])
-                        board.Add(source_tracks[uid])
-                    pcbnew.ZONE_FILLER(board).Fill(board.Zones())
-                    row["rollback_from_pristine_source"] = False
+                progress("pristine_native_board_reload_started")
+                if hashlib.sha256(pcb_path.read_bytes()).hexdigest() != (
+                        PINNED_CANDIDATE_SHA):
+                    raise RuntimeError("Original disk source SHA drift")
+                board = pcbnew.LoadBoard(str(pcb_path))
+                source_tracks = {
+                    item.m_Uuid.AsString(): item
+                    for item in board.GetTracks()}
+                z = next((zone for zone in board.Zones()
+                          if zone.m_Uuid.AsString() == ZONE
+                          and zone.GetNetname() == "3V3A"
+                          and zone.IsOnLayer(pcbnew.In2_Cu)), None)
+                if z is None:
+                    raise RuntimeError("Protected zone absent in source")
+                pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+                row["rollback_from_pristine_source"] = True
                 row["restored_originals"] = (
                     track_inventory(board) == original_tracks
                     and unchanged_fingerprints(board) == original_protected
