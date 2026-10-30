@@ -52,6 +52,16 @@ NEVER_RIP = frozenset({
     "VCM", "VCM_RAW", "AGND", "MUX_EN", "3V3A",
     "CH025_N_MUX", "CH027_N_MUX", "CH022_N_ELECTRODE",
 })
+# Evidence from workflow #8: two native 138 candidates each failed on
+# these four original victim tracks (five DRC violations per candidate).
+# UUIDs are diagnostic constraints, never permission to move protected copper.
+RESTITUTION_HOTSPOTS = {
+    "31a40ce9-1b3f-4f1a-b654-7fec9e793976": ("MUX_S2", 4),
+    "2ac3aecb-9a62-4bc7-846a-75a782ad0474": ("MUX_S1", 2),
+    "c320c092-5407-4ad6-9a97-2c324373271c": ("MUX_S3", 2),
+    "d63cd5b4-9b79-4d97-8e66-1895bb81d615": ("MUX_S2", 2),
+}
+
 LOCK = {
     "accepted": False, "routing_completed": False,
     "fabrication_release": False, "manufacturing_files": False,
@@ -105,6 +115,11 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
         "L3_exact_after_rollback": False,
         "source_archive_unchanged": False,
         "no_protected_net_copper_moved": False,
+        "historical_138_DRC_hotspot_UUIDs": {
+            uid: {"net": net, "combined_DRC_findings": count}
+            for uid, (net, count) in RESTITUTION_HOTSPOTS.items()
+        },
+        "predictive_policy": "reject any victim without a routed FCu return; no fallback",
     }
 
     native_start = time.monotonic()
@@ -246,12 +261,25 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
                 board.FindNet(name).GetNetCode(), region, guard)
             for name, pts in positions.items() if name in targets}
         progress("original_three_net_FCu_components_recorded")
+        # Diversify cuts rather than assuming larger prefix cuts always win.
+        # The protected-hotspot variant probes whether the S-bus long tracks
+        # are better preserved while other Block2 copper is displaced.
+        cut_plans = [
+            ("prefix-16", tuple(priority[:16])),
+            ("prefix-32", tuple(priority[:32])),
+            ("preserve-hotspots-32", tuple(
+                uid for uid in priority if uid not in RESTITUTION_HOTSPOTS)[:32]),
+            ("expanded-48", tuple(priority[:48])),
+        ]
+        report["planned_cuts"] = [
+            {"label": label, "UUID_count": len(uuids)}
+            for label, uuids in cut_plans]
         global_end = time.monotonic() + 165
-        for cut_size in (16, 32):
-            subset = tuple(priority[:min(cut_size, len(priority))])
-            if not subset or (report["trials"] and
-                              subset == tuple(report["trials"][-1]["removed_UUIDs"])):
+        seen_cuts: set[tuple[str, ...]] = set()
+        for cut_size, subset in cut_plans:
+            if not subset or subset in seen_cuts:
                 continue
+            seen_cuts.add(subset)
             row: dict[str, Any] = {
                 "removed_UUIDs": list(subset),
                 "removed_nets": sorted({
@@ -266,6 +294,9 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
                 "restored_originals": False,
                 "native_In1_exact": False, "native_L3_exact": False,
                 "new_vias": 0,
+                "cut_strategy": cut_size,
+                "predictive_restitution_blocked_UUIDs": [],
+                "predictive_restitution_routes_found": False,
             }
             report["trials"].append(row)
             report["active_deep_cut_size"] = len(subset)
@@ -372,36 +403,57 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
                 row["victim_reroute_UUIDs"] = list(reroute)
                 row["victims_preserved_original"] = len(reinserted)
                 progress("victim_original_corridors_restored")
-                for uid in reroute:
+                # Predictive cooperative candidate: no cut is admissible
+                # if its replacement FCu corridor cannot be routed while
+                # the target copper and the other victims occupy the board.
+                # Route the four proven restitution blockers first, then
+                # every other displaced victim. Never reinsert a colliding
+                # original merely to make the bookkeeping appear complete.
+                predictive_failed = False
+                for uid in sorted(reroute, key=lambda u: (
+                        u not in RESTITUTION_HOTSPOTS,
+                        -RESTITUTION_HOTSPOTS.get(u, ("", 0))[1], u)):
                     victim = source_tracks[uid]
                     report["active_victim_UUID"] = uid
-                    progress("victim_reroute_Astar_started")
+                    progress("predictive_victim_return_search_started")
                     proposed = None
-                    if time.monotonic() + 2 < global_end:
-                        proposed = search(
+                    for grid_step, node_limit, budget in (
+                            (.20, 27000, 10), (.14, 40000, 15)):
+                        if time.monotonic() + 2 >= global_end:
+                            break
+                        trial_path = search(
                             board, xy(victim.GetStart()),
                             xy(victim.GetEnd()), victim.GetNetCode(),
-                            .15, .15, False, 2.5, step=.25,
-                            max_nodes=16000,
-                            deadline=min(time.monotonic()+7, global_end),
+                            .15, .15, False, 2.5, step=grid_step,
+                            max_nodes=node_limit,
+                            deadline=min(time.monotonic()+budget, global_end),
                             start_layer=0, goal_layer=0,
                             layers=(pcbnew.F_Cu, pcbnew.B_Cu))
-                    if (proposed is not None and len(proposed) >= 2
-                            and all(point[0] == 0 for point in proposed)):
-                        add_path(board, proposed, victim.GetNetCode(), .15,
-                                 layers=(pcbnew.F_Cu, pcbnew.B_Cu))
-                        strategy = "new_FCu_trace"
-                    else:
-                        board.Add(victim)
-                        reinserted.add(uid)
-                        strategy = "original_fallback_needs_native_DRC"
+                        if (trial_path is not None and len(trial_path) >= 2
+                                and all(point[0] == 0 for point in trial_path)):
+                            proposed = trial_path
+                            break
+                    if proposed is None:
+                        row["predictive_restitution_blocked_UUIDs"].append(uid)
+                        row["victim_restitution"].append({
+                            "uuid": uid, "net": victim.GetNetname(),
+                            "strategy": "reject_no_verified_FCu_return"})
+                        predictive_failed = True
+                        progress("predictive_return_deadlock_UUID_persisted")
+                        break
+                    add_path(board, proposed, victim.GetNetCode(), .15,
+                             layers=(pcbnew.F_Cu, pcbnew.B_Cu))
                     row["victim_restitution"].append({
                         "uuid": uid, "net": victim.GetNetname(),
-                        "strategy": strategy})
-                    progress("single_victim_restituted")
+                        "strategy": "proposed_FCu_return_pending_native_DRC"})
+                    progress("predictive_return_path_added")
                 report.pop("active_victim_UUID", None)
+                if predictive_failed:
+                    row["status"] = "predictive_restitution_deadlock_rejected"
+                    continue
                 if len(row["victim_restitution"]) != len(subset):
                     raise RuntimeError("Victim accounting incomplete")
+                row["predictive_restitution_routes_found"] = True
                 progress("all_displaced_victims_accounted")
                 progress("native_original_inventory_check_started")
                 current_track_inventory = track_inventory(board)
@@ -454,6 +506,10 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
                         "unconnected": 139 - len(row["target_net_routed"])}
                     and all(count == 0
                             for count in row["native_target_open"].values())
+                    and not row["net_regressions"])
+                row["predictive_restitution_native_DRC_clean"] = (
+                    row["native_DRC"]["violations"] == 0
+                    and row["native_DRC"]["warnings"] == 0
                     and not row["net_regressions"])
                 row["candidate_136_qualified"] = (
                     row["candidate_native_net_reduction_qualified"]
