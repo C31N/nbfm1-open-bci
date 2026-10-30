@@ -22,6 +22,15 @@ class DeepBlock2Test(unittest.TestCase):
         self.assertNotIn("original_fallback_needs_native_DRC", text)
         self.assertNotIn("make_via(", text)
 
+    def test_rollback_reloads_pristine_source_without_stale_swig_objects(self) -> None:
+        text = SOURCE.read_text()
+        rollback = text.split("            finally:", 1)[1]
+        self.assertIn("pcbnew.LoadBoard(str(pcb_path))", rollback)
+        self.assertIn("source_tracks = {", rollback)
+        self.assertIn("PINNED_CANDIDATE_SHA", rollback)
+        self.assertNotIn("board.Remove(source_tracks[uid])", rollback)
+        self.assertNotIn("board.Add(source_tracks[uid])", rollback)
+
     def test_three_net_native_release_gates(self) -> None:
         text = SOURCE.read_text()
         for x in (
