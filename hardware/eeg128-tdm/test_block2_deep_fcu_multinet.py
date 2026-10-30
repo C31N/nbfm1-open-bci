@@ -7,6 +7,21 @@ import unittest
 SOURCE = Path(__file__).with_name("probe_block2_deep_fcu_multinet.py")
 
 class DeepBlock2Test(unittest.TestCase):
+    def test_predictive_restitution_never_uses_unverified_fallback(self) -> None:
+        text = SOURCE.read_text()
+        for required in (
+            "RESTITUTION_HOTSPOTS", "predictive_restitution_blocked_UUIDs",
+            "predictive_restitution_routes_found",
+            "predictive_restitution_native_DRC_clean",
+            "predictive_restitution_deadlock_rejected",
+            "reject_no_verified_FCu_return",
+            "preserve-hotspots-32", "expanded-48",
+            "candidate_L3_exact_zero", "candidate_In1_exact_zero",
+        ):
+            self.assertIn(required, text)
+        self.assertNotIn("original_fallback_needs_native_DRC", text)
+        self.assertNotIn("make_via(", text)
+
     def test_three_net_native_release_gates(self) -> None:
         text = SOURCE.read_text()
         for x in (
