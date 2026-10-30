@@ -111,6 +111,9 @@ def run(candidate: Path, output: Path) -> dict:
             for net in TARGETS}
         native_lines = {
             net: LineString(endpoints[net]) for net in TARGETS}
+        # SWIG GetNet() may become invalid after board.Remove(); pin net codes.
+        target_codes = {
+            net: board.FindNet(net).GetNetCode() for net in TARGETS}
         removed = []
         unmovable = []
         for item in list(board.GetTracks()):
@@ -148,7 +151,7 @@ def run(candidate: Path, output: Path) -> dict:
         report["all_movable_removed_topology"] = {
             net: same_free_component(
                 board, endpoints[net][0], endpoints[net][1],
-                board.FindNet(net).GetNetCode(), region, guard)
+                target_codes[net], region, guard)
             for net in TARGETS}
         report["fixed_only_partitioned_targets"] = [
             net for net in TARGETS
