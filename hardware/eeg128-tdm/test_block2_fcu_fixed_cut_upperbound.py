@@ -8,7 +8,7 @@ SOURCE = Path(__file__).with_name("probe_block2_fcu_fixed_cut_upperbound.py")
 
 
 class FixedCutUpperboundTests(unittest.TestCase):
-    def test_source_guards_and_protected_copper(self):
+    def test_source_guards_and_protected_copper(self) -> None:
         source = SOURCE.read_text()
         for required in (
             "PINNED_CANDIDATE_SHA", "ARCHIVE_SHA256",
@@ -29,7 +29,7 @@ class FixedCutUpperboundTests(unittest.TestCase):
         ):
             self.assertNotIn(forbidden, source)
 
-    def test_upperbound_source_never_publishes_candidate(self):
+    def test_upperbound_source_never_publishes_candidate(self) -> None:
         source = SOURCE.read_text()
         self.assertIn('"saved_candidate_PCB": False', source)
         self.assertIn('"native_candidate_DRC_pass": False', source)
