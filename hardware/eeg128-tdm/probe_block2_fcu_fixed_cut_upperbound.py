@@ -30,6 +30,12 @@ from probe_real_mux_fcu_block2_ripup import same_free_component
 from route_targeted_closure import metrics, native, routing_domain, xy
 
 TARGETS = ("CH028_N_MUX", "CH029_N_MUX", "CH030_N_MUX")
+# Both polarities of these already-closed channels are kept intact.
+PRESERVE_CHANNELS = ("CH022_", "CH025_", "CH027_")
+
+
+def upperbound_movable(net: str) -> bool:
+    return movable(net) and not net.startswith(PRESERVE_CHANNELS)
 
 
 def run(candidate: Path, output: Path) -> dict:
@@ -116,7 +122,7 @@ def run(candidate: Path, output: Path) -> dict:
             if not segment.intersects(bbox):
                 continue
             uid, net = item.m_Uuid.AsString(), item.GetNetname()
-            if movable(net):
+            if upperbound_movable(net):
                 removed.append({"uuid": uid, "net": net})
                 board.Remove(item)
             else:
@@ -130,6 +136,7 @@ def run(candidate: Path, output: Path) -> dict:
         report["eligible_removed_count"] = len(removed)
         report["removed_UUIDs"] = [r["uuid"] for r in removed]
         report["all_eligible_FCu_removed"] = bool(removed)
+        report["protected_channels"] = list(PRESERVE_CHANNELS)
         report["immutable_FCu_inventory_count"] = len(unmovable)
         report["immutable_near_airwire"] = sorted(
             [v for v in unmovable
