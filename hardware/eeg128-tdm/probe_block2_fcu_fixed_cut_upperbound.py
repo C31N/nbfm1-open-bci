@@ -47,7 +47,7 @@ def strip_track_segments_by_uuid(text: str, uuids: set[str]) -> str:
     """
     spans: list[tuple[int, int, str]] = []
     found: set[str] = set()
-    for match in re.finditer(r"(?m)^[ \\t]*\\(segment\\b", text):
+    for match in re.finditer(r"(?m)^[ \t]*\(segment\b", text):
         start = match.start()
         begin = text.index("(", start, match.end())
         depth = 0
@@ -59,7 +59,7 @@ def strip_track_segments_by_uuid(text: str, uuids: set[str]) -> str:
             if in_string:
                 if escaped:
                     escaped = False
-                elif char == "\\\\":
+                elif char == "\\":
                     escaped = True
                 elif char == '"':
                     in_string = False
@@ -78,13 +78,13 @@ def strip_track_segments_by_uuid(text: str, uuids: set[str]) -> str:
         if end is None:
             raise RuntimeError("Unterminated KiCad segment")
         body = text[begin:end]
-        uid = re.search(r'\\(uuid\\s+"([^"]+)"\\)', body)
+        uid = re.search(r'\(uuid\s+"([^"]+)"\)', body)
         if uid is None or uid.group(1) not in uuids:
             continue
         if uid.group(1) in found:
             raise RuntimeError("Duplicate track UUID in native PCB")
         found.add(uid.group(1))
-        if end < len(text) and text[end] == "\\n":
+        if end < len(text) and text[end] == "\n":
             end += 1
         spans.append((start, end, uid.group(1)))
     if found != uuids:
