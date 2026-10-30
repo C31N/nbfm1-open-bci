@@ -3,7 +3,7 @@
 """Fail-closed, NO-ROUTE F.Cu upper-bound screen for native Block2 N28/N29/N30.
 
 Temporarily remove EVERY eligible Block2 F.Cu signal track from a throwaway
-in-memory board. If even this all-movable-copper-absent geometry is divided,
+scratch PCB text (never a manufacturing output). If this geometry is divided,
 any subset of the current whitelist is also divided (under the pinned
 clearance/domain model). NO candidate PCB is saved and no manufacturing
 output is generated. A positive topology result is NOT routing success:
@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import tempfile
 import zipfile
 from pathlib import Path
@@ -36,6 +37,62 @@ PRESERVE_CHANNELS = ("CH022_", "CH025_", "CH027_")
 
 def upperbound_movable(net: str) -> bool:
     return movable(net) and not net.startswith(PRESERVE_CHANNELS)
+
+
+def strip_track_segments_by_uuid(text: str, uuids: set[str]) -> str:
+    """Remove only exact top-level (segment ...) expressions, never vias/zones.
+
+    A fresh KiCad parse avoids invalidated SWIG containers after hundreds
+    of pcbnew.Board.Remove() calls. Fail closed on missing/duplicate UUIDs.
+    """
+    spans: list[tuple[int, int, str]] = []
+    found: set[str] = set()
+    for match in re.finditer(r"(?m)^[ \\t]*\\(segment\\b", text):
+        start = match.start()
+        begin = text.index("(", start, match.end())
+        depth = 0
+        in_string = False
+        escaped = False
+        end = None
+        for pos in range(begin, len(text)):
+            char = text[pos]
+            if in_string:
+                if escaped:
+                    escaped = False
+                elif char == "\\\\":
+                    escaped = True
+                elif char == '"':
+                    in_string = False
+                continue
+            if char == '"':
+                in_string = True
+            elif char == "(":
+                depth += 1
+            elif char == ")":
+                depth -= 1
+                if depth == 0:
+                    end = pos + 1
+                    break
+                if depth < 0:
+                    raise RuntimeError("Invalid KiCad segment nesting")
+        if end is None:
+            raise RuntimeError("Unterminated KiCad segment")
+        body = text[begin:end]
+        uid = re.search(r'\\(uuid\\s+"([^"]+)"\\)', body)
+        if uid is None or uid.group(1) not in uuids:
+            continue
+        if uid.group(1) in found:
+            raise RuntimeError("Duplicate track UUID in native PCB")
+        found.add(uid.group(1))
+        if end < len(text) and text[end] == "\\n":
+            end += 1
+        spans.append((start, end, uid.group(1)))
+    if found != uuids:
+        raise RuntimeError("UUID-precise scratch removal mismatch: " +
+                           repr(sorted(uuids - found)))
+    for start, end, _ in reversed(spans):
+        text = text[:start] + text[end:]
+    return text
 
 
 def run(candidate: Path, output: Path) -> dict:
@@ -127,7 +184,7 @@ def run(candidate: Path, output: Path) -> dict:
             uid, net = item.m_Uuid.AsString(), item.GetNetname()
             if upperbound_movable(net):
                 removed.append({"uuid": uid, "net": net})
-                board.Remove(item)
+                # Record only; original KiCad SWIG board is never mutated.
             else:
                 distances = {
                     name: round(segment.distance(line), 6)
@@ -147,6 +204,20 @@ def run(candidate: Path, output: Path) -> dict:
              and min(v["distance_mm"].values()) <= 2.5],
             key=lambda v: (min(v["distance_mm"].values()), v["net"],
                            v["uuid"]))
+        # Parse a new scratch KiCad PCB, avoiding SWIG invalidation after
+        # removing 201+ tracks from a live pcbnew BOARD instance.
+        scratch = root / "fixed-cut-unqualified-scratch.kicad_pcb"
+        original_pcb_text = pcb.read_text(encoding="utf-8")
+        scratch.write_text(strip_track_segments_by_uuid(
+            original_pcb_text, set(report["removed_UUIDs"])),
+            encoding="utf-8")
+        board = pcbnew.LoadBoard(str(scratch))
+        if board is None:
+            raise RuntimeError("Unable to reload scratch KiCad board")
+        report["scratch_segment_removal_verified"] = (
+            len(original) - len(track_inventory(board)) == len(removed))
+        if not report["scratch_segment_removal_verified"]:
+            raise RuntimeError("Scratch copper inventory mismatch")
         persist("all_whitelisted_FCu_tracks_temporarily_removed")
         report["all_movable_removed_topology"] = {
             net: same_free_component(
@@ -170,8 +241,8 @@ def run(candidate: Path, output: Path) -> dict:
                 and report["protected_footprints_unchanged"]
                 and report["via_UUID_set_unchanged"]):
             raise RuntimeError("Protected copper was changed in upperbound")
-        # Discard the throwaway board. Never native SaveBoard on a ripped
-        # board and never claim this in-memory check is a valid candidate.
+        # Discard scratch board with TemporaryDirectory; original SHA pinned.
+        # This is deliberately NOT a qualified or retained candidate PCB.
         if hashlib.sha256(pcb.read_bytes()).hexdigest() != PINNED_CANDIDATE_SHA:
             raise RuntimeError("Source PCB changed during upperbound")
         persist("fixed_copper_only_FCu_topology_recorded")
