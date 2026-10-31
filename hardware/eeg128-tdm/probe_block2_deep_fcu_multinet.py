@@ -597,7 +597,7 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
                 if (row["early_mux_s2_reserved_UUIDs"]
                         and row.get("native_DRC") is None
                         and row.get("predictive_deadlock_diagnostic_DRC") is None):
-                    early_dir = root / "early-S2-" + str(cut_size)
+                    early_dir = root / ("early-S2-" + str(cut_size))
                     early_dir.mkdir()
                     for member in MEMBERS[1:]:
                         shutil.copyfile(root / member, early_dir / member)
