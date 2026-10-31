@@ -265,6 +265,7 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
         # The protected-hotspot variant probes whether the S-bus long tracks
         # are better preserved while other Block2 copper is displaced.
         cut_plans = [
+            ("mux-s2-first-32", tuple(priority[:32])),
             ("prefix-16", tuple(priority[:16])),
             ("prefix-32", tuple(priority[:32])),
             ("preserve-hotspots-32", tuple(
@@ -275,11 +276,14 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
             {"label": label, "UUID_count": len(uuids)}
             for label, uuids in cut_plans]
         global_end = time.monotonic() + 165
-        seen_cuts: set[tuple[str, ...]] = set()
+        seen_cuts: set[tuple[bool, tuple[str, ...]]] = set()
         for cut_size, subset in cut_plans:
-            if not subset or subset in seen_cuts:
+            # The same UUIDs are intentionally compared under two different
+            # corridor-order strategies, so the key includes the strategy.
+            cut_key = (cut_size == "mux-s2-first-32", subset)
+            if not subset or cut_key in seen_cuts:
                 continue
-            seen_cuts.add(subset)
+            seen_cuts.add(cut_key)
             row: dict[str, Any] = {
                 "removed_UUIDs": list(subset),
                 "removed_nets": sorted({
@@ -297,6 +301,9 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
                 "cut_strategy": cut_size,
                 "predictive_restitution_blocked_UUIDs": [],
                 "predictive_restitution_routes_found": False,
+                "early_mux_s2_reserved_UUIDs": [],
+                "early_mux_s2_restitution_proven": False,
+                "early_mux_s2_scratch_DRC": None,
             }
             report["trials"].append(row)
             report["active_deep_cut_size"] = len(subset)
@@ -328,6 +335,43 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
                 if not row["reachable_targets"]:
                     row["status"] = "deep_cut_still_topologically_partitioned"
                     continue
+                # Optional victim-first branch: reserve a real alternative
+                # for the proven MUX_S2 blocker BEFORE routing target nets.
+                # Strictly F.Cu; no new via or protected net is altered.
+                # Keeping the original MUX_S2 in place was already found to
+                # partition the target topology (preserve-hotspots-32).
+                if cut_size == "mux-s2-first-32":
+                    mux_s2_uid = "31a40ce9-1b3f-4f1a-b654-7fec9e793976"
+                    if mux_s2_uid not in subset:
+                        row["status"] = "early_mux_s2_not_in_selected_cut"
+                        continue
+                    victim = source_tracks[mux_s2_uid]
+                    if victim.GetNetname() != "MUX_S2" or victim.GetLayer() != pcbnew.F_Cu:
+                        raise RuntimeError("MUX_S2 UUID identity mismatch")
+                    # Avoid the three target airwire lanes during the early
+                    # return search, then keep the new copper on the board
+                    # while searching each target route. This is a soft
+                    # preference, not an unsafe clearance exception.
+                    avoid_target_lanes = unary_union([
+                        LineString(positions[name]).buffer(.34)
+                        for name in targets])
+                    early_path = search(
+                        board, xy(victim.GetStart()), xy(victim.GetEnd()),
+                        victim.GetNetCode(), .15, .15, False, 5.0,
+                        step=.20, max_nodes=42000,
+                        deadline=min(time.monotonic()+19, global_end),
+                        start_layer=0, goal_layer=0,
+                        layers=(pcbnew.F_Cu, pcbnew.B_Cu),
+                        cost_regions=((0, avoid_target_lanes, 40.0),))
+                    if (early_path is None or len(early_path) < 2
+                            or any(p[0] != 0 for p in early_path)):
+                        row["status"] = "early_mux_s2_corridor_unavailable"
+                        progress("victim_first_mux_s2_has_no_FCu_corridor")
+                        continue
+                    add_path(board, early_path, victim.GetNetCode(), .15,
+                             layers=(pcbnew.F_Cu, pcbnew.B_Cu))
+                    row["early_mux_s2_reserved_UUIDs"].append(mux_s2_uid)
+                    progress("victim_first_mux_s2_corridor_pre_reserved")
                 # Original victim corridors receive a soft reservation
                 # BEFORE target routing, rather than being displaced last.
                 victim_reservation = unary_union([
@@ -389,6 +433,11 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
                 reroute = []
                 for uid in subset:
                     victim = source_tracks[uid]
+                    if uid in row["early_mux_s2_reserved_UUIDs"]:
+                        row["victim_restitution"].append({
+                            "uuid": uid, "net": victim.GetNetname(),
+                            "strategy": "early_FCu_copper_native_verification_pending"})
+                        continue
                     old_geom = LineString((
                         xy(victim.GetStart()), xy(victim.GetEnd())
                     )).buffer(pcbnew.ToMM(victim.GetWidth()) / 2)
@@ -542,9 +591,26 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
                 report["any_native_net_reduction_qualified"] |= (
                     row["candidate_native_net_reduction_qualified"])
             finally:
+                # A victim-first proposal which did not reach native DRC
+                # still receives a scratch native DRC before rollback.
+                # Never risk stale KiCad SWIG objects after adding copper.
+                if (row["early_mux_s2_reserved_UUIDs"]
+                        and row.get("native_DRC") is None
+                        and row.get("predictive_deadlock_diagnostic_DRC") is None):
+                    early_dir = root / "early-S2-" + str(cut_size)
+                    early_dir.mkdir()
+                    for member in MEMBERS[1:]:
+                        shutil.copyfile(root / member, early_dir / member)
+                    early_board = early_dir / MEMBERS[0]
+                    pcbnew.SaveBoard(str(early_board), board)
+                    report_early = native(
+                        early_board, root / ("early-S2-" + str(cut_size) + ".json"))
+                    row["early_mux_s2_scratch_DRC"] = metrics(report_early)
+                    progress("victim_first_scratch_native_DRC_complete")
                 progress("rollback_original_copper_started")
                 if (row.get("native_DRC") is not None or
-                        row.get("predictive_deadlock_diagnostic_DRC") is not None):
+                        row.get("predictive_deadlock_diagnostic_DRC") is not None
+                        or row.get("early_mux_s2_scratch_DRC") is not None):
                     # Restore from the immutable pinned PCB only after the
                     # trial board was saved and native DRC ran on a separate
                     # file. This is the successfully validated KiCad #8 path.
