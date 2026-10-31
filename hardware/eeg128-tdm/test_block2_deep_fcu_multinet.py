@@ -33,6 +33,23 @@ class DeepBlock2Test(unittest.TestCase):
         self.assertIn("board.Add(source_tracks[uid])", rollback)
         self.assertIn("row[\"rollback_from_pristine_source\"] = True", rollback)
 
+    def test_victim_first_mux_s2_is_scratch_only_and_no_via(self) -> None:
+        text = SOURCE.read_text()
+        for required in (
+            '"mux-s2-first-32"',
+            'mux_s2_uid = "31a40ce9-1b3f-4f1a-b654-7fec9e793976"',
+            'avoid_target_lanes',
+            'early_mux_s2_reserved_UUIDs',
+            'early_mux_s2_scratch_DRC',
+            'early_FCu_copper_native_verification_pending',
+            'victim_first_scratch_native_DRC_complete',
+            'any(p[0] != 0 for p in early_path)',
+            'rollback_from_pristine_source',
+        ):
+            self.assertIn(required, text)
+        self.assertNotIn('make_via(', text)
+        self.assertNotIn('SetLayer(pcbnew.In1_Cu)', text)
+
     def test_three_net_native_release_gates(self) -> None:
         text = SOURCE.read_text()
         for x in (
