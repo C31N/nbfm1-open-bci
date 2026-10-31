@@ -1,0 +1,99 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+name: Native Block2 CH038 two-UUID causal scratch no-release
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/block2-predictive-restitution-2026-10-30]
+    paths:
+      - ".github/workflows/block2-ch038-fcu-causal-scratch.yml"
+      - "hardware/eeg128-tdm/probe_block2_fcu_fixed_cut_upperbound.py"
+      - "hardware/eeg128-tdm/test_block2_fcu_fixed_cut_upperbound.py"
+permissions:
+  contents: read
+jobs:
+  fixed-cut:
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [CH028_N_MUX, CH029_N_MUX, CH030_N_MUX]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    container:
+      image: kicad/kicad@sha256:5716d82aa247abdbe512650eb4e8fce5a4031cbbef0a2c8df83208a69fef87b2
+      options: --user 0:0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare pinned native KiCad and geometry dependencies
+        run: |
+          set -eu
+          test "$(kicad-cli version)" = "8.0.9"
+          apt-get -o Acquire::Retries=3 update
+          DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 install -y --no-install-recommends python3-shapely python3-pip python3-numpy
+          /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
+      - name: Verify upperbound is diagnostic only
+        run: |
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_fcu_fixed_cut_upperbound.py -v
+      - name: Reproduce pinned native 139 MUX_EN source
+        timeout-minutes: 8
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_mux_en_multihop_route.py \
+            --archive hardware/eeg128-tdm/engineering/block2-ch019-electrode-closed139.zip \
+            --output /tmp/fixed-cut-base.json \
+            --candidate-output /tmp/fixed-cut-base.zip
+      - name: Compare fixed-only FCu and 2 extra CH038 traces (scratch only)
+        timeout-minutes: 33
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_block2_fcu_fixed_cut_upperbound.py \
+            --candidate /tmp/fixed-cut-base.zip \
+            --target ${{ matrix.target }} \
+            --explore-ch038 \
+            --output /tmp/block2-ch038-causal-${{ matrix.target }}.json
+      - name: Verify fail-closed upperbound and never release copper
+        run: |
+          TARGET_NET=${{ matrix.target }} /usr/bin/python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          d=json.loads(Path('/tmp/block2-ch038-causal-'+os.environ['TARGET_NET']+'.json').read_text())
+          assert d['topology_requested_targets']==[os.environ['TARGET_NET']]
+          assert d['topology_completed_targets']==[os.environ['TARGET_NET']]
+          assert d['baseline_DRC']=={
+              'violations':0,'warnings':0,'unconnected':139}
+          assert d['status']=='fixed_cut_upperbound_diagnostic_complete_no_release'
+          assert d['all_eligible_FCu_removed']
+          assert d['source_unchanged'] and d['immutable_tracks_unchanged']
+          assert d['protected_footprints_unchanged']
+          assert d['via_UUID_set_unchanged']
+          assert len(d['all_movable_removed_topology'])==1
+          assert d['CH038_exploratory_only'] is True
+          assert d['CH038_eligible_for_ripup_whitelist'] is False
+          assert d['CH038_restitution_verified'] is False
+          assert d['CH038_candidate_accepted'] is False
+          probe=d['CH038_two_UUID_scratch']
+          assert probe['status']=='CH038_two_UUID_causal_screen_complete_no_release'
+          assert probe['removed_201_UUIDs']==201
+          assert probe['removed_CH038_UUIDs']==[
+              '1a5c9937-f30d-4bf9-b20a-c65f47d46040',
+              'f1271355-bfbd-4e09-b95f-b9d10b867e72']
+          assert probe['removed_other_UUIDs']==[]
+          assert probe['unchanged_other_tracks']
+          assert probe['protected_footprints_unchanged']
+          assert probe['via_UUID_set_unchanged']
+          assert len(probe['after_CH038_cut_topology'])==1
+          assert probe['candidate_qualified'] is False
+          assert probe['CH038_restitution_verified'] is False
+          for flag in ('accepted','routing_completed','fabrication_release',
+                       'manufacturing_files','checkpoint_promoted',
+                       'independent_replay_verified','schematic_parity_qualified',
+                       'saved_candidate_PCB','native_candidate_DRC_pass'):
+              assert d[flag] is False, flag
+          assert d['new_vias_added']==0
+          assert not list(Path('/tmp').rglob('*.gbr'))
+          assert not list(Path('/tmp').rglob('*.drl'))
+          PY
+      - name: Preserve diagnostics on failure or success
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Block2-CH038-twoUUID-${{ matrix.target }}
+          path: /tmp/block2-ch038-causal-${{ matrix.target }}.json
+          if-no-files-found: ignore
