@@ -95,16 +95,21 @@ def strip_track_segments_by_uuid(text: str, uuids: set[str]) -> str:
     return text
 
 
-def run(candidate: Path, output: Path) -> dict:
+def run(candidate: Path, output: Path, target: str | None = None) -> dict:
     import pcbnew
     from shapely.geometry import box, LineString
 
     if not pcbnew.Version().startswith("8.0.9"):
         raise RuntimeError("Native KiCad 8.0.9 required")
+    if target is not None and target not in TARGETS:
+        raise ValueError("Upperbound target must be one of the three pinned open nets")
+    topology_targets = (target,) if target else TARGETS
     source_digest = hashlib.sha256(candidate.read_bytes()).hexdigest()
     report = {
         **LOCK,
         "status": "started", "target_nets": list(TARGETS),
+        "topology_requested_targets": list(topology_targets),
+        "topology_completed_targets": [],
         "upperbound_only_not_routing_qualified": True,
         "saved_candidate_PCB": False, "native_candidate_DRC_pass": False,
         "all_eligible_FCu_removed": False,
@@ -161,11 +166,13 @@ def run(candidate: Path, output: Path) -> dict:
             raise RuntimeError("Empty routing domain")
         guard = power_fcu_obstacles(board)
         report["full_eight_net_bbox_mm"] = list(bbox.bounds)
-        report["before_topology"] = {
-            net: same_free_component(
+        report["before_topology"] = {}
+        for net in topology_targets:
+            persist("baseline_FCu_topology_started_" + net)
+            report["before_topology"][net] = same_free_component(
                 board, endpoints[net][0], endpoints[net][1],
                 board.FindNet(net).GetNetCode(), region, guard)
-            for net in TARGETS}
+            persist("baseline_FCu_topology_finished_" + net)
         native_lines = {
             net: LineString(endpoints[net]) for net in TARGETS}
         # SWIG GetNet() may become invalid after board.Remove(); pin net codes.
@@ -219,13 +226,18 @@ def run(candidate: Path, output: Path) -> dict:
         if not report["scratch_segment_removal_verified"]:
             raise RuntimeError("Scratch copper inventory mismatch")
         persist("all_whitelisted_FCu_tracks_temporarily_removed")
-        report["all_movable_removed_topology"] = {
-            net: same_free_component(
-                board, endpoints[net][0], endpoints[net][1],
-                target_codes[net], region, guard)
-            for net in TARGETS}
+        for net in topology_targets:
+            persist("fixed_only_topology_started_" + net)
+            report["all_movable_removed_topology"][net] = (
+                same_free_component(
+                    board, endpoints[net][0], endpoints[net][1],
+                    target_codes[net], region, guard))
+            report["topology_completed_targets"].append(net)
+            persist("fixed_only_topology_finished_" + net)
+        if set(report["topology_completed_targets"]) != set(topology_targets):
+            raise RuntimeError("Incomplete native fixed-only topology")
         report["fixed_only_partitioned_targets"] = [
-            net for net in TARGETS
+            net for net in topology_targets
             if not report["all_movable_removed_topology"][net]["same_component"]]
         report["immutable_tracks_unchanged"] = all(
             track_inventory(board).get(uid) == signature
@@ -259,8 +271,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--candidate", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--target", choices=TARGETS, default=None,
+                        help="Isolate one target in a native KiCad process")
     options = parser.parse_args()
-    d = run(options.candidate, options.output)
+    d = run(options.candidate, options.output, options.target)
     print(json.dumps({
         "status": d["status"],
         "fixed_only_partitioned_targets": d["fixed_only_partitioned_targets"],
