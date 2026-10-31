@@ -12,8 +12,12 @@ permissions:
   contents: read
 jobs:
   fixed-cut:
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [CH028_N_MUX, CH029_N_MUX, CH030_N_MUX]
     runs-on: ubuntu-24.04
-    timeout-minutes: 21
+    timeout-minutes: 29
     container:
       image: kicad/kicad@sha256:5716d82aa247abdbe512650eb4e8fce5a4031cbbef0a2c8df83208a69fef87b2
       options: --user 0:0
@@ -36,18 +40,21 @@ jobs:
             --archive hardware/eeg128-tdm/engineering/block2-ch019-electrode-closed139.zip \
             --output /tmp/fixed-cut-base.json \
             --candidate-output /tmp/fixed-cut-base.zip
-      - name: Remove only allowed FCu copper in memory and test fixed-only topology
-        timeout-minutes: 8
+      - name: Remove allowed FCu copper and test one native topology
+        timeout-minutes: 18
         run: |
           /usr/bin/python3 hardware/eeg128-tdm/probe_block2_fcu_fixed_cut_upperbound.py \
             --candidate /tmp/fixed-cut-base.zip \
-            --output /tmp/block2-fcu-fixed-cut-upperbound.json
+            --target ${{ matrix.target }} \
+            --output /tmp/block2-fcu-fixed-cut-upperbound-${{ matrix.target }}.json
       - name: Verify fail-closed upperbound and never release copper
         run: |
-          /usr/bin/python3 - <<'PY'
-          import json
+          TARGET_NET=${{ matrix.target }} /usr/bin/python3 - <<'PY'
+          import json, os
           from pathlib import Path
-          d=json.loads(Path('/tmp/block2-fcu-fixed-cut-upperbound.json').read_text())
+          d=json.loads(Path('/tmp/block2-fcu-fixed-cut-upperbound-'+os.environ['TARGET_NET']+'.json').read_text())
+          assert d['topology_requested_targets']==[os.environ['TARGET_NET']]
+          assert d['topology_completed_targets']==[os.environ['TARGET_NET']]
           assert d['baseline_DRC']=={
               'violations':0,'warnings':0,'unconnected':139}
           assert d['status']=='fixed_cut_upperbound_diagnostic_complete_no_release'
@@ -55,7 +62,7 @@ jobs:
           assert d['source_unchanged'] and d['immutable_tracks_unchanged']
           assert d['protected_footprints_unchanged']
           assert d['via_UUID_set_unchanged']
-          assert len(d['all_movable_removed_topology'])==3
+          assert len(d['all_movable_removed_topology'])==1
           for flag in ('accepted','routing_completed','fabrication_release',
                        'manufacturing_files','checkpoint_promoted',
                        'independent_replay_verified','schematic_parity_qualified',
@@ -69,6 +76,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Block2-fixed-FCu-cut-upperbound
-          path: /tmp/block2-fcu-fixed-cut-upperbound.json
+          name: Block2-fixed-FCu-cut-${{ matrix.target }}
+          path: /tmp/block2-fcu-fixed-cut-upperbound-${{ matrix.target }}.json
           if-no-files-found: ignore
