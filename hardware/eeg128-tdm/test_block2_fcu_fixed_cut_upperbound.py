@@ -55,6 +55,20 @@ class FixedCutUpperboundTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             cut(board, {"not-present"})
 
+    def test_each_native_target_has_separate_progress_and_no_promotion(self) -> None:
+        source = SOURCE.read_text()
+        for required in (
+            '"topology_requested_targets": list(topology_targets)',
+            '"topology_completed_targets": []',
+            'persist("fixed_only_topology_started_" + net)',
+            'persist("fixed_only_topology_finished_" + net)',
+            'if set(report["topology_completed_targets"]) != set(topology_targets)',
+            'choices=TARGETS',
+            'if target is not None and target not in TARGETS',
+            '"fixed_only_partitioned_targets"',
+        ):
+            self.assertIn(required, source)
+
     def test_upperbound_source_never_publishes_candidate(self) -> None:
         source = SOURCE.read_text()
         self.assertIn('"saved_candidate_PCB": False', source)
