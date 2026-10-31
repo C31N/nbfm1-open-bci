@@ -265,8 +265,9 @@ def run(candidate: Path, output: Path, target: str | None = None,\n        explo
             # Controlled causal comparison against this very same run's
             # 201-track fixed-only geometry. CH038 may NOT be promoted to
             # movable(), and original 139 input bytes remain untouched.
-            ch038 = sorted(v for v in unmovable
-                           if v["uuid"] in CH038_EXPLORATORY_UUIDS)
+            ch038 = sorted((v for v in unmovable
+                            if v["uuid"] in CH038_EXPLORATORY_UUIDS),
+                           key=lambda v: v["uuid"])
             if (len(ch038) != len(CH038_EXPLORATORY_UUIDS)
                     or {v["uuid"] for v in ch038} != CH038_EXPLORATORY_UUIDS
                     or any(v["net"] != "CH038_P_MUX" for v in ch038)):
