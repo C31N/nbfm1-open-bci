@@ -33,6 +33,12 @@ from route_targeted_closure import metrics, native, routing_domain, xy
 TARGETS = ("CH028_N_MUX", "CH029_N_MUX", "CH030_N_MUX")
 # Both polarities of these already-closed channels are kept intact.
 PRESERVE_CHANNELS = ("CH022_", "CH025_", "CH027_")
+# These protected CH038_P_MUX source traces may be removed ONLY from a
+# disposable diagnostic scratch text. They are never added to movable().
+CH038_EXPLORATORY_UUIDS = frozenset({
+    "1a5c9937-f30d-4bf9-b20a-c65f47d46040",
+    "f1271355-bfbd-4e09-b95f-b9d10b867e72",
+})
 
 
 def upperbound_movable(net: str) -> bool:
@@ -95,7 +101,7 @@ def strip_track_segments_by_uuid(text: str, uuids: set[str]) -> str:
     return text
 
 
-def run(candidate: Path, output: Path, target: str | None = None) -> dict:
+def run(candidate: Path, output: Path, target: str | None = None,\n        explore_ch038: bool = False) -> dict:
     import pcbnew
     from shapely.geometry import box, LineString
 
@@ -103,6 +109,8 @@ def run(candidate: Path, output: Path, target: str | None = None) -> dict:
         raise RuntimeError("Native KiCad 8.0.9 required")
     if target is not None and target not in TARGETS:
         raise ValueError("Upperbound target must be one of the three pinned open nets")
+    if explore_ch038 and target is None:
+        raise ValueError("Exploratory CH038 diagnostic requires --target")
     topology_targets = (target,) if target else TARGETS
     source_digest = hashlib.sha256(candidate.read_bytes()).hexdigest()
     report = {
@@ -118,6 +126,11 @@ def run(candidate: Path, output: Path, target: str | None = None) -> dict:
         "via_UUID_set_unchanged": False,
         "baseline_DRC": None, "all_movable_removed_topology": {},
         "immutable_near_airwire": [],
+        "CH038_exploratory_only": bool(explore_ch038),
+        "CH038_eligible_for_ripup_whitelist": False,
+        "CH038_restitution_verified": False,
+        "CH038_candidate_accepted": False,
+        "CH038_two_UUID_scratch": None,
     }
     def persist(stage: str) -> None:
         report["last_completed_stage"] = stage
@@ -248,6 +261,64 @@ def run(candidate: Path, output: Path, target: str | None = None) -> dict:
         report["via_UUID_set_unchanged"] = ({
             item.m_Uuid.AsString() for item in board.GetTracks()
             if isinstance(item, pcbnew.PCB_VIA)} == via_uuids)
+        if explore_ch038:
+            # Controlled causal comparison against this very same run's
+            # 201-track fixed-only geometry. CH038 may NOT be promoted to
+            # movable(), and original 139 input bytes remain untouched.
+            ch038 = sorted(v for v in unmovable
+                           if v["uuid"] in CH038_EXPLORATORY_UUIDS)
+            if (len(ch038) != len(CH038_EXPLORATORY_UUIDS)
+                    or {v["uuid"] for v in ch038} != CH038_EXPLORATORY_UUIDS
+                    or any(v["net"] != "CH038_P_MUX" for v in ch038)):
+                raise RuntimeError("CH038 diagnostic UUID/net mismatch")
+            remove_set = set(report["removed_UUIDs"]) | CH038_EXPLORATORY_UUIDS
+            extra = root / "CH038_TWOTRACK_DIAGNOSTIC_ONLY.kicad_pcb"
+            extra.write_text(strip_track_segments_by_uuid(
+                original_pcb_text, remove_set), encoding="utf-8")
+            probe = pcbnew.LoadBoard(str(extra))
+            if probe is None:
+                raise RuntimeError("Cannot load CH038 diagnostic-only scratch")
+            expected = {uid: signature for uid, signature in original.items()
+                        if uid not in remove_set}
+            observed = track_inventory(probe)
+            no_other_tracks_changed = observed == expected
+            protected_same = unchanged_fingerprints(probe) == protected
+            via_set_same = ({
+                item.m_Uuid.AsString() for item in probe.GetTracks()
+                if isinstance(item, pcbnew.PCB_VIA)} == via_uuids)
+            if not (no_other_tracks_changed and protected_same and via_set_same):
+                raise RuntimeError("CH038 diagnostic damaged a protected item")
+            result = {
+                "status": "fixed_plus_two_CH038_topology_started",
+                "removed_201_UUIDs": len(removed),
+                "removed_CH038_UUIDs": sorted(CH038_EXPLORATORY_UUIDS),
+                "removed_other_UUIDs": [],
+                "unchanged_other_tracks": no_other_tracks_changed,
+                "protected_footprints_unchanged": protected_same,
+                "via_UUID_set_unchanged": via_set_same,
+                "before_CH038_cut_same_component": {
+                    net: report["all_movable_removed_topology"][net]
+                           ["same_component"] for net in topology_targets},
+                "after_CH038_cut_topology": {},
+                "opens_FCu_path_diagnostic_only": False,
+                "CH038_restitution_verified": False,
+                "candidate_qualified": False,
+            }
+            report["CH038_two_UUID_scratch"] = result
+            persist("CH038_two_UUID_scratch_precisely_verified")
+            for net in topology_targets:
+                persist("CH038_topology_started_" + net)
+                result["after_CH038_cut_topology"][net] = same_free_component(
+                    probe, endpoints[net][0], endpoints[net][1],
+                    target_codes[net], region, guard)
+                persist("CH038_topology_finished_" + net)
+            result["opens_FCu_path_diagnostic_only"] = any(
+                v["same_component"]
+                for v in result["after_CH038_cut_topology"].values())
+            result["status"] = "CH038_two_UUID_causal_screen_complete_no_release"
+            persist("CH038_two_UUID_disposable_comparison_completed")
+            # Critically: NO SaveBoard() or native DRC on this damaged
+            # scratch board. Track restitution has not been demonstrated.
         if not (report["all_eligible_FCu_removed"]
                 and report["immutable_tracks_unchanged"]
                 and report["protected_footprints_unchanged"]
@@ -273,8 +344,11 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--target", choices=TARGETS, default=None,
                         help="Isolate one target in a native KiCad process")
+    parser.add_argument("--explore-ch038", action="store_true",
+                        help="Disposable two-UUID CH038 comparison; NO release")
     options = parser.parse_args()
-    d = run(options.candidate, options.output, options.target)
+    d = run(options.candidate, options.output, options.target,
+            explore_ch038=options.explore_ch038)
     print(json.dumps({
         "status": d["status"],
         "fixed_only_partitioned_targets": d["fixed_only_partitioned_targets"],
