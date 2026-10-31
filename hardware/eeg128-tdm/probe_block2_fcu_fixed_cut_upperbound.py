@@ -101,7 +101,8 @@ def strip_track_segments_by_uuid(text: str, uuids: set[str]) -> str:
     return text
 
 
-def run(candidate: Path, output: Path, target: str | None = None,\n        explore_ch038: bool = False) -> dict:
+def run(candidate: Path, output: Path, target: str | None = None,
+        explore_ch038: bool = False) -> dict:
     import pcbnew
     from shapely.geometry import box, LineString
 
