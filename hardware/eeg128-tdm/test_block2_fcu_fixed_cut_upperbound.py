@@ -69,6 +69,30 @@ class FixedCutUpperboundTests(unittest.TestCase):
         ):
             self.assertIn(required, source)
 
+    def test_ch038_two_uuid_probe_is_protected_disposable_diagnostic(self) -> None:
+        source = SOURCE.read_text()
+        for required in (
+            'CH038_EXPLORATORY_UUIDS = frozenset({',
+            '"1a5c9937-f30d-4bf9-b20a-c65f47d46040"',
+            '"f1271355-bfbd-4e09-b95f-b9d10b867e72"',
+            'if explore_ch038 and target is None:',
+            'if explore_ch038:',
+            'if v["uuid"] in CH038_EXPLORATORY_UUIDS',
+            'v["net"] != "CH038_P_MUX"',
+            'strip_track_segments_by_uuid(',
+            '"CH038_eligible_for_ripup_whitelist": False',
+            '"CH038_restitution_verified": False',
+            '"CH038_candidate_accepted": False',
+            '"opens_FCu_path_diagnostic_only": False',
+            '"candidate_qualified": False',
+            'expected = {uid: signature for uid, signature in original.items()',
+            'if uid not in remove_set',
+            'via_set_same = (',
+        ):
+            self.assertIn(required, source)
+        self.assertNotIn('return movable(net) or net == "CH038_P_MUX"', source)
+        self.assertNotIn("pcbnew.SaveBoard(", source)
+
     def test_upperbound_source_never_publishes_candidate(self) -> None:
         source = SOURCE.read_text()
         self.assertIn('"saved_candidate_PCB": False', source)
