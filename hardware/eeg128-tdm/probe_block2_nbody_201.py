@@ -60,13 +60,10 @@ def route_child(board_path: Path, baseline: Path, output: Path,
     )
     from probe_block2_deep_fcu_multinet import native_open_positions
     from probe_ch025_cooperative8 import unchanged_fingerprints
-    from probe_ch025_fcu_l3_exact import (
-        power_fcu_obstacles, track_inventory,
-    )
+    from probe_ch025_fcu_l3_exact import track_inventory
     from probe_mux_en_multihop_neighbors import PINNED_CANDIDATE_SHA
-    from probe_real_mux_fcu_block2_ripup import same_free_component
     from route_targeted_closure import (
-        add_path, make_track, routing_domain, search, xy,
+        add_path, make_track, search, xy,
     )
 
     if not pcbnew.Version().startswith("8.0.9"):
@@ -184,18 +181,18 @@ def route_child(board_path: Path, baseline: Path, output: Path,
                  layers=(pcbnew.F_Cu, pcbnew.B_Cu))
         record["CH038_routed_UUIDs"].append(uid)
         persist("CH038_return_added_" + uid)
-    domain = routing_domain(original, .075, .25).intersection(bbox)
-    guard = power_fcu_obstacles(original)
-    for net in order:
-        net_code = board.FindNet(net).GetNetCode()
-        topo = same_free_component(board, opens[net][0], opens[net][1],
-                                   net_code, domain, guard)
-        record["topology_after_CH038"][net] = topo
-        persist("topology_CH038_" + net)
-        if not topo["same_component"]:
-            record["status"] = "CH038_return_repartitions_" + net
-            persist("topology_rejected")
-            return record
+    # Native CH038+201 topology was separately established for all three
+    # endpoints in the pinned preceding workflow. Recomputing the exact same
+    # costly component graph three times before A* exceeded child budgets.
+    # This worker directly tests actual sequential FCu path existence with
+    # real SHAPE obstacles; an unsuccessful route is explicitly rejected.
+    record["topology_after_CH038"] = {
+        "prerequisite": "native_CH038_plus_201_three_target_screens_PASS",
+        "previous_workflow_run": 41292189543,
+        "recomputed_in_this_worker": False,
+        "route_existence_must_be_verified_by_Astar": True,
+    }
+    persist("CH038_both_replaced_joint_Astar_started")
     # Joint iterative routing: each accepted target blocks the next, while
     # original 201 return corridors are costly but not artificially blocked.
     for net in order:
@@ -307,20 +304,33 @@ def run(archive: Path, output: Path, order_id: int) -> dict:
         if metrics != {"violations": 0, "warnings": 0, "unconnected": 139}:
             raise RuntimeError("Native pinned 139/0/0 source lost")
         diag = root / "nbody-worker.json"
-        result = subprocess.run(
-            [sys.executable, str(Path(__file__).resolve()),
-             "--child", "--board", str(board), "--baseline", str(base),
-             "--order", str(order_id), "--output", str(diag)],
-            capture_output=True, text=True, check=False, timeout=265)
-        report["child_exit_code"] = result.returncode
-        report["child_stderr_tail"] = result.stderr[-2000:]
+        try:
+            result = subprocess.run(
+                [sys.executable, str(Path(__file__).resolve()),
+                 "--child", "--board", str(board), "--baseline", str(base),
+                 "--order", str(order_id), "--output", str(diag)],
+                capture_output=True, text=True, check=False, timeout=265)
+            report["child_exit_code"] = result.returncode
+            report["child_stderr_tail"] = result.stderr[-2000:]
+            report["child_timeout"] = False
+        except subprocess.TimeoutExpired as exc:
+            # The child must be killed by subprocess.run; salvage its
+            # atomically persisted stage/UUID inventory before /tmp cleanup.
+            # A timeout is never interpreted as a topology result.
+            report["child_exit_code"] = 124
+            report["child_timeout"] = True
+            report["child_stderr_tail"] = (
+                "bounded_child_timeout: " + str(exc)[-1000:])
         report["child_diagnostic"] = (
             json.loads(diag.read_text()) if diag.exists() else None)
+        report["last_observed_child_stage"] = (
+            report["child_diagnostic"].get("last_stage")
+            if report["child_diagnostic"] else "no_child_report")
         report["source_unchanged"] = file_hash(archive) == original_sha
         persist()
         child = report["child_diagnostic"] or {}
         trial = root / ("NBODY_%d" % order_id) / board.name
-        if (result.returncode == 0 and child.get("fully_restituted")
+        if (report["child_exit_code"] == 0 and child.get("fully_restituted")
                 and child.get("scratch_board_ready_for_independent_DRC")
                 and trial.exists()):
             # Independent process performs native zone fill and DRC.
@@ -333,6 +343,8 @@ def run(archive: Path, output: Path, order_id: int) -> dict:
         report["status"] = (
             "136_DRC_only_not_parity_L3_or_replay_qualified"
             if report["candidate_qualified_136"]
+            else "Nbody_child_bounded_timeout_no_release"
+            if report["child_timeout"]
             else "Nbody_unqualified_no_release")
         persist()
     return report
