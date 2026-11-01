@@ -76,6 +76,17 @@ class NBody201Tests(unittest.TestCase):
         ):
             self.assertIn(required, text)
 
+    def test_post_restoration_inventory_single_swig_pass(self) -> None:
+        text = SOURCE.read_text(encoding="utf-8")
+        for required in (
+            '"restored_201_postroute_inventory_started"',
+            'postroute_inventory = track_inventory(board)',
+            '"restored_201_postroute_inventory_ready"',
+            'postroute_inventory.get(uid) == val',
+        ):
+            self.assertIn(required, text)
+        self.assertNotIn('all(track_inventory(board).get(uid)', text)
+
     def test_process_and_replay_gates(self) -> None:
         text = SOURCE.read_text(encoding="utf-8")
         for required in (
