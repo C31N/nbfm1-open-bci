@@ -43,7 +43,7 @@ class JointStateAStarTests(unittest.TestCase):
             '"--grid-mm", type=float, default=.30',
             'step=grid_mm, max_states=70000,',
             '"source_archive_unchanged"',
-            'if report["child_exit_code"] == 0',
+            'if (report["child_exit_code"] == 0',
             'joint_138_DRC_qualified',
         ):
             self.assertIn(required, text)
