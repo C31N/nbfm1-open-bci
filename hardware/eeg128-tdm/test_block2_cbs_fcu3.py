@@ -50,6 +50,25 @@ class CBS3Tests(unittest.TestCase):
         self.assertIn('selection=cbs_selection', BODY)
         self.assertIn('"cbs_selection": cbs_selection', BODY)
 
+    def test_corridor_bundle_is_optional_and_fail_closed(self) -> None:
+        for term in (
+            'split_mode: str = "single-edge"',
+            'split_mode in ("single-edge", "corridor-bundle")',
+            'for agent,prohibited in ((i,ei),(j,ej)):',
+            'if split_mode == "corridor-bundle":',
+            'if segment.distance(rival_line) < clearance_threshold',
+            'forbidden_edges |= frozenset(colliding)',
+            '"last_corridor_bundle_edge_count"',
+        ):
+            self.assertIn(term, CBS)
+        for term in (
+            'cbs_split_mode: str = "single-edge"',
+            'split_mode=cbs_split_mode',
+            '"cbs_split_mode": cbs_split_mode',
+            'cbs_split_mode=a.cbs_split_mode',
+        ):
+            self.assertIn(term, BODY)
+
     def test_nbody_runs_cbs_before_restitution(self) -> None:
         for term in (
             '"cbs_three_enabled": cbs_three',
