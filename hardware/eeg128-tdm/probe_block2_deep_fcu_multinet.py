@@ -98,7 +98,8 @@ def native_open_positions(report: dict[str, Any]) -> dict[str, list[tuple[float,
 
 def run(candidate: Path, cohort: str, output: Path,
         single_strategy: str | None = None,
-        disposable_worker: bool = False) -> dict[str, Any]:
+        disposable_worker: bool = False,
+        soft_penalty: float = 85.0) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import LineString, box
     from shapely.ops import unary_union
@@ -108,6 +109,8 @@ def run(candidate: Path, cohort: str, output: Path,
     targets = COHORTS[cohort]
     if disposable_worker and single_strategy is None:
         raise ValueError("Disposable worker must have exactly one selected strategy")
+    if not 40.0 <= soft_penalty <= 500.0:
+        raise ValueError("Soft constraint penalty outside bounded range")
     report: dict[str, Any] = {
         **LOCK, "cohort": cohort, "targets": list(targets),
         "status": "starting", "baseline_DRC": None,
@@ -439,12 +442,12 @@ def run(candidate: Path, cohort: str, output: Path,
                             xy(source_tracks[uid].GetEnd())
                         )).buffer(.31) for uid in soft_control_uuids])
                     row["soft_constraint_control_UUIDs"] = list(soft_control_uuids)
-                    row["soft_constraint_weight"] = 85.0
+                    row["soft_constraint_weight"] = soft_penalty
                     row["target_first_without_control_copper"] = True
                     # S1/S2/S3 are NOT routed before the target. Their
                     # original lanes are expensive but not hard blockers.
                     target_cost_regions = ((0, victim_reservation, 25.0),
-                                           (0, control_penalty, 85.0))
+                                           (0, control_penalty, soft_penalty))
                 else:
                     target_cost_regions = ((0, victim_reservation, 35.0),)
                 progress("victim_return_corridor_pre_reserved")
@@ -783,10 +786,12 @@ def main() -> None:
                                  "prefix-16", "prefix-32",
                                  "preserve-hotspots-32", "expanded-48"))
     parser.add_argument("--disposable-worker", action="store_true")
+    parser.add_argument("--soft-penalty", type=float, default=85.0)
     options = parser.parse_args()
     result = run(options.candidate, options.cohort, options.output,
                  single_strategy=options.single_strategy,
-                 disposable_worker=options.disposable_worker)
+                 disposable_worker=options.disposable_worker,
+                 soft_penalty=options.soft_penalty)
     print(json.dumps({
         "cohort": result["cohort"],
         "status": result["status"],
