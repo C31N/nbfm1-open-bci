@@ -138,7 +138,7 @@ def main() -> int:
     if not api_key:
         print("GEMINI_API_KEY repository secret not available.", file=sys.stderr)
         return 2
-    model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    model = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
     try:
         answer = ask_gemini(prompt(args.repo, args.run_id, snippet),
                             api_key, model)
