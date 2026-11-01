@@ -57,7 +57,8 @@ def route_child(board_path: Path, baseline: Path, output: Path,
                 cbs_three: bool = False,
                 cbs_selection: str = "length",
                 cbs_split_mode: str = "single-edge",
-                cbs_grid_mm: float = .30) -> dict:
+                cbs_grid_mm: float = .30,
+                macro_three: bool = False) -> dict:
     import pcbnew
     from shapely.geometry import LineString, box
     from shapely.ops import unary_union
@@ -83,8 +84,8 @@ def route_child(board_path: Path, baseline: Path, output: Path,
         raise ValueError("Unreviewed future FCu lane penalty")
     if not 1.0 <= joint_weight <= 3.0:
         raise ValueError("Unreviewed coupled MAPF3 weight")
-    if joint_three and cbs_three:
-        raise ValueError("Joint A* and CBS must be isolated strategies")
+    if sum((bool(joint_three), bool(cbs_three), bool(macro_three))) > 1:
+        raise ValueError("Select exactly one coupled strategy")
     if cbs_selection not in ("length", "conflict-volume"):
         raise ValueError("Unreviewed CBS node selection strategy")
     if cbs_split_mode not in ("single-edge", "corridor-bundle"):
@@ -133,6 +134,7 @@ def route_child(board_path: Path, baseline: Path, output: Path,
         "cbs_selection": cbs_selection,
         "cbs_split_mode": cbs_split_mode,
         "cbs_grid_mm": cbs_grid_mm,
+        "macro_three_enabled": macro_three,
         "joint_weight": joint_weight,
         "baseline_DRC": {"violations": 0, "warnings": 0, "unconnected": 139},
         "cut_whitelist_UUIDs": sorted(removed),
@@ -252,7 +254,32 @@ def route_child(board_path: Path, baseline: Path, output: Path,
     }
     persist("CH038_both_replaced_joint_Astar_started")
     persist("three_target_joint_Astar_batch_started")
-    if joint_three:
+    if macro_three:
+        from probe_block2_macro_voronoi import macro_routes
+        record["macro_three_method"] = "sampled_medial_voronoi_ridge_waypoints"
+        def update_macro(stage: str, info: dict) -> None:
+            record["macro_three_progress"] = info
+            persist(stage)
+        persist("macro_voronoi_skeleton_started")
+        # macro_routes adds each FCu micro-hop directly onto the disposable
+        # child BOARD. These routes are provisional until all 201 victims,
+        # KiCad native DRC and all separate release gates have passed.
+        _, macro_diagnostic = macro_routes(
+            board, opens, order, step_mm=.44, micro_step_mm=.22,
+            lane_bias=7., deadline_s=132., progress=update_macro)
+        record["macro_three_diagnostic"] = macro_diagnostic
+        persist("macro_three_solver_returned")
+        if macro_diagnostic.get("status") != "macro_three_targets_proposed_unverified":
+            record["status"] = "macro_three_not_routable_with_bounded_waypoints"
+            record["blocked_target"] = macro_diagnostic.get("blocked_target")
+            persist("macro_three_no_release")
+            return record
+        if any(macro_diagnostic.get("micro_segments_completed", {}).get(net) != 4
+               for net in TARGETS):
+            raise RuntimeError("No complete four-hop macro routing for targets")
+        record["target_nets_routed"].extend(order)
+        persist("macro_three_proposed_paths_ready_for_all_201_restoration")
+    elif joint_three:
         from probe_block2_joint_fcu_mapf3 import simultaneous_fcu_astar3
         # One A* state contains three heads and three full partial paths.
         # CH038 already passed independent 139/0/0 native DRC.
@@ -436,14 +463,15 @@ def run(archive: Path, output: Path, order_id: int,
         cbs_three: bool = False,
         cbs_selection: str = "length",
         cbs_split_mode: str = "single-edge",
-        cbs_grid_mm: float = .30) -> dict:
+        cbs_grid_mm: float = .30,
+        macro_three: bool = False) -> dict:
     from probe_block2_isolated_s1s2 import pinned_source_copy
     from probe_block2_ch038_restitution import isolated_drc
     if not 0.0 <= future_lane_penalty <= 500.0:
         raise ValueError("Unreviewed N-body lookahead penalty")
     if not 1.0 <= joint_weight <= 3.0:
         raise ValueError("Unreviewed N-body joint heuristic weight")
-    if joint_three and cbs_three:
+    if sum((bool(joint_three), bool(cbs_three), bool(macro_three))) > 1:
         raise ValueError("Choose only one coupled solver")
     if cbs_selection not in ("length", "conflict-volume"):
         raise ValueError("Unreviewed CBS search ordering")
@@ -459,6 +487,7 @@ def run(archive: Path, output: Path, order_id: int,
               "cbs_selection": cbs_selection,
               "cbs_split_mode": cbs_split_mode,
               "cbs_grid_mm": cbs_grid_mm,
+              "macro_three_enabled": macro_three,
               "joint_weight": joint_weight,
               "order": ORDERS[order_id], "source_unchanged": False,
               "candidate_native_DRC": None,
@@ -484,13 +513,14 @@ def run(archive: Path, output: Path, order_id: int,
              "--future-lane-penalty", str(future_lane_penalty),
              *(["--joint-three"] if joint_three else []),
              *(["--cbs-three"] if cbs_three else []),
+             *(["--macro-three"] if macro_three else []),
              "--cbs-selection", cbs_selection,
              "--cbs-split-mode", cbs_split_mode,
              "--cbs-grid-mm", str(cbs_grid_mm),
              "--joint-weight", str(joint_weight),
              "--output", str(diag)],
                 capture_output=True, text=True, check=False,
-            timeout=340 if (joint_three or cbs_three) else 265)
+            timeout=340 if (joint_three or cbs_three or macro_three) else 265)
             report["child_exit_code"] = result.returncode
             report["child_stderr_tail"] = result.stderr[-2000:]
             report["child_timeout"] = False
@@ -541,6 +571,7 @@ def main() -> None:
     p.add_argument("--future-lane-penalty", type=float, default=0.0)
     p.add_argument("--joint-three", action="store_true")
     p.add_argument("--cbs-three", action="store_true")
+    p.add_argument("--macro-three", action="store_true")
     p.add_argument("--cbs-selection", choices=("length", "conflict-volume"),
                    default="length")
     p.add_argument("--cbs-split-mode", choices=("single-edge", "corridor-bundle"),
@@ -559,7 +590,8 @@ def main() -> None:
                              cbs_three=a.cbs_three,
                              cbs_selection=a.cbs_selection,
                              cbs_split_mode=a.cbs_split_mode,
-                             cbs_grid_mm=a.cbs_grid_mm)
+                             cbs_grid_mm=a.cbs_grid_mm,
+                             macro_three=a.macro_three)
     else:
         if not a.candidate or a.board or a.baseline:
             raise ValueError("Parent expects only --candidate")
@@ -570,7 +602,8 @@ def main() -> None:
                      cbs_three=a.cbs_three,
                      cbs_selection=a.cbs_selection,
                      cbs_split_mode=a.cbs_split_mode,
-                     cbs_grid_mm=a.cbs_grid_mm)
+                     cbs_grid_mm=a.cbs_grid_mm,
+                     macro_three=a.macro_three)
     print(json.dumps({"status": report["status"],
                       "accepted": False, "fabrication_release": False}))
 
