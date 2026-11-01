@@ -183,6 +183,21 @@ def joint_fcu_astar(board, endpoints, nets, *, step: float = .30,
 
 
 def child(source: Path, baseline: Path, output: Path) -> dict:
+    out = {
+        **NO_RELEASE, "status": "joint_source_preflight_started",
+        "S1_removed_UUID": S1_UUID,
+        "S2_S3_original_copper_immutable": True,
+        "target_net": TARGET,
+        "candidate_native_DRC": None,
+        "joint_search": None,
+        "joint_138_DRC_qualified": False,
+        "source_unchanged": False,
+    }
+    def persist(stage: str) -> None:
+        out["last_stage"] = stage
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(out, indent=2)+"\n")
+    persist("isolated_child_initialized_before_Swig_import")
     import pcbnew
     from probe_block2_deep_fcu_multinet import native_open_positions
     from probe_block2_fcu_fixed_cut_upperbound import strip_track_segments_by_uuid
@@ -195,15 +210,20 @@ def child(source: Path, baseline: Path, output: Path) -> dict:
         raise RuntimeError("KiCad 8.0.9 required")
     if file_sha(source) != PINNED_CANDIDATE_SHA:
         raise RuntimeError("Source 139 MUX_EN SHA changed")
+    persist("loading_original_Swig_board")
     original = pcbnew.LoadBoard(str(source))
+    persist("original_board_loaded")
     tracks = {tr.m_Uuid.AsString(): tr for tr in original.GetTracks()}
     victim = tracks.get(S1_UUID)
     if (victim is None or victim.GetNetname() != "MUX_S1"
             or victim.GetLayer() != pcbnew.F_Cu
             or isinstance(victim, (pcbnew.PCB_VIA, pcbnew.PCB_ARC))):
         raise RuntimeError("Pinned S1 UUID/net/FCu mismatch")
+    persist("original_S1_UUID_verified")
     original_tracks = track_inventory(original)
+    persist("original_track_inventory_complete")
     fp = unchanged_fingerprints(original)
+    persist("original_protected_item_fingerprint_complete")
     vias = {tr.m_Uuid.AsString() for tr in original.GetTracks()
             if isinstance(tr, pcbnew.PCB_VIA)}
     native_report = json.loads(baseline.read_text())
@@ -214,13 +234,17 @@ def child(source: Path, baseline: Path, output: Path) -> dict:
     scratchdir = source.parent / "joint_CH018_MUXS1_diagnostic"
     scratchdir.mkdir()
     boardfile = scratchdir / source.name
+    persist("scratch_exact_S1_cut_started")
     boardfile.write_text(strip_track_segments_by_uuid(
         source.read_text(encoding="utf-8"), {S1_UUID}),
         encoding="utf-8")
     for suffix in (".kicad_pro", ".kicad_dru"):
         boardfile.with_suffix(suffix).write_bytes(
             source.with_suffix(suffix).read_bytes())
+    persist("scratch_S1_cut_finished_loading_Swig_board")
     board = pcbnew.LoadBoard(str(boardfile))
+    persist("scratch_board_loaded")
+    persist("scratch_protected_fingerprint_in_progress")
     if unchanged_fingerprints(board) != fp:
         raise RuntimeError("Protected copper drifted")
     if ({tr.m_Uuid.AsString() for tr in board.GetTracks()
@@ -229,22 +253,10 @@ def child(source: Path, baseline: Path, output: Path) -> dict:
     if any(track_inventory(board).get(uid) != value
            for uid, value in original_tracks.items() if uid != S1_UUID):
         raise RuntimeError("Original copper changed beyond one S1 UUID")
-    out = {
-        **NO_RELEASE, "status": "joint_search_started",
-        "S1_removed_UUID": S1_UUID,
-        "S2_S3_original_copper_immutable": True,
-        "target_net": TARGET,
-        "candidate_native_DRC": None,
-        "joint_search": None,
-        "joint_138_DRC_qualified": False,
-        "source_unchanged": False,
-    }
-    def persist(stage: str) -> None:
-        out["last_stage"] = stage
-        output.write_text(json.dumps(out, indent=2)+"\n")
-    persist("all_other_copper_verified")
+    out["status"] = "joint_search_started"\n    persist("all_other_copper_verified")
     target_code = board.FindNet(TARGET).GetNetCode()
     victim_code = board.FindNet("MUX_S1").GetNetCode()
+    persist("joint_Astar_precompute_started")
     path_pair, diag = joint_fcu_astar(
         board, (endpoints, s1_ends),
         (target_code, victim_code), max_states=16000, seconds=95)
