@@ -11,7 +11,7 @@ SUPERVISOR = (ROOT / "probe_block2_isolated_s1s2.py").read_text()
 
 
 class IsolatedS1S2Tests(unittest.TestCase):
-    def test_python_syntax_and_no_swig_supervisor_import(self):
+    def test_python_syntax_and_no_swig_supervisor_import(self) -> None:
         ast.parse(WORKER)
         tree = ast.parse(SUPERVISOR)
         imports = [node for node in ast.walk(tree)
@@ -20,7 +20,7 @@ class IsolatedS1S2Tests(unittest.TestCase):
         self.assertNotIn("pcbnew", names)
         self.assertNotIn("route_targeted_closure", names)
 
-    def test_both_victims_owned_by_same_disposable_child(self):
+    def test_both_victims_owned_by_same_disposable_child(self) -> None:
         for literal in (
             '"mux-s1s2-first-32"',
             '"31a40ce9-1b3f-4f1a-b654-7fec9e793976"',
@@ -36,7 +36,7 @@ class IsolatedS1S2Tests(unittest.TestCase):
             self.assertIn(literal, WORKER)
         self.assertNotIn("make_via(", WORKER)
 
-    def test_parent_independently_checks_pinned_139_and_never_accepts(self):
+    def test_parent_independently_checks_pinned_139_and_never_accepts(self) -> None:
         for literal in (
             'subprocess.run(', '--single-strategy',
             '--disposable-worker', 'subprocess_baseline(',
