@@ -50,15 +50,22 @@ def isolated_drc(board: Path, report: Path) -> dict:
         raise RuntimeError("Isolated DRC process failed: " + proc.stderr[-1100:])
     return json.loads(proc.stdout.strip().splitlines()[-1])
 
-def route_child(source: Path, native_baseline: Path, output: Path) -> dict:
+def route_child(source: Path, native_baseline: Path, output: Path,
+                target: str | None = None) -> dict:
     import pcbnew
-    from shapely.geometry import LineString
+    from shapely.geometry import LineString, box
     from shapely.ops import unary_union
     from probe_block2_deep_fcu_multinet import native_open_positions
     from probe_ch025_cooperative8 import unchanged_fingerprints
-    from probe_ch025_fcu_l3_exact import track_inventory
+    from probe_ch025_fcu_l3_exact import (
+        power_fcu_obstacles, track_inventory,
+    )
     from probe_mux_en_multihop_neighbors import PINNED_CANDIDATE_SHA
-    from route_targeted_closure import add_path, search, xy
+    from route_targeted_closure import add_path, routing_domain, search, xy
+    from probe_real_mux_fcu_block2_ripup import same_free_component
+    from probe_block2_fcu_fixed_cut_upperbound import (
+        TARGETS, upperbound_movable,
+    )
 
     if not pcbnew.Version().startswith("8.0.9"):
         raise RuntimeError("Pinned KiCad 8.0.9 required")
@@ -82,7 +89,27 @@ def route_child(source: Path, native_baseline: Path, output: Path) -> dict:
         raise RuntimeError("CH038 F.Cu UUID/net/layer mismatch")
 
     positions = native_open_positions(json.loads(native_baseline.read_text()))
-    from probe_block2_fcu_fixed_cut_upperbound import TARGETS
+    if target is not None and target not in TARGETS:
+        raise ValueError("Non-pinned target in joint CH038 diagnostic")
+    bbox = None
+    extra_removed: set[str] = set()
+    if target is not None:
+        all_xy = [p for pair in positions.values() for p in pair]
+        bbox = box(min(x[0] for x in all_xy)-2.5,
+                   min(x[1] for x in all_xy)-2.5,
+                   max(x[0] for x in all_xy)+2.5,
+                   max(x[1] for x in all_xy)+2.5)
+        for tr in original.GetTracks():
+            if (isinstance(tr, (pcbnew.PCB_VIA, pcbnew.PCB_ARC))
+                    or tr.GetLayer() != pcbnew.F_Cu
+                    or not upperbound_movable(tr.GetNetname())):
+                continue
+            segment = LineString((xy(tr.GetStart()), xy(tr.GetEnd())))
+            if segment.intersects(bbox):
+                extra_removed.add(tr.m_Uuid.AsString())
+        if len(extra_removed) != 201 or (extra_removed & set(EXPECTED_UUIDS)):
+            raise RuntimeError("201-segment upperbound whitelist drift")
+
     cost = unary_union([
         LineString(positions[n]).buffer(.34) for n in TARGETS
     ])
@@ -93,7 +120,8 @@ def route_child(source: Path, native_baseline: Path, output: Path) -> dict:
     candidate_dir.mkdir(exist_ok=False)
     candidate = candidate_dir / source.name
     candidate.write_text(strip_track_segments_by_uuid(
-        source.read_text(encoding="utf-8"), set(EXPECTED_UUIDS)),
+        source.read_text(encoding="utf-8"),
+        set(EXPECTED_UUIDS) | extra_removed),
         encoding="utf-8")
     for ext in (".kicad_pro", ".kicad_dru"):
         shutil.copyfile(source.with_suffix(ext), candidate.with_suffix(ext))
@@ -104,11 +132,31 @@ def route_child(source: Path, native_baseline: Path, output: Path) -> dict:
            for t in probe.GetTracks()):
         raise RuntimeError("Original CH038 tracks were not removed")
     code = probe.FindNet("CH038_P_MUX").GetNetCode()
+    region = None
+    guard = None
+    target_code = None
+    topo_before = None
+    if target is not None:
+        if bbox is None:
+            raise RuntimeError("No upperbound geometry")
+        region = routing_domain(original, .075, .25).intersection(bbox)
+        guard = power_fcu_obstacles(original)
+        target_code = probe.FindNet(target).GetNetCode()
+        topo_before = same_free_component(
+            probe, positions[target][0], positions[target][1],
+            target_code, region, guard)
+        if not topo_before["same_component"]:
+            raise RuntimeError("CH038 + 201 scratch failed known open upperbound")
     report = {
         **NO_RELEASE,
         "status": "CH038_restitution_search_started",
         "only_CH038_two_UUIDs_removed": list(EXPECTED_UUIDS),
-        "other_201_original_tracks_preserved": True,
+        "other_201_original_tracks_preserved": target is None,
+        "joint_upperbound_only": target is not None,
+        "selected_target": target,
+        "201_other_UUIDs_removed_for_geometry_only": len(extra_removed),
+        "target_reachable_before_CH038_return": topo_before,
+        "target_reachable_after_CH038_return": None,
         "scratch_candidate_saved": False,
         "ch038_both_replacements_found": False,
         "target_airwire_lane_penalty": 40.0,
@@ -152,7 +200,7 @@ def route_child(source: Path, native_baseline: Path, output: Path) -> dict:
     new_inventory = track_inventory(probe)
     expected_remaining = {
         uid: signature for uid, signature in initial_tracks.items()
-        if uid not in EXPECTED_UUIDS
+        if uid not in set(EXPECTED_UUIDS) | extra_removed
     }
     if any(new_inventory.get(uid) != signature
            for uid, signature in expected_remaining.items()):
@@ -166,14 +214,27 @@ def route_child(source: Path, native_baseline: Path, output: Path) -> dict:
            for t in probe.GetTracks()
            if t.m_Uuid.AsString() not in initial_tracks):
         raise RuntimeError("New CH038 trace left F.Cu")
+    if target is not None:
+        if region is None or guard is None or target_code is None:
+            raise RuntimeError("Joint diagnostic geometry missing")
+        report["target_reachable_after_CH038_return"] = same_free_component(
+            probe, positions[target][0], positions[target][1],
+            target_code, region, guard)
+        # This is only a geometrical necessary condition: all 201 victims
+        # are still disconnected. In no case claim DRC-qualified restitution.
+        report["status"] = "joint_target_FCu_component_screen_complete"
+        persist()
     pcbnew.SaveBoard(str(candidate), probe)
     report["ch038_both_replacements_found"] = True
     report["scratch_candidate_saved"] = True
-    report["status"] = "CH038_two_FCu_replacements_pending_separate_native_DRC"
+    report["status"] = ("CH038_two_FCu_replacements_pending_separate_native_DRC"
+                        if target is None else
+                        "CH038_plus_201_topological_only_no_DRC_qualification")
     persist()
     return report
 
-def run(candidate: Path, output: Path) -> dict:
+def run(candidate: Path, output: Path,
+        target: str | None = None) -> dict:
     source_sha = sha(candidate)
     result = {
         **NO_RELEASE,
@@ -183,6 +244,9 @@ def run(candidate: Path, output: Path) -> dict:
         "three_target_136_qualified": False,
         "source_archive_unchanged": False,
         "child_exit_code": None, "worker": None,
+        "target": target,
+        "joint_upperbound_only": target is not None,
+        "target_FCu_reachable_with_CH038_return": False,
     }
     def persist() -> None:
         output.parent.mkdir(parents=True, exist_ok=True)
@@ -201,6 +265,7 @@ def run(candidate: Path, output: Path) -> dict:
             "--child", "--source", str(original),
             "--native-baseline", str(original_native),
             "--output", str(subreport),
+            *(["--target", target] if target else []),
         ], capture_output=True, text=True, timeout=210, check=False)
         result["child_exit_code"] = child.returncode
         result["child_stderr_tail"] = child.stderr[-1800:]
@@ -211,13 +276,24 @@ def run(candidate: Path, output: Path) -> dict:
         if (child.returncode == 0 and result["worker"]
                 and result["worker"]["ch038_both_replacements_found"]
                 and scratch.exists()):
-            result["candidate_DRC"] = isolated_drc(
-                scratch, root / "CH038-candidate-native.json")
-            result["ch038_restitution_DRC_qualified"] = (
-                result["candidate_DRC"] == EXPECTED_BASELINE)
+            if target is None:
+                result["candidate_DRC"] = isolated_drc(
+                    scratch, root / "CH038-candidate-native.json")
+                result["ch038_restitution_DRC_qualified"] = (
+                    result["candidate_DRC"] == EXPECTED_BASELINE)
+            else:
+                checked = result["worker"]["target_reachable_after_CH038_return"]
+                result["target_FCu_reachable_with_CH038_return"] = (
+                    checked is not None and checked["same_component"] is True)
         result["source_archive_unchanged"] = sha(candidate) == source_sha
         result["status"] = (
-            "CH038_isolated_139_DRC_qualified_not_136"
+            "CH038_plus_201_topology_reachable_no_release"
+            if target is not None
+            and result["target_FCu_reachable_with_CH038_return"]
+            and result["source_archive_unchanged"]
+            else "CH038_plus_201_topology_partitioned_no_release"
+            if target is not None
+            else "CH038_isolated_139_DRC_qualified_not_136"
             if result["ch038_restitution_DRC_qualified"]
             and result["source_archive_unchanged"]
             else "CH038_isolated_restitution_not_DRC_qualified")
@@ -231,15 +307,18 @@ def main() -> None:
     parser.add_argument("--child", action="store_true")
     parser.add_argument("--source", type=Path)
     parser.add_argument("--native-baseline", type=Path)
+    parser.add_argument("--target", choices=("CH028_N_MUX", "CH029_N_MUX",
+                                             "CH030_N_MUX"))
     a = parser.parse_args()
     if a.child:
         if not a.source or not a.native_baseline or a.candidate:
             raise ValueError("Child requires --source and --native-baseline")
-        report = route_child(a.source, a.native_baseline, a.output)
+        report = route_child(a.source, a.native_baseline, a.output,
+                             target=a.target)
     else:
         if not a.candidate or a.source or a.native_baseline:
             raise ValueError("Parent requires only --candidate")
-        report = run(a.candidate, a.output)
+        report = run(a.candidate, a.output, target=a.target)
     print(json.dumps({
         "status": report["status"],
         "accepted": False, "fabrication_release": False,
