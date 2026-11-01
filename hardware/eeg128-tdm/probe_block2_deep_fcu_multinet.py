@@ -620,73 +620,94 @@ def run(candidate: Path, cohort: str, output: Path,
                 report["any_native_net_reduction_qualified"] |= (
                     row["candidate_native_net_reduction_qualified"])
             finally:
-                # A victim-first proposal which did not reach native DRC
-                # still receives a scratch native DRC before rollback.
-                # Never risk stale KiCad SWIG objects after adding copper.
-                if (row["early_mux_s2_reserved_UUIDs"]
-                        and row.get("native_DRC") is None
-                        and row.get("predictive_deadlock_diagnostic_DRC") is None):
-                    early_dir = root / ("early-S2-" + str(cut_size))
-                    early_dir.mkdir()
-                    for member in MEMBERS[1:]:
-                        shutil.copyfile(root / member, early_dir / member)
-                    early_board = early_dir / MEMBERS[0]
-                    pcbnew.SaveBoard(str(early_board), board)
-                    report_early = native(
-                        early_board, root / ("early-S2-" + str(cut_size) + ".json"))
-                    row["early_mux_s2_scratch_DRC"] = metrics(report_early)
-                    progress("victim_first_scratch_native_DRC_complete")
-                progress("rollback_original_copper_started")
-                if (row.get("native_DRC") is not None or
-                        row.get("predictive_deadlock_diagnostic_DRC") is not None
-                        or row.get("early_mux_s2_scratch_DRC") is not None):
-                    # Restore from the immutable pinned PCB only after the
-                    # trial board was saved and native DRC ran on a separate
-                    # file. This is the successfully validated KiCad #8 path.
-                    progress("pristine_native_board_reload_started")
-                    if hashlib.sha256(pcb_path.read_bytes()).hexdigest() != (
-                            PINNED_CANDIDATE_SHA):
-                        raise RuntimeError("Original disk source SHA drift")
-                    board = pcbnew.LoadBoard(str(pcb_path))
-                    source_tracks = {
-                        item.m_Uuid.AsString(): item
-                        for item in board.GetTracks()}
-                    z = next((zone for zone in board.Zones()
-                              if zone.m_Uuid.AsString() == ZONE
-                              and zone.GetNetname() == "3V3A"
-                              and zone.IsOnLayer(pcbnew.In2_Cu)), None)
-                    if z is None:
-                        raise RuntimeError("Protected zone absent in source")
-                    pcbnew.ZONE_FILLER(board).Fill(board.Zones())
-                    row["rollback_from_pristine_source"] = True
+                if disposable_worker:
+                    # A short-lived worker must never inspect/reload stale
+                    # SWIG PCB items after scratch native evaluation. The
+                    # parent independently verifies the pinned source in a
+                    # SECOND PROCESS and discards this worker completely.
+                    row["worker_scratch_discard_required"] = True
+                    row["restored_originals"] = False
+                    row["native_L3_exact"] = False
+                    row["native_In1_exact"] = False
+                    progress("worker_scratch_disposable_no_reuse")
                 else:
-                    # Purely topological candidate (no added target path):
-                    # use the original native UUID-safe in-memory rollback.
-                    for item in list(board.GetTracks()):
-                        if item.m_Uuid.AsString() not in before_new:
-                            board.Remove(item)
-                    for uid in subset:
-                        if uid in reinserted:
-                            board.Remove(source_tracks[uid])
-                        board.Add(source_tracks[uid])
-                    pcbnew.ZONE_FILLER(board).Fill(board.Zones())
-                    row["rollback_from_pristine_source"] = False
-                row["restored_originals"] = (
-                    track_inventory(board) == original_tracks
-                    and unchanged_fingerprints(board) == original_protected
-                    and {item.m_Uuid.AsString()
-                         for item in board.GetTracks()
-                         if isinstance(item, pcbnew.PCB_VIA)} == original_vias)
-                row["native_L3_exact"] = exact_native_difference(
-                    base_L3, pcbnew.SHAPE_POLY_SET(
-                        z.GetFilledPolysList(pcbnew.In2_Cu))
-                )["native_both_empty"]
-                row["native_In1_exact"] = every_zero(polygon_delta(
-                    base_In1, polygon_snapshot(board, pcbnew.In1_Cu)))
-                if not (row["restored_originals"]
-                        and row["native_L3_exact"] and row["native_In1_exact"]):
-                    raise RuntimeError("Fail-closed rollback or zone identity")
-                progress("deep_trial_all_original_UUIDs_restored")
+                    # A victim-first proposal which did not reach native DRC
+                    # still receives a scratch native DRC before rollback.
+                    # Never risk stale KiCad SWIG objects after adding copper.
+                    if (row["early_mux_s2_reserved_UUIDs"]
+                            and row.get("native_DRC") is None
+                            and row.get("predictive_deadlock_diagnostic_DRC") is None):
+                        early_dir = root / ("early-S2-" + str(cut_size))
+                        early_dir.mkdir()
+                        for member in MEMBERS[1:]:
+                            shutil.copyfile(root / member, early_dir / member)
+                        early_board = early_dir / MEMBERS[0]
+                        pcbnew.SaveBoard(str(early_board), board)
+                        report_early = native(
+                            early_board, root / ("early-S2-" + str(cut_size) + ".json"))
+                        row["early_mux_s2_scratch_DRC"] = metrics(report_early)
+                        progress("victim_first_scratch_native_DRC_complete")
+                    progress("rollback_original_copper_started")
+                    if (row.get("native_DRC") is not None or
+                            row.get("predictive_deadlock_diagnostic_DRC") is not None
+                            or row.get("early_mux_s2_scratch_DRC") is not None):
+                        # Restore from the immutable pinned PCB only after the
+                        # trial board was saved and native DRC ran on a separate
+                        # file. This is the successfully validated KiCad #8 path.
+                        progress("pristine_native_board_reload_started")
+                        if hashlib.sha256(pcb_path.read_bytes()).hexdigest() != (
+                                PINNED_CANDIDATE_SHA):
+                            raise RuntimeError("Original disk source SHA drift")
+                        board = pcbnew.LoadBoard(str(pcb_path))
+                        source_tracks = {
+                            item.m_Uuid.AsString(): item
+                            for item in board.GetTracks()}
+                        z = next((zone for zone in board.Zones()
+                                  if zone.m_Uuid.AsString() == ZONE
+                                  and zone.GetNetname() == "3V3A"
+                                  and zone.IsOnLayer(pcbnew.In2_Cu)), None)
+                        if z is None:
+                            raise RuntimeError("Protected zone absent in source")
+                        pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+                        row["rollback_from_pristine_source"] = True
+                    else:
+                        # Purely topological candidate (no added target path):
+                        # use the original native UUID-safe in-memory rollback.
+                        for item in list(board.GetTracks()):
+                            if item.m_Uuid.AsString() not in before_new:
+                                board.Remove(item)
+                        for uid in subset:
+                            if uid in reinserted:
+                                board.Remove(source_tracks[uid])
+                            board.Add(source_tracks[uid])
+                        pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+                        row["rollback_from_pristine_source"] = False
+                    row["restored_originals"] = (
+                        track_inventory(board) == original_tracks
+                        and unchanged_fingerprints(board) == original_protected
+                        and {item.m_Uuid.AsString()
+                             for item in board.GetTracks()
+                             if isinstance(item, pcbnew.PCB_VIA)} == original_vias)
+                    row["native_L3_exact"] = exact_native_difference(
+                        base_L3, pcbnew.SHAPE_POLY_SET(
+                            z.GetFilledPolysList(pcbnew.In2_Cu))
+                    )["native_both_empty"]
+                    row["native_In1_exact"] = every_zero(polygon_delta(
+                        base_In1, polygon_snapshot(board, pcbnew.In1_Cu)))
+                    if not (row["restored_originals"]
+                            and row["native_L3_exact"] and row["native_In1_exact"]):
+                        raise RuntimeError("Fail-closed rollback or zone identity")
+                    progress("deep_trial_all_original_UUIDs_restored")
+        if disposable_worker:
+            # No KiCad SWIG object is touched after the disposable trial.
+            # No trial PCB is persisted or promoted. Independently verified
+            # source integrity and native baseline are parent responsibilities.
+            report["source_archive_unchanged"] = (
+                hashlib.sha256(candidate.read_bytes()).hexdigest()
+                == original_zip_sha)
+            report["status"] = "isolated_worker_scratch_discarded_pending_parent_checks"
+            progress("isolated_worker_closed_without_Swig_reload")
+            return report
         report["all_originals_restituted"] = (
             track_inventory(board) == original_tracks
             and unchanged_fingerprints(board) == original_protected)
