@@ -8,6 +8,7 @@ from pathlib import Path
 import unittest
 
 from probe_block2_elastic_routes import _nearest_distance, repel_waypoints
+from probe_block2_clearance_cutset import spacing_scenarios
 
 ROOT = Path(__file__).resolve().parent
 ELASTIC = (ROOT / "probe_block2_elastic_routes.py").read_text()
@@ -44,6 +45,16 @@ class ElasticPathTests(unittest.TestCase):
             self.assertEqual(labels[int(round(y * 2)), int(round(x * 2))], 0)
             self.assertTrue(row["same_component"])
 
+    def test_only_hypothetical_reduction_and_design_hard_gate(self) -> None:
+        measured = spacing_scenarios(.22)
+        self.assertAlmostEqual(
+            measured["enforced_0_15"]["shortfall_mm"], .08)
+        self.assertAlmostEqual(
+            measured["hypothetical_0_10_not_authorized"]["shortfall_mm"], .03)
+        self.assertFalse(
+            measured["hypothetical_0_10_not_authorized"]
+            ["valid_under_current_rules"])
+
     def test_no_release_or_layer_relaxation(self) -> None:
         ast.parse(ELASTIC)
         for token in (
@@ -61,6 +72,8 @@ class ElasticPathTests(unittest.TestCase):
             "\"topology_separation_attempts\"",
             "\"width_aware_fixed_copper\"",
             "native_fixed_copper_0.15mm_width_clearance",
+            "fixed_copper_cutset_analysis",
+            "inspect_cutset(",
             "tuple(reversed(order))",
             "rubber_repulsion = np.zeros",
             "rubber_repulsion[y, x]",

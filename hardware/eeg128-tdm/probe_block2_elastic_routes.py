@@ -464,6 +464,19 @@ def rubber_band_routes(
             emit("width_aware_three_corridors_proposed_native_DRC_pending")
             break
 
+    # Exact KiCad source-item UUID inventory on the already stripped scratch
+    # board. This is *diagnostic*; 0.10-mm clearance is never activated.
+    from probe_block2_clearance_cutset import inspect_cutset
+    try:
+        diag["fixed_copper_cutset_analysis"] = inspect_cutset(
+            board, reference)
+    except (RuntimeError, ValueError, OSError, KeyError) as exc:
+        diag["fixed_copper_cutset_analysis"] = {
+            "status": "read_only_cutset_unavailable",
+            "error_type": type(exc).__name__,
+            "error": str(exc)[:350],
+        }
+    emit("native_uuid_cutset_diagnosis_completed")
     emit("three_zero_width_spanning_trees_nonintersecting")
     all_routes: list[list[tuple[int, float, float]]] = []
     completed: set[str] = set()
