@@ -155,9 +155,12 @@ def simultaneous_fcu_astar3(
                         expanded_joint_states=expanded,
                         wall_s=round(time.monotonic()-started,3))
             return result,diag
-        index=next((i for d in range(3)
-                    if (i:=(turn+d)%3) >= 0 and heads[i]!=goals3[i]),
-                   None)
+        index=None
+        for offset in range(3):
+            which=(turn+offset)%3
+            if heads[which]!=goals3[which]:
+                index=which
+                break
         if index is None:
             continue
         head=heads[index]
