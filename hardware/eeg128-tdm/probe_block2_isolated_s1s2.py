@@ -75,13 +75,17 @@ def subprocess_baseline(board: Path, destination: Path) -> dict:
 
 
 def run(candidate: Path, cohort: str, output: Path,
-        strategy: str = STRATEGY) -> dict:
+        strategy: str = STRATEGY,
+        soft_penalty: float = 85.0) -> dict:
     if cohort not in COHORTS or strategy not in STRATEGIES:
         raise ValueError("Unreviewed coupled-victim cohort or strategy")
+    if not 40.0 <= soft_penalty <= 500.0:
+        raise ValueError("Unreviewed soft routing penalty")
     original = sha(candidate)
     record = {
         "cohort": cohort,
         "strategy": strategy,
+        "soft_penalty": soft_penalty,
         "status": "isolated_trial_not_verified",
         "baseline_DRC": None,
         "source_archive_unchanged": False,
@@ -113,6 +117,7 @@ def run(candidate: Path, cohort: str, output: Path,
              "--candidate", str(candidate),
              "--cohort", cohort,
              "--single-strategy", strategy,
+             "--soft-penalty", str(soft_penalty),
              "--disposable-worker",
              "--output", str(worker_file)],
             capture_output=True, text=True, check=False, timeout=260)
@@ -157,9 +162,11 @@ def main() -> None:
     parser.add_argument("--cohort", choices=COHORTS, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--strategy", choices=STRATEGIES, default=STRATEGY)
+    parser.add_argument("--soft-penalty", type=float, default=85.0)
     args = parser.parse_args()
     report = run(args.candidate, args.cohort, args.output,
-                 strategy=args.strategy)
+                 strategy=args.strategy,
+                 soft_penalty=args.soft_penalty)
     print(json.dumps({
         "status": report["status"],
         "cohort": report["cohort"], "accepted": False,
