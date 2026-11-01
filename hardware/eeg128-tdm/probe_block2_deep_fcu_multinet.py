@@ -277,6 +277,9 @@ def run(candidate: Path, cohort: str, output: Path,
                 uid for uid in priority if uid not in RESTITUTION_HOTSPOTS)[:32]),
             ("expanded-48", tuple(priority[:48])),
         ]
+        if single_strategy == "mux-s1s2s3-first-32":
+            cut_plans.insert(0, ("mux-s1s2s3-first-32",
+                                 tuple(priority[:32])))
         if single_strategy is not None:
             cut_plans = [x for x in cut_plans if x[0] == single_strategy]
             if len(cut_plans) != 1:
@@ -351,15 +354,20 @@ def run(candidate: Path, cohort: str, output: Path,
                 # Strictly F.Cu; no new via or protected net is altered.
                 # Keeping the original MUX_S2 in place was already found to
                 # partition the target topology (preserve-hotspots-32).
-                if cut_size in ("mux-s2-first-32", "mux-s1s2-first-32"):
+                if cut_size in ("mux-s2-first-32", "mux-s1s2-first-32",
+                                   "mux-s1s2s3-first-32"):
                     # Cooperative early reservation, BOTH victim paths remain
                     # on F.Cu while actual target nets are searched. The
                     # selected child worker owns ALL its KiCad SWIG objects.
                     selected_victims = [
                         ("MUX_S2", "31a40ce9-1b3f-4f1a-b654-7fec9e793976")]
-                    if cut_size == "mux-s1s2-first-32":
+                    if cut_size in ("mux-s1s2-first-32",
+                                    "mux-s1s2s3-first-32"):
                         selected_victims.append(
                             ("MUX_S1", "2ac3aecb-9a62-4bc7-846a-75a782ad0474"))
+                    if cut_size == "mux-s1s2s3-first-32":
+                        selected_victims.append(
+                            ("MUX_S3", "c320c092-5407-4ad6-9a97-2c324373271c"))
                     missing = [uid for _, uid in selected_victims
                                if uid not in subset]
                     if missing:
@@ -741,7 +749,8 @@ def main() -> None:
     parser.add_argument("--cohort", choices=tuple(COHORTS), required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--single-strategy", default=None,
-                        choices=("mux-s1s2-first-32", "mux-s2-first-32",
+                        choices=("mux-s1s2s3-first-32", "mux-s1s2-first-32",
+                                 "mux-s2-first-32",
                                  "prefix-16", "prefix-32",
                                  "preserve-hotspots-32", "expanded-48"))
     parser.add_argument("--disposable-worker", action="store_true")
