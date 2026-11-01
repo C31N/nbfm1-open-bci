@@ -34,6 +34,7 @@ def spatial_cbs_fcu3(
     max_cbs_nodes: int = 90,
     max_lowlevel_nodes: int = 18000,
     seconds: float = 105,
+    selection: str = "length",
     progress: Progress | None = None,
 ) -> tuple[list[list[tuple[int, float, float]]] | None, dict[str, Any]]:
     import pcbnew
@@ -46,7 +47,8 @@ def spatial_cbs_fcu3(
         raise ValueError("CBS requires exactly three distinct target nets")
     if not (.19 <= step_mm <= .44 and 5 <= max_cbs_nodes <= 1200
             and 1000 <= max_lowlevel_nodes <= 50000
-            and 10 <= seconds <= 150):
+            and 10 <= seconds <= 150
+            and selection in ("length", "conflict-volume")):
         raise ValueError("Unreviewed bounded CBS parameter")
     started = time.monotonic()
     all_ends = [xy for pair in endpoints for xy in pair]
@@ -101,6 +103,7 @@ def spatial_cbs_fcu3(
     diag:dict[str,Any]={
         "status":"CBS3_prepared", "grid_shape":[len(xs),len(ys)],
         "step_mm":step_mm, "max_cbs_nodes":max_cbs_nodes,
+        "selection":selection,
         "start_anchors":start, "goal_anchors":goal,
         "simultaneous_three_net_conflict_search":True,
         "CH038_return_preplaced":True, "qualified":False,
@@ -176,6 +179,7 @@ def spatial_cbs_fcu3(
     # Exact 0.300-mm centreline spacing is legal for 0.15-mm width plus
     # 0.15-mm native clearance; do not invent a 0.001-mm extra no-go band.
     # Independent KiCad DRC remains authoritative for all real copper.
+    clearance_threshold = .300 - 1e-9
     def first_conflict(paths:tuple[GridPath,GridPath,GridPath]
                        ) -> tuple[int,int,GridEdge,GridEdge,float] | None:
         segs=[path_segments(i,paths[i]) for i in range(3)]
@@ -187,12 +191,12 @@ def spatial_cbs_fcu3(
                 line_j=LineString([endpoints[j][0]]
                                   +[physical(x) for x in paths[j]]
                                   +[endpoints[j][1]])
-                if line_i.distance(line_j)>=.300:
+                if line_i.distance(line_j)>=clearance_threshold:
                     continue
                 for gi,ki in segs[i]:
                     for gj,kj in segs[j]:
                         d=gi.distance(gj)
-                        if d<.300:
+                        if d<clearance_threshold:
                             return i,j,ki,kj,d
         return None
 
@@ -207,7 +211,21 @@ def spatial_cbs_fcu3(
     paths0=(initial_paths[0],initial_paths[1],initial_paths[2])
     zero=(frozenset(),frozenset(),frozenset())
     def score(paths:tuple[GridPath,GridPath,GridPath]) -> float:
-        return sum(len(p) for p in paths)
+        length_cost = sum(len(p) for p in paths)
+        if selection == "length":
+            return float(length_cost)
+        # Prioritize removing the *geometric conflict volume*, rather than
+        # exploring hundreds of almost equal-length paths whose copper still
+        # crosses. This mode changes search order, not route legalities.
+        copper = [
+            LineString([endpoints[i][0]]
+                       +[physical(x) for x in paths[i]]
+                       +[endpoints[i][1]]).buffer(.15, resolution=4)
+            for i in range(3)]
+        overlap = sum(
+            copper[i].intersection(copper[j]).area
+            for i in range(3) for j in range(i+1,3))
+        return length_cost + 250.0*overlap
     q=[(score(paths0),next(counter),zero,paths0)]
     seen={zero}
     if progress:
