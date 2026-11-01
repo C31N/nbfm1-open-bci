@@ -261,13 +261,38 @@ def route_child(board_path: Path, baseline: Path, output: Path,
             record["macro_three_progress"] = info
             persist(stage)
         persist("macro_voronoi_skeleton_started")
-        # macro_routes adds each FCu micro-hop directly onto the disposable
-        # child BOARD. These routes are provisional until all 201 victims,
-        # KiCad native DRC and all separate release gates have passed.
-        _, macro_diagnostic = macro_routes(
-            board, opens, order, step_mm=.44, micro_step_mm=.22,
-            lane_bias=7., deadline_s=132., progress=update_macro)
-        record["macro_three_diagnostic"] = macro_diagnostic
+        # A 0.44-mm sample reported 29-34 *sampled* free components in
+        # native workflow #1, but already closed one full target on four
+        # fine-grid micro hops. A disconnected coarse sample is NOT proof of
+        # topological impossibility. Retry on independent scratch clones
+        # with finer skeletons, never with the previous trial's copper.
+        macro_diagnostic = {}
+        record["macro_three_attempts"] = []
+        for coarse_step in (.44, .30, .22):
+            if coarse_step != .44:
+                board = pcbnew.LoadBoard(str(trial_board))
+                if board is None or unchanged_fingerprints(board) != protected:
+                    raise RuntimeError("Macro retry scratch copper drift")
+                persist("macro_reloaded_exact_201_cut_scratch")
+            # macro_routes adds every successful micro-hop directly to this
+            # disposable board. On failure the whole board is discarded.
+            _, macro_diagnostic = macro_routes(
+                board, opens, order, step_mm=coarse_step,
+                micro_step_mm=.22, lane_bias=10.,
+                deadline_s=105., progress=update_macro)
+            record["macro_three_attempts"].append({
+                "coarse_grid_mm": coarse_step,
+                "status": macro_diagnostic.get("status"),
+                "component_counts_by_net": macro_diagnostic.get(
+                    "component_counts_by_net", {}),
+                "blocked_target": macro_diagnostic.get("blocked_target"),
+                "micro_segments_completed": macro_diagnostic.get(
+                    "micro_segments_completed", {}),
+            })
+            record["macro_three_diagnostic"] = macro_diagnostic
+            persist("macro_three_attempt_completed")
+            if macro_diagnostic.get("status") == "macro_three_targets_proposed_unverified":
+                break
         persist("macro_three_solver_returned")
         if macro_diagnostic.get("status") != "macro_three_targets_proposed_unverified":
             record["status"] = "macro_three_not_routable_with_bounded_waypoints"
