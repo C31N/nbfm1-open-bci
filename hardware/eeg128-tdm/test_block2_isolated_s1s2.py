@@ -42,6 +42,7 @@ class IsolatedS1S2Tests(unittest.TestCase):
             '--disposable-worker', 'subprocess_baseline(',
             'EXPECTED_BASELINE',
             'source_archive_unchanged',
+            '".kicad_dru"',
             'worker_scratch_discarded',
             '"accepted": False',
             '"fabrication_release": False',
