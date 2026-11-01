@@ -46,6 +46,19 @@ class NBody201Tests(unittest.TestCase):
         self.assertNotIn('make_via(', text)
         self.assertNotIn('SetLayer(pcbnew.In1_Cu)', text)
 
+    def test_timeout_preserves_last_observed_stage(self) -> None:
+        text = SOURCE.read_text(encoding="utf-8")
+        for required in (
+            'except subprocess.TimeoutExpired as exc:',
+            '"child_exit_code"] = 124',
+            '"child_timeout"] = True',
+            '"last_observed_child_stage"',
+            '"Nbody_child_bounded_timeout_no_release"',
+            '"recomputed_in_this_worker": False',
+            '"route_existence_must_be_verified_by_Astar": True',
+        ):
+            self.assertIn(required, text)
+
     def test_process_and_replay_gates(self) -> None:
         text = SOURCE.read_text(encoding="utf-8")
         for required in (
