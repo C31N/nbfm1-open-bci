@@ -95,6 +95,14 @@ def spatial_cbs_fcu3(
          for path in reference_paths]
         if reference_paths is not None else None
     )
+    competitor_masks = (
+        [contains_xy(
+            LineString(reference_paths[(i + 1) % 3]).buffer(.33).union(
+                LineString(reference_paths[(i + 2) % 3]).buffer(.33)),
+            gx, gy)
+         for i in range(3)]
+        if reference_paths is not None else None
+    )
 
     def physical(node: GridNode) -> Point:
         return float(xs[node[0]]), float(ys[node[1]])
@@ -129,6 +137,7 @@ def spatial_cbs_fcu3(
         return None,diag
 
     diag["rubber_band_guidance"] = reference_masks is not None
+    diag["competitor_corridor_repulsion"] = competitor_masks is not None
 
     def edge(a: GridNode,b: GridNode) -> GridEdge:
         return (a,b) if a <= b else (b,a)
@@ -171,7 +180,9 @@ def spatial_cbs_fcu3(
                     continue
                 corridor_cost = (2.75 if reference_masks is not None
                                  and not reference_masks[agent][y,x] else 0.)
-                g2=g+step_mm*(math.hypot(dx,dy)+corridor_cost)
+                neighbor_cost = (12.0 if competitor_masks is not None
+                                 and competitor_masks[agent][y,x] else 0.0)
+                g2=g+step_mm*(math.hypot(dx,dy)+corridor_cost+neighbor_cost)
                 if g2<cost.get(nxt,float("inf")):
                     cost[nxt]=g2
                     parents[nxt]=node

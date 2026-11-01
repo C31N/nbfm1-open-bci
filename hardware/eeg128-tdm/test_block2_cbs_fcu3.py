@@ -80,6 +80,8 @@ class CBS3Tests(unittest.TestCase):
             "reference_masks",
             "corridor_cost = (2.75",
             "rubber_band_guidance",
+            "competitor_masks",
+            "neighbor_cost = (12.0",
         ):
             self.assertIn(token, code)
 

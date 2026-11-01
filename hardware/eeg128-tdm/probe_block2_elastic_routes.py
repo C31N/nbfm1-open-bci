@@ -141,7 +141,21 @@ def _rubber_trace(
     expires: float,
 ) -> list[Point] | None:
     """Zero-trace-width A* over an F.Cu free-space graph, no DRC claim."""
+    import numpy as np
+    from shapely import contains_xy
     from shapely.geometry import LineString
+
+    # Before zero-width A*, softly repel later trees from every already
+    # planned tree. This does not remove an obstacle or authorize copper.
+    grid_x, grid_y = np.meshgrid(xs, ys)
+    rubber_repulsion = np.zeros(blocked.shape, dtype=float)
+    for guide in previous:
+        line = LineString(guide)
+        for radius, penalty in ((1.0, 3.0), (.65, 9.0),
+                                (.42, 21.0), (.30, 55.0)):
+            rubber_repulsion += (
+                contains_xy(line.buffer(radius), grid_x, grid_y) * penalty
+            )
 
     xstep = float(xs[1] - xs[0])
     ystep = float(ys[1] - ys[0])
@@ -203,7 +217,8 @@ def _rubber_trace(
             if (segment.relate_pattern(obstacle, "T********")
                     or any(segment.intersects(other) for other in other_lines)):
                 continue
-            proposal = g + math.hypot(xstep * dx, ystep * dy)
+            proposal = (g + math.hypot(xstep * dx, ystep * dy)
+                        * (1.0 + float(rubber_repulsion[y, x])))
             if proposal < costs.get(nxt, float("inf")):
                 costs[nxt] = proposal
                 parents[nxt] = node
@@ -346,6 +361,10 @@ def rubber_band_routes(
         for i in range(3) for j in range(i + 1, 3))
     if not diag["topology_crossing_free"]:
         raise RuntimeError("Zero-width topological crossing detected")
+    diag["rubber_pairwise_minimum_mm"] = min(
+        lines[i].distance(lines[j])
+        for i in range(3) for j in range(i + 1, 3))
+    diag["rubber_repulsion_enabled"] = True
     emit("three_zero_width_spanning_trees_nonintersecting")
     all_routes: list[list[tuple[int, float, float]]] = []
     completed: set[str] = set()
