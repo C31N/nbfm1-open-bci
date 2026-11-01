@@ -76,7 +76,7 @@ class CBS3Tests(unittest.TestCase):
     def test_nbody_runs_cbs_before_restitution(self) -> None:
         for term in (
             '"cbs_three_enabled": cbs_three',
-            "if joint_three and cbs_three:",
+            "if sum((bool(joint_three), bool(cbs_three), bool(macro_three))) > 1:",
             'from probe_block2_cbs_fcu3 import spatial_cbs_fcu3',
             "routes, diagnostic = spatial_cbs_fcu3(",
             '"CBS3_solver_returned"',
