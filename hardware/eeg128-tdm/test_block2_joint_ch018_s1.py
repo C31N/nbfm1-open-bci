@@ -25,7 +25,9 @@ class JointStateAStarTests(unittest.TestCase):
             'p1, p2 = path_a, path_b+(nxt,)',
             'next_turn = 1-which',
             'visited.add((path_a, path_b, turn))',
-            'max_states=16000, seconds=95',
+            'max_states=70000,',
+            'seconds=95, heuristic_weight=1.8',
+            'min_distance = .300 - 1e-9',
         ):
             self.assertIn(mandatory, text)
         self.assertNotIn('make_via(', text)
