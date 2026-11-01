@@ -1,0 +1,57 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+name: Gemini Failure Analysis
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+      - Native KiCad 8 Validation
+      - A1 Four-Layer Autoroute Experiment
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Existing failed GitHub Actions run ID"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: gemini-failure-analysis-${{ github.event.workflow_run.id || inputs.run_id || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  triage:
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'failure' && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch') && github.event.workflow_run.head_repository.full_name == github.repository) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      # Always use the trusted default-branch code, never the failed branch.
+      - name: Checkout trusted analysis code from main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify redaction and no-release regression tests
+        run: python -m unittest discover -s scripts -p 'test_analyze_logs.py' -v
+      - name: Install pinned official Gemini SDK
+        run: python -m pip install --disable-pip-version-check google-genai==2.34.0
+      - name: Diagnose failed CI or KiCad job
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-2.5-flash' }}
+          FAILED_RUN_ID: ${{ github.event.workflow_run.id || inputs.run_id }}
+        run: |
+          set -euo pipefail
+          python scripts/analyze_logs.py \
+            --repo "$GITHUB_REPOSITORY" \
+            --run-id "$FAILED_RUN_ID"
