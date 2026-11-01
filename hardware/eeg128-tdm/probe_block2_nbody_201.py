@@ -53,7 +53,8 @@ def independent_drc(board: Path, report: Path) -> dict:
 def route_child(board_path: Path, baseline: Path, output: Path,
                 order_id: int, future_lane_penalty: float = 0.0,
                 joint_three: bool = False,
-                joint_weight: float = 1.0) -> dict:
+                joint_weight: float = 1.0,
+                cbs_three: bool = False) -> dict:
     import pcbnew
     from shapely.geometry import LineString, box
     from shapely.ops import unary_union
@@ -79,6 +80,8 @@ def route_child(board_path: Path, baseline: Path, output: Path,
         raise ValueError("Unreviewed future FCu lane penalty")
     if not 1.0 <= joint_weight <= 3.0:
         raise ValueError("Unreviewed coupled MAPF3 weight")
+    if joint_three and cbs_three:
+        raise ValueError("Joint A* and CBS must be isolated strategies")
     original = pcbnew.LoadBoard(str(board_path))
     initial = track_inventory(original)
     protected = unchanged_fingerprints(original)
@@ -117,6 +120,7 @@ def route_child(board_path: Path, baseline: Path, output: Path,
         **NO_RELEASE, "status": "nbody_starting", "order": ORDERS[order_id],
         "future_lane_penalty": future_lane_penalty,
         "joint_three_enabled": joint_three,
+        "cbs_three_enabled": cbs_three,
         "joint_weight": joint_weight,
         "baseline_DRC": {"violations": 0, "warnings": 0, "unconnected": 139},
         "cut_whitelist_UUIDs": sorted(removed),
@@ -267,6 +271,36 @@ def route_child(board_path: Path, baseline: Path, output: Path,
                      layers=(pcbnew.F_Cu, pcbnew.B_Cu))
             record["target_nets_routed"].append(net)
             persist("mapf3_target_committed_" + net)
+    elif cbs_three:
+        from probe_block2_cbs_fcu3 import spatial_cbs_fcu3
+        # Conflict tree branches BOTH possible reroutes for each actual
+        # crossing. CH038 remains native 139/0/0 DRC-qualified and fixed.
+        record["cbs_three_method"] = "spatial_conflict_based_three_net"
+        def update_conflict(stage: str, info: dict) -> None:
+            record["cbs_three_progress"] = info
+            persist(stage)
+        persist("CBS3_solver_invoked")
+        endpoints3 = tuple(opens[n] for n in order)
+        netcodes3 = tuple(board.FindNet(n).GetNetCode() for n in order)
+        routes, diagnostic = spatial_cbs_fcu3(
+            board, endpoints3, netcodes3,
+            max_cbs_nodes=90, max_lowlevel_nodes=18000,
+            seconds=105, progress=update_conflict)
+        record["cbs_three_diagnostic"] = diagnostic
+        persist("CBS3_solver_returned")
+        if routes is None:
+            record["status"] = "CBS3_no_solution_within_bounded_search"
+            persist("CBS3_joint_three_rejected")
+            return record
+        if len(routes) != 3:
+            raise RuntimeError("CBS3 must return exactly three target paths")
+        for net, code, path in zip(order, netcodes3, routes):
+            if len(path) < 2 or any(point[0] != 0 for point in path):
+                raise RuntimeError("CBS3 target escaped FCu / via")
+            add_path(board, path, code, .15,
+                     layers=(pcbnew.F_Cu, pcbnew.B_Cu))
+            record["target_nets_routed"].append(net)
+            persist("CBS3_target_committed_" + net)
     else:
         # Original sequential A* retained as independent comparison arm.
         for net in order:
@@ -379,17 +413,21 @@ def route_child(board_path: Path, baseline: Path, output: Path,
 def run(archive: Path, output: Path, order_id: int,
         future_lane_penalty: float = 0.0,
         joint_three: bool = False,
-        joint_weight: float = 1.0) -> dict:
+        joint_weight: float = 1.0,
+        cbs_three: bool = False) -> dict:
     from probe_block2_isolated_s1s2 import pinned_source_copy
     from probe_block2_ch038_restitution import isolated_drc
     if not 0.0 <= future_lane_penalty <= 500.0:
         raise ValueError("Unreviewed N-body lookahead penalty")
     if not 1.0 <= joint_weight <= 3.0:
         raise ValueError("Unreviewed N-body joint heuristic weight")
+    if joint_three and cbs_three:
+        raise ValueError("Choose only one coupled solver")
     original_sha = file_hash(archive)
     report = {**NO_RELEASE, "status": "Nbody_not_qualified",
               "future_lane_penalty": future_lane_penalty,
               "joint_three_enabled": joint_three,
+              "cbs_three_enabled": cbs_three,
               "joint_weight": joint_weight,
               "order": ORDERS[order_id], "source_unchanged": False,
               "candidate_native_DRC": None,
@@ -414,10 +452,11 @@ def run(archive: Path, output: Path, order_id: int,
                  "--order", str(order_id),
              "--future-lane-penalty", str(future_lane_penalty),
              *(["--joint-three"] if joint_three else []),
+             *(["--cbs-three"] if cbs_three else []),
              "--joint-weight", str(joint_weight),
              "--output", str(diag)],
                 capture_output=True, text=True, check=False,
-            timeout=340 if joint_three else 265)
+            timeout=340 if (joint_three or cbs_three) else 265)
             report["child_exit_code"] = result.returncode
             report["child_stderr_tail"] = result.stderr[-2000:]
             report["child_timeout"] = False
@@ -467,6 +506,7 @@ def main() -> None:
     p.add_argument("--order", type=int, choices=range(len(ORDERS)), required=True)
     p.add_argument("--future-lane-penalty", type=float, default=0.0)
     p.add_argument("--joint-three", action="store_true")
+    p.add_argument("--cbs-three", action="store_true")
     p.add_argument("--joint-weight", type=float, default=1.0)
     p.add_argument("--output", type=Path, required=True)
     a = p.parse_args()
@@ -476,14 +516,16 @@ def main() -> None:
         report = route_child(a.board, a.baseline, a.output, a.order,
                              future_lane_penalty=a.future_lane_penalty,
                              joint_three=a.joint_three,
-                             joint_weight=a.joint_weight)
+                             joint_weight=a.joint_weight,
+                             cbs_three=a.cbs_three)
     else:
         if not a.candidate or a.board or a.baseline:
             raise ValueError("Parent expects only --candidate")
         report = run(a.candidate, a.output, a.order,
                      future_lane_penalty=a.future_lane_penalty,
                      joint_three=a.joint_three,
-                     joint_weight=a.joint_weight)
+                     joint_weight=a.joint_weight,
+                     cbs_three=a.cbs_three)
     print(json.dumps({"status": report["status"],
                       "accepted": False, "fabrication_release": False}))
 
