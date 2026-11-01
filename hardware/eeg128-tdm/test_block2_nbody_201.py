@@ -49,6 +49,20 @@ class NBody201Tests(unittest.TestCase):
         self.assertNotIn('make_via(', text)
         self.assertNotIn('SetLayer(pcbnew.In1_Cu)', text)
 
+    def test_bounded_lookahead_accounts_for_remaining_target_nets(self) -> None:
+        text = SOURCE.read_text(encoding="utf-8")
+        for expected in (
+            '0.0 <= future_lane_penalty <= 500.0',
+            'future for future in order',
+            'future != net and future not in record["target_nets_routed"]',
+            'LineString(opens[future]).buffer(.34)',
+            '"future_lane_reservations"',
+            'costs += ((0, future_lanes, future_lane_penalty),)',
+            'cost_regions=costs',
+            '--future-lane-penalty',
+        ):
+            self.assertIn(expected, text)
+
     def test_timeout_preserves_last_observed_stage(self) -> None:
         text = SOURCE.read_text(encoding="utf-8")
         for required in (
