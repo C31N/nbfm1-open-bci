@@ -87,6 +87,18 @@ class NBody201Tests(unittest.TestCase):
             self.assertIn(required, text)
         self.assertNotIn('all(track_inventory(board).get(uid)', text)
 
+    def test_immutable_footprints_and_pads_survive_scratch_roundtrip(self) -> None:
+        code = SOURCE.read_text(encoding="utf-8")
+        for token in (
+            'component_signature = component_inventory(original)',
+            'require_unchanged_components(board, component_signature, "201-track-cut")',
+            'require_unchanged_components(board, component_signature, "macro-waypoints-and-micro-Astar")',
+            'require_unchanged_components(board, component_signature, "before-scratch-save")',
+            'require_unchanged_components(saved, component_signature, "after-scratch-save")',
+            'record["component_identity_verified"] = True',
+        ):
+            self.assertIn(token, code)
+
     def test_process_and_replay_gates(self) -> None:
         text = SOURCE.read_text(encoding="utf-8")
         for required in (

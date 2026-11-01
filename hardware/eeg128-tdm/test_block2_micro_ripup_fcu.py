@@ -10,6 +10,10 @@ class TestMicroRipupFCu(unittest.TestCase):
     def test_virtual_original_restoration(self) -> None:
         code = SOURCE.read_text()
         for token in (
+            "component_signature = component_inventory(board)",
+            'require_unchanged_components(board, component_signature, "micro-ripup")',
+            'require_unchanged_components(saved, component_signature, "micro-after-save")',
+            'require_unchanged_components(board, component_signature, "micro-rollback")',
             "PINNED_CANDIDATE_SHA", "CASE_VICTIMS",
             "CH027_ALT_VIA", "CH027_VIA_LANDINGS_MM",
             "S0_UUIDS", "NEIGHBORS", "CUT",

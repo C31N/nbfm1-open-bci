@@ -67,6 +67,7 @@ def route_child(board_path: Path, baseline: Path, output: Path,
     )
     from probe_block2_deep_fcu_multinet import native_open_positions
     from probe_ch025_cooperative8 import unchanged_fingerprints
+    from board_scratch_integrity import component_inventory, require_unchanged_components
     from probe_ch025_fcu_l3_exact import track_inventory
     from probe_mux_en_multihop_neighbors import PINNED_CANDIDATE_SHA
     from route_targeted_closure import (
@@ -93,6 +94,7 @@ def route_child(board_path: Path, baseline: Path, output: Path,
     if not .19 <= cbs_grid_mm <= .44:
         raise ValueError("Unreviewed CBS grid size")
     original = pcbnew.LoadBoard(str(board_path))
+    component_signature = component_inventory(original)
     initial = track_inventory(original)
     protected = unchanged_fingerprints(original)
     base_vias = {t.m_Uuid.AsString() for t in original.GetTracks()
@@ -223,6 +225,7 @@ def route_child(board_path: Path, baseline: Path, output: Path,
     board = pcbnew.LoadBoard(str(trial_board))
     if board is None:
         raise RuntimeError("Cannot parse isolated N-body scratch PCB")
+    require_unchanged_components(board, component_signature, "201-track-cut")
     persist("201_cut_native_board_loaded")
     initial_unmodified = {uid: v for uid, v in initial.items()
                           if uid not in removed and uid not in CH038}
@@ -273,6 +276,7 @@ def route_child(board_path: Path, baseline: Path, output: Path,
                 board = pcbnew.LoadBoard(str(trial_board))
                 if board is None or unchanged_fingerprints(board) != protected:
                     raise RuntimeError("Macro retry scratch copper drift")
+                require_unchanged_components(board, component_signature, "macro-retry-reload")
                 persist("macro_reloaded_exact_201_cut_scratch")
             # macro_routes adds every successful micro-hop directly to this
             # disposable board. On failure the whole board is discarded.
@@ -280,6 +284,7 @@ def route_child(board_path: Path, baseline: Path, output: Path,
                 board, opens, order, step_mm=coarse_step,
                 micro_step_mm=.22, lane_bias=10.,
                 deadline_s=105., progress=update_macro)
+            require_unchanged_components(board, component_signature, "macro-waypoints-and-micro-Astar")
             record["macro_three_attempts"].append({
                 "coarse_grid_mm": coarse_step,
                 "status": macro_diagnostic.get("status"),
@@ -473,7 +478,14 @@ def route_child(board_path: Path, baseline: Path, output: Path,
     if ({t.m_Uuid.AsString() for t in board.GetTracks()
          if isinstance(t, pcbnew.PCB_VIA)} != base_vias):
         raise RuntimeError("New via or via movement detected")
-    pcbnew.SaveBoard(str(trial_board), board)
+    require_unchanged_components(board, component_signature, "before-scratch-save")
+    if pcbnew.SaveBoard(str(trial_board), board) is False:
+        raise RuntimeError("Scratch board could not be saved")
+    saved = pcbnew.LoadBoard(str(trial_board))
+    if saved is None:
+        raise RuntimeError("Cannot reload scratch board")
+    require_unchanged_components(saved, component_signature, "after-scratch-save")
+    record["component_identity_verified"] = True
     record["fully_restituted"] = True
     record["scratch_board_ready_for_independent_DRC"] = True
     record["status"] = "all_201_restituted_pending_separate_native_DRC"

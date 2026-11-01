@@ -51,6 +51,14 @@ class MacroBlock2Tests(unittest.TestCase):
                           "ExportDrill(", "SaveBoard("):
             self.assertNotIn(forbidden,MACRO)
 
+    def test_native_scratch_component_guard(self) -> None:
+        for token in (
+            'component_signature = component_inventory(original)',
+            'require_unchanged_components(board, component_signature, "macro-waypoints-and-micro-Astar")',
+            'require_unchanged_components(saved, component_signature, "after-scratch-save")',
+        ):
+            self.assertIn(token, BODY)
+
     def test_macro_starts_restoration_only_after_all_micro_hops(self) -> None:
         for term in (
             '"macro_three_enabled": macro_three',

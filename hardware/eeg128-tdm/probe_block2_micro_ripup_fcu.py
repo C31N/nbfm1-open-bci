@@ -62,6 +62,7 @@ FLAGS = {
 
 def run(candidate: Path, index: int, report_path: Path | None = None) -> dict[str, Any]:
     import pcbnew
+    from board_scratch_integrity import component_inventory, require_unchanged_components
     from shapely.geometry import Point, box, LineString
     from shapely.ops import unary_union
     from shapely.strtree import STRtree
@@ -148,6 +149,7 @@ def run(candidate: Path, index: int, report_path: Path | None = None) -> dict[st
             out["status"] = "baseline_139_gate_failed"
             return out
         board = pcbnew.LoadBoard(str(pcb_path))
+        component_signature = component_inventory(board)
         initial = track_inventory(board)
         protected = unchanged_fingerprints(board)
         existing_ids = set(initial)
@@ -197,6 +199,7 @@ def run(candidate: Path, index: int, report_path: Path | None = None) -> dict[st
         out["selected_originals_verified"] = True
         for uid in selected:
             board.Remove(current[uid])
+        require_unchanged_components(board, component_signature, "micro-ripup")
         reinserted_original: set[str] = set()
         try:
             save_progress("virtual_micro_ripup_started")
@@ -352,7 +355,13 @@ def run(candidate: Path, index: int, report_path: Path | None = None) -> dict[st
                                 shutil.copyfile(folder / name,
                                                 scratch_dir / name)
                             scratch = scratch_dir / MEMBERS[0]
-                            pcbnew.SaveBoard(str(scratch), board)
+                            require_unchanged_components(board, component_signature, "micro-before-save")
+                            if pcbnew.SaveBoard(str(scratch), board) is False:
+                                raise RuntimeError("Micro scratch save failed")
+                            saved = pcbnew.LoadBoard(str(scratch))
+                            if saved is None:
+                                raise RuntimeError("Micro scratch reload failed")
+                            require_unchanged_components(saved, component_signature, "micro-after-save")
                             post = native(scratch, folder / "post.json")
                             out["native_post_DRC"] = metrics(post)
                             out["native_CH027_airwires_after"] = (
@@ -394,6 +403,7 @@ def run(candidate: Path, index: int, report_path: Path | None = None) -> dict[st
                 raise RuntimeError("Original tracks not exactly restituted")
             if unchanged_fingerprints(board) != protected:
                 raise RuntimeError("Protected vias pads or zones changed")
+            require_unchanged_components(board, component_signature, "micro-rollback")
             pcbnew.ZONE_FILLER(board).Fill(board.Zones())
             delta = exact_native_difference(
                 original_l3,
