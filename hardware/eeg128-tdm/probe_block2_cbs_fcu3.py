@@ -271,11 +271,26 @@ def spatial_cbs_fcu3(
                     [endpoints[counterpart][0]]
                     + [physical(x) for x in paths[counterpart]]
                     + [endpoints[counterpart][1]])
-                colliding = (
-                    key for segment,key in path_segments(agent, paths[agent])
-                    if segment.distance(rival_line) < clearance_threshold)
-                forbidden_edges |= frozenset(colliding)
+                # Restrict the bundle to the first collision neighborhood.
+                # Banning all ~42 overlapping segments severed BOTH root
+                # search branches in native run #2; this is a local conflict
+                # direction choice, never a full corridor blackout.
+                center_a = physical(prohibited[0])
+                center_b = physical(prohibited[1])
+                center = ((center_a[0]+center_b[0])/2,
+                          (center_a[1]+center_b[1])/2)
+                colliding = sorted(
+                    ((math.dist(
+                        ((physical(key[0])[0]+physical(key[1])[0])/2,
+                         (physical(key[0])[1]+physical(key[1])[1])/2),
+                        center), key)
+                     for segment,key in path_segments(agent, paths[agent])
+                     if segment.distance(rival_line) < clearance_threshold),
+                    key=lambda item: item[0])
+                local = [key for dist,key in colliding if dist <= 1.05]
+                forbidden_edges |= frozenset(local[:6])
                 diag["last_corridor_bundle_edge_count"] = len(forbidden_edges)
+                diag["last_corridor_bundle_original_overlap_edges"] = len(colliding)
             newer=list(limits_by_net)
             newer[agent]=limits_by_net[agent] | forbidden_edges
             key=(newer[0],newer[1],newer[2])
