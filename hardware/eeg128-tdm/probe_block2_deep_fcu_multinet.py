@@ -97,7 +97,8 @@ def native_open_positions(report: dict[str, Any]) -> dict[str, list[tuple[float,
     return output
 
 def run(candidate: Path, cohort: str, output: Path,
-        single_strategy: str | None = None,\n        disposable_worker: bool = False) -> dict[str, Any]:
+        single_strategy: str | None = None,
+        disposable_worker: bool = False) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import LineString, box
     from shapely.ops import unary_union
