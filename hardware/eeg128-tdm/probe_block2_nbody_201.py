@@ -68,6 +68,8 @@ def route_child(board_path: Path, baseline: Path, output: Path,
 
     if not pcbnew.Version().startswith("8.0.9"):
         raise RuntimeError("Wrong KiCad version for no-release experiment")
+    started = time.monotonic()
+
     if file_hash(board_path) != PINNED_CANDIDATE_SHA:
         raise RuntimeError("139 source copper hash drift")
     if order_id not in range(len(ORDERS)):
@@ -160,7 +162,8 @@ def route_child(board_path: Path, baseline: Path, output: Path,
     victim_lanes = unary_union([
         LineString((v["start"], v["end"])).buffer(v["width_mm"]/2 + .25)
         for v in removed.values()])
-    deadline = time.monotonic() + 210
+    # Overall child wall budget includes native prep and all searches.
+    deadline = started + 210
     ch038_net = board.FindNet("CH038_P_MUX").GetNetCode()
     for uid in CH038:
         tr = original_tracks[uid]
