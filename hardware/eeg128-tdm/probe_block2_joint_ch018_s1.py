@@ -42,7 +42,8 @@ def file_sha(path: Path) -> str:
 
 def joint_fcu_astar(board: Any,
                     endpoints: tuple, nets: tuple[int, int], *, step: float = .30,
-                    max_states: int = 16000, seconds: float = 95.0) -> tuple:
+                    max_states: int = 16000, seconds: float = 95.0,
+                    heuristic_weight: float = 1.0) -> tuple:
     """Paired-head A*: state stores BOTH accumulated copper paths.
 
     Unlike sequential A*, the other path is unknown until expanded, and
@@ -56,7 +57,8 @@ def joint_fcu_astar(board: Any,
     from shapely import contains_xy, prepare
     from route_targeted_closure import obstacles
 
-    if not .18 <= step <= .45 or max_states > 50000:
+    if not (.18 <= step <= .45 and 300 <= max_states <= 90000
+            and 1.0 <= heuristic_weight <= 3.0):
         raise ValueError("Joint-grid budget outside reviewed bounds")
     start_at = time.monotonic()
     e = [p for pair in endpoints for p in pair]
@@ -109,7 +111,7 @@ def joint_fcu_astar(board: Any,
                       "starts": starts, "goals": goals}
     # The two routes have different nets and require at least 0.30 mm
     # centreline separation (0.15 trace + 0.15 native clearance).
-    min_distance = .301
+    min_distance = .300 - 1e-9
     def collides(move_a: tuple[float, float],
                  move_b: tuple[float, float],
                  other_path: tuple[tuple[int, int], ...]) -> bool:
@@ -127,7 +129,7 @@ def joint_fcu_astar(board: Any,
     seq = itertools.count()
     a0, b0 = starts
     initial = (a0, b0, 0, (a0,), (b0,))
-    queue = [(h(a0, b0), next(seq), 0.0, initial)]
+    queue = [(heuristic_weight*h(a0, b0), next(seq), 0.0, initial)]
     visited = set()
     expanded = 0
     while queue and expanded < max_states:
@@ -149,7 +151,10 @@ def joint_fcu_astar(board: Any,
             ], {"status": "joint_path_found_unverified",
                  "expanded_joint_states": expanded,
                  "grid_shape": [len(xs), len(ys)],
-                 "step_mm": step, "wall_s": round(time.monotonic()-start_at, 2)}
+                 "step_mm": step, "wall_s": round(time.monotonic()-start_at, 2),
+        "heuristic_weight": heuristic_weight,
+        "open_joint_states": len(queue),
+                 "heuristic_weight": heuristic_weight}
         which = turn
         if (which == 0 and a == goals[0]) or (which == 1 and b == goals[1]):
             which = 1-which
@@ -177,7 +182,7 @@ def joint_fcu_astar(board: Any,
             next_turn = 1-which
             step_cost = step*math.hypot(dx, dy)
             g = spent+step_cost
-            heapq.heappush(queue, (g+h(a1, b1), next(seq), g,
+            heapq.heappush(queue, (g+heuristic_weight*h(a1, b1), next(seq), g,
                                    (a1, b1, next_turn, p1, p2)))
     return None, {
         "status": "joint_state_budget_exhausted_no_solution_proven",
@@ -270,7 +275,8 @@ def child(source: Path, baseline: Path, output: Path) -> dict:
     persist("joint_Astar_precompute_started")
     path_pair, diag = joint_fcu_astar(
         board, (endpoints, s1_ends),
-        (target_code, victim_code), max_states=16000, seconds=95)
+        (target_code, victim_code), max_states=70000,
+        seconds=95, heuristic_weight=1.8)
     out["joint_search"] = diag
     persist("joint_Astar_finished")
     if path_pair is None:
