@@ -69,7 +69,7 @@ def route_child(board_path: Path, baseline: Path, output: Path,
         add_path, make_track, routing_domain, search, xy,
     )
 
-    if pcbnew.Version() != "8.0.9":
+    if not pcbnew.Version().startswith("8.0.9"):
         raise RuntimeError("Wrong KiCad version for no-release experiment")
     if file_hash(board_path) != PINNED_CANDIDATE_SHA:
         raise RuntimeError("139 source copper hash drift")
