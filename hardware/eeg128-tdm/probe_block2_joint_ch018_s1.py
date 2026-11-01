@@ -52,7 +52,7 @@ def joint_fcu_astar(board, endpoints, nets, *, step: float = .30,
     import numpy as np
     from shapely.geometry import LineString, box
     from shapely import contains_xy, prepare
-    from route_targeted_closure import obstacles, xy
+    from route_targeted_closure import obstacles
 
     if not .18 <= step <= .45 or max_states > 50000:
         raise ValueError("Joint-grid budget outside reviewed bounds")
