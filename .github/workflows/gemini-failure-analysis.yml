@@ -7,13 +7,22 @@ on:
       - CI
       - Native KiCad 8 Validation
       - A1 Four-Layer Autoroute Experiment
+      - Native Block2 Elastic Repulsion Rubber Band CH038 no-release
     types: [completed]
   workflow_dispatch:
     inputs:
       run_id:
-        description: "Existing failed GitHub Actions run ID"
+        description: "Existing GitHub Actions run ID (failure or elastic routing)"
         required: true
         type: string
+      mode:
+        description: "Analyze failed logs or bounded elastic JSON reports"
+        required: true
+        type: choice
+        options:
+          - failure
+          - routing
+        default: failure
 
 permissions:
   contents: read
@@ -26,7 +35,7 @@ concurrency:
 jobs:
   triage:
     if: >-
-      ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'failure' && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch') && github.event.workflow_run.head_repository.full_name == github.repository) }}
+      ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.head_repository.full_name == github.repository && ((github.event.workflow_run.conclusion == 'failure' && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch')) || (github.event.workflow_run.name == 'Native Block2 Elastic Repulsion Rubber Band CH038 no-release' && github.event.workflow_run.head_branch == 'codex/block2-predictive-restitution-2026-10-30' && github.event.workflow_run.conclusion == 'success'))) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 8
     steps:
@@ -44,14 +53,21 @@ jobs:
         run: python -m unittest discover -s scripts -p 'test_analyze_logs.py' -v
       - name: Install pinned official Gemini SDK
         run: python -m pip install --disable-pip-version-check google-genai==2.34.0
-      - name: Diagnose failed CI or KiCad job
+      - name: Diagnose failed CI or KiCad job, or safe Elastic JSON
         env:
           GH_TOKEN: ${{ github.token }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-3.8-flash' }}
           FAILED_RUN_ID: ${{ github.event.workflow_run.id || inputs.run_id }}
+          GEMINI_ROUTING_MODE: ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.name == 'Native Block2 Elastic Repulsion Rubber Band CH038 no-release') || inputs.mode == 'routing' }}
         run: |
           set -euo pipefail
-          python scripts/analyze_logs.py \
-            --repo "$GITHUB_REPOSITORY" \
-            --run-id "$FAILED_RUN_ID"
+          if [ "$GEMINI_ROUTING_MODE" = "true" ]; then
+            python scripts/analyze_logs.py \
+              --repo "$GITHUB_REPOSITORY" \
+              --run-id "$FAILED_RUN_ID" --routing-artifacts
+          else
+            python scripts/analyze_logs.py \
+              --repo "$GITHUB_REPOSITORY" \
+              --run-id "$FAILED_RUN_ID"
+          fi

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import json
 import subprocess
 import sys
 import tempfile
@@ -76,6 +77,65 @@ class GeminiLogTests(unittest.TestCase):
             self.assertEqual(code, 0)
             model.assert_not_called()
             self.assertIn("no Gemini request", output.getvalue())
+
+    def test_native_routing_artifact_uuid_allowlist(self) -> None:
+        fixed_uuid = "10000000-0000-4000-8000-000000000001"
+        with tempfile.TemporaryDirectory() as folder:
+            report = Path(folder) / "Block2-Elastic-5"
+            report.mkdir()
+            (report / "elastic-5.json").write_text(json.dumps({
+                "order": ["CH030_N_MUX", "CH029_N_MUX", "CH028_N_MUX"],
+                "child_diagnostic": {
+                    "status": "rubber_guided_CBS3_bounded_no_solution",
+                    "rubber_band_diagnostic": {
+                        "topology_crossing_free": True,
+                        "rubber_pairwise_minimum_mm": .22,
+                        "fixed_copper_cutset_analysis": {
+                            "status": "read_only_native_cutset_candidates",
+                            "pairwise": [{
+                                "nets": ["CH028_N_MUX", "CH029_N_MUX"],
+                                "minimum_centreline_mm": .22,
+                                "fixed_copper_uuid_candidates": [{
+                                    "uuid": fixed_uuid,
+                                    "kind": "via",
+                                    "net": "VCM",
+                                    "centreline_to_copper_mm": .14,
+                                    "clearance_deficit_mm": .135,
+                                    "note": "GEMINI_API_KEY=AIzaABCDEFGHIJKLMNOPQRSTUVWXYZ123456",
+                                }, {
+                                    "uuid": "invalid-uuid", "net": "password=secret"
+                                }],
+                                "other_net_fixed_copper_uuid_candidates": []
+                            }],
+                        },
+                        "topology_separation_attempts": [],
+                        "inflated_micro_hops": {"CH030_N_MUX": 4},
+                    }
+                }
+            }), encoding="utf-8")
+            compact = analyze_logs.routing_summary_from_dir(Path(folder))
+        self.assertIn(fixed_uuid, compact)
+        self.assertIn("CH028_N_MUX", compact)
+        self.assertIn("0.22", compact)
+        self.assertNotIn("AIza", compact)
+        self.assertNotIn("password", compact)
+        self.assertNotIn("invalid-uuid", compact)
+        prompt = analyze_logs.routing_prompt(
+            "C31N/nbfm1-open-bci", 123, compact)
+        for gate in ("accepted=false", "0.15-mm", "In1.Cu", "keine neuen Vias"):
+            self.assertIn(gate, prompt)
+
+    def test_invalid_routing_artifact_is_not_sent_to_gemini(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            (Path(folder) / "elastic-5.json").write_text(
+                json.dumps({"child_diagnostic": {}}), encoding="utf-8")
+            summary = analyze_logs.routing_summary_from_dir(Path(folder))
+            self.assertIn("not_produced", summary)
+            self.assertNotIn("exec", summary)
+        with mock.patch.object(analyze_logs.subprocess, "run") as runner:
+            with self.assertRaises(ValueError):
+                analyze_logs.fetch_routing_artifacts("bad/../../", 10)
+            runner.assert_not_called()
 
     def test_hardware_gates_explicitly_blocked(self) -> None:
         prompt = analyze_logs.prompt(
