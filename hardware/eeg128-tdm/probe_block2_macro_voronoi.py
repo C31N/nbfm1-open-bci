@@ -269,12 +269,30 @@ def macro_routes(
         hop_points=[endpoints[net][0]]+waypoints+[endpoints[net][1]]
         netroutes=[]
         for start,goal in zip(hop_points,hop_points[1:]):
-            hop=search(board,start,goal,netcode,.15,.15,False,
-                       1.45,step=micro_step_mm,max_nodes=15000,
-                       deadline=min(time.monotonic()+10,began+deadline_s),
-                       start_layer=0,goal_layer=0,
-                       layers=(pcbnew.F_Cu,pcbnew.B_Cu))
-            if hop is None or len(hop)<2 or any(p[0]!=0 for p in hop):
+            hop=None
+            # A 1.45-mm local window falsely blocked the second target in
+            # native macro run #4, despite three valid macro corridors.
+            # Retry ONLY the blocked micro-hop with a wider window; no
+            # multi-agent state explosion or removal of the first net.
+            for margin,nodes,wall_s in ((1.45,15000,10.),
+                                         (3.8,30000,15.)):
+                candidate=search(
+                    board,start,goal,netcode,.15,.15,False,
+                    margin,step=micro_step_mm,max_nodes=nodes,
+                    deadline=min(time.monotonic()+wall_s,
+                                 began+deadline_s),
+                    start_layer=0,goal_layer=0,
+                    layers=(pcbnew.F_Cu,pcbnew.B_Cu))
+                diag.setdefault("micro_hop_search_attempts",[]).append({
+                    "net":net,"start":start,"end":goal,
+                    "margin_mm":margin,"nodes_cap":nodes,
+                    "found":bool(candidate),
+                })
+                if (candidate is not None and len(candidate)>=2
+                        and all(p[0]==0 for p in candidate)):
+                    hop=candidate
+                    break
+            if hop is None:
                 diag["status"]="macro_micro_hop_unavailable"
                 diag["blocked_target"]=net
                 diag["failed_hop_endpoints"]=[start,goal]
