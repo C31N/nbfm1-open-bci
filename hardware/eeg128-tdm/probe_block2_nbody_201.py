@@ -52,7 +52,8 @@ def independent_drc(board: Path, report: Path) -> dict:
 
 def route_child(board_path: Path, baseline: Path, output: Path,
                 order_id: int, future_lane_penalty: float = 0.0,
-                joint_three: bool = False) -> dict:
+                joint_three: bool = False,
+                joint_weight: float = 1.0) -> dict:
     import pcbnew
     from shapely.geometry import LineString, box
     from shapely.ops import unary_union
@@ -76,6 +77,8 @@ def route_child(board_path: Path, baseline: Path, output: Path,
         raise ValueError("Unapproved target order")
     if not 0.0 <= future_lane_penalty <= 500.0:
         raise ValueError("Unreviewed future FCu lane penalty")
+    if not 1.0 <= joint_weight <= 3.0:
+        raise ValueError("Unreviewed coupled MAPF3 weight")
     original = pcbnew.LoadBoard(str(board_path))
     initial = track_inventory(original)
     protected = unchanged_fingerprints(original)
@@ -114,6 +117,7 @@ def route_child(board_path: Path, baseline: Path, output: Path,
         **NO_RELEASE, "status": "nbody_starting", "order": ORDERS[order_id],
         "future_lane_penalty": future_lane_penalty,
         "joint_three_enabled": joint_three,
+        "joint_weight": joint_weight,
         "baseline_DRC": {"violations": 0, "warnings": 0, "unconnected": 139},
         "cut_whitelist_UUIDs": sorted(removed),
         "CH038_cut_UUIDs": list(CH038),
@@ -245,7 +249,9 @@ def route_child(board_path: Path, baseline: Path, output: Path,
         joint_codes = tuple(board.FindNet(n).GetNetCode() for n in order)
         routes, diagnostic = simultaneous_fcu_astar3(
             board, joint_endpoints, joint_codes,
-            max_states=12000, seconds=105, progress=update_joint)
+            max_states=40000 if joint_weight > 1 else 12000,
+            seconds=105, heuristic_weight=joint_weight,
+            progress=update_joint)
         record["joint_three_diagnostic"] = diagnostic
         persist("mapf3_joint_solver_returned")
         if routes is None:
@@ -372,15 +378,19 @@ def route_child(board_path: Path, baseline: Path, output: Path,
 
 def run(archive: Path, output: Path, order_id: int,
         future_lane_penalty: float = 0.0,
-        joint_three: bool = False) -> dict:
+        joint_three: bool = False,
+        joint_weight: float = 1.0) -> dict:
     from probe_block2_isolated_s1s2 import pinned_source_copy
     from probe_block2_ch038_restitution import isolated_drc
     if not 0.0 <= future_lane_penalty <= 500.0:
         raise ValueError("Unreviewed N-body lookahead penalty")
+    if not 1.0 <= joint_weight <= 3.0:
+        raise ValueError("Unreviewed N-body joint heuristic weight")
     original_sha = file_hash(archive)
     report = {**NO_RELEASE, "status": "Nbody_not_qualified",
               "future_lane_penalty": future_lane_penalty,
               "joint_three_enabled": joint_three,
+              "joint_weight": joint_weight,
               "order": ORDERS[order_id], "source_unchanged": False,
               "candidate_native_DRC": None,
               "candidate_qualified_136": False, "child_exit_code": None,
@@ -404,6 +414,7 @@ def run(archive: Path, output: Path, order_id: int,
                  "--order", str(order_id),
              "--future-lane-penalty", str(future_lane_penalty),
              *(["--joint-three"] if joint_three else []),
+             "--joint-weight", str(joint_weight),
              "--output", str(diag)],
                 capture_output=True, text=True, check=False,
             timeout=340 if joint_three else 265)
@@ -456,6 +467,7 @@ def main() -> None:
     p.add_argument("--order", type=int, choices=range(len(ORDERS)), required=True)
     p.add_argument("--future-lane-penalty", type=float, default=0.0)
     p.add_argument("--joint-three", action="store_true")
+    p.add_argument("--joint-weight", type=float, default=1.0)
     p.add_argument("--output", type=Path, required=True)
     a = p.parse_args()
     if a.child:
@@ -463,13 +475,15 @@ def main() -> None:
             raise ValueError("Child expects only --board and --baseline")
         report = route_child(a.board, a.baseline, a.output, a.order,
                              future_lane_penalty=a.future_lane_penalty,
-                             joint_three=a.joint_three)
+                             joint_three=a.joint_three,
+                             joint_weight=a.joint_weight)
     else:
         if not a.candidate or a.board or a.baseline:
             raise ValueError("Parent expects only --candidate")
         report = run(a.candidate, a.output, a.order,
                      future_lane_penalty=a.future_lane_penalty,
-                     joint_three=a.joint_three)
+                     joint_three=a.joint_three,
+                     joint_weight=a.joint_weight)
     print(json.dumps({"status": report["status"],
                       "accepted": False, "fabrication_release": False}))
 
