@@ -266,13 +266,29 @@ def ask_gemini(text: str, api_key: str, model: str) -> str:
     from google import genai
 
     with genai.Client(api_key=api_key) as client:
-        response = client.models.generate_content(
-            model=model, contents=text
-        )
-    result = response.text or ""
-    if not result.strip():
-        raise RuntimeError("Gemini returned no text")
-    return redact(result)[:MAX_ANSWER]
+        for attempt in range(4):
+            try:
+                response = client.models.generate_content(
+                    model=model, contents=text
+                )
+                result = response.text or ""
+                if not result.strip():
+                    raise RuntimeError("Gemini returned no text")
+                return redact(result)[:MAX_ANSWER]
+            except Exception as exc:
+                message = str(exc)
+                # Only transient throttling/server-capacity responses are
+                # retryable. Auth, model-not-found and safety errors fail fast.
+                transient = (
+                    type(exc).__name__ in ("ServerError", "ClientError")
+                    and (re.search(r"\b(?:429|503)\b", message)
+                         or "RESOURCE_EXHAUSTED" in message
+                         or "UNAVAILABLE" in message)
+                )
+                if not transient or attempt == 3:
+                    raise
+                time.sleep((2, 5, 10)[attempt])
+    raise RuntimeError("Unreachable retry loop")
 
 
 def main() -> int:

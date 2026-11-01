@@ -9,6 +9,7 @@ import json
 import subprocess
 import sys
 import tempfile
+import types
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -136,6 +137,51 @@ class GeminiLogTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 analyze_logs.fetch_routing_artifacts("bad/../../", 10)
             runner.assert_not_called()
+
+    def test_gemini_transient_503_retried_and_401_not_retried(self) -> None:
+        calls = []
+        ServerError = type("ServerError", (Exception,), {})
+        ClientError = type("ClientError", (Exception,), {})
+
+        class Models:
+            def generate_content(self, *, model: str, contents: str):
+                calls.append((model, contents))
+                if len(calls) <= 2:
+                    raise ServerError("503 UNAVAILABLE high demand")
+                return types.SimpleNamespace(text="UUID analysis")
+
+        class Client:
+            models = Models()
+
+            def __init__(self, api_key: str):
+                self.api_key = api_key
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+        google = types.ModuleType("google")
+        genai = types.ModuleType("google.genai")
+        genai.Client = Client
+        google.genai = genai
+        with mock.patch.dict(sys.modules, {"google": google, "google.genai": genai}):
+            with mock.patch.object(analyze_logs.time, "sleep") as sleep:
+                result = analyze_logs.ask_gemini("safe routing metrics", "test", "mock")
+        self.assertEqual(result, "UUID analysis")
+        self.assertEqual(len(calls), 3)
+        self.assertEqual([a.args[0] for a in sleep.call_args_list], [2, 5])
+
+        class BadModels:
+            def generate_content(self, *, model: str, contents: str):
+                raise ClientError("401 INVALID_API_KEY")
+        Client.models = BadModels()
+        with mock.patch.dict(sys.modules, {"google": google, "google.genai": genai}):
+            with mock.patch.object(analyze_logs.time, "sleep") as sleep:
+                with self.assertRaises(ClientError):
+                    analyze_logs.ask_gemini("safe", "test", "mock")
+                sleep.assert_not_called()
 
     def test_hardware_gates_explicitly_blocked(self) -> None:
         prompt = analyze_logs.prompt(
