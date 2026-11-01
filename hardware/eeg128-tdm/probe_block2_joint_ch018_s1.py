@@ -151,10 +151,10 @@ def joint_fcu_astar(board: Any,
             ], {"status": "joint_path_found_unverified",
                  "expanded_joint_states": expanded,
                  "grid_shape": [len(xs), len(ys)],
-                 "step_mm": step, "wall_s": round(time.monotonic()-start_at, 2),
-        "heuristic_weight": heuristic_weight,
-        "open_joint_states": len(queue),
-                 "heuristic_weight": heuristic_weight}
+                 "step_mm": step,
+                 "wall_s": round(time.monotonic()-start_at, 2),
+                 "heuristic_weight": heuristic_weight,
+                 "open_joint_states": len(queue)}
         which = turn
         if (which == 0 and a == goals[0]) or (which == 1 and b == goals[1]):
             which = 1-which
@@ -189,6 +189,8 @@ def joint_fcu_astar(board: Any,
         "expanded_joint_states": expanded,
         "grid_shape": [len(xs), len(ys)],
         "step_mm": step, "wall_s": round(time.monotonic()-start_at, 2),
+        "heuristic_weight": heuristic_weight,
+        "open_joint_states": len(queue),
     }
 
 
