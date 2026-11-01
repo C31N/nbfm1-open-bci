@@ -99,7 +99,7 @@ def macro_routes(
     from route_targeted_closure import obstacles, search, add_path
 
     if (set(order)!=set(TARGETS) or len(order)!=3 or
-            not .35<=step_mm<=.65 or not .18<=micro_step_mm<=.30
+            not .20<=step_mm<=.65 or not .18<=micro_step_mm<=.30
             or not 0<=lane_bias<=30 or not 30<=deadline_s<=190):
         raise ValueError("Unreviewed three-net macro corridor request")
     began=time.monotonic()
