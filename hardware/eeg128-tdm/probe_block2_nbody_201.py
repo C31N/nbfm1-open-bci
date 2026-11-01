@@ -600,7 +600,8 @@ def run(archive: Path, output: Path, order_id: int,
         cbs_selection: str = "length",
         cbs_split_mode: str = "single-edge",
         cbs_grid_mm: float = .30,
-        macro_three: bool = False) -> dict:
+        macro_three: bool = False,
+        elastic_three: bool = False) -> dict:
     from probe_block2_isolated_s1s2 import pinned_source_copy
     from probe_block2_ch038_restitution import isolated_drc
     if not 0.0 <= future_lane_penalty <= 500.0:
