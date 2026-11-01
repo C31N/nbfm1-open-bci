@@ -96,7 +96,8 @@ def native_open_positions(report: dict[str, Any]) -> dict[str, list[tuple[float,
             for x in matched[0]["items"]]
     return output
 
-def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
+def run(candidate: Path, cohort: str, output: Path,
+        single_strategy: str | None = None,\n        disposable_worker: bool = False) -> dict[str, Any]:
     import pcbnew
     from shapely.geometry import LineString, box
     from shapely.ops import unary_union
@@ -104,6 +105,8 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
     if cohort not in COHORTS or not pcbnew.Version().startswith("8.0.9"):
         raise RuntimeError("Unsupported cohort or unpinned KiCad version")
     targets = COHORTS[cohort]
+    if disposable_worker and single_strategy is None:
+        raise ValueError("Disposable worker must have exactly one selected strategy")
     report: dict[str, Any] = {
         **LOCK, "cohort": cohort, "targets": list(targets),
         "status": "starting", "baseline_DRC": None,
@@ -265,6 +268,7 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
         # The protected-hotspot variant probes whether the S-bus long tracks
         # are better preserved while other Block2 copper is displaced.
         cut_plans = [
+            ("mux-s1s2-first-32", tuple(priority[:32])),
             ("mux-s2-first-32", tuple(priority[:32])),
             ("prefix-16", tuple(priority[:16])),
             ("prefix-32", tuple(priority[:32])),
@@ -272,6 +276,10 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
                 uid for uid in priority if uid not in RESTITUTION_HOTSPOTS)[:32]),
             ("expanded-48", tuple(priority[:48])),
         ]
+        if single_strategy is not None:
+            cut_plans = [x for x in cut_plans if x[0] == single_strategy]
+            if len(cut_plans) != 1:
+                raise ValueError("Unknown or unavailable isolated cut strategy")
         report["planned_cuts"] = [
             {"label": label, "UUID_count": len(uuids)}
             for label, uuids in cut_plans]
@@ -280,7 +288,7 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
         for cut_size, subset in cut_plans:
             # The same UUIDs are intentionally compared under two different
             # corridor-order strategies, so the key includes the strategy.
-            cut_key = (cut_size == "mux-s2-first-32", subset)
+            cut_key = (cut_size, subset)
             if not subset or cut_key in seen_cuts:
                 continue
             seen_cuts.add(cut_key)
@@ -302,6 +310,8 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
                 "predictive_restitution_blocked_UUIDs": [],
                 "predictive_restitution_routes_found": False,
                 "early_mux_s2_reserved_UUIDs": [],
+                "early_mux_s1s2_reserved_UUIDs": [],
+                "early_mux_s1s2_status": "not_tested",
                 "early_mux_s2_restitution_proven": False,
                 "early_mux_s2_scratch_DRC": None,
             }
@@ -340,38 +350,57 @@ def run(candidate: Path, cohort: str, output: Path) -> dict[str, Any]:
                 # Strictly F.Cu; no new via or protected net is altered.
                 # Keeping the original MUX_S2 in place was already found to
                 # partition the target topology (preserve-hotspots-32).
-                if cut_size == "mux-s2-first-32":
-                    mux_s2_uid = "31a40ce9-1b3f-4f1a-b654-7fec9e793976"
-                    if mux_s2_uid not in subset:
-                        row["status"] = "early_mux_s2_not_in_selected_cut"
+                if cut_size in ("mux-s2-first-32", "mux-s1s2-first-32"):
+                    # Cooperative early reservation, BOTH victim paths remain
+                    # on F.Cu while actual target nets are searched. The
+                    # selected child worker owns ALL its KiCad SWIG objects.
+                    selected_victims = [
+                        ("MUX_S2", "31a40ce9-1b3f-4f1a-b654-7fec9e793976")]
+                    if cut_size == "mux-s1s2-first-32":
+                        selected_victims.append(
+                            ("MUX_S1", "2ac3aecb-9a62-4bc7-846a-75a782ad0474"))
+                    missing = [uid for _, uid in selected_victims
+                               if uid not in subset]
+                    if missing:
+                        row["status"] = "early_mux_s1s2_missing_selected_UUID"
+                        row["early_mux_s1s2_missing_UUIDs"] = missing
                         continue
-                    victim = source_tracks[mux_s2_uid]
-                    if victim.GetNetname() != "MUX_S2" or victim.GetLayer() != pcbnew.F_Cu:
-                        raise RuntimeError("MUX_S2 UUID identity mismatch")
-                    # Avoid the three target airwire lanes during the early
-                    # return search, then keep the new copper on the board
-                    # while searching each target route. This is a soft
-                    # preference, not an unsafe clearance exception.
                     avoid_target_lanes = unary_union([
                         LineString(positions[name]).buffer(.34)
                         for name in targets])
-                    early_path = search(
-                        board, xy(victim.GetStart()), xy(victim.GetEnd()),
-                        victim.GetNetCode(), .15, .15, False, 5.0,
-                        step=.20, max_nodes=42000,
-                        deadline=min(time.monotonic()+19, global_end),
-                        start_layer=0, goal_layer=0,
-                        layers=(pcbnew.F_Cu, pcbnew.B_Cu),
-                        cost_regions=((0, avoid_target_lanes, 40.0),))
-                    if (early_path is None or len(early_path) < 2
-                            or any(p[0] != 0 for p in early_path)):
-                        row["status"] = "early_mux_s2_corridor_unavailable"
-                        progress("victim_first_mux_s2_has_no_FCu_corridor")
+                    early_failed = False
+                    for victim_name, uid in selected_victims:
+                        victim = source_tracks[uid]
+                        if (victim.GetNetname() != victim_name
+                                or victim.GetLayer() != pcbnew.F_Cu):
+                            raise RuntimeError("Early MUX S1/S2 UUID/net mismatch")
+                        # Each accepted path is added to the same scratch
+                        # board before routing the other victim, so their
+                        # occupied corridors are mutually exclusionary.
+                        early_path = search(
+                            board, xy(victim.GetStart()), xy(victim.GetEnd()),
+                            victim.GetNetCode(), .15, .15, False, 5.0,
+                            step=.20, max_nodes=42000,
+                            deadline=min(time.monotonic()+19, global_end),
+                            start_layer=0, goal_layer=0,
+                            layers=(pcbnew.F_Cu, pcbnew.B_Cu),
+                            cost_regions=((0, avoid_target_lanes, 40.0),))
+                        if (early_path is None or len(early_path) < 2
+                                or any(p[0] != 0 for p in early_path)):
+                            row["early_mux_s1s2_status"] = (
+                                "no_early_FCu_return_for_" + victim_name)
+                            early_failed = True
+                            break
+                        add_path(board, early_path, victim.GetNetCode(), .15,
+                                 layers=(pcbnew.F_Cu, pcbnew.B_Cu))
+                        row["early_mux_s2_reserved_UUIDs"].append(uid)
+                        row["early_mux_s1s2_reserved_UUIDs"].append(uid)
+                        progress("cooperative_victim_corridor_pre_reserved_" +
+                                 victim_name)
+                    if early_failed:
+                        row["status"] = "early_mux_s1s2_coupled_FCu_unavailable"
                         continue
-                    add_path(board, early_path, victim.GetNetCode(), .15,
-                             layers=(pcbnew.F_Cu, pcbnew.B_Cu))
-                    row["early_mux_s2_reserved_UUIDs"].append(mux_s2_uid)
-                    progress("victim_first_mux_s2_corridor_pre_reserved")
+                    row["early_mux_s1s2_status"] = "both_reserved_pending_native_DRC"
                 # Original victim corridors receive a soft reservation
                 # BEFORE target routing, rather than being displaced last.
                 victim_reservation = unary_union([
@@ -689,8 +718,15 @@ def main() -> None:
     parser.add_argument("--candidate", type=Path, required=True)
     parser.add_argument("--cohort", choices=tuple(COHORTS), required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--single-strategy", default=None,
+                        choices=("mux-s1s2-first-32", "mux-s2-first-32",
+                                 "prefix-16", "prefix-32",
+                                 "preserve-hotspots-32", "expanded-48"))
+    parser.add_argument("--disposable-worker", action="store_true")
     options = parser.parse_args()
-    result = run(options.candidate, options.cohort, options.output)
+    result = run(options.candidate, options.cohort, options.output,
+                 single_strategy=options.single_strategy,
+                 disposable_worker=options.disposable_worker)
     print(json.dumps({
         "cohort": result["cohort"],
         "status": result["status"],
