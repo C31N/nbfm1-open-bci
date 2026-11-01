@@ -1,0 +1,79 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+name: Native Block2 coupled MUX S1-S2-S3 process isolated no-release
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/block2-predictive-restitution-2026-10-30]
+    paths:
+      - ".github/workflows/block2-s1s2s3-process-isolated.yml"
+      - "hardware/eeg128-tdm/probe_block2_deep_fcu_multinet.py"
+      - "hardware/eeg128-tdm/test_block2_isolated_s1s2.py"
+      - "hardware/eeg128-tdm/probe_block2_isolated_s1s2.py"
+permissions:
+  contents: read
+jobs:
+  coupled:
+    strategy:
+      fail-fast: false
+      matrix:
+        cohort: [P18P24N30]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 24
+    container:
+      image: kicad/kicad@sha256:5716d82aa247abdbe512650eb4e8fce5a4031cbbef0a2c8df83208a69fef87b2
+      options: --user 0:0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare pinned KiCad 8.0.9 and geometry dependencies
+        run: |
+          set -eu
+          test "$(kicad-cli version)" = "8.0.9"
+          apt-get -o Acquire::Retries=3 update
+          DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 install -y --no-install-recommends python3-shapely python3-pip python3-numpy
+          /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
+      - name: Guard native source, exact power and no-release policy
+        run: |
+          /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_deep_fcu_multinet.py hardware/eeg128-tdm/probe_block2_isolated_s1s2.py
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_isolated_s1s2.py -v
+      - name: Reproduce source pinned 139 MUX_EN engineering candidate
+        timeout-minutes: 8
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_mux_en_multihop_route.py \
+            --archive hardware/eeg128-tdm/engineering/block2-ch019-electrode-closed139.zip \
+            --output /tmp/deep139-base.json \
+            --candidate-output /tmp/deep139-base.zip
+      - name: Separate SWIG worker process and independently verify pinned 139
+        timeout-minutes: 12
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_block2_isolated_s1s2.py \
+            --candidate /tmp/deep139-base.zip \
+            --cohort ${{ matrix.cohort }} \
+            --strategy mux-s1s2s3-first-32 \
+            --output /tmp/isolated-S1S2-${{ matrix.cohort }}.json
+      - name: Fail closed without publishing candidate copper
+        run: |
+          COHORT=${{ matrix.cohort }} /usr/bin/python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          d=json.loads(Path('/tmp/isolated-S1S2-'+os.environ['COHORT']+'.json').read_text())
+          assert d['baseline_DRC']=={'violations':0,'warnings':0,'unconnected':139}
+          assert d['worker_exit_code']==0
+          assert d['source_archive_unchanged']
+          assert d['parent_natively_reverified']
+          assert d['worker_scratch_discarded']
+          assert d['status']=='isolated_S1S2_diagnostic_complete_no_release'
+          assert d['strategy']=='mux-s1s2s3-first-32'
+          for flag in ('accepted','routing_completed','fabrication_release',
+                       'manufacturing_files','checkpoint_promoted',
+                       'schematic_parity_qualified','independent_replay_verified'):
+              assert d[flag] is False, flag
+          assert not list(Path('/tmp').rglob('*.gbr'))
+          assert not list(Path('/tmp').rglob('*.drl'))
+          PY
+      - name: Upload diagnostic JSON on all outcomes including timeout
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Block2-isolated-S1S2S3-${{ matrix.cohort }}
+          path: /tmp/isolated-S1S2-${{ matrix.cohort }}.json
+          if-no-files-found: ignore
