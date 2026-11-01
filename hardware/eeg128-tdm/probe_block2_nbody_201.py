@@ -410,7 +410,12 @@ def route_child(board_path: Path, baseline: Path, output: Path,
         raise RuntimeError("201-victim restoration count mismatch")
     if unchanged_fingerprints(board) != protected:
         raise RuntimeError("Protected copper changed after routing")
-    if not all(track_inventory(board).get(uid) == val
+    # Build exactly ONE native SWIG inventory after all 201 restorations.
+    # The repeated getter formerly rebuilt it for every UUID (O(N^2)).
+    persist("restored_201_postroute_inventory_started")
+    postroute_inventory = track_inventory(board)
+    persist("restored_201_postroute_inventory_ready")
+    if not all(postroute_inventory.get(uid) == val
                for uid, val in initial_unmodified.items()):
         raise RuntimeError("Other original copper changed")
     if ({t.m_Uuid.AsString() for t in board.GetTracks()
