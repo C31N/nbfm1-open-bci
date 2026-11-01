@@ -73,12 +73,14 @@ def joint_fcu_astar(board, endpoints, nets, *, step: float = .30,
     xx, yy = np.meshgrid(xs, ys)
     window = box(x0, y0, x1, y1)
     forbidden = []
+    forbidden_shapes = []
     for net in nets:
         obstacles_by_layer, _ = obstacles(
             board, net, .15, .15, window, .65,
             (pcbnew.F_Cu, pcbnew.B_Cu))
         shape = obstacles_by_layer[0].buffer(-1e-9)
         prepare(shape)
+        forbidden_shapes.append(shape)
         forbidden.append(contains_xy(shape, xx, yy))
     def coord(n):
         return (float(xs[n[0]]), float(ys[n[1]]))
@@ -94,14 +96,7 @@ def joint_fcu_astar(board, endpoints, nets, *, step: float = .30,
              if not mask[y, x]),
             key=lambda n: math.dist(coord(n), point))
         for n in near:
-            shape, _ = obstacles(
-                board, nets[which], .15, .15,
-                box(min(point[0], coord(n)[0])-.01,
-                    min(point[1], coord(n)[1])-.01,
-                    max(point[0], coord(n)[0])+.01,
-                    max(point[1], coord(n)[1])+.01),
-                .65, (pcbnew.F_Cu, pcbnew.B_Cu))
-            if not segment_hit(shape[0], point, coord(n)):
+            if not segment_hit(forbidden_shapes[which], point, coord(n)):
                 return n
         return None
     starts = [anchor(i, pair[0]) for i, pair in enumerate(endpoints)]
