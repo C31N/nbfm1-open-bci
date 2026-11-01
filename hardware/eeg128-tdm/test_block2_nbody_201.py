@@ -30,7 +30,10 @@ class NBody201Tests(unittest.TestCase):
         for required in (
             "if len(removed) != 201",
             "upperbound_movable(tr.GetNetname())",
-            "set(removed) | set(CH038)",
+            "strip_track_segments_by_uuid(",
+            "replaced_board.read_text(encoding=\"utf-8\"), set(removed)",
+            '"CH038_pre_return_native_DRC"',
+            '"201_whitelist_UUIDs_removed_after_CH038_DRC_pass"',
             'tr.GetNetname() != "CH038_P_MUX"',
             "initial_unmodified", "unchanged_fingerprints(board)",
             'victims_restored_original_geometry',
