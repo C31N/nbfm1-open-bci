@@ -134,6 +134,7 @@ def macro_routes(
     # claim that the source has exactly 54 free-space components.
     lane_for={"CH028_N_MUX":0,"CH029_N_MUX":1,"CH030_N_MUX":2}
     assigned_lines=[]
+    planned={}
     all_routes=[]
     seq=itertools.count()
     for net in order:
@@ -214,7 +215,7 @@ def macro_routes(
                 relative=min(math.dist(pt,endpoints[net][0]),
                              math.dist(pt,endpoints[net][1]))
                 lane_cost=lane_bias*abs(pt[1]-target_y)/(y1-y0)*min(1.,relative/2.)
-                other_cost=sum(9. if math.dist(pt,prior)<.65 else 0.
+                other_cost=sum(32. if math.dist(pt,prior)<.65 else 0.
                                for lane in assigned_lines for prior in lane)
                 g2=g+step_mm*weight*(1+clearance_penalty+
                                       ridge_reward+lane_cost+other_cost)
@@ -250,9 +251,21 @@ def macro_routes(
             return None,diag
         diag["macro_waypoints"][net]=waypoints
         diag["micro_segments_completed"][net]=0
+        planned[net]=waypoints
+        # All three macro corridors are planned on the SAME pre-route fixed
+        # copper; micro tracks are not committed until macro reservations
+        # exist for every target. This avoids prematurely disconnecting the
+        # second target on the coarse grid.
+        assigned_lines.append(course[::max(1,len(course)//80)])
         emit("macro_waypoints_selected_"+net)
-        # F.Cu only, no via: native A* inside local hop corridors. Commit all
-        # hops on scratch; other nets then see them as physical obstructions.
+    if set(planned)!=set(TARGETS):
+        raise RuntimeError("All three target corridors not preplanned")
+    emit("macro_three_waypoint_corridors_preplanned")
+    # F.Cu only, no via: actual native A* microroutes each fixed macro hop.
+    # A crossing found at this stage is a failed candidate, never released.
+    for net in order:
+        netcode=board.FindNet(net).GetNetCode()
+        waypoints=planned[net]
         hop_points=[endpoints[net][0]]+waypoints+[endpoints[net][1]]
         netroutes=[]
         for start,goal in zip(hop_points,hop_points[1:]):
@@ -271,9 +284,6 @@ def macro_routes(
             netroutes.extend(hop if not netroutes else hop[1:])
             diag["micro_segments_completed"][net]+=1
             emit("macro_micro_hop_committed_"+net)
-        # Reserve a thin centreline sample only as a SOFT penalty in the
-        # next macro search. Native copper actually blocks in micro A*.
-        assigned_lines.append(course[::max(1,len(course)//80)])
         all_routes.append(netroutes)
         emit("macro_target_routed_"+net)
     diag["status"]="macro_three_targets_proposed_unverified"
