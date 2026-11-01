@@ -51,7 +51,8 @@ def independent_drc(board: Path, report: Path) -> dict:
 
 
 def route_child(board_path: Path, baseline: Path, output: Path,
-                order_id: int, future_lane_penalty: float = 0.0) -> dict:
+                order_id: int, future_lane_penalty: float = 0.0,
+                joint_three: bool = False) -> dict:
     import pcbnew
     from shapely.geometry import LineString, box
     from shapely.ops import unary_union
@@ -112,6 +113,7 @@ def route_child(board_path: Path, baseline: Path, output: Path,
     record = {
         **NO_RELEASE, "status": "nbody_starting", "order": ORDERS[order_id],
         "future_lane_penalty": future_lane_penalty,
+        "joint_three_enabled": joint_three,
         "baseline_DRC": {"violations": 0, "warnings": 0, "unconnected": 139},
         "cut_whitelist_UUIDs": sorted(removed),
         "CH038_cut_UUIDs": list(CH038),
@@ -230,41 +232,74 @@ def route_child(board_path: Path, baseline: Path, output: Path,
     }
     persist("CH038_both_replaced_joint_Astar_started")
     persist("three_target_joint_Astar_batch_started")
-    # Joint iterative routing: each accepted target blocks the next, while
-    # original 201 return corridors are costly but not artificially blocked.
-    for net in order:
-        nc = board.FindNet(net).GetNetCode()
-        a, b = opens[net]
-        persist("Astar_start_" + net)
-        remaining_targets = [
-            future for future in order
-            if future != net and future not in record["target_nets_routed"]]
-        future_lanes = unary_union([
-            LineString(opens[future]).buffer(.34)
-            for future in remaining_targets])
-        record.setdefault("future_lane_reservations", {})[net] = {
-            "remaining_targets": remaining_targets,
-            "penalty": future_lane_penalty,
-        }
-        costs = ((0, victim_lanes, 28.0),)
-        if remaining_targets and future_lane_penalty > 0:
-            costs += ((0, future_lanes, future_lane_penalty),)
-        persist("joint_remaining_target_corridors_soft_reserved_" + net)
-        path = search(
-            board, a, b, nc, .15, .15, False, 6.0,
-            step=.22, max_nodes=36000,
-            deadline=min(time.monotonic()+23, deadline),
-            start_layer=0, goal_layer=0,
-            layers=(pcbnew.F_Cu, pcbnew.B_Cu),
-            cost_regions=costs)
-        if path is None or len(path) < 2 or any(v[0] != 0 for v in path):
-            record["status"] = "target_FCu_path_unavailable"
-            record["blocked_target"] = net
-            persist("target_search_failed_" + net)
+    if joint_three:
+        from probe_block2_joint_fcu_mapf3 import simultaneous_fcu_astar3
+        # One A* state contains three heads and three full partial paths.
+        # CH038 already passed independent 139/0/0 native DRC.
+        record["joint_three_method"] = "one_queue_three_heads_three_paths"
+        def update_joint(stage: str, info: dict) -> None:
+            record["joint_three_progress"] = info
+            persist(stage)
+        persist("mapf3_joint_solver_invoked")
+        joint_endpoints = tuple(opens[n] for n in order)
+        joint_codes = tuple(board.FindNet(n).GetNetCode() for n in order)
+        routes, diagnostic = simultaneous_fcu_astar3(
+            board, joint_endpoints, joint_codes,
+            max_states=12000, seconds=105, progress=update_joint)
+        record["joint_three_diagnostic"] = diagnostic
+        persist("mapf3_joint_solver_returned")
+        if routes is None:
+            record["status"] = "joint_three_no_solution_within_bounded_search"
+            persist("mapf3_joint_three_rejected")
             return record
-        add_path(board, path, nc, .15, layers=(pcbnew.F_Cu, pcbnew.B_Cu))
-        record["target_nets_routed"].append(net)
-        persist("target_route_added_" + net)
+        if len(routes) != 3:
+            raise RuntimeError("MAPF3 must return exactly three target paths")
+        for net, code, path in zip(order, joint_codes, routes):
+            if len(path) < 2 or any(point[0] != 0 for point in path):
+                raise RuntimeError("Joint target crossed non-FCu or via")
+            add_path(board, path, code, .15,
+                     layers=(pcbnew.F_Cu, pcbnew.B_Cu))
+            record["target_nets_routed"].append(net)
+            persist("mapf3_target_committed_" + net)
+    else:
+        # Original sequential A* retained as independent comparison arm.
+        for net in order:
+            nc = board.FindNet(net).GetNetCode()
+            a, b = opens[net]
+            persist("Astar_start_" + net)
+            remaining_targets = [
+                future for future in order
+                if future != net and future not in record["target_nets_routed"]]
+            future_lanes = unary_union([
+                LineString(opens[future]).buffer(.34)
+                for future in remaining_targets])
+            record.setdefault("future_lane_reservations", {})[net] = {
+                "remaining_targets": remaining_targets,
+                "penalty": future_lane_penalty,
+            }
+            costs = ((0, victim_lanes, 28.0),)
+            if remaining_targets and future_lane_penalty > 0:
+                costs += ((0, future_lanes, future_lane_penalty),)
+            persist("joint_remaining_target_corridors_soft_reserved_" + net)
+            path = search(
+                board, a, b, nc, .15, .15, False, 6.0,
+                step=.22, max_nodes=36000,
+                deadline=min(time.monotonic()+23, deadline),
+                start_layer=0, goal_layer=0,
+                layers=(pcbnew.F_Cu, pcbnew.B_Cu),
+                cost_regions=costs)
+            if path is None or len(path) < 2 or any(v[0] != 0 for v in path):
+                record["status"] = "target_FCu_path_unavailable"
+                record["blocked_target"] = net
+                persist("target_search_failed_" + net)
+                return record
+            add_path(board, path, nc, .15,
+                     layers=(pcbnew.F_Cu, pcbnew.B_Cu))
+            record["target_nets_routed"].append(net)
+            persist("target_route_added_" + net)
+    if set(record["target_nets_routed"]) != set(TARGETS):
+        raise RuntimeError("Incomplete target routes before restitution")
+    persist("three_targets_completed_restoration_stage_entered")
 
     # Restore non-colliding victims first, then adapt colliding ones by a
     # separate A* on the SAME occupied copper. All 201 must be dealt with.
@@ -336,7 +371,8 @@ def route_child(board_path: Path, baseline: Path, output: Path,
 
 
 def run(archive: Path, output: Path, order_id: int,
-        future_lane_penalty: float = 0.0) -> dict:
+        future_lane_penalty: float = 0.0,
+        joint_three: bool = False) -> dict:
     from probe_block2_isolated_s1s2 import pinned_source_copy
     from probe_block2_ch038_restitution import isolated_drc
     if not 0.0 <= future_lane_penalty <= 500.0:
@@ -344,6 +380,7 @@ def run(archive: Path, output: Path, order_id: int,
     original_sha = file_hash(archive)
     report = {**NO_RELEASE, "status": "Nbody_not_qualified",
               "future_lane_penalty": future_lane_penalty,
+              "joint_three_enabled": joint_three,
               "order": ORDERS[order_id], "source_unchanged": False,
               "candidate_native_DRC": None,
               "candidate_qualified_136": False, "child_exit_code": None,
@@ -366,6 +403,7 @@ def run(archive: Path, output: Path, order_id: int,
                  "--child", "--board", str(board), "--baseline", str(base),
                  "--order", str(order_id),
              "--future-lane-penalty", str(future_lane_penalty),
+             *(["--joint-three"] if joint_three else []),
              "--output", str(diag)],
                 capture_output=True, text=True, check=False, timeout=265)
             report["child_exit_code"] = result.returncode
@@ -416,18 +454,21 @@ def main() -> None:
     p.add_argument("--child", action="store_true")
     p.add_argument("--order", type=int, choices=range(len(ORDERS)), required=True)
     p.add_argument("--future-lane-penalty", type=float, default=0.0)
+    p.add_argument("--joint-three", action="store_true")
     p.add_argument("--output", type=Path, required=True)
     a = p.parse_args()
     if a.child:
         if a.candidate or not a.board or not a.baseline:
             raise ValueError("Child expects only --board and --baseline")
         report = route_child(a.board, a.baseline, a.output, a.order,
-                             future_lane_penalty=a.future_lane_penalty)
+                             future_lane_penalty=a.future_lane_penalty,
+                             joint_three=a.joint_three)
     else:
         if not a.candidate or a.board or a.baseline:
             raise ValueError("Parent expects only --candidate")
         report = run(a.candidate, a.output, a.order,
-                     future_lane_penalty=a.future_lane_penalty)
+                     future_lane_penalty=a.future_lane_penalty,
+                     joint_three=a.joint_three)
     print(json.dumps({"status": report["status"],
                       "accepted": False, "fabrication_release": False}))
 
