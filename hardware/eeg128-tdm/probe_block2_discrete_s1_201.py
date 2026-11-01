@@ -146,14 +146,61 @@ def worker(source:Path,baseline:Path,output:Path) -> dict:
         costs=((0,control_keepout,85.),)+tuple(
             (0,line.buffer(.65),160.) for line in prior)
         s1code=board.FindNet("MUX_S1").GetNetCode()
-        s1path=search(
-            board,old_s1["start"],old_s1["end"],s1code,
-            old_s1["width_mm"],.15,False,6.,
-            step=.22,max_nodes=35000,
-            deadline=time.monotonic()+24,
-            start_layer=0,goal_layer=0,
-            layers=(pcbnew.F_Cu,pcbnew.B_Cu),
-            cost_regions=costs)
+        s1path=None
+        if iteration==0:
+            # This exact source segment was already DRC-clean at 139/0/0.
+            # Test it as a valid static reference, not a "new" route.
+            s1path=[(0,*old_s1["start"]),(0,*old_s1["end"])]
+            current["route_origin"]="original_S1_segment_reference"
+        else:
+            # Direct, analytic two-leg bent paths avoid false-negative A*
+            # endpoint anchoring on the raster. Each geometrical candidate
+            # must avoid every fixed native FCu obstacle before CH018.
+            import math
+            from shapely.geometry import box as bounds_box
+            from route_targeted_closure import obstacles
+            a0,b0=old_s1["start"],old_s1["end"]
+            vx,vy=b0[0]-a0[0],b0[1]-a0[1]
+            norm=math.hypot(vx,vy)
+            if norm < .25:
+                raise RuntimeError("S1 original segment shorter than quarter mm")
+            nx,ny=-vy/norm,vx/norm
+            region_s1=bounds_box(min(a0[0],b0[0])-3.,
+                                 min(a0[1],b0[1])-3.,
+                                 max(a0[0],b0[0])+3.,
+                                 max(a0[1],b0[1])+3.)
+            shapes,_=obstacles(
+                board,s1code,old_s1["width_mm"],.15,
+                region_s1,.65,(pcbnew.F_Cu,pcbnew.B_Cu))
+            fixed=shapes[0].buffer(-1e-9)
+            proposals=(
+                (0.66,1.10,1.65,2.20)
+                if iteration==1 else (-.66,-1.10,-1.65,-2.20))
+            for offset in proposals:
+                middle=((a0[0]+b0[0])/2+nx*offset,
+                        (a0[1]+b0[1])/2+ny*offset)
+                trial=LineString((a0,middle,b0))
+                if trial.relate_pattern(fixed,"T********"):
+                    continue
+                if prior and min(trial.hausdorff_distance(p)
+                                 for p in prior)<.45:
+                    continue
+                s1path=[(0,*a0),(0,*middle),(0,*b0)]
+                current["route_origin"]="native_obstacle_screened_bend"
+                current["detour_offset_mm"]=offset
+                break
+            if s1path is None:
+                # Grid A* is only a fallback, never a substitute for native
+                # verification or unchanged S2/S3 original copper.
+                s1path=search(
+                    board,a0,b0,s1code,old_s1["width_mm"],.15,
+                    False,6.,step=.22,max_nodes=35000,
+                    deadline=time.monotonic()+24,
+                    start_layer=0,goal_layer=0,
+                    layers=(pcbnew.F_Cu,pcbnew.B_Cu),
+                    cost_regions=costs)
+                if s1path is not None:
+                    current["route_origin"]="grid_Astar_fallback"
         if s1path is None or len(s1path)<2 or any(p[0]!=0 for p in s1path):
             current["status"]="S1_static_FCu_path_unavailable"
             stage("S1_static_route_not_found_%d"%iteration)
