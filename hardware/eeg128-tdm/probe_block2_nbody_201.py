@@ -51,7 +51,7 @@ def independent_drc(board: Path, report: Path) -> dict:
 
 
 def route_child(board_path: Path, baseline: Path, output: Path,
-                order_id: int) -> dict:
+                order_id: int, future_lane_penalty: float = 0.0) -> dict:
     import pcbnew
     from shapely.geometry import LineString, box
     from shapely.ops import unary_union
@@ -73,6 +73,8 @@ def route_child(board_path: Path, baseline: Path, output: Path,
         raise RuntimeError("139 source copper hash drift")
     if order_id not in range(len(ORDERS)):
         raise ValueError("Unapproved target order")
+    if not 0.0 <= future_lane_penalty <= 500.0:
+        raise ValueError("Unreviewed future FCu lane penalty")
     original = pcbnew.LoadBoard(str(board_path))
     initial = track_inventory(original)
     protected = unchanged_fingerprints(original)
@@ -109,6 +111,7 @@ def route_child(board_path: Path, baseline: Path, output: Path,
 
     record = {
         **NO_RELEASE, "status": "nbody_starting", "order": ORDERS[order_id],
+        "future_lane_penalty": future_lane_penalty,
         "baseline_DRC": {"violations": 0, "warnings": 0, "unconnected": 139},
         "cut_whitelist_UUIDs": sorted(removed),
         "CH038_cut_UUIDs": list(CH038),
@@ -233,13 +236,27 @@ def route_child(board_path: Path, baseline: Path, output: Path,
         nc = board.FindNet(net).GetNetCode()
         a, b = opens[net]
         persist("Astar_start_" + net)
+        remaining_targets = [
+            future for future in order
+            if future != net and future not in record["target_nets_routed"]]
+        future_lanes = unary_union([
+            LineString(opens[future]).buffer(.34)
+            for future in remaining_targets])
+        record.setdefault("future_lane_reservations", {})[net] = {
+            "remaining_targets": remaining_targets,
+            "penalty": future_lane_penalty,
+        }
+        costs = ((0, victim_lanes, 28.0),)
+        if remaining_targets and future_lane_penalty > 0:
+            costs += ((0, future_lanes, future_lane_penalty),)
+        persist("joint_remaining_target_corridors_soft_reserved_" + net)
         path = search(
             board, a, b, nc, .15, .15, False, 6.0,
             step=.22, max_nodes=36000,
             deadline=min(time.monotonic()+23, deadline),
             start_layer=0, goal_layer=0,
             layers=(pcbnew.F_Cu, pcbnew.B_Cu),
-            cost_regions=((0, victim_lanes, 28.0),))
+            cost_regions=costs)
         if path is None or len(path) < 2 or any(v[0] != 0 for v in path):
             record["status"] = "target_FCu_path_unavailable"
             record["blocked_target"] = net
@@ -318,11 +335,15 @@ def route_child(board_path: Path, baseline: Path, output: Path,
     return record
 
 
-def run(archive: Path, output: Path, order_id: int) -> dict:
+def run(archive: Path, output: Path, order_id: int,
+        future_lane_penalty: float = 0.0) -> dict:
     from probe_block2_isolated_s1s2 import pinned_source_copy
     from probe_block2_ch038_restitution import isolated_drc
+    if not 0.0 <= future_lane_penalty <= 500.0:
+        raise ValueError("Unreviewed N-body lookahead penalty")
     original_sha = file_hash(archive)
     report = {**NO_RELEASE, "status": "Nbody_not_qualified",
+              "future_lane_penalty": future_lane_penalty,
               "order": ORDERS[order_id], "source_unchanged": False,
               "candidate_native_DRC": None,
               "candidate_qualified_136": False, "child_exit_code": None,
@@ -343,7 +364,9 @@ def run(archive: Path, output: Path, order_id: int) -> dict:
             result = subprocess.run(
                 [sys.executable, str(Path(__file__).resolve()),
                  "--child", "--board", str(board), "--baseline", str(base),
-                 "--order", str(order_id), "--output", str(diag)],
+                 "--order", str(order_id),
+             "--future-lane-penalty", str(future_lane_penalty),
+             "--output", str(diag)],
                 capture_output=True, text=True, check=False, timeout=265)
             report["child_exit_code"] = result.returncode
             report["child_stderr_tail"] = result.stderr[-2000:]
@@ -392,16 +415,19 @@ def main() -> None:
     p.add_argument("--baseline", type=Path)
     p.add_argument("--child", action="store_true")
     p.add_argument("--order", type=int, choices=range(len(ORDERS)), required=True)
+    p.add_argument("--future-lane-penalty", type=float, default=0.0)
     p.add_argument("--output", type=Path, required=True)
     a = p.parse_args()
     if a.child:
         if a.candidate or not a.board or not a.baseline:
             raise ValueError("Child expects only --board and --baseline")
-        report = route_child(a.board, a.baseline, a.output, a.order)
+        report = route_child(a.board, a.baseline, a.output, a.order,
+                             future_lane_penalty=a.future_lane_penalty)
     else:
         if not a.candidate or a.board or a.baseline:
             raise ValueError("Parent expects only --candidate")
-        report = run(a.candidate, a.output, a.order)
+        report = run(a.candidate, a.output, a.order,
+                     future_lane_penalty=a.future_lane_penalty)
     print(json.dumps({"status": report["status"],
                       "accepted": False, "fabrication_release": False}))
 
