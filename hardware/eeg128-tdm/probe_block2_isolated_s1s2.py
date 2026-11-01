@@ -20,6 +20,7 @@ from pathlib import Path
 
 COHORTS = ("N20P20N24", "P18P24N30")
 STRATEGY = "mux-s1s2-first-32"
+STRATEGIES = (STRATEGY, "mux-s1s2s3-first-32")
 EXPECTED_BASELINE = {"violations": 0, "warnings": 0, "unconnected": 139}
 
 
@@ -72,13 +73,14 @@ def subprocess_baseline(board: Path, destination: Path) -> dict:
     return json.loads(result.stdout.strip().splitlines()[-1])
 
 
-def run(candidate: Path, cohort: str, output: Path) -> dict:
-    if cohort not in COHORTS:
-        raise ValueError("Unreviewed coupled-victim cohort")
+def run(candidate: Path, cohort: str, output: Path,
+        strategy: str = STRATEGY) -> dict:
+    if cohort not in COHORTS or strategy not in STRATEGIES:
+        raise ValueError("Unreviewed coupled-victim cohort or strategy")
     original = sha(candidate)
     record = {
         "cohort": cohort,
-        "strategy": STRATEGY,
+        "strategy": strategy,
         "status": "isolated_trial_not_verified",
         "baseline_DRC": None,
         "source_archive_unchanged": False,
@@ -109,7 +111,7 @@ def run(candidate: Path, cohort: str, output: Path) -> dict:
              str(Path(__file__).with_name("probe_block2_deep_fcu_multinet.py")),
              "--candidate", str(candidate),
              "--cohort", cohort,
-             "--single-strategy", STRATEGY,
+             "--single-strategy", strategy,
              "--disposable-worker",
              "--output", str(worker_file)],
             capture_output=True, text=True, check=False, timeout=260)
@@ -153,8 +155,10 @@ def main() -> None:
     parser.add_argument("--candidate", type=Path, required=True)
     parser.add_argument("--cohort", choices=COHORTS, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--strategy", choices=STRATEGIES, default=STRATEGY)
     args = parser.parse_args()
-    report = run(args.candidate, args.cohort, args.output)
+    report = run(args.candidate, args.cohort, args.output,
+                 strategy=args.strategy)
     print(json.dumps({
         "status": report["status"],
         "cohort": report["cohort"], "accepted": False,
