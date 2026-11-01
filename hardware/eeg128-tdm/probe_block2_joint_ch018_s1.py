@@ -253,7 +253,8 @@ def child(source: Path, baseline: Path, output: Path) -> dict:
     if any(track_inventory(board).get(uid) != value
            for uid, value in original_tracks.items() if uid != S1_UUID):
         raise RuntimeError("Original copper changed beyond one S1 UUID")
-    out["status"] = "joint_search_started"\n    persist("all_other_copper_verified")
+    out["status"] = "joint_search_started"
+    persist("all_other_copper_verified")
     target_code = board.FindNet(TARGET).GetNetCode()
     victim_code = board.FindNet("MUX_S1").GetNetCode()
     persist("joint_Astar_precompute_started")
