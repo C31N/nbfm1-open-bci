@@ -133,22 +133,75 @@ def route_child(board_path: Path, baseline: Path, output: Path,
         output.write_text(json.dumps(record, indent=2) + "\n")
     persist("inventory_verified")
     root = board_path.parent
+    # The isolated 139/0/0 CH038 return is already a native proof on the
+    # untouched 201-track source. Obtain it in an independently terminated
+    # child process BEFORE widening the rip-up set. This avoids doing the
+    # most expensive A* initialization on the stripped, highly open PCB.
+    ch038_report = root / ("NBODY_CH038_RETURN_%d.json" % order_id)
+    persist("isolated_CH038_native_pre_return_started")
+    return_cmd = [
+        sys.executable,
+        str(Path(__file__).with_name("probe_block2_ch038_restitution.py")),
+        "--child", "--source", str(board_path),
+        "--native-baseline", str(baseline),
+        "--output", str(ch038_report),
+    ]
+    try:
+        ch038_child = subprocess.run(
+            return_cmd, capture_output=True, text=True,
+            check=False, timeout=115)
+    except subprocess.TimeoutExpired as exc:
+        record["status"] = "CH038_pre_return_timed_out_no_release"
+        record["CH038_pre_return_stderr_tail"] = str(exc)[-900:]
+        persist("CH038_pre_return_timeout")
+        return record
+    record["CH038_pre_return_exit_code"] = ch038_child.returncode
+    record["CH038_pre_return_stderr_tail"] = ch038_child.stderr[-1200:]
+    if ch038_report.exists():
+        record["CH038_pre_return_diagnostic"] = json.loads(
+            ch038_report.read_text())
+    persist("isolated_CH038_native_pre_return_complete")
+    pre_return = record.get("CH038_pre_return_diagnostic", {})
+    replaced_board = root / "CH038_PROBE_ONLY" / board_path.name
+    if (ch038_child.returncode != 0
+            or not pre_return.get("ch038_both_replacements_found")
+            or not replaced_board.exists()):
+        record["status"] = "CH038_pre_return_unqualified"
+        persist("CH038_pre_return_rejected")
+        return record
+    # Separate native DRC process, with .kicad_dru present, before any
+    # additional victim is ever removed. A 139/0/0 result is mandatory.
+    from probe_block2_ch038_restitution import isolated_drc
+    ch038_metrics = isolated_drc(
+        replaced_board, root / ("NBODY_CH038_native_%d.json" % order_id))
+    record["CH038_pre_return_native_DRC"] = ch038_metrics
+    persist("CH038_pre_return_native_DRC_recorded")
+    if ch038_metrics != {"violations": 0, "warnings": 0, "unconnected": 139}:
+        record["status"] = "CH038_pre_return_native_DRC_failed"
+        persist("CH038_pre_return_not_139_0_0")
+        return record
+    record["CH038_routed_UUIDs"] = list(CH038)
+    # The preliminary CH038 PCB is the ONLY source for the 201-track cut;
+    # original source PCB/ZIP bytes remain immutable and pinned by SHA.
     scratch = root / ("NBODY_%d" % order_id)
     scratch.mkdir(exist_ok=False)
     trial_board = scratch / board_path.name
     trial_board.write_text(
         strip_track_segments_by_uuid(
-            board_path.read_text(encoding="utf-8"), set(removed) | set(CH038)),
+            replaced_board.read_text(encoding="utf-8"), set(removed)),
         encoding="utf-8")
     for suffix in (".kicad_pro", ".kicad_dru"):
-        (scratch / (board_path.stem + suffix)).write_bytes(
+        trial_board.with_suffix(suffix).write_bytes(
             board_path.with_suffix(suffix).read_bytes())
+    persist("201_whitelist_UUIDs_removed_after_CH038_DRC_pass")
     board = pcbnew.LoadBoard(str(trial_board))
     if board is None:
         raise RuntimeError("Cannot parse isolated N-body scratch PCB")
+    persist("201_cut_native_board_loaded")
     initial_unmodified = {uid: v for uid, v in initial.items()
                           if uid not in removed and uid not in CH038}
-    if not all(track_inventory(board).get(uid) == value
+    inventory = track_inventory(board)
+    if not all(inventory.get(uid) == value
                for uid, value in initial_unmodified.items()):
         raise RuntimeError("Non-whitelisted copper modified by scratch cut")
     if unchanged_fingerprints(board) != protected:
@@ -156,34 +209,12 @@ def route_child(board_path: Path, baseline: Path, output: Path,
     if ({t.m_Uuid.AsString() for t in board.GetTracks()
          if isinstance(t, pcbnew.PCB_VIA)} != base_vias):
         raise RuntimeError("A via changed in scratch cut")
+    persist("immutable_201_cut_native_copper_verified")
     order = ORDERS[order_id]
-    target_lanes = unary_union([
-        LineString(opens[n]).buffer(.34) for n in TARGETS])
     victim_lanes = unary_union([
         LineString((v["start"], v["end"])).buffer(v["width_mm"]/2 + .25)
         for v in removed.values()])
-    # Overall child wall budget includes native prep and all searches.
-    deadline = started + 210
-    ch038_net = board.FindNet("CH038_P_MUX").GetNetCode()
-    for uid in CH038:
-        tr = original_tracks[uid]
-        path = search(
-            board, xy(tr.GetStart()), xy(tr.GetEnd()), ch038_net,
-            .15, .15, False, 7.0, step=.22, max_nodes=33000,
-            deadline=min(time.monotonic()+19, deadline),
-            start_layer=0, goal_layer=0,
-            layers=(pcbnew.F_Cu, pcbnew.B_Cu),
-            cost_regions=((0, target_lanes, 40.0),
-                          (0, victim_lanes, 16.0)))
-        if path is None or len(path) < 2 or any(v[0] != 0 for v in path):
-            record["status"] = "CH038_restitution_blocked_no_release"
-            record["blocked_CH038_UUID"] = uid
-            persist("CH038_failed")
-            return record
-        add_path(board, path, ch038_net, .15,
-                 layers=(pcbnew.F_Cu, pcbnew.B_Cu))
-        record["CH038_routed_UUIDs"].append(uid)
-        persist("CH038_return_added_" + uid)
+    deadline = time.monotonic() + 135
     # Native CH038+201 topology was separately established for all three
     # endpoints in the pinned preceding workflow. Recomputing the exact same
     # costly component graph three times before A* exceeded child budgets.
@@ -196,11 +227,13 @@ def route_child(board_path: Path, baseline: Path, output: Path,
         "route_existence_must_be_verified_by_Astar": True,
     }
     persist("CH038_both_replaced_joint_Astar_started")
+    persist("three_target_joint_Astar_batch_started")
     # Joint iterative routing: each accepted target blocks the next, while
     # original 201 return corridors are costly but not artificially blocked.
     for net in order:
         nc = board.FindNet(net).GetNetCode()
         a, b = opens[net]
+        persist("Astar_start_" + net)
         path = search(
             board, a, b, nc, .15, .15, False, 6.0,
             step=.22, max_nodes=36000,
