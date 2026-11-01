@@ -18,7 +18,7 @@ class JointStateAStarTests(unittest.TestCase):
             'def joint_fcu_astar(',
             'initial = (a0, b0, 0, (a0,), (b0,))',
             'a, b, turn, path_a, path_b',
-            'queue = [(h(a0, b0), next(seq), 0.0, initial)]',
+            'queue = [(heuristic_weight*h(a0, b0), next(seq), 0.0, initial)]',
             'for dx, dy in MOVES:',
             'if collides(coord(head), coord(nxt), other_path):',
             'p1, p2 = path_a+(nxt,), path_b',
@@ -28,9 +28,25 @@ class JointStateAStarTests(unittest.TestCase):
             'max_states=70000,',
             'seconds=95, heuristic_weight=1.8',
             'min_distance = .300 - 1e-9',
+            'step=grid_mm, max_states=70000,',
+            'grid_mm: float = .30',
+            '"--grid-mm", str(grid_mm)',
         ):
             self.assertIn(mandatory, text)
         self.assertNotIn('make_via(', text)
+
+    def test_fine_grid_is_isolated_and_fail_closed(self) -> None:
+        text = SOURCE.read_text(encoding="utf-8")
+        for required in (
+            'if not .18 <= grid_mm <= .45:',
+            '"grid_mm": grid_mm',
+            '"--grid-mm", type=float, default=.30',
+            'step=grid_mm, max_states=70000,',
+            '"source_archive_unchanged"',
+            'if report["child_exit_code"] == 0',
+            'joint_138_DRC_qualified',
+        ):
+            self.assertIn(required, text)
 
     def test_s1_exact_uuid_and_s2_s3_unmodified(self) -> None:
         text = SOURCE.read_text(encoding="utf-8")
