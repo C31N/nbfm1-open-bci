@@ -20,7 +20,8 @@ from pathlib import Path
 
 COHORTS = ("N20P20N24", "P18P24N30")
 STRATEGY = "mux-s1s2-first-32"
-STRATEGIES = (STRATEGY, "mux-s1s2s3-first-32")
+STRATEGIES = (STRATEGY, "mux-s1s2s3-first-32",
+              "mux-s1s2s3-soft-32")
 EXPECTED_BASELINE = {"violations": 0, "warnings": 0, "unconnected": 139}
 
 
