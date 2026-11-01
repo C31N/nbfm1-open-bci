@@ -194,9 +194,13 @@ def joint_fcu_astar(board: Any,
     }
 
 
-def child(source: Path, baseline: Path, output: Path) -> dict:
+def child(source: Path, baseline: Path, output: Path,
+          grid_mm: float = .30) -> dict:
+    if not .18 <= grid_mm <= .45:
+        raise ValueError("Unreviewed CH018P/MUXS1 grid spacing")
     out = {
         **NO_RELEASE, "status": "joint_source_preflight_started",
+        "grid_mm": grid_mm,
         "S1_removed_UUID": S1_UUID,
         "S2_S3_original_copper_immutable": True,
         "target_net": TARGET,
@@ -277,7 +281,7 @@ def child(source: Path, baseline: Path, output: Path) -> dict:
     persist("joint_Astar_precompute_started")
     path_pair, diag = joint_fcu_astar(
         board, (endpoints, s1_ends),
-        (target_code, victim_code), max_states=70000,
+        (target_code, victim_code), step=grid_mm, max_states=70000,
         seconds=95, heuristic_weight=1.8)
     out["joint_search"] = diag
     persist("joint_Astar_finished")
@@ -308,12 +312,15 @@ def child(source: Path, baseline: Path, output: Path) -> dict:
     return out
 
 
-def run(archive: Path, output: Path) -> dict:
+def run(archive: Path, output: Path, grid_mm: float = .30) -> dict:
     from probe_block2_isolated_s1s2 import pinned_source_copy
     from probe_block2_ch038_restitution import isolated_drc
 
+    if not .18 <= grid_mm <= .45:
+        raise ValueError("Unreviewed CH018P/MUXS1 grid spacing")
     source_sha = file_sha(archive)
     report = {**NO_RELEASE, "status": "joint_unqualified",
+              "grid_mm": grid_mm,
               "native_baseline_DRC": None, "native_trial_DRC": None,
               "joint_138_DRC_qualified": False,
               "child_exit_code": None, "child_diagnostic": None,
@@ -335,6 +342,7 @@ def run(archive: Path, output: Path) -> dict:
                 [sys.executable, str(Path(__file__).resolve()),
                  "--child", "--board", str(board),
                  "--baseline", str(baseline),
+                 "--grid-mm", str(grid_mm),
                  "--output", str(child_json)],
                 capture_output=True, text=True, check=False, timeout=195)
             report["child_exit_code"] = p.returncode
@@ -371,15 +379,16 @@ def main() -> None:
     parser.add_argument("--board", type=Path)
     parser.add_argument("--baseline", type=Path)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--grid-mm", type=float, default=.30)
     a = parser.parse_args()
     if a.child:
         if not a.board or not a.baseline or a.candidate:
             raise ValueError("Isolated worker requires --board and --baseline")
-        result = child(a.board, a.baseline, a.output)
+        result = child(a.board, a.baseline, a.output, grid_mm=a.grid_mm)
     else:
         if a.board or a.baseline or not a.candidate:
             raise ValueError("Supervisor requires --candidate only")
-        result = run(a.candidate, a.output)
+        result = run(a.candidate, a.output, grid_mm=a.grid_mm)
     print(json.dumps({"status": result["status"],
                       "accepted": False, "fabrication_release": False}))
 
