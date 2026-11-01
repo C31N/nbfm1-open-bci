@@ -47,7 +47,8 @@ def pinned_source_copy(archive: Path, destination: Path) -> Path:
                 "routing_replay_byteidentical_verified")):
             raise RuntimeError("Engineering archive release lock drift")
         for name in names:
-            if name.endswith((".kicad_pcb", ".kicad_pro", ".kicad_sch")):
+            if name.endswith((".kicad_pcb", ".kicad_pro", ".kicad_dru",
+                              ".kicad_sch")):
                 (destination / name).write_bytes(z.read(name))
         return destination / boards[0]
 
