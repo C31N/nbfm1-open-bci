@@ -57,8 +57,13 @@ def worker(source:Path,baseline:Path,output:Path) -> dict:
     stage("worker_initialized")
     if not pcbnew.Version().startswith("8.0.9"):
         raise RuntimeError("Pinned KiCad 8.0.9 required")
-    if file_hash(source)!=PINNED_CANDIDATE_SHA:
-        raise RuntimeError("Pinned MUX_EN source SHA drift")
+    # The worker must route on the independently DRC-qualified CH038-return
+    # scratch, NOT on its immutable pinned original 139-copper predecessor.
+    pinned=source.parent.parent/source.name
+    if file_hash(pinned)!=PINNED_CANDIDATE_SHA:
+        raise RuntimeError("Pinned MUX_EN predecessor SHA drift")
+    if source==pinned or source.parent.name!="CH038_PROBE_ONLY":
+        raise RuntimeError("Only native-verified CH038 return may be searched")
     started=time.monotonic()
     original=pcbnew.LoadBoard(str(source))
     inventory=track_inventory(original)
@@ -307,7 +312,7 @@ def run(archive:Path,output:Path) -> dict:
         try:
             subprocess_result=subprocess.run(
                 [sys.executable,str(Path(__file__).resolve()),
-                 "--child","--board",str(source),
+                 "--child","--board",str(replaced),
                  "--baseline",str(baseline),
                  "--output",str(scratch)],
                 capture_output=True,text=True,check=False,timeout=290)
