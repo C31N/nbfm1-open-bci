@@ -54,7 +54,8 @@ def route_child(board_path: Path, baseline: Path, output: Path,
                 order_id: int, future_lane_penalty: float = 0.0,
                 joint_three: bool = False,
                 joint_weight: float = 1.0,
-                cbs_three: bool = False) -> dict:
+                cbs_three: bool = False,
+                cbs_selection: str = "length") -> dict:
     import pcbnew
     from shapely.geometry import LineString, box
     from shapely.ops import unary_union
@@ -82,6 +83,8 @@ def route_child(board_path: Path, baseline: Path, output: Path,
         raise ValueError("Unreviewed coupled MAPF3 weight")
     if joint_three and cbs_three:
         raise ValueError("Joint A* and CBS must be isolated strategies")
+    if cbs_selection not in ("length", "conflict-volume"):
+        raise ValueError("Unreviewed CBS node selection strategy")
     original = pcbnew.LoadBoard(str(board_path))
     initial = track_inventory(original)
     protected = unchanged_fingerprints(original)
@@ -121,6 +124,7 @@ def route_child(board_path: Path, baseline: Path, output: Path,
         "future_lane_penalty": future_lane_penalty,
         "joint_three_enabled": joint_three,
         "cbs_three_enabled": cbs_three,
+        "cbs_selection": cbs_selection,
         "joint_weight": joint_weight,
         "baseline_DRC": {"violations": 0, "warnings": 0, "unconnected": 139},
         "cut_whitelist_UUIDs": sorted(removed),
@@ -285,7 +289,8 @@ def route_child(board_path: Path, baseline: Path, output: Path,
         routes, diagnostic = spatial_cbs_fcu3(
             board, endpoints3, netcodes3,
             max_cbs_nodes=1000, max_lowlevel_nodes=18000,
-            seconds=105, progress=update_conflict)
+            seconds=105, selection=cbs_selection,
+            progress=update_conflict)
         record["cbs_three_diagnostic"] = diagnostic
         persist("CBS3_solver_returned")
         if routes is None:
@@ -414,7 +419,8 @@ def run(archive: Path, output: Path, order_id: int,
         future_lane_penalty: float = 0.0,
         joint_three: bool = False,
         joint_weight: float = 1.0,
-        cbs_three: bool = False) -> dict:
+        cbs_three: bool = False,
+        cbs_selection: str = "length") -> dict:
     from probe_block2_isolated_s1s2 import pinned_source_copy
     from probe_block2_ch038_restitution import isolated_drc
     if not 0.0 <= future_lane_penalty <= 500.0:
@@ -423,11 +429,14 @@ def run(archive: Path, output: Path, order_id: int,
         raise ValueError("Unreviewed N-body joint heuristic weight")
     if joint_three and cbs_three:
         raise ValueError("Choose only one coupled solver")
+    if cbs_selection not in ("length", "conflict-volume"):
+        raise ValueError("Unreviewed CBS search ordering")
     original_sha = file_hash(archive)
     report = {**NO_RELEASE, "status": "Nbody_not_qualified",
               "future_lane_penalty": future_lane_penalty,
               "joint_three_enabled": joint_three,
               "cbs_three_enabled": cbs_three,
+              "cbs_selection": cbs_selection,
               "joint_weight": joint_weight,
               "order": ORDERS[order_id], "source_unchanged": False,
               "candidate_native_DRC": None,
@@ -453,6 +462,7 @@ def run(archive: Path, output: Path, order_id: int,
              "--future-lane-penalty", str(future_lane_penalty),
              *(["--joint-three"] if joint_three else []),
              *(["--cbs-three"] if cbs_three else []),
+             "--cbs-selection", cbs_selection,
              "--joint-weight", str(joint_weight),
              "--output", str(diag)],
                 capture_output=True, text=True, check=False,
@@ -507,6 +517,8 @@ def main() -> None:
     p.add_argument("--future-lane-penalty", type=float, default=0.0)
     p.add_argument("--joint-three", action="store_true")
     p.add_argument("--cbs-three", action="store_true")
+    p.add_argument("--cbs-selection", choices=("length", "conflict-volume"),
+                   default="length")
     p.add_argument("--joint-weight", type=float, default=1.0)
     p.add_argument("--output", type=Path, required=True)
     a = p.parse_args()
@@ -517,7 +529,8 @@ def main() -> None:
                              future_lane_penalty=a.future_lane_penalty,
                              joint_three=a.joint_three,
                              joint_weight=a.joint_weight,
-                             cbs_three=a.cbs_three)
+                             cbs_three=a.cbs_three,
+                             cbs_selection=a.cbs_selection)
     else:
         if not a.candidate or a.board or a.baseline:
             raise ValueError("Parent expects only --candidate")
@@ -525,7 +538,8 @@ def main() -> None:
                      future_lane_penalty=a.future_lane_penalty,
                      joint_three=a.joint_three,
                      joint_weight=a.joint_weight,
-                     cbs_three=a.cbs_three)
+                     cbs_three=a.cbs_three,
+                     cbs_selection=a.cbs_selection)
     print(json.dumps({"status": report["status"],
                       "accepted": False, "fabrication_release": False}))
 
