@@ -23,7 +23,7 @@ class CBS3Tests(unittest.TestCase):
             "def low_level(",
             "def first_conflict(",
             "for agent,prohibited in ((i,ei),(j,ej)):",
-            "newer[agent]=limits_by_net[agent] | frozenset((prohibited,))",
+            "newer[agent]=limits_by_net[agent] | forbidden_edges",
             "newpaths[agent]=reroute",
             "simultaneous_three_net_conflict_search",
             "CBS3_joint_FCu_candidate_unverified",
