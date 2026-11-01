@@ -35,6 +35,7 @@ def spatial_cbs_fcu3(
     max_lowlevel_nodes: int = 18000,
     seconds: float = 105,
     selection: str = "length",
+    split_mode: str = "single-edge",
     progress: Progress | None = None,
 ) -> tuple[list[list[tuple[int, float, float]]] | None, dict[str, Any]]:
     import pcbnew
@@ -48,7 +49,8 @@ def spatial_cbs_fcu3(
     if not (.19 <= step_mm <= .44 and 5 <= max_cbs_nodes <= 1200
             and 1000 <= max_lowlevel_nodes <= 50000
             and 10 <= seconds <= 150
-            and selection in ("length", "conflict-volume")):
+            and selection in ("length", "conflict-volume")
+            and split_mode in ("single-edge", "corridor-bundle")):
         raise ValueError("Unreviewed bounded CBS parameter")
     started = time.monotonic()
     all_ends = [xy for pair in endpoints for xy in pair]
@@ -104,6 +106,7 @@ def spatial_cbs_fcu3(
         "status":"CBS3_prepared", "grid_shape":[len(xs),len(ys)],
         "step_mm":step_mm, "max_cbs_nodes":max_cbs_nodes,
         "selection":selection,
+        "split_mode":split_mode,
         "start_anchors":start, "goal_anchors":goal,
         "simultaneous_three_net_conflict_search":True,
         "CH038_return_preplaced":True, "qualified":False,
@@ -256,8 +259,25 @@ def spatial_cbs_fcu3(
             "edge_a":ei, "edge_b":ej,
         }
         for agent,prohibited in ((i,ei),(j,ej)):
+            # CBS normally bans exactly one conflicting edge on each branch.
+            # The exploratory corridor-bundle mode bans *every* edge of the
+            # presently occupied path that collides with the other complete
+            # net. This is an aggressive, bounded conflict-directed heuristic,
+            # not a proof of unsatisfiability if no path survives.
+            forbidden_edges = frozenset((prohibited,))
+            if split_mode == "corridor-bundle":
+                counterpart = j if agent == i else i
+                rival_line = LineString(
+                    [endpoints[counterpart][0]]
+                    + [physical(x) for x in paths[counterpart]]
+                    + [endpoints[counterpart][1]])
+                colliding = (
+                    key for segment,key in path_segments(agent, paths[agent])
+                    if segment.distance(rival_line) < clearance_threshold)
+                forbidden_edges |= frozenset(colliding)
+                diag["last_corridor_bundle_edge_count"] = len(forbidden_edges)
             newer=list(limits_by_net)
-            newer[agent]=limits_by_net[agent] | frozenset((prohibited,))
+            newer[agent]=limits_by_net[agent] | forbidden_edges
             key=(newer[0],newer[1],newer[2])
             if key in seen:
                 continue
