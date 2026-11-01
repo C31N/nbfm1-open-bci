@@ -144,7 +144,7 @@ class GeminiLogTests(unittest.TestCase):
         ClientError = type("ClientError", (Exception,), {})
 
         class Models:
-            def generate_content(self, *, model: str, contents: str):
+            def generate_content(self, *, model: str, contents: str) -> types.SimpleNamespace:
                 calls.append((model, contents))
                 if len(calls) <= 2:
                     raise ServerError("503 UNAVAILABLE high demand")
@@ -153,13 +153,13 @@ class GeminiLogTests(unittest.TestCase):
         class Client:
             models = Models()
 
-            def __init__(self, api_key: str):
+            def __init__(self, api_key: str) -> None:
                 self.api_key = api_key
 
-            def __enter__(self):
+            def __enter__(self) -> Client:
                 return self
 
-            def __exit__(self, *args):
+            def __exit__(self, *args: object) -> bool:
                 return False
 
         google = types.ModuleType("google")
@@ -174,7 +174,7 @@ class GeminiLogTests(unittest.TestCase):
         self.assertEqual([a.args[0] for a in sleep.call_args_list], [2, 5])
 
         class BadModels:
-            def generate_content(self, *, model: str, contents: str):
+            def generate_content(self, *, model: str, contents: str) -> None:
                 raise ClientError("401 INVALID_API_KEY")
         Client.models = BadModels()
         with mock.patch.dict(sys.modules, {"google": google, "google.genai": genai}):
