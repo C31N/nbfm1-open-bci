@@ -31,6 +31,7 @@ def simultaneous_fcu_astar3(
     grid_mm: float = .30,
     max_states: int = 12000,
     seconds: float = 105.0,
+    heuristic_weight: float = 1.0,
     progress: Progress | None = None,
 ) -> tuple[list[list[tuple[int, float, float]]] | None, dict[str, Any]]:
     import pcbnew
@@ -41,8 +42,9 @@ def simultaneous_fcu_astar3(
 
     if len(endpoints) != 3 or len(nets) != 3 or len(set(nets)) != 3:
         raise ValueError("Exactly three unique target netcodes required")
-    if not (.18 <= grid_mm <= .44 and 300 <= max_states <= 20000
-            and 10 <= seconds <= 150):
+    if not (.18 <= grid_mm <= .44 and 300 <= max_states <= 50000
+            and 10 <= seconds <= 150
+            and 1.0 <= heuristic_weight <= 3.0):
         raise ValueError("Unreviewed MAPF3 grid/time/node budget")
     started = time.monotonic()
     points = [p for pair in endpoints for p in pair]
@@ -97,6 +99,7 @@ def simultaneous_fcu_astar3(
         "status":"joint_mapf3_prepared",
         "grid_shape":[len(xs),len(ys)],
         "grid_mm":grid_mm, "max_joint_states":max_states,
+        "heuristic_weight":heuristic_weight,
         "start_anchors":starts, "goal_anchors":goals,
         "three_agents_joint":True,
         "all_partial_paths_in_one_state":True,
@@ -127,7 +130,7 @@ def simultaneous_fcu_astar3(
     paths:MultiPath=((starts3[0],),(starts3[1],),(starts3[2],))
     initial=(starts3,paths,0)
     seq=itertools.count()
-    q=[(heuristic(starts3),next(seq),0.0,initial)]
+    q=[(heuristic_weight*heuristic(starts3),next(seq),0.0,initial)]
     visited=set()
     moves=((1,0),(-1,0),(0,1),(0,-1),
            (1,1),(1,-1),(-1,1),(-1,-1))
@@ -185,7 +188,7 @@ def simultaneous_fcu_astar3(
             paths2=(next_paths[0],next_paths[1],next_paths[2])
             g2=g+grid_mm*math.hypot(dx,dy)
             heapq.heappush(q,(
-                g2+heuristic(heads2),next(seq),g2,
+                g2+heuristic_weight*heuristic(heads2),next(seq),g2,
                 (heads2,paths2,(index+1)%3)))
         if progress and expanded%1000==0:
             progress("mapf3_shared_queue_progress",
