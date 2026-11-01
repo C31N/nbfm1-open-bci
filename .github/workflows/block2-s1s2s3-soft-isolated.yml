@@ -17,6 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         cohort: [P18P24N30]
+        penalty: [160, 320]
     runs-on: ubuntu-24.04
     timeout-minutes: 24
     container:
@@ -49,13 +50,14 @@ jobs:
             --candidate /tmp/deep139-base.zip \
             --cohort ${{ matrix.cohort }} \
             --strategy mux-s1s2s3-soft-32 \
-            --output /tmp/isolated-soft-S1S2-${{ matrix.cohort }}.json
+            --soft-penalty ${{ matrix.penalty }} \
+            --output /tmp/isolated-soft-S1S2-${{ matrix.cohort }}-${{ matrix.penalty }}.json
       - name: Fail closed without publishing candidate copper
         run: |
-          COHORT=${{ matrix.cohort }} /usr/bin/python3 - <<'PY'
+          COHORT=${{ matrix.cohort }} PENALTY=${{ matrix.penalty }} /usr/bin/python3 - <<'PY'
           import json, os
           from pathlib import Path
-          d=json.loads(Path('/tmp/isolated-soft-S1S2-'+os.environ['COHORT']+'.json').read_text())
+          d=json.loads(Path('/tmp/isolated-soft-S1S2-'+os.environ['COHORT']+'-'+os.environ['PENALTY']+'.json').read_text())
           assert d['baseline_DRC']=={'violations':0,'warnings':0,'unconnected':139}
           assert d['worker_exit_code']==0
           assert d['source_archive_unchanged']
@@ -63,6 +65,8 @@ jobs:
           assert d['worker_scratch_discarded']
           assert d['status']=='isolated_S1S2_diagnostic_complete_no_release'
           assert d['strategy']=='mux-s1s2s3-soft-32'
+          assert d['soft_penalty']==float(os.environ['PENALTY'])
+          assert d['worker_trial']['soft_constraint_weight']==float(os.environ['PENALTY'])
           for flag in ('accepted','routing_completed','fabrication_release',
                        'manufacturing_files','checkpoint_promoted',
                        'schematic_parity_qualified','independent_replay_verified'):
@@ -74,6 +78,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Block2-isolated-soft-S1S2S3-${{ matrix.cohort }}
-          path: /tmp/isolated-soft-S1S2-${{ matrix.cohort }}.json
+          name: Block2-isolated-soft-S1S2S3-${{ matrix.cohort }}-${{ matrix.penalty }}
+          path: /tmp/isolated-soft-S1S2-${{ matrix.cohort }}-${{ matrix.penalty }}.json
           if-no-files-found: ignore
