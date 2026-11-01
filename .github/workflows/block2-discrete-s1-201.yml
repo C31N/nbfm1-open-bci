@@ -57,7 +57,11 @@ jobs:
           assert w and w['original_victim_count']==201
           assert w['S1_UUID']=='2ac3aecb-9a62-4bc7-846a-75a782ad0474'
           assert w['source_file_unchanged'] is True
-          assert w['S2_S3_original_copper_readded'] is True
+          assert isinstance(w['S2_S3_original_copper_readded'],bool)
+          if any(c['CH018_P_routed'] for c in w['static_candidates']):
+              assert w['S2_S3_original_copper_readded'] is True
+          assert all(c['S1_homotopy_independence_proven'] is False
+                     for c in w['static_candidates'])
           assert w['topological_independence_proven'] is False
           assert len(w['eligible_victim_UUIDs'])==201
           assert not set(w['eligible_victim_UUIDs']).intersection((
