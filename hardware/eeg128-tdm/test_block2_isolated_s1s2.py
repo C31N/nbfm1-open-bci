@@ -25,6 +25,8 @@ class IsolatedS1S2Tests(unittest.TestCase):
             '"mux-s1s2-first-32"',
             '"31a40ce9-1b3f-4f1a-b654-7fec9e793976"',
             '"2ac3aecb-9a62-4bc7-846a-75a782ad0474"',
+            '"mux-s1s2s3-first-32"',
+            '"c320c092-5407-4ad6-9a97-2c324373271c"',
             '"MUX_S2"', '"MUX_S1"',
             'early_mux_s1s2_reserved_UUIDs',
             'if disposable_worker:',
