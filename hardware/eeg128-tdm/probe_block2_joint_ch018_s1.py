@@ -40,7 +40,7 @@ def file_sha(path: Path) -> str:
 
 
 def joint_fcu_astar(board, endpoints, nets, *, step: float = .30,
-                    max_states: int = 16000, seconds: float = 95.0):
+                    max_states: int = 16000, seconds: float = 95.0) -> tuple:
     """Paired-head A*: state stores BOTH accumulated copper paths.
 
     Unlike sequential A*, the other path is unknown until expanded, and
@@ -82,11 +82,11 @@ def joint_fcu_astar(board, endpoints, nets, *, step: float = .30,
         prepare(shape)
         forbidden_shapes.append(shape)
         forbidden.append(contains_xy(shape, xx, yy))
-    def coord(n):
+    def coord(n) -> tuple[float, float]:
         return (float(xs[n[0]]), float(ys[n[1]]))
-    def segment_hit(shape, a, b):
+    def segment_hit(shape, a, b) -> bool:
         return LineString((a, b)).relate_pattern(shape, "T********")
-    def anchor(which, point):
+    def anchor(which, point) -> tuple[int, int] | None:
         mask = forbidden[which]
         near = sorted(
             ((x, y) for x in range(max(0, int(round((point[0]-x0)/step))-3),
@@ -107,7 +107,7 @@ def joint_fcu_astar(board, endpoints, nets, *, step: float = .30,
     # The two routes have different nets and require at least 0.30 mm
     # centreline separation (0.15 trace + 0.15 native clearance).
     min_distance = .301
-    def collides(move_a, move_b, other_path):
+    def collides(move_a, move_b, other_path) -> bool:
         new_line = LineString((move_a, move_b))
         if len(other_path) == 1:
             return new_line.distance(
@@ -116,7 +116,7 @@ def joint_fcu_astar(board, endpoints, nets, *, step: float = .30,
         return any(new_line.distance(LineString(
             (coord(p), coord(q)))) < min_distance
             for p, q in zip(other_path, other_path[1:]))
-    def h(a, b):
+    def h(a, b) -> float:
         return (math.dist(coord(a), coord(goals[0])) +
                 math.dist(coord(b), coord(goals[1])))
     seq = itertools.count()
@@ -239,7 +239,7 @@ def child(source: Path, baseline: Path, output: Path) -> dict:
         "joint_138_DRC_qualified": False,
         "source_unchanged": False,
     }
-    def persist(stage: str):
+    def persist(stage: str) -> None:
         out["last_stage"] = stage
         output.write_text(json.dumps(out, indent=2)+"\n")
     persist("all_other_copper_verified")
@@ -284,7 +284,7 @@ def run(archive: Path, output: Path) -> dict:
               "joint_138_DRC_qualified": False,
               "child_exit_code": None, "child_diagnostic": None,
               "source_archive_unchanged": False}
-    def persist():
+    def persist() -> None:
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(json.dumps(report, indent=2)+"\n")
     persist()
