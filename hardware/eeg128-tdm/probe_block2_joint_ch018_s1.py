@@ -255,7 +255,12 @@ def child(source: Path, baseline: Path, output: Path) -> dict:
     if ({tr.m_Uuid.AsString() for tr in board.GetTracks()
          if isinstance(tr, pcbnew.PCB_VIA)} != vias):
         raise RuntimeError("Protected vias drifted")
-    if any(track_inventory(board).get(uid) != value
+    # Inventory must be constructed ONCE. Rebuilding it within the generator
+    # triggered O(N²) expensive native SWIG traversals and timed out workflow 6.
+    persist("scratch_track_inventory_single_pass_started")
+    scratch_inventory = track_inventory(board)
+    persist("scratch_track_inventory_single_pass_complete")
+    if any(scratch_inventory.get(uid) != value
            for uid, value in original_tracks.items() if uid != S1_UUID):
         raise RuntimeError("Original copper changed beyond one S1 UUID")
     out["status"] = "joint_search_started"
@@ -282,7 +287,10 @@ def child(source: Path, baseline: Path, output: Path) -> dict:
     if ({tr.m_Uuid.AsString() for tr in board.GetTracks()
          if isinstance(tr, pcbnew.PCB_VIA)} != vias):
         raise RuntimeError("Joint A* produced unapproved via")
-    if any(track_inventory(board).get(uid) != value
+    persist("candidate_track_inventory_single_pass_started")
+    candidate_inventory = track_inventory(board)
+    persist("candidate_track_inventory_single_pass_complete")
+    if any(candidate_inventory.get(uid) != value
            for uid, value in original_tracks.items() if uid != S1_UUID):
         raise RuntimeError("Joint A* modified protected original copper")
     pcbnew.SaveBoard(str(boardfile), board)
