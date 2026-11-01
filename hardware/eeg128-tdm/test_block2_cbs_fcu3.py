@@ -35,6 +35,21 @@ class CBS3Tests(unittest.TestCase):
                           "ExportGerbers(", "ExportDrill("):
             self.assertNotIn(forbidden, CBS)
 
+    def test_conflict_volume_and_exact_clearance_are_bounded(self) -> None:
+        for required in (
+            'selection: str = "length"',
+            'selection in ("length", "conflict-volume")',
+            'clearance_threshold = .300 - 1e-9',
+            'if d<clearance_threshold:',
+            'if line_i.distance(line_j)>=clearance_threshold:',
+            'length_cost + 250.0*overlap',
+            'copper[i].intersection(copper[j]).area',
+        ):
+            self.assertIn(required, CBS)
+        self.assertIn('cbs_selection: str = "length"', BODY)
+        self.assertIn('selection=cbs_selection', BODY)
+        self.assertIn('"cbs_selection": cbs_selection', BODY)
+
     def test_nbody_runs_cbs_before_restitution(self) -> None:
         for term in (
             '"cbs_three_enabled": cbs_three',
