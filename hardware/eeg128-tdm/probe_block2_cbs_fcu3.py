@@ -271,7 +271,7 @@ def spatial_cbs_fcu3(
                     [endpoints[counterpart][0]]
                     + [physical(x) for x in paths[counterpart]]
                     + [endpoints[counterpart][1]])
-                # Restrict the bundle to the first collision neighborhood.
+                # Restrict the bundle to at most two edges around first conflict.
                 # Banning all ~42 overlapping segments severed BOTH root
                 # search branches in native run #2; this is a local conflict
                 # direction choice, never a full corridor blackout.
@@ -288,7 +288,7 @@ def spatial_cbs_fcu3(
                      if segment.distance(rival_line) < clearance_threshold),
                     key=lambda item: item[0])
                 local = [key for dist,key in colliding if dist <= 1.05]
-                forbidden_edges |= frozenset(local[:6])
+                forbidden_edges |= frozenset(local[:2])
                 diag["last_corridor_bundle_edge_count"] = len(forbidden_edges)
                 diag["last_corridor_bundle_original_overlap_edges"] = len(colliding)
             newer=list(limits_by_net)
