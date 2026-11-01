@@ -75,5 +75,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Block2-isolated-soft-S1S2S3-${{ matrix.cohort }}
-          path: /tmp/isolated-S1S2-${{ matrix.cohort }}.json
+          path: /tmp/isolated-soft-S1S2-${{ matrix.cohort }}.json
           if-no-files-found: ignore
