@@ -277,6 +277,9 @@ def run(candidate: Path, cohort: str, output: Path,
                 uid for uid in priority if uid not in RESTITUTION_HOTSPOTS)[:32]),
             ("expanded-48", tuple(priority[:48])),
         ]
+        if single_strategy == "mux-s1s2s3-soft-32":
+            cut_plans.insert(0, ("mux-s1s2s3-soft-32",
+                                 tuple(priority[:32])))
         if single_strategy == "mux-s1s2s3-first-32":
             cut_plans.insert(0, ("mux-s1s2s3-first-32",
                                  tuple(priority[:32])))
@@ -419,6 +422,31 @@ def run(candidate: Path, cohort: str, output: Path,
                     )).buffer(.245)
                     for uid in subset])
                 row["victim_corridors_pre_reserved"] = len(subset)
+                if cut_size == "mux-s1s2s3-soft-32":
+                    soft_control_uuids = (
+                        "31a40ce9-1b3f-4f1a-b654-7fec9e793976",
+                        "2ac3aecb-9a62-4bc7-846a-75a782ad0474",
+                        "c320c092-5407-4ad6-9a97-2c324373271c")
+                    if any(uid not in subset
+                           or source_tracks[uid].GetNetname() not in
+                           ("MUX_S1", "MUX_S2", "MUX_S3")
+                           for uid in soft_control_uuids):
+                        row["status"] = "soft_S1_S2_S3_missing_or_mismatched"
+                        continue
+                    control_penalty = unary_union([
+                        LineString((
+                            xy(source_tracks[uid].GetStart()),
+                            xy(source_tracks[uid].GetEnd())
+                        )).buffer(.31) for uid in soft_control_uuids])
+                    row["soft_constraint_control_UUIDs"] = list(soft_control_uuids)
+                    row["soft_constraint_weight"] = 85.0
+                    row["target_first_without_control_copper"] = True
+                    # S1/S2/S3 are NOT routed before the target. Their
+                    # original lanes are expensive but not hard blockers.
+                    target_cost_regions = ((0, victim_reservation, 25.0),
+                                           (0, control_penalty, 85.0))
+                else:
+                    target_cost_regions = ((0, victim_reservation, 35.0),)
                 progress("victim_return_corridor_pre_reserved")
                 # A single truly open MUX pair must first pass KiCad's
                 # native 138 gate before three independent closures can
@@ -440,7 +468,7 @@ def run(candidate: Path, cohort: str, output: Path,
                         deadline=min(time.monotonic()+18, global_end),
                         start_layer=0, goal_layer=0,
                         layers=(pcbnew.F_Cu, pcbnew.B_Cu),
-                        cost_regions=((0, victim_reservation, 35.0),))
+                        cost_regions=target_cost_regions)
                     if (proposal is None or len(proposal) < 2
                             or any(k[0] != 0 for k in proposal)):
                         success = False
@@ -749,7 +777,8 @@ def main() -> None:
     parser.add_argument("--cohort", choices=tuple(COHORTS), required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--single-strategy", default=None,
-                        choices=("mux-s1s2s3-first-32", "mux-s1s2-first-32",
+                        choices=("mux-s1s2s3-soft-32", "mux-s1s2s3-first-32",
+                                 "mux-s1s2-first-32",
                                  "mux-s2-first-32",
                                  "prefix-16", "prefix-32",
                                  "preserve-hotspots-32", "expanded-48"))
