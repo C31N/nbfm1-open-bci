@@ -37,6 +37,25 @@ class CH038RestitutionTests(unittest.TestCase):
         ):
             self.assertNotIn(forbidden, content)
 
+    def test_joint_201_cut_is_diagnostic_only(self) -> None:
+        content = SOURCE.read_text(encoding="utf-8")
+        for check in (
+            "upperbound_movable",
+            'len(extra_removed) != 201',
+            'extra_removed & set(EXPECTED_UUIDS)',
+            'target_reachable_before_CH038_return',
+            'target_reachable_after_CH038_return',
+            'same_free_component(',
+            'target_FCu_reachable_with_CH038_return',
+            '"joint_upperbound_only": target is not None',
+            '"CH038_plus_201_topology_reachable_no_release"',
+            '"CH038_plus_201_topology_partitioned_no_release"',
+        ):
+            self.assertIn(check, content)
+        self.assertIn('if target is None:', content)
+        self.assertIn('result["candidate_DRC"] = isolated_drc(', content)
+        self.assertIn('"three_target_136_qualified": False', content)
+
     def test_no_cpp_pointer_crosses_process_boundary(self) -> None:
         content = SOURCE.read_text(encoding="utf-8")
         self.assertIn('"--child", "--source"', content)
