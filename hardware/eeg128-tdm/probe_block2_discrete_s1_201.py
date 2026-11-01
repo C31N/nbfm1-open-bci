@@ -122,15 +122,17 @@ def worker(source:Path,baseline:Path,output:Path) -> dict:
         local_inventory=track_inventory(board)
         if any(local_inventory.get(k)!=v for k,v in initial_unmodified.items()):
             raise RuntimeError("Protected original track drift")
-        # Return original S2/S3 copper before both target nets route.
-        # They are never permitted to be sacrificed by the discrete search.
-        for uid in sorted(removed):
-            v=removed[uid]
-            if v["net"] in ("MUX_S2","MUX_S3"):
-                make_track(board,v["start"],v["end"],
-                           board.FindNet(v["net"]).GetNetCode(),
-                           v["width_mm"],pcbnew.F_Cu)
-        data["S2_S3_original_copper_readded"]=True
+        # S1 must first explore the FULL 201-cut FCu corridor. Original
+        # MUX_S2/S3 remain protected by a large soft cost on their ORIGINAL
+        # copper outlines and by explicit hard validation BEFORE CH018P.
+        # The earlier S2/S3-first experiment found zero S1 alternatives.
+        controls=[v for v in removed.values()
+                  if v["net"] in ("MUX_S2","MUX_S3")]
+        control_shapes=[
+            LineString((v["start"],v["end"])).buffer(
+                (v["width_mm"]+old_s1["width_mm"])/2+.15)
+            for v in controls]
+        control_keepout=unary_union(control_shapes)
         current={"iteration":iteration,"S1_routed":False,
                  "CH018_P_routed":False,"restored_victim_count":0,
                  "blocked_victim_UUIDs":[],"candidate_DRC":None,
@@ -138,11 +140,11 @@ def worker(source:Path,baseline:Path,output:Path) -> dict:
                  "S1_homotopy_independence_proven":False,
                  "scratch_saved_for_native_DRC":False}
         data["static_candidates"].append(current)
-        stage("static_S2_S3_returned_before_discrete_S1_%d"%iteration)
-        # The previous alternatives are a soft cost only; current board is
-        # ALWAYS rebuilt from the identical original 201-cut scratch.
-        costs=tuple((0,line.buffer(.65),160.)
-                    for line in prior)
+        stage("all_201_copper_removed_before_discrete_S1_%d"%iteration)
+        # Static prior alternatives plus S2/S3 ORIGINAL clearance envelopes
+        # are soft costs; the untouched candidate is a new scratch for k.
+        costs=((0,control_keepout,85.),)+tuple(
+            (0,line.buffer(.65),160.) for line in prior)
         s1code=board.FindNet("MUX_S1").GetNetCode()
         s1path=search(
             board,old_s1["start"],old_s1["end"],s1code,
@@ -171,6 +173,25 @@ def worker(source:Path,baseline:Path,output:Path) -> dict:
         add_path(board,s1path,s1code,old_s1["width_mm"],
                  layers=(pcbnew.F_Cu,pcbnew.B_Cu))
         stage("S1_static_candidate_routed_%d"%iteration)
+        # Fail closed if any proposed S1 edge intrudes into S2/S3 ORIGINAL
+        # track+clearance space; only then restore those protected controls.
+        if line.intersects(control_keepout.buffer(-1e-9)):
+            current["status"]="S1_crosses_protected_S2_S3_original_geometry"
+            current["protected_control_conflicts"]=[
+                {"net":v["net"],"start":v["start"],"end":v["end"]}
+                for v,keepout in zip(controls,control_shapes)
+                if line.intersects(keepout.buffer(-1e-9))]
+            stage("S1_S2_S3_control_collision_%d"%iteration)
+            continue
+        for uid in sorted(removed):
+            v=removed[uid]
+            if v["net"] in ("MUX_S2","MUX_S3"):
+                make_track(board,v["start"],v["end"],
+                           board.FindNet(v["net"]).GetNetCode(),
+                           v["width_mm"],pcbnew.F_Cu)
+        data["S2_S3_original_copper_readded"]=True
+        current["S2_S3_geometry_restituted_before_CH018P"]=True
+        stage("S2_S3_immutable_controls_returned_%d"%iteration)
         target=opens["CH018_P_MUX"]
         chcode=board.FindNet("CH018_P_MUX").GetNetCode()
         chpath=search(
