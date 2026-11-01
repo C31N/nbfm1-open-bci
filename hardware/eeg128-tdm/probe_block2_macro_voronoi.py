@@ -95,7 +95,8 @@ def macro_routes(
     import numpy as np
     import pcbnew
     from shapely import contains_xy, prepare
-    from shapely.geometry import box
+    from shapely.geometry import box, LineString
+    from shapely.ops import unary_union
     from route_targeted_closure import obstacles, search, add_path
 
     if (set(order)!=set(TARGETS) or len(order)!=3 or
@@ -263,9 +264,21 @@ def macro_routes(
     emit("macro_three_waypoint_corridors_preplanned")
     # F.Cu only, no via: actual native A* microroutes each fixed macro hop.
     # A crossing found at this stage is a failed candidate, never released.
+    completed=set()
     for net in order:
         netcode=board.FindNet(net).GetNetCode()
         waypoints=planned[net]
+        # Preserve the planned escape corridors of targets which have not
+        # yet received native micro tracks. This is a SOFT cost preference:
+        # the KiCad obstacle/DRC requirements are never reduced or bypassed.
+        future=[name for name in order if name not in completed and name!=net]
+        keepout=unary_union([
+            LineString([endpoints[name][0]]+planned[name]
+                       +[endpoints[name][1]]).buffer(.34)
+            for name in future])
+        reservation=((0,keepout,180.),) if future else ()
+        diag.setdefault("future_macro_corridor_reservations",{})[net]=future
+        emit("macro_reserved_future_escape_corridors_"+net)
         hop_points=[endpoints[net][0]]+waypoints+[endpoints[net][1]]
         netroutes=[]
         for start,goal in zip(hop_points,hop_points[1:]):
@@ -282,7 +295,8 @@ def macro_routes(
                     deadline=min(time.monotonic()+wall_s,
                                  began+deadline_s),
                     start_layer=0,goal_layer=0,
-                    layers=(pcbnew.F_Cu,pcbnew.B_Cu))
+                    layers=(pcbnew.F_Cu,pcbnew.B_Cu),
+                    cost_regions=reservation)
                 diag.setdefault("micro_hop_search_attempts",[]).append({
                     "net":net,"start":start,"end":goal,
                     "margin_mm":margin,"nodes_cap":nodes,
@@ -303,6 +317,7 @@ def macro_routes(
             diag["micro_segments_completed"][net]+=1
             emit("macro_micro_hop_committed_"+net)
         all_routes.append(netroutes)
+        completed.add(net)
         emit("macro_target_routed_"+net)
     diag["status"]="macro_three_targets_proposed_unverified"
     diag["all_targets_qualified"]=False
