@@ -107,6 +107,8 @@ class NBody201Tests(unittest.TestCase):
             "\"elastic_three_enabled\": elastic_three",
             "\"rubber_guided_CBS3_bounded_no_solution\"",
             "rubber_band_routes(",
+            "for coarse_step in (.30,):",
+            "\"blocked_victim_nets\"",
             "\"--elastic-three\"",
         ):
             self.assertIn(token, code)

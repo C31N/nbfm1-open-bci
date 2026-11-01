@@ -326,7 +326,9 @@ def route_child(board_path: Path, baseline: Path, output: Path,
 
         record["elastic_macro_attempts"] = []
         elastic_diagnostic = {}
-        for coarse_step in (.44, .30):
+        # .30 mm was strictly more productive than .44 mm in native #4.
+        # Preserve the saved time for alternative corridor topologies.
+        for coarse_step in (.30,):
             board = pcbnew.LoadBoard(str(trial_board))
             if board is None:
                 raise RuntimeError("Cannot reload elastic scratch PCB")
@@ -364,7 +366,7 @@ def route_child(board_path: Path, baseline: Path, output: Path,
             require_unchanged_components(
                 board, component_signature, "rubber-fallback-clean-reload")
             _, rubber_diag, references = rubber_band_routes(
-                board, opens, order, step_mm=.22, seconds=75.,
+                board, opens, order, step_mm=.22, seconds=95.,
                 progress=elastic_progress)
             record["rubber_band_diagnostic"] = rubber_diag
             record["zero_width_reference_nets"] = sorted(references)
@@ -537,13 +539,19 @@ def route_child(board_path: Path, baseline: Path, output: Path,
     persist("noncolliding_victims_restored")
     for uid in collided:
         victim = removed[uid]
-        record["attempted_victim_UUIDs"].append(uid)
+        # A timed-out current victim is blocked, not "attempted" and silently
+        # dropped. Record its UUID and every unattempted victim deterministically.
         if time.monotonic() >= deadline:
             record["blocked_victim_UUIDs"].extend(
                 v for v in collided if v not in record["attempted_victim_UUIDs"])
+            record["blocked_victim_nets"] = {
+                victim_uuid: removed[victim_uuid]["net"]
+                for victim_uuid in record["blocked_victim_UUIDs"]
+            }
             record["status"] = "bounded_victim_restoration_timeout"
             persist("victim_deadline")
             return record
+        record["attempted_victim_UUIDs"].append(uid)
         net_code = board.FindNet(victim["net"]).GetNetCode()
         path = search(
             board, victim["start"], victim["end"], net_code,
@@ -554,6 +562,7 @@ def route_child(board_path: Path, baseline: Path, output: Path,
             layers=(pcbnew.F_Cu, pcbnew.B_Cu))
         if path is None or len(path) < 2 or any(v[0] != 0 for v in path):
             record["blocked_victim_UUIDs"].append(uid)
+            record["blocked_victim_nets"] = {uid: victim["net"]}
             record["status"] = "predictive_victim_restitution_deadlock"
             persist("blocked_victim_" + uid)
             return record

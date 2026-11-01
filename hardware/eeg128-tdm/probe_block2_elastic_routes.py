@@ -264,7 +264,7 @@ def rubber_band_routes(
     from shapely.geometry import LineString, Point as ShapelyPoint, box
     from shapely.ops import unary_union
     from route_targeted_closure import (
-        pad_copper_shape, routing_domain, search, add_path,
+        obstacles, pad_copper_shape, routing_domain, search, add_path,
         xy,
     )
 
@@ -379,36 +379,91 @@ def rubber_band_routes(
     diag["topology_separation_attempted"] = False
     diag["topology_separated_for_inflation"] = False
     diag["zero_width_initial_minimum_mm"] = diag["rubber_pairwise_minimum_mm"]
-    # Second, independent phase: after proving ZERO-WIDTH crossing freedom,
-    # negotiate the finite-width centreline distance. A blocked .30-mm
-    # corridor never invalidates the earlier topology result; it is a
-    # bounded physical feasibility diagnostic, not a copper DRC substitute.
+    # Width-aware topology re-negotiation is a *proposal only*. The original
+    # crossing-free zero-width paths remain the fallback, and only independent
+    # KiCad DRC may qualify real copper. Include fixed-copper trace clearance
+    # in this step: a zero-width channel can be wider than zero yet still be
+    # physically impossible to inflate to 0.15 mm.
+    diag["topology_separation_attempts"] = []
+    diag["width_aware_fixed_copper"] = False
     if (diag["rubber_pairwise_minimum_mm"] < .30
             and time.monotonic() < expires - 18):
         diag["topology_separation_attempted"] = True
-        separated: dict[str, list[Point]] = {}
-        for net in order:
-            blocked, obstacle = topology_models[net]
-            proposed = _rubber_trace(
-                xs, ys, blocked, obstacle, endpoints[net][0],
-                endpoints[net][1], list(separated.values()), expires - 18,
-                separation_mm=.30001)
-            if proposed is None:
-                diag["topology_separation_blocked_target"] = net
-                emit("bounded_preinflation_separation_failed_" + net)
+        # Exact three nets => finite set of deterministic priority orders.
+        # Try the previously starved net FIRST rather than always anchoring
+        # both competing corridor trunks before seeking its escape.
+        attempted_orders = []
+        priorities = [
+            tuple(reversed(order)),
+            (order[-1], order[0], order[1]),
+            (order[1], order[2], order[0]),
+            order,
+        ]
+        for priority in priorities:
+            if priority not in attempted_orders:
+                attempted_orders.append(priority)
+        width_models = {}
+        for net in TARGETS:
+            code = board.FindNet(net).GetNetCode()
+            geo, _ = obstacles(
+                board, code, .15, .15, window, .65,
+                (pcbnew.F_Cu, pcbnew.B_Cu))
+            inflated_obstacle = geo[0].buffer(-1e-9)
+            prepare(inflated_obstacle)
+            width_models[net] = (
+                contains_xy(inflated_obstacle, gx, gy),
+                inflated_obstacle)
+        diag["width_aware_fixed_copper"] = True
+        # Do not let permutations consume the inflation/CBS deadline.
+        latest = min(expires - 18., time.monotonic() + 42.)
+        for priority in attempted_orders:
+            if time.monotonic() >= latest:
                 break
-            separated[net] = proposed
-            emit("bounded_preinflation_separation_pass_" + net)
-        if len(separated) == 3:
-            reference = separated
-            lines = [LineString(reference[name]) for name in TARGETS]
-            diag["rubber_pairwise_minimum_mm"] = min(
-                lines[i].distance(lines[j])
+            separated: dict[str, list[Point]] = {}
+            failure = None
+            for net in priority:
+                if time.monotonic() >= latest:
+                    failure = "separation_time_budget"
+                    break
+                blocked, obstacle = width_models[net]
+                proposed = _rubber_trace(
+                    xs, ys, blocked, obstacle, endpoints[net][0],
+                    endpoints[net][1], list(separated.values()),
+                    min(latest, time.monotonic() + 13.),
+                    separation_mm=.30001)
+                if proposed is None:
+                    failure = net
+                    break
+                separated[net] = proposed
+            detail = {
+                "priority": priority,
+                "reached_nets": list(separated),
+                "blocked_target": failure,
+                "obstacle_model": "native_fixed_copper_0.15mm_width_clearance",
+                "mutual_centreline_mm": .30001,
+            }
+            diag["topology_separation_attempts"].append(detail)
+            emit("width_aware_corridor_priority_checked")
+            if len(separated) != 3:
+                diag["topology_separation_blocked_target"] = failure
+                continue
+            proposed_lines = [LineString(separated[name])
+                              for name in TARGETS]
+            clearance = min(
+                proposed_lines[i].distance(proposed_lines[j])
                 for i in range(3) for j in range(i + 1, 3))
-            diag["topology_separated_for_inflation"] = (
-                diag["rubber_pairwise_minimum_mm"] >= .30)
-            if not diag["topology_separated_for_inflation"]:
-                raise RuntimeError("Rubber separated routes violated .30 mm")
+            detail["minimum_pairwise_mm"] = clearance
+            if clearance < .30:
+                raise RuntimeError("Width-aware negotiation violated .30 mm")
+            reference = separated
+            diag["rubber_pairwise_minimum_mm"] = clearance
+            diag["topology_separated_for_inflation"] = True
+            diag["topology_selected_priority"] = priority
+            diag["spanning_tree_paths"] = {
+                name: len(reference[name]) for name in TARGETS}
+            emit("width_aware_three_corridors_proposed_native_DRC_pending")
+            break
+
     emit("three_zero_width_spanning_trees_nonintersecting")
     all_routes: list[list[tuple[int, float, float]]] = []
     completed: set[str] = set()
