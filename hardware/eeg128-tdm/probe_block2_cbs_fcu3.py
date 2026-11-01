@@ -173,6 +173,9 @@ def spatial_cbs_fcu3(
         return [(LineString((a,b)),key)
                 for (a,b),key in zip(zip(nodes,nodes[1:]),keys)]
 
+    # Exact 0.300-mm centreline spacing is legal for 0.15-mm width plus
+    # 0.15-mm native clearance; do not invent a 0.001-mm extra no-go band.
+    # Independent KiCad DRC remains authoritative for all real copper.
     def first_conflict(paths:tuple[GridPath,GridPath,GridPath]
                        ) -> tuple[int,int,GridEdge,GridEdge,float] | None:
         segs=[path_segments(i,paths[i]) for i in range(3)]
@@ -184,12 +187,12 @@ def spatial_cbs_fcu3(
                 line_j=LineString([endpoints[j][0]]
                                   +[physical(x) for x in paths[j]]
                                   +[endpoints[j][1]])
-                if line_i.distance(line_j)>=.301:
+                if line_i.distance(line_j)>=.300:
                     continue
                 for gi,ki in segs[i]:
                     for gj,kj in segs[j]:
                         d=gi.distance(gj)
-                        if d<.301:
+                        if d<.300:
                             return i,j,ki,kj,d
         return None
 
