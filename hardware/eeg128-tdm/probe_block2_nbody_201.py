@@ -56,7 +56,8 @@ def route_child(board_path: Path, baseline: Path, output: Path,
                 joint_weight: float = 1.0,
                 cbs_three: bool = False,
                 cbs_selection: str = "length",
-                cbs_split_mode: str = "single-edge") -> dict:
+                cbs_split_mode: str = "single-edge",
+                cbs_grid_mm: float = .30) -> dict:
     import pcbnew
     from shapely.geometry import LineString, box
     from shapely.ops import unary_union
@@ -88,6 +89,8 @@ def route_child(board_path: Path, baseline: Path, output: Path,
         raise ValueError("Unreviewed CBS node selection strategy")
     if cbs_split_mode not in ("single-edge", "corridor-bundle"):
         raise ValueError("Unreviewed CBS splitting strategy")
+    if not .19 <= cbs_grid_mm <= .44:
+        raise ValueError("Unreviewed CBS grid size")
     original = pcbnew.LoadBoard(str(board_path))
     initial = track_inventory(original)
     protected = unchanged_fingerprints(original)
@@ -129,6 +132,7 @@ def route_child(board_path: Path, baseline: Path, output: Path,
         "cbs_three_enabled": cbs_three,
         "cbs_selection": cbs_selection,
         "cbs_split_mode": cbs_split_mode,
+        "cbs_grid_mm": cbs_grid_mm,
         "joint_weight": joint_weight,
         "baseline_DRC": {"violations": 0, "warnings": 0, "unconnected": 139},
         "cut_whitelist_UUIDs": sorted(removed),
@@ -294,7 +298,8 @@ def route_child(board_path: Path, baseline: Path, output: Path,
             board, endpoints3, netcodes3,
             max_cbs_nodes=1000, max_lowlevel_nodes=18000,
             seconds=105, selection=cbs_selection,
-            split_mode=cbs_split_mode, progress=update_conflict)
+            split_mode=cbs_split_mode, step_mm=cbs_grid_mm,
+            progress=update_conflict)
         record["cbs_three_diagnostic"] = diagnostic
         persist("CBS3_solver_returned")
         if routes is None:
@@ -425,7 +430,8 @@ def run(archive: Path, output: Path, order_id: int,
         joint_weight: float = 1.0,
         cbs_three: bool = False,
         cbs_selection: str = "length",
-        cbs_split_mode: str = "single-edge") -> dict:
+        cbs_split_mode: str = "single-edge",
+        cbs_grid_mm: float = .30) -> dict:
     from probe_block2_isolated_s1s2 import pinned_source_copy
     from probe_block2_ch038_restitution import isolated_drc
     if not 0.0 <= future_lane_penalty <= 500.0:
@@ -438,6 +444,8 @@ def run(archive: Path, output: Path, order_id: int,
         raise ValueError("Unreviewed CBS search ordering")
     if cbs_split_mode not in ("single-edge", "corridor-bundle"):
         raise ValueError("Unreviewed CBS constraint bundling")
+    if not .19 <= cbs_grid_mm <= .44:
+        raise ValueError("Unreviewed CBS grid size")
     original_sha = file_hash(archive)
     report = {**NO_RELEASE, "status": "Nbody_not_qualified",
               "future_lane_penalty": future_lane_penalty,
@@ -445,6 +453,7 @@ def run(archive: Path, output: Path, order_id: int,
               "cbs_three_enabled": cbs_three,
               "cbs_selection": cbs_selection,
               "cbs_split_mode": cbs_split_mode,
+              "cbs_grid_mm": cbs_grid_mm,
               "joint_weight": joint_weight,
               "order": ORDERS[order_id], "source_unchanged": False,
               "candidate_native_DRC": None,
@@ -472,6 +481,7 @@ def run(archive: Path, output: Path, order_id: int,
              *(["--cbs-three"] if cbs_three else []),
              "--cbs-selection", cbs_selection,
              "--cbs-split-mode", cbs_split_mode,
+             "--cbs-grid-mm", str(cbs_grid_mm),
              "--joint-weight", str(joint_weight),
              "--output", str(diag)],
                 capture_output=True, text=True, check=False,
@@ -530,6 +540,7 @@ def main() -> None:
                    default="length")
     p.add_argument("--cbs-split-mode", choices=("single-edge", "corridor-bundle"),
                    default="single-edge")
+    p.add_argument("--cbs-grid-mm", type=float, default=.30)
     p.add_argument("--joint-weight", type=float, default=1.0)
     p.add_argument("--output", type=Path, required=True)
     a = p.parse_args()
@@ -542,7 +553,8 @@ def main() -> None:
                              joint_weight=a.joint_weight,
                              cbs_three=a.cbs_three,
                              cbs_selection=a.cbs_selection,
-                             cbs_split_mode=a.cbs_split_mode)
+                             cbs_split_mode=a.cbs_split_mode,
+                             cbs_grid_mm=a.cbs_grid_mm)
     else:
         if not a.candidate or a.board or a.baseline:
             raise ValueError("Parent expects only --candidate")
@@ -552,7 +564,8 @@ def main() -> None:
                      joint_weight=a.joint_weight,
                      cbs_three=a.cbs_three,
                      cbs_selection=a.cbs_selection,
-                     cbs_split_mode=a.cbs_split_mode)
+                     cbs_split_mode=a.cbs_split_mode,
+                     cbs_grid_mm=a.cbs_grid_mm)
     print(json.dumps({"status": report["status"],
                       "accepted": False, "fabrication_release": False}))
 
