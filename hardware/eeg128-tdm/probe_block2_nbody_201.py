@@ -405,7 +405,8 @@ def run(archive: Path, output: Path, order_id: int,
              "--future-lane-penalty", str(future_lane_penalty),
              *(["--joint-three"] if joint_three else []),
              "--output", str(diag)],
-                capture_output=True, text=True, check=False, timeout=265)
+                capture_output=True, text=True, check=False,
+            timeout=340 if joint_three else 265)
             report["child_exit_code"] = result.returncode
             report["child_stderr_tail"] = result.stderr[-2000:]
             report["child_timeout"] = False
