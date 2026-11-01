@@ -284,7 +284,7 @@ def route_child(board_path: Path, baseline: Path, output: Path,
         netcodes3 = tuple(board.FindNet(n).GetNetCode() for n in order)
         routes, diagnostic = spatial_cbs_fcu3(
             board, endpoints3, netcodes3,
-            max_cbs_nodes=240, max_lowlevel_nodes=18000,
+            max_cbs_nodes=1000, max_lowlevel_nodes=18000,
             seconds=105, progress=update_conflict)
         record["cbs_three_diagnostic"] = diagnostic
         persist("CBS3_solver_returned")
