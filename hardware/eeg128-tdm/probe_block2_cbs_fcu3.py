@@ -37,6 +37,7 @@ def spatial_cbs_fcu3(
     selection: str = "length",
     split_mode: str = "single-edge",
     progress: Progress | None = None,
+    reference_paths: tuple[list[Point], ...] | None = None,
 ) -> tuple[list[list[tuple[int, float, float]]] | None, dict[str, Any]]:
     import pcbnew
     import numpy as np
@@ -52,6 +53,9 @@ def spatial_cbs_fcu3(
             and selection in ("length", "conflict-volume")
             and split_mode in ("single-edge", "corridor-bundle")):
         raise ValueError("Unreviewed bounded CBS parameter")
+    if reference_paths is not None and (len(reference_paths) != 3
+            or any(len(path) < 2 for path in reference_paths)):
+        raise ValueError("Guided CBS3 requires three complete rubber-band paths")
     started = time.monotonic()
     all_ends = [xy for pair in endpoints for xy in pair]
     limits = board.GetBoardEdgesBoundingBox()
@@ -86,6 +90,12 @@ def spatial_cbs_fcu3(
         if progress:
             progress("CBS3_fixed_copper_agent_done",{"agent":i})
 
+    reference_masks = (
+        [contains_xy(LineString(path).buffer(.65), gx, gy)
+         for path in reference_paths]
+        if reference_paths is not None else None
+    )
+
     def physical(node: GridNode) -> Point:
         return float(xs[node[0]]), float(ys[node[1]])
 
@@ -117,6 +127,8 @@ def spatial_cbs_fcu3(
     if any(q is None for q in start+goal):
         diag["status"]="CBS3_endpoint_escape_blocked"
         return None,diag
+
+    diag["rubber_band_guidance"] = reference_masks is not None
 
     def edge(a: GridNode,b: GridNode) -> GridEdge:
         return (a,b) if a <= b else (b,a)
@@ -157,7 +169,9 @@ def spatial_cbs_fcu3(
                     continue
                 if dx and dy and (mask[node[1],x] or mask[y,node[0]]):
                     continue
-                g2=g+step_mm*math.hypot(dx,dy)
+                corridor_cost = (2.75 if reference_masks is not None
+                                 and not reference_masks[agent][y,x] else 0.)
+                g2=g+step_mm*(math.hypot(dx,dy)+corridor_cost)
                 if g2<cost.get(nxt,float("inf")):
                     cost[nxt]=g2
                     parents[nxt]=node

@@ -51,6 +51,15 @@ class MacroBlock2Tests(unittest.TestCase):
                           "ExportDrill(", "SaveBoard("):
             self.assertNotIn(forbidden,MACRO)
 
+    def test_dynamic_repulsion_is_opt_in(self) -> None:
+        for token in (
+            "dynamic_repulsion: bool = False",
+            "repulsion_field(gx,gy,assigned_lines)",
+            "repel_waypoints(",
+            "\"dynamic_waypoint_displacements\"",
+        ):
+            self.assertIn(token, MACRO)
+
     def test_native_scratch_component_guard(self) -> None:
         for token in (
             'component_signature = component_inventory(original)',

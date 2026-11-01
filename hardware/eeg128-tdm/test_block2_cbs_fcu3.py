@@ -73,6 +73,16 @@ class CBS3Tests(unittest.TestCase):
         ):
             self.assertIn(term, BODY)
 
+    def test_guided_CBS3_only_adds_positive_soft_corridor_cost(self) -> None:
+        code = (Path(__file__).with_name("probe_block2_cbs_fcu3.py")).read_text()
+        for token in (
+            "reference_paths: tuple[list[Point], ...] | None = None",
+            "reference_masks",
+            "corridor_cost = (2.75",
+            "rubber_band_guidance",
+        ):
+            self.assertIn(token, code)
+
     def test_nbody_runs_cbs_before_restitution(self) -> None:
         for term in (
             '"cbs_three_enabled": cbs_three',

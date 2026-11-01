@@ -18,6 +18,8 @@ import math
 import time
 from typing import Any, Callable
 
+from probe_block2_elastic_routes import repel_waypoints, repulsion_field
+
 Point = tuple[float,float]
 Progress = Callable[[str, dict[str,Any]], None]
 TARGETS = ("CH028_N_MUX", "CH029_N_MUX", "CH030_N_MUX")
@@ -91,6 +93,7 @@ def macro_routes(
     micro_step_mm: float = .22,
     deadline_s: float = 130.,
     progress: Progress | None = None,
+    dynamic_repulsion: bool = False,
 ) -> tuple[list[list[tuple[int,float,float]]] | None,dict[str,Any]]:
     import numpy as np
     import pcbnew
@@ -125,6 +128,8 @@ def macro_routes(
         "all_targets_qualified":False,"new_vias_added":0,
         "route_order":order,"macro_lane_assignment":{},
         "native_drc_required":True,"source_board_no_release":True,
+        "dynamic_repulsion_enabled":dynamic_repulsion,
+        "dynamic_waypoint_displacements":{},
     }
     def emit(stage:str) -> None:
         diag["last_stage"]=stage
@@ -151,6 +156,8 @@ def macro_routes(
         blocked=contains_xy(geom,gx,gy)
         labels,sizes=_components(blocked)
         dist=_chamfer_distance(blocked)
+        repulse=(repulsion_field(gx,gy,assigned_lines)
+                 if dynamic_repulsion and assigned_lines else None)
         # A discrete medial axis is approximated by distance-field ridges,
         # with all native obstacles still hard-blocked in the macro graph.
         h,w=blocked.shape
@@ -216,8 +223,9 @@ def macro_routes(
                 relative=min(math.dist(pt,endpoints[net][0]),
                              math.dist(pt,endpoints[net][1]))
                 lane_cost=lane_bias*abs(pt[1]-target_y)/(y1-y0)*min(1.,relative/2.)
-                other_cost=sum(32. if math.dist(pt,prior)<.65 else 0.
-                               for lane in assigned_lines for prior in lane)
+                other_cost=(float(repulse[ny,nx]) if repulse is not None
+                            else sum(32. if math.dist(pt,prior)<.65 else 0.
+                                     for lane in assigned_lines for prior in lane))
                 g2=g+step_mm*weight*(1+clearance_penalty+
                                       ridge_reward+lane_cost+other_cost)
                 nxt=(nx,ny)
@@ -246,6 +254,11 @@ def macro_routes(
         # actual reachable graph vertices with nonzero obstacle clearance.
         indices=sorted(set(round((len(course)-1)*q/4) for q in (1,2,3)))
         waypoints=[course[i] for i in indices]
+        if dynamic_repulsion and assigned_lines:
+            waypoints,moves=repel_waypoints(
+                course,xs,ys,blocked,labels,ridge,assigned_lines)
+            diag["dynamic_waypoint_displacements"][net]=moves
+            emit("dynamic_waypoint_repulsion_"+net)
         if len(waypoints)!=3:
             diag["status"]="macro_underdetermined_waypoint_count"
             emit("macro_waypoint_count_failed_"+net)
@@ -257,7 +270,7 @@ def macro_routes(
         # copper; micro tracks are not committed until macro reservations
         # exist for every target. This avoids prematurely disconnecting the
         # second target on the coarse grid.
-        assigned_lines.append(course[::max(1,len(course)//80)])
+        assigned_lines.append(course[::max(1,len(course)//80)]+[course[-1]])
         emit("macro_waypoints_selected_"+net)
     if set(planned)!=set(TARGETS):
         raise RuntimeError("All three target corridors not preplanned")

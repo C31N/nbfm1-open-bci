@@ -99,6 +99,18 @@ class NBody201Tests(unittest.TestCase):
         ):
             self.assertIn(token, code)
 
+    def test_elastic_rubber_fallback_is_exclusive(self) -> None:
+        code = SOURCE.read_text(encoding="utf-8")
+        for token in (
+            "elastic_three: bool = False",
+            "if elastic_three and any((joint_three, cbs_three, macro_three)):",
+            "\"elastic_three_enabled\": elastic_three",
+            "\"rubber_guided_CBS3_bounded_no_solution\"",
+            "rubber_band_routes(",
+            "\"--elastic-three\"",
+        ):
+            self.assertIn(token, code)
+
     def test_process_and_replay_gates(self) -> None:
         text = SOURCE.read_text(encoding="utf-8")
         for required in (

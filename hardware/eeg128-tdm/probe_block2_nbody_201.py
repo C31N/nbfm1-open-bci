@@ -58,7 +58,8 @@ def route_child(board_path: Path, baseline: Path, output: Path,
                 cbs_selection: str = "length",
                 cbs_split_mode: str = "single-edge",
                 cbs_grid_mm: float = .30,
-                macro_three: bool = False) -> dict:
+                macro_three: bool = False,
+                elastic_three: bool = False) -> dict:
     import pcbnew
     from shapely.geometry import LineString, box
     from shapely.ops import unary_union
@@ -87,6 +88,8 @@ def route_child(board_path: Path, baseline: Path, output: Path,
         raise ValueError("Unreviewed coupled MAPF3 weight")
     if sum((bool(joint_three), bool(cbs_three), bool(macro_three))) > 1:
         raise ValueError("Select exactly one coupled strategy")
+    if elastic_three and any((joint_three, cbs_three, macro_three)):
+        raise ValueError("Elastic three-net strategy must be exclusive")
     if cbs_selection not in ("length", "conflict-volume"):
         raise ValueError("Unreviewed CBS node selection strategy")
     if cbs_split_mode not in ("single-edge", "corridor-bundle"):
@@ -137,6 +140,7 @@ def route_child(board_path: Path, baseline: Path, output: Path,
         "cbs_split_mode": cbs_split_mode,
         "cbs_grid_mm": cbs_grid_mm,
         "macro_three_enabled": macro_three,
+        "elastic_three_enabled": elastic_three,
         "joint_weight": joint_weight,
         "baseline_DRC": {"violations": 0, "warnings": 0, "unconnected": 139},
         "cut_whitelist_UUIDs": sorted(removed),
@@ -243,7 +247,7 @@ def route_child(board_path: Path, baseline: Path, output: Path,
     victim_lanes = unary_union([
         LineString((v["start"], v["end"])).buffer(v["width_mm"]/2 + .25)
         for v in removed.values()])
-    deadline = time.monotonic() + 135
+    deadline = time.monotonic() + (245 if elastic_three else 135)
     # Native CH038+201 topology was separately established for all three
     # endpoints in the pinned preceding workflow. Recomputing the exact same
     # costly component graph three times before A* exceeded child budgets.
@@ -309,6 +313,101 @@ def route_child(board_path: Path, baseline: Path, output: Path,
             raise RuntimeError("No complete four-hop macro routing for targets")
         record["target_nets_routed"].extend(order)
         persist("macro_three_proposed_paths_ready_for_all_201_restoration")
+    elif elastic_three:
+        from probe_block2_macro_voronoi import macro_routes
+        from probe_block2_elastic_routes import rubber_band_routes
+        from probe_block2_cbs_fcu3 import spatial_cbs_fcu3
+
+        record["elastic_three_method"] = "repulsion_zero_width_guided_CBS3"
+
+        def elastic_progress(stage: str, info: dict) -> None:
+            record["elastic_progress"] = info
+            persist(stage)
+
+        record["elastic_macro_attempts"] = []
+        elastic_diagnostic = {}
+        for coarse_step in (.44, .30):
+            board = pcbnew.LoadBoard(str(trial_board))
+            if board is None:
+                raise RuntimeError("Cannot reload elastic scratch PCB")
+            require_unchanged_components(
+                board, component_signature, "elastic-macro-scratch-reload")
+            _, elastic_diagnostic = macro_routes(
+                board, opens, order, step_mm=coarse_step,
+                micro_step_mm=.22, lane_bias=4., deadline_s=55.,
+                progress=elastic_progress, dynamic_repulsion=True)
+            require_unchanged_components(
+                board, component_signature, "elastic-repulsion-proposal")
+            record["elastic_macro_attempts"].append({
+                "coarse_step_mm": coarse_step,
+                "status": elastic_diagnostic.get("status"),
+                "blocked_target": elastic_diagnostic.get("blocked_target"),
+                "waypoint_repulsion": elastic_diagnostic.get(
+                    "dynamic_waypoint_displacements", {}),
+                "micro_segments_completed": elastic_diagnostic.get(
+                    "micro_segments_completed", {}),
+            })
+            persist("elastic_repulsive_waypoint_attempt_finished")
+            if (elastic_diagnostic.get("status")
+                    == "macro_three_targets_proposed_unverified"):
+                record["elastic_selected_strategy"] = "repulsive_macro"
+                break
+            if time.monotonic() > deadline - 120:
+                break
+        if (elastic_diagnostic.get("status")
+                != "macro_three_targets_proposed_unverified"):
+            # Reuse only the untouched scratch file, not copper from a
+            # partially routed macro attempt.
+            board = pcbnew.LoadBoard(str(trial_board))
+            if board is None:
+                raise RuntimeError("Cannot reload rubber scratch PCB")
+            require_unchanged_components(
+                board, component_signature, "rubber-fallback-clean-reload")
+            _, rubber_diag, references = rubber_band_routes(
+                board, opens, order, step_mm=.22, seconds=65.,
+                progress=elastic_progress)
+            record["rubber_band_diagnostic"] = rubber_diag
+            record["zero_width_reference_nets"] = sorted(references)
+            persist("zero_width_topology_and_inflation_checked")
+            if rubber_diag.get("status") == "rubber_inflated_three_unverified":
+                record["elastic_selected_strategy"] = "rubber_inflation"
+            elif set(references) == set(TARGETS):
+                # CBS only resolves FINITE-WIDTH boundary conflicts after
+                # three crossing-free, zero-width topology paths exist.
+                board = pcbnew.LoadBoard(str(trial_board))
+                if board is None:
+                    raise RuntimeError("Cannot reload guided CBS3 PCB")
+                require_unchanged_components(
+                    board, component_signature, "guided-CBS3-clean-reload")
+                routes, cbs_diag = spatial_cbs_fcu3(
+                    board, tuple(opens[net] for net in order),
+                    tuple(board.FindNet(net).GetNetCode() for net in order),
+                    step_mm=.30, max_cbs_nodes=1100,
+                    max_lowlevel_nodes=20000, seconds=55.,
+                    selection="conflict-volume",
+                    reference_paths=tuple(references[net] for net in order),
+                    progress=elastic_progress)
+                record["rubber_guided_CBS3_diagnostic"] = cbs_diag
+                record["repulsion_guidance"] = True
+                persist("rubber_guided_CBS3_solver_returned")
+                if routes is None:
+                    record["status"] = "rubber_guided_CBS3_bounded_no_solution"
+                    persist("elastic_no_release")
+                    return record
+                for net, path in zip(order, routes):
+                    if len(path) < 2 or any(p[0] != 0 for p in path):
+                        raise RuntimeError("CBS3 proposed non-FCu or via")
+                    add_path(board, path, board.FindNet(net).GetNetCode(),
+                             .15, layers=(pcbnew.F_Cu, pcbnew.B_Cu))
+                record["elastic_selected_strategy"] = "rubber_guided_CBS3"
+            else:
+                record["status"] = "elastic_zero_width_topology_unavailable"
+                persist("elastic_no_release")
+                return record
+        require_unchanged_components(
+            board, component_signature, "elastic-three-before-restoration")
+        record["target_nets_routed"].extend(order)
+        persist("elastic_three_proposed_paths_ready_for_all_201_restoration")
     elif joint_three:
         from probe_block2_joint_fcu_mapf3 import simultaneous_fcu_astar3
         # One A* state contains three heads and three full partial paths.
@@ -510,6 +609,8 @@ def run(archive: Path, output: Path, order_id: int,
         raise ValueError("Unreviewed N-body joint heuristic weight")
     if sum((bool(joint_three), bool(cbs_three), bool(macro_three))) > 1:
         raise ValueError("Choose only one coupled solver")
+    if elastic_three and any((joint_three, cbs_three, macro_three)):
+        raise ValueError("Elastic three-net strategy must be exclusive")
     if cbs_selection not in ("length", "conflict-volume"):
         raise ValueError("Unreviewed CBS search ordering")
     if cbs_split_mode not in ("single-edge", "corridor-bundle"):
@@ -525,6 +626,7 @@ def run(archive: Path, output: Path, order_id: int,
               "cbs_split_mode": cbs_split_mode,
               "cbs_grid_mm": cbs_grid_mm,
               "macro_three_enabled": macro_three,
+        "elastic_three_enabled": elastic_three,
               "joint_weight": joint_weight,
               "order": ORDERS[order_id], "source_unchanged": False,
               "candidate_native_DRC": None,
@@ -551,13 +653,14 @@ def run(archive: Path, output: Path, order_id: int,
              *(["--joint-three"] if joint_three else []),
              *(["--cbs-three"] if cbs_three else []),
              *(["--macro-three"] if macro_three else []),
+             *(["--elastic-three"] if elastic_three else []),
              "--cbs-selection", cbs_selection,
              "--cbs-split-mode", cbs_split_mode,
              "--cbs-grid-mm", str(cbs_grid_mm),
              "--joint-weight", str(joint_weight),
              "--output", str(diag)],
                 capture_output=True, text=True, check=False,
-            timeout=340 if (joint_three or cbs_three or macro_three) else 265)
+            timeout=340 if (joint_three or cbs_three or macro_three or elastic_three) else 265)
             report["child_exit_code"] = result.returncode
             report["child_stderr_tail"] = result.stderr[-2000:]
             report["child_timeout"] = False
@@ -609,6 +712,7 @@ def main() -> None:
     p.add_argument("--joint-three", action="store_true")
     p.add_argument("--cbs-three", action="store_true")
     p.add_argument("--macro-three", action="store_true")
+    p.add_argument("--elastic-three", action="store_true")
     p.add_argument("--cbs-selection", choices=("length", "conflict-volume"),
                    default="length")
     p.add_argument("--cbs-split-mode", choices=("single-edge", "corridor-bundle"),
@@ -628,7 +732,8 @@ def main() -> None:
                              cbs_selection=a.cbs_selection,
                              cbs_split_mode=a.cbs_split_mode,
                              cbs_grid_mm=a.cbs_grid_mm,
-                             macro_three=a.macro_three)
+                             macro_three=a.macro_three,
+                     elastic_three=a.elastic_three)
     else:
         if not a.candidate or a.board or a.baseline:
             raise ValueError("Parent expects only --candidate")
@@ -640,7 +745,8 @@ def main() -> None:
                      cbs_selection=a.cbs_selection,
                      cbs_split_mode=a.cbs_split_mode,
                      cbs_grid_mm=a.cbs_grid_mm,
-                     macro_three=a.macro_three)
+                     macro_three=a.macro_three,
+                     elastic_three=a.elastic_three)
     print(json.dumps({"status": report["status"],
                       "accepted": False, "fabrication_release": False}))
 
