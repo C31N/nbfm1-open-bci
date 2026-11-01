@@ -57,7 +57,7 @@ class CBS3Tests(unittest.TestCase):
             'for agent,prohibited in ((i,ei),(j,ej)):',
             'if split_mode == "corridor-bundle":',
             'if segment.distance(rival_line) < clearance_threshold',
-            'forbidden_edges |= frozenset(local[:6])',
+            'forbidden_edges |= frozenset(local[:2])',
             'if dist <= 1.05',
             '"last_corridor_bundle_original_overlap_edges"',
             '"last_corridor_bundle_edge_count"',
@@ -68,6 +68,8 @@ class CBS3Tests(unittest.TestCase):
             'split_mode=cbs_split_mode',
             '"cbs_split_mode": cbs_split_mode',
             'cbs_split_mode=a.cbs_split_mode',
+            'cbs_grid_mm=a.cbs_grid_mm',
+            'step_mm=cbs_grid_mm',
         ):
             self.assertIn(term, BODY)
 
