@@ -21,6 +21,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from typing import Any
 
 NO_RELEASE = {
     "accepted": False, "routing_completed": False,
@@ -39,7 +40,8 @@ def file_sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def joint_fcu_astar(board, endpoints, nets, *, step: float = .30,
+def joint_fcu_astar(board: Any,
+                    endpoints: tuple, nets: tuple[int, int], *, step: float = .30,
                     max_states: int = 16000, seconds: float = 95.0) -> tuple:
     """Paired-head A*: state stores BOTH accumulated copper paths.
 
@@ -82,11 +84,12 @@ def joint_fcu_astar(board, endpoints, nets, *, step: float = .30,
         prepare(shape)
         forbidden_shapes.append(shape)
         forbidden.append(contains_xy(shape, xx, yy))
-    def coord(n) -> tuple[float, float]:
+    def coord(n: tuple[int, int]) -> tuple[float, float]:
         return (float(xs[n[0]]), float(ys[n[1]]))
-    def segment_hit(shape, a, b) -> bool:
+    def segment_hit(shape: Any, a: tuple[float, float],
+                    b: tuple[float, float]) -> bool:
         return LineString((a, b)).relate_pattern(shape, "T********")
-    def anchor(which, point) -> tuple[int, int] | None:
+    def anchor(which: int, point: tuple[float, float]) -> tuple[int, int] | None:
         mask = forbidden[which]
         near = sorted(
             ((x, y) for x in range(max(0, int(round((point[0]-x0)/step))-3),
@@ -107,7 +110,9 @@ def joint_fcu_astar(board, endpoints, nets, *, step: float = .30,
     # The two routes have different nets and require at least 0.30 mm
     # centreline separation (0.15 trace + 0.15 native clearance).
     min_distance = .301
-    def collides(move_a, move_b, other_path) -> bool:
+    def collides(move_a: tuple[float, float],
+                 move_b: tuple[float, float],
+                 other_path: tuple[tuple[int, int], ...]) -> bool:
         new_line = LineString((move_a, move_b))
         if len(other_path) == 1:
             return new_line.distance(
@@ -116,7 +121,7 @@ def joint_fcu_astar(board, endpoints, nets, *, step: float = .30,
         return any(new_line.distance(LineString(
             (coord(p), coord(q)))) < min_distance
             for p, q in zip(other_path, other_path[1:]))
-    def h(a, b) -> float:
+    def h(a: tuple[int, int], b: tuple[int, int]) -> float:
         return (math.dist(coord(a), coord(goals[0])) +
                 math.dist(coord(b), coord(goals[1])))
     seq = itertools.count()
