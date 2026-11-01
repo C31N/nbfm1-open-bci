@@ -44,7 +44,7 @@ def spatial_cbs_fcu3(
 
     if len(endpoints) != 3 or len(nets) != 3 or len(set(nets)) != 3:
         raise ValueError("CBS requires exactly three distinct target nets")
-    if not (.19 <= step_mm <= .44 and 5 <= max_cbs_nodes <= 240
+    if not (.19 <= step_mm <= .44 and 5 <= max_cbs_nodes <= 1200
             and 1000 <= max_lowlevel_nodes <= 50000
             and 10 <= seconds <= 150):
         raise ValueError("Unreviewed bounded CBS parameter")
