@@ -139,6 +139,7 @@ def _rubber_trace(
     target: Point,
     previous: list[list[Point]],
     expires: float,
+    separation_mm: float = 0.0,
 ) -> list[Point] | None:
     """Zero-trace-width A* over an F.Cu free-space graph, no DRC claim."""
     import numpy as np
@@ -157,6 +158,10 @@ def _rubber_trace(
                 contains_xy(line.buffer(radius), grid_x, grid_y) * penalty
             )
 
+    if not 0.0 <= separation_mm <= .5:
+        raise ValueError("Unsupported topology separation")
+    other_lines = [LineString(g) for g in previous]
+
     xstep = float(xs[1] - xs[0])
     ystep = float(ys[1] - ys[0])
 
@@ -174,8 +179,9 @@ def _rubber_trace(
         for node in sorted(options, key=lambda p: math.dist(physical(p), pt)):
             stub = LineString((pt, physical(node)))
             if (not stub.relate_pattern(obstacle, "T********")
-                    and all(not stub.intersects(LineString(line))
-                            for line in previous)):
+                    and all(not stub.intersects(other)
+                            and stub.distance(other) >= separation_mm - 1e-9
+                            for other in other_lines)):
                 return node
         return None
 
@@ -187,7 +193,6 @@ def _rubber_trace(
               next(sequence), 0.0, start)]
     costs = {start: 0.0}
     parents: dict[tuple[int, int], tuple[int, int] | None] = {start: None}
-    other_lines = [LineString(g) for g in previous]
     expansions = 0
     while queue and expansions < 55000 and time.monotonic() < expires:
         _, _, g, node = heapq.heappop(queue)
@@ -202,7 +207,9 @@ def _rubber_trace(
                 cursor = parents[cursor]
             route = [source] + list(reversed(rev)) + [target]
             polygonal = LineString(route)
-            if any(polygonal.intersects(other) for other in other_lines):
+            if any(polygonal.intersects(other)
+                   or polygonal.distance(other) < separation_mm - 1e-9
+                   for other in other_lines):
                 return None
             return route
         for dx, dy in MOVES:
@@ -215,7 +222,9 @@ def _rubber_trace(
             nxt = x, y
             segment = LineString((physical(node), physical(nxt)))
             if (segment.relate_pattern(obstacle, "T********")
-                    or any(segment.intersects(other) for other in other_lines)):
+                    or any(segment.intersects(other)
+                           or segment.distance(other) < separation_mm - 1e-9
+                           for other in other_lines)):
                 continue
             proposal = (g + math.hypot(xstep * dx, ystep * dy)
                         * (1.0 + float(rubber_repulsion[y, x])))
@@ -297,6 +306,7 @@ def rubber_band_routes(
     domain = routing_domain(board, .000001)
     outside = window.difference(domain)
     reference: dict[str, list[Point]] = {}
+    topology_models: dict[str, tuple[Any, Any]] = {}
 
     def emit(stage: str) -> None:
         diag["last_stage"] = stage
@@ -344,6 +354,7 @@ def rubber_band_routes(
         obstacle = unary_union(physical).buffer(1e-9)
         prepare(obstacle)
         blocked = contains_xy(obstacle, gx, gy)
+        topology_models[net] = (blocked, obstacle)
         path = _rubber_trace(
             xs, ys, blocked, obstacle, endpoints[net][0],
             endpoints[net][1], list(reference.values()), expires)
@@ -365,6 +376,39 @@ def rubber_band_routes(
         lines[i].distance(lines[j])
         for i in range(3) for j in range(i + 1, 3))
     diag["rubber_repulsion_enabled"] = True
+    diag["topology_separation_attempted"] = False
+    diag["topology_separated_for_inflation"] = False
+    diag["zero_width_initial_minimum_mm"] = diag["rubber_pairwise_minimum_mm"]
+    # Second, independent phase: after proving ZERO-WIDTH crossing freedom,
+    # negotiate the finite-width centreline distance. A blocked .30-mm
+    # corridor never invalidates the earlier topology result; it is a
+    # bounded physical feasibility diagnostic, not a copper DRC substitute.
+    if (diag["rubber_pairwise_minimum_mm"] < .30
+            and time.monotonic() < expires - 18):
+        diag["topology_separation_attempted"] = True
+        separated: dict[str, list[Point]] = {}
+        for net in order:
+            blocked, obstacle = topology_models[net]
+            proposed = _rubber_trace(
+                xs, ys, blocked, obstacle, endpoints[net][0],
+                endpoints[net][1], list(separated.values()), expires - 18,
+                separation_mm=.30001)
+            if proposed is None:
+                diag["topology_separation_blocked_target"] = net
+                emit("bounded_preinflation_separation_failed_" + net)
+                break
+            separated[net] = proposed
+            emit("bounded_preinflation_separation_pass_" + net)
+        if len(separated) == 3:
+            reference = separated
+            lines = [LineString(reference[name]) for name in TARGETS]
+            diag["rubber_pairwise_minimum_mm"] = min(
+                lines[i].distance(lines[j])
+                for i in range(3) for j in range(i + 1, 3))
+            diag["topology_separated_for_inflation"] = (
+                diag["rubber_pairwise_minimum_mm"] >= .30)
+            if not diag["topology_separated_for_inflation"]:
+                raise RuntimeError("Rubber separated routes violated .30 mm")
     emit("three_zero_width_spanning_trees_nonintersecting")
     all_routes: list[list[tuple[int, float, float]]] = []
     completed: set[str] = set()

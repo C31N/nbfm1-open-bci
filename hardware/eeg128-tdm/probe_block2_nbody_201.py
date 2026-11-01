@@ -364,7 +364,7 @@ def route_child(board_path: Path, baseline: Path, output: Path,
             require_unchanged_components(
                 board, component_signature, "rubber-fallback-clean-reload")
             _, rubber_diag, references = rubber_band_routes(
-                board, opens, order, step_mm=.22, seconds=65.,
+                board, opens, order, step_mm=.22, seconds=75.,
                 progress=elastic_progress)
             record["rubber_band_diagnostic"] = rubber_diag
             record["zero_width_reference_nets"] = sorted(references)
