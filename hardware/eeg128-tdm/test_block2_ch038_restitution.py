@@ -48,8 +48,7 @@ class CH038RestitutionTests(unittest.TestCase):
         self.assertIn('new_inventory.get(uid) != signature', content)
         self.assertIn('if t.m_Uuid.AsString() not in initial_tracks', content)
         self.assertIn('layers=(pcbnew.F_Cu, pcbnew.B_Cu)', content)
-        self.assertIn('any(n[0] == 0 for n in path)', content.replace(
-            "all(n[0] == 0 for n in path)", "any(n[0] == 0 for n in path)"))
+        self.assertIn('all(n[0] == 0 for n in path)', content)
 
 
 if __name__ == "__main__":
