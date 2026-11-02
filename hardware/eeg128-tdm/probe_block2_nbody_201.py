@@ -374,9 +374,11 @@ def route_child(board_path: Path, baseline: Path, output: Path,
             persist("zero_width_topology_and_inflation_checked")
             if rubber_diag.get("status") == "rubber_inflated_three_unverified":
                 record["elastic_selected_strategy"] = "rubber_inflation"
-            elif set(references) == set(TARGETS):
-                # CBS only resolves FINITE-WIDTH boundary conflicts after
-                # three crossing-free, zero-width topology paths exist.
+            elif references:
+                # A missing third rubber path often indicates competition
+                # with earlier soft routes rather than a fixed copper cut.
+                # Let CBS3 reroute ALL agents jointly, without hardening
+                # any incomplete reference as an obstacle.
                 board = pcbnew.LoadBoard(str(trial_board))
                 if board is None:
                     raise RuntimeError("Cannot reload guided CBS3 PCB")
@@ -388,10 +390,11 @@ def route_child(board_path: Path, baseline: Path, output: Path,
                     step_mm=.30, max_cbs_nodes=1100,
                     max_lowlevel_nodes=20000, seconds=55.,
                     selection="conflict-volume",
-                    reference_paths=tuple(references[net] for net in order),
+                    reference_paths=tuple(references.get(net) for net in order),
                     progress=elastic_progress, uuid_detours=True)
                 record["rubber_guided_CBS3_diagnostic"] = cbs_diag
                 record["repulsion_guidance"] = True
+                record["partial_rubber_reference_nets"] = sorted(references)
                 persist("rubber_guided_CBS3_solver_returned")
                 if routes is None:
                     record["status"] = "rubber_guided_CBS3_bounded_no_solution"

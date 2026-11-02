@@ -37,13 +37,14 @@ def spatial_cbs_fcu3(
     selection: str = "length",
     split_mode: str = "single-edge",
     progress: Progress | None = None,
-    reference_paths: tuple[list[Point], ...] | None = None,
+    reference_paths: tuple[list[Point] | None, ...] | None = None,
     uuid_detours: bool = False,
 ) -> tuple[list[list[tuple[int, float, float]]] | None, dict[str, Any]]:
     import pcbnew
     import numpy as np
     from shapely import contains_xy, prepare
     from shapely.geometry import LineString, box
+    from shapely.ops import unary_union
     from route_targeted_closure import obstacles
 
     if len(endpoints) != 3 or len(nets) != 3 or len(set(nets)) != 3:
@@ -55,8 +56,9 @@ def spatial_cbs_fcu3(
             and split_mode in ("single-edge", "corridor-bundle")):
         raise ValueError("Unreviewed bounded CBS parameter")
     if reference_paths is not None and (len(reference_paths) != 3
-            or any(len(path) < 2 for path in reference_paths)):
-        raise ValueError("Guided CBS3 requires three complete rubber-band paths")
+            or any(path is not None and len(path) < 2
+                   for path in reference_paths)):
+        raise ValueError("Guided CBS3 requires valid known reference paths")
     started = time.monotonic()
     from probe_block2_uuid_detours import detour_geometry
     hard_detours, detour_diagnostic = (
@@ -97,16 +99,22 @@ def spatial_cbs_fcu3(
         if progress:
             progress("CBS3_fixed_copper_agent_done",{"agent":i})
 
+    # Missing rubber-band paths are UNGUIDED; never force an artificial
+    # crossing or turn hints into immutable physical copper.
     reference_masks = (
         [contains_xy(LineString(path).buffer(.65), gx, gy)
-         for path in reference_paths]
+         if path is not None else None for path in reference_paths]
         if reference_paths is not None else None
     )
     competitor_masks = (
         [contains_xy(
-            LineString(reference_paths[(i + 1) % 3]).buffer(.33).union(
-                LineString(reference_paths[(i + 2) % 3]).buffer(.33)),
+            unary_union([LineString(path).buffer(.33)
+                         for j, path in enumerate(reference_paths)
+                         if j != i and path is not None]),
             gx, gy)
+         if any(j != i and path is not None
+                for j, path in enumerate(reference_paths))
+         else np.zeros(gx.shape, dtype=bool)
          for i in range(3)]
         if reference_paths is not None else None
     )
@@ -148,6 +156,12 @@ def spatial_cbs_fcu3(
 
     diag["rubber_band_guidance"] = reference_masks is not None
     diag["competitor_corridor_repulsion"] = competitor_masks is not None
+    diag["partial_reference_count"] = (
+        sum(path is not None for path in reference_paths)
+        if reference_paths is not None else 0)
+    diag["missing_reference_agents"] = (
+        [i for i, path in enumerate(reference_paths) if path is None]
+        if reference_paths is not None else [])
 
     def edge(a: GridNode,b: GridNode) -> GridEdge:
         return (a,b) if a <= b else (b,a)
@@ -189,6 +203,7 @@ def spatial_cbs_fcu3(
                 if dx and dy and (mask[node[1],x] or mask[y,node[0]]):
                     continue
                 corridor_cost = (2.75 if reference_masks is not None
+                                 and reference_masks[agent] is not None
                                  and not reference_masks[agent][y,x] else 0.)
                 neighbor_cost = (12.0 if competitor_masks is not None
                                  and competitor_masks[agent][y,x] else 0.0)

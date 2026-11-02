@@ -49,6 +49,8 @@ class CBS3Tests(unittest.TestCase):
         self.assertIn('cbs_selection: str = "length"', BODY)
         self.assertIn('selection=cbs_selection', BODY)
         self.assertIn('"cbs_selection": cbs_selection', BODY)
+        self.assertIn("reference_paths=tuple(references.get(net) for net in order)", BODY)
+        self.assertIn("elif references:", BODY)
 
     def test_corridor_bundle_is_optional_and_fail_closed(self) -> None:
         for term in (
@@ -76,7 +78,9 @@ class CBS3Tests(unittest.TestCase):
     def test_guided_CBS3_only_adds_positive_soft_corridor_cost(self) -> None:
         code = (Path(__file__).with_name("probe_block2_cbs_fcu3.py")).read_text()
         for token in (
-            "reference_paths: tuple[list[Point], ...] | None = None",
+            "reference_paths: tuple[list[Point] | None, ...] | None = None",
+            "partial_reference_count",
+            "missing_reference_agents",
             "reference_masks",
             "corridor_cost = (2.75",
             "rubber_band_guidance",
