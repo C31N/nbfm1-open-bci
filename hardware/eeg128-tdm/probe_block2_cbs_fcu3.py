@@ -38,6 +38,7 @@ def spatial_cbs_fcu3(
     split_mode: str = "single-edge",
     progress: Progress | None = None,
     reference_paths: tuple[list[Point], ...] | None = None,
+    uuid_detours: bool = False,
 ) -> tuple[list[list[tuple[int, float, float]]] | None, dict[str, Any]]:
     import pcbnew
     import numpy as np
@@ -57,6 +58,9 @@ def spatial_cbs_fcu3(
             or any(len(path) < 2 for path in reference_paths)):
         raise ValueError("Guided CBS3 requires three complete rubber-band paths")
     started = time.monotonic()
+    from probe_block2_uuid_detours import detour_geometry
+    hard_detours, detour_diagnostic = (
+        detour_geometry(board) if uuid_detours else (None, None))
     all_ends = [xy for pair in endpoints for xy in pair]
     limits = board.GetBoardEdgesBoundingBox()
     margin = .56
@@ -84,6 +88,8 @@ def spatial_cbs_fcu3(
             board, net, .15, .15, bbox, .65,
             (pcbnew.F_Cu, pcbnew.B_Cu))
         shape = geometry[0].buffer(-1e-9)
+        if hard_detours is not None:
+            shape = shape.union(hard_detours)
         prepare(shape)
         shapes.append(shape)
         masks.append(contains_xy(shape,gx,gy))
@@ -129,6 +135,8 @@ def spatial_cbs_fcu3(
         "simultaneous_three_net_conflict_search":True,
         "CH038_return_preplaced":True, "qualified":False,
         "new_vias_added":0,
+        "uuid_detours_enabled": uuid_detours,
+        "uuid_detour_diagnostic": detour_diagnostic,
         "expanded_cbs_nodes":0, "expanded_lowlevel_nodes":0,
         "resolved_conflicts":0,
     }

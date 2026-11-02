@@ -337,7 +337,8 @@ def route_child(board_path: Path, baseline: Path, output: Path,
             _, elastic_diagnostic = macro_routes(
                 board, opens, order, step_mm=coarse_step,
                 micro_step_mm=.22, lane_bias=4., deadline_s=55.,
-                progress=elastic_progress, dynamic_repulsion=True)
+                progress=elastic_progress, dynamic_repulsion=True,
+                uuid_detours=True)
             require_unchanged_components(
                 board, component_signature, "elastic-repulsion-proposal")
             record["elastic_macro_attempts"].append({
@@ -367,7 +368,7 @@ def route_child(board_path: Path, baseline: Path, output: Path,
                 board, component_signature, "rubber-fallback-clean-reload")
             _, rubber_diag, references = rubber_band_routes(
                 board, opens, order, step_mm=.22, seconds=95.,
-                progress=elastic_progress)
+                progress=elastic_progress, uuid_detours=True)
             record["rubber_band_diagnostic"] = rubber_diag
             record["zero_width_reference_nets"] = sorted(references)
             persist("zero_width_topology_and_inflation_checked")
@@ -388,7 +389,7 @@ def route_child(board_path: Path, baseline: Path, output: Path,
                     max_lowlevel_nodes=20000, seconds=55.,
                     selection="conflict-volume",
                     reference_paths=tuple(references[net] for net in order),
-                    progress=elastic_progress)
+                    progress=elastic_progress, uuid_detours=True)
                 record["rubber_guided_CBS3_diagnostic"] = cbs_diag
                 record["repulsion_guidance"] = True
                 persist("rubber_guided_CBS3_solver_returned")

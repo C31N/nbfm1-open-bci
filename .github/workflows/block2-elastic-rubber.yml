@@ -8,6 +8,7 @@ on:
       - ".github/workflows/block2-elastic-rubber.yml"
       - "hardware/eeg128-tdm/probe_block2_elastic_routes.py"
       - "hardware/eeg128-tdm/probe_block2_clearance_cutset.py"
+      - "hardware/eeg128-tdm/probe_block2_uuid_detours.py"
       - "hardware/eeg128-tdm/test_block2_elastic_routes.py"
       - "hardware/eeg128-tdm/probe_block2_nbody_201.py"
       - "hardware/eeg128-tdm/probe_block2_macro_voronoi.py"
@@ -36,7 +37,7 @@ jobs:
           /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
       - name: Unit test dynamical repulsion and fail-closed zero-width topology
         run: |
-          /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_elastic_routes.py hardware/eeg128-tdm/probe_block2_clearance_cutset.py hardware/eeg128-tdm/probe_block2_macro_voronoi.py hardware/eeg128-tdm/probe_block2_nbody_201.py hardware/eeg128-tdm/probe_block2_cbs_fcu3.py
+          /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_elastic_routes.py hardware/eeg128-tdm/probe_block2_clearance_cutset.py hardware/eeg128-tdm/probe_block2_uuid_detours.py hardware/eeg128-tdm/probe_block2_macro_voronoi.py hardware/eeg128-tdm/probe_block2_nbody_201.py hardware/eeg128-tdm/probe_block2_cbs_fcu3.py
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_elastic_routes.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_macro_voronoi.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_nbody_201.py -v

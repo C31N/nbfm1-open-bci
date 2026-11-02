@@ -245,6 +245,7 @@ def rubber_band_routes(
     step_mm: float = .22,
     seconds: float = 65.0,
     progress: Callable[[str, dict[str, Any]], None] | None = None,
+    uuid_detours: bool = False,
 ) -> tuple[
     list[list[tuple[int, float, float]]] | None,
     dict[str, Any],
@@ -274,6 +275,9 @@ def rubber_band_routes(
         raise ValueError("Unreviewed topological rubber-band request")
     started = time.monotonic()
     expires = started + seconds
+    from probe_block2_uuid_detours import detour_geometry
+    hard_detours, detour_diagnostic = (
+        detour_geometry(board) if uuid_detours else (None, None))
     coords = [p for name in TARGETS for p in endpoints[name]]
     bbox = board.GetBoardEdgesBoundingBox()
     x0 = max(min(p[0] for p in coords) - 4.4,
@@ -297,6 +301,8 @@ def rubber_band_routes(
         "In1_Cu_used": False,
         "spanning_tree_paths": {},
         "inflated_micro_hops": {},
+        "uuid_detours_enabled": uuid_detours,
+        "uuid_detour_diagnostic": detour_diagnostic,
     }
     if (len(xs) < 3 or len(ys) < 3 or len(xs) * len(ys) > 180000):
         diag["status"] = "rubber_grid_unavailable"
@@ -352,6 +358,8 @@ def rubber_band_routes(
             if shape.intersects(window):
                 physical.append(shape)
         obstacle = unary_union(physical).buffer(1e-9)
+        if hard_detours is not None:
+            obstacle = obstacle.union(hard_detours)
         prepare(obstacle)
         blocked = contains_xy(obstacle, gx, gy)
         topology_models[net] = (blocked, obstacle)
@@ -409,6 +417,8 @@ def rubber_band_routes(
                 board, code, .15, .15, window, .65,
                 (pcbnew.F_Cu, pcbnew.B_Cu))
             inflated_obstacle = geo[0].buffer(-1e-9)
+            if hard_detours is not None:
+                inflated_obstacle = inflated_obstacle.union(hard_detours)
             prepare(inflated_obstacle)
             width_models[net] = (
                 contains_xy(inflated_obstacle, gx, gy),
@@ -511,7 +521,14 @@ def rubber_band_routes(
                 )
                 if (proposal is not None and len(proposal) >= 2
                         and all(p[0] == 0 for p in proposal)):
-                    break
+                    if hard_detours is not None and LineString(
+                            [(p[1], p[2]) for p in proposal]
+                    ).intersects(hard_detours):
+                        diag.setdefault("uuid_detour_rejected_hops", []).append(
+                            {"net": net, "start": start, "end": end})
+                        proposal = None
+                    else:
+                        break
                 proposal = None
             if proposal is None:
                 diag["status"] = "rubber_inflation_requires_cbs"

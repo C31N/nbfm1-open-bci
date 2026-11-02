@@ -55,6 +55,20 @@ class ElasticPathTests(unittest.TestCase):
             measured["hypothetical_0_10_not_authorized"]
             ["valid_under_current_rules"])
 
+    def test_uuid_detour_registry_is_pinned_and_unmodifiable(self) -> None:
+        from probe_block2_uuid_detours import FIXED_DETOUR_ITEMS
+        self.assertEqual(len(FIXED_DETOUR_ITEMS), 5)
+        self.assertEqual(FIXED_DETOUR_ITEMS[
+            "0c622acd-a2a9-440d-a4d0-7d8cdbdc7014"],
+            ("MUX_EN", "pad"))
+        self.assertEqual(FIXED_DETOUR_ITEMS[
+            "3af750bf-ef0a-495a-9e9c-4af1480ec59d"],
+            ("CH038_P_MUX", "track"))
+        self.assertIn("uuid_detours=True", BODY)
+        for forbidden in ("SaveBoard(", "make_via(", "ExportGerbers("):
+            self.assertNotIn(forbidden,
+                (ROOT / "probe_block2_uuid_detours.py").read_text())
+
     def test_no_release_or_layer_relaxation(self) -> None:
         ast.parse(ELASTIC)
         for token in (
@@ -73,6 +87,8 @@ class ElasticPathTests(unittest.TestCase):
             "\"width_aware_fixed_copper\"",
             "native_fixed_copper_0.15mm_width_clearance",
             "fixed_copper_cutset_analysis",
+            "uuid_detours_enabled",
+            "hard_detours",
             "inspect_cutset(",
             "tuple(reversed(order))",
             "rubber_repulsion = np.zeros",

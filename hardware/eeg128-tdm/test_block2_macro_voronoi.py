@@ -54,6 +54,8 @@ class MacroBlock2Tests(unittest.TestCase):
     def test_dynamic_repulsion_is_opt_in(self) -> None:
         for token in (
             "dynamic_repulsion: bool = False",
+            "uuid_detours: bool = False",
+            "uuid_detour_rejected_hops",
             "repulsion_field(gx,gy,assigned_lines)",
             "repel_waypoints(",
             "\"dynamic_waypoint_displacements\"",

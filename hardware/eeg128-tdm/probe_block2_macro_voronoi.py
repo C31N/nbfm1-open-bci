@@ -94,6 +94,7 @@ def macro_routes(
     deadline_s: float = 130.,
     progress: Progress | None = None,
     dynamic_repulsion: bool = False,
+    uuid_detours: bool = False,
 ) -> tuple[list[list[tuple[int,float,float]]] | None,dict[str,Any]]:
     import numpy as np
     import pcbnew
@@ -107,6 +108,9 @@ def macro_routes(
             or not 0<=lane_bias<=30 or not 30<=deadline_s<=190):
         raise ValueError("Unreviewed three-net macro corridor request")
     began=time.monotonic()
+    from probe_block2_uuid_detours import detour_geometry
+    hard_detours, detour_diagnostic = (
+        detour_geometry(board) if uuid_detours else (None, None))
     pts=[point for n in TARGETS for point in endpoints[n]]
     bounds=board.GetBoardEdgesBoundingBox()
     pad=.56
@@ -123,6 +127,8 @@ def macro_routes(
     diag:dict[str,Any]={
         "status":"macro_started","macro_grid":[len(xs),len(ys)],
         "macro_step_mm":step_mm,"micro_step_mm":micro_step_mm,
+        "uuid_detours_enabled": uuid_detours,
+        "uuid_detour_diagnostic": detour_diagnostic,
         "component_counts_by_net":{},"medial_ridge_nodes_by_net":{},
         "macro_waypoints":{},"micro_segments_completed":{},
         "all_targets_qualified":False,"new_vias_added":0,
@@ -152,6 +158,8 @@ def macro_routes(
         geoms,_=obstacles(board,netcode,.15,.15,window,.65,
                            (pcbnew.F_Cu,pcbnew.B_Cu))
         geom=geoms[0].buffer(-1e-9)
+        if hard_detours is not None:
+            geom=geom.union(hard_detours)
         prepare(geom)
         blocked=contains_xy(geom,gx,gy)
         labels,sizes=_components(blocked)
@@ -317,8 +325,15 @@ def macro_routes(
                 })
                 if (candidate is not None and len(candidate)>=2
                         and all(p[0]==0 for p in candidate)):
-                    hop=candidate
-                    break
+                    if hard_detours is not None and LineString(
+                            [(p[1], p[2]) for p in candidate]
+                    ).intersects(hard_detours):
+                        diag.setdefault("uuid_detour_rejected_hops", []).append(
+                            {"net": net, "start": start, "goal": goal})
+                        candidate=None
+                    else:
+                        hop=candidate
+                        break
             if hop is None:
                 diag["status"]="macro_micro_hop_unavailable"
                 diag["blocked_target"]=net
