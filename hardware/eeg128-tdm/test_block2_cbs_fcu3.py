@@ -89,6 +89,39 @@ class CBS3Tests(unittest.TestCase):
         ):
             self.assertIn(token, code)
 
+    def test_connected_corridor_cbs_and_pinned_u4_escapes(self) -> None:
+        from probe_block2_u4_corridors import (
+            CH027_PINS, connected_conflict_corridor,
+        )
+
+        class Segment:
+            def __init__(self, distance: float):
+                self.distance_value = distance
+
+            def distance(self, _rival: object) -> float:
+                return self.distance_value
+
+        segments = [(Segment(d), i) for i, d in enumerate(
+            (1., .1, .07, .01, .03, .04, .5, 1.))]
+        result = connected_conflict_corridor(
+            segments, object(), 3, .3, max_edges=10)
+        self.assertEqual(result, frozenset((0, 1, 2, 3, 4, 5, 6)))
+        self.assertEqual(CH027_PINS, ("9a811be0", "515dd677"))
+        self.assertIn('split_mode="u4-corridor"', BODY)
+        for token in (
+            '"u4-corridor"',
+            "verify_u4_escape_group(",
+            "u4_first_conflict_priority",
+            "connected_conflict_corridor(",
+            '"u4_corridor_splits"',
+            '"last_u4_corridor_edge_count"',
+        ):
+            self.assertIn(token, CBS)
+        for forbidden in ("SaveBoard(", "make_via(",
+                          "ExportGerbers(", "ExportDrill("):
+            self.assertNotIn(forbidden,
+                (ROOT / "probe_block2_u4_corridors.py").read_text())
+
     def test_nbody_runs_cbs_before_restitution(self) -> None:
         for term in (
             '"cbs_three_enabled": cbs_three',

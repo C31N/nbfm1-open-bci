@@ -390,6 +390,7 @@ def route_child(board_path: Path, baseline: Path, output: Path,
                     step_mm=.30, max_cbs_nodes=1100,
                     max_lowlevel_nodes=20000, seconds=55.,
                     selection="conflict-volume",
+                    split_mode="u4-corridor",
                     reference_paths=tuple(references.get(net) for net in order),
                     progress=elastic_progress, uuid_detours=True)
                 record["rubber_guided_CBS3_diagnostic"] = cbs_diag

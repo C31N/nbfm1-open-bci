@@ -46,6 +46,10 @@ def spatial_cbs_fcu3(
     from shapely.geometry import LineString, box
     from shapely.ops import unary_union
     from route_targeted_closure import obstacles
+    from probe_block2_u4_corridors import (
+        connected_conflict_corridor, verify_u4_escape_group,
+    )
+    from shapely.geometry import Point as ShapelyPoint
 
     if len(endpoints) != 3 or len(nets) != 3 or len(set(nets)) != 3:
         raise ValueError("CBS requires exactly three distinct target nets")
@@ -53,13 +57,26 @@ def spatial_cbs_fcu3(
             and 1000 <= max_lowlevel_nodes <= 50000
             and 10 <= seconds <= 150
             and selection in ("length", "conflict-volume")
-            and split_mode in ("single-edge", "corridor-bundle")):
+            and split_mode in ("single-edge", "corridor-bundle",
+                               "u4-corridor")):
         raise ValueError("Unreviewed bounded CBS parameter")
     if reference_paths is not None and (len(reference_paths) != 3
             or any(path is not None and len(path) < 2
                    for path in reference_paths)):
         raise ValueError("Guided CBS3 requires valid known reference paths")
     started = time.monotonic()
+    u4_ports = ()
+    u4_reservation: dict[str, Any] | None = None
+    if split_mode == "u4-corridor":
+        try:
+            u4_ports, u4_reservation = verify_u4_escape_group(
+                board, nets, endpoints)
+        except RuntimeError as exc:
+            return None, {
+                "status": "CBS3_U4_reservation_source_drift",
+                "reason": str(exc)[:250],
+                "qualified": False, "new_vias_added": 0,
+            }
     from probe_block2_uuid_detours import detour_geometry
     hard_detours, detour_diagnostic = (
         detour_geometry(board) if uuid_detours else (None, None))
@@ -81,6 +98,9 @@ def spatial_cbs_fcu3(
         return None, {"status": "spatial_CBS_no_grid"}
     gx, gy = np.meshgrid(xs, ys)
     bbox = box(x0,y0,x1,y1)
+    u4_roi = (unary_union([ShapelyPoint(port).buffer(1.65)
+                           for port in u4_ports])
+              if u4_ports else None)
     masks=[]
     shapes=[]
     if progress:
@@ -140,6 +160,10 @@ def spatial_cbs_fcu3(
         "step_mm":step_mm, "max_cbs_nodes":max_cbs_nodes,
         "selection":selection,
         "split_mode":split_mode,
+        "u4_coupled_reservation":u4_reservation,
+        "u4_conflict_radius_mm":1.65 if u4_roi is not None else None,
+        "u4_first_conflict_priority":u4_roi is not None,
+        "u4_corridor_splits":0,
         "start_anchors":start, "goal_anchors":goal,
         "simultaneous_three_net_conflict_search":True,
         "CH038_return_preplaced":True, "qualified":False,
@@ -236,21 +260,28 @@ def spatial_cbs_fcu3(
     def first_conflict(paths:tuple[GridPath,GridPath,GridPath]
                        ) -> tuple[int,int,GridEdge,GridEdge,float] | None:
         segs=[path_segments(i,paths[i]) for i in range(3)]
-        for i in range(3):
-            for j in range(i+1,3):
-                line_i=LineString([endpoints[i][0]]
-                                  +[physical(x) for x in paths[i]]
-                                  +[endpoints[i][1]])
-                line_j=LineString([endpoints[j][0]]
-                                  +[physical(x) for x in paths[j]]
-                                  +[endpoints[j][1]])
-                if line_i.distance(line_j)>=clearance_threshold:
-                    continue
-                for gi,ki in segs[i]:
-                    for gj,kj in segs[j]:
-                        d=gi.distance(gj)
-                        if d<clearance_threshold:
-                            return i,j,ki,kj,d
+        # Resolve three U4 exits as a COUPLED group before collisions farther
+        # into F.Cu. Never waive the 0.300-mm copper-centreline requirement.
+        for u4_first in ((True, False) if u4_roi is not None else (False,)):
+            for i in range(3):
+                for j in range(i+1,3):
+                    line_i=LineString([endpoints[i][0]]
+                                      +[physical(x) for x in paths[i]]
+                                      +[endpoints[i][1]])
+                    line_j=LineString([endpoints[j][0]]
+                                      +[physical(x) for x in paths[j]]
+                                      +[endpoints[j][1]])
+                    if line_i.distance(line_j)>=clearance_threshold:
+                        continue
+                    for gi,ki in segs[i]:
+                        if u4_first and not gi.intersects(u4_roi):
+                            continue
+                        for gj,kj in segs[j]:
+                            if u4_first and not gj.intersects(u4_roi):
+                                continue
+                            d=gi.distance(gj)
+                            if d<clearance_threshold:
+                                return i,j,ki,kj,d
         return None
 
     initial_paths=[]
@@ -315,6 +346,21 @@ def spatial_cbs_fcu3(
             # net. This is an aggressive, bounded conflict-directed heuristic,
             # not a proof of unsatisfiability if no path survives.
             forbidden_edges = frozenset((prohibited,))
+            if split_mode == "u4-corridor":
+                # Entire CONNECTED offending strand, not a single grid edge.
+                # Both children receive complementary region prohibitions.
+                counterpart = j if agent == i else i
+                rival_line = LineString(
+                    [endpoints[counterpart][0]]
+                    + [physical(x) for x in paths[counterpart]]
+                    + [endpoints[counterpart][1]])
+                strand = connected_conflict_corridor(
+                    path_segments(agent, paths[agent]), rival_line,
+                    prohibited, clearance_threshold, max_edges=10)
+                forbidden_edges |= strand
+                diag["u4_corridor_splits"] += 1
+                diag["last_u4_corridor_edge_count"] = len(forbidden_edges)
+                diag["last_u4_corridor_agent"] = agent
             if split_mode == "corridor-bundle":
                 counterpart = j if agent == i else i
                 rival_line = LineString(
