@@ -47,7 +47,8 @@ def spatial_cbs_fcu3(
     from shapely.ops import unary_union
     from route_targeted_closure import obstacles
     from probe_block2_u4_corridors import (
-        connected_conflict_corridor, verify_u4_escape_group,
+        connected_conflict_corridor, rasterized_conflict_region_edges,
+        verify_u4_escape_group,
     )
     from shapely.geometry import Point as ShapelyPoint
 
@@ -357,7 +358,10 @@ def spatial_cbs_fcu3(
                 strand = connected_conflict_corridor(
                     path_segments(agent, paths[agent]), rival_line,
                     prohibited, clearance_threshold, max_edges=10)
-                forbidden_edges |= strand
+                spatial_strand = rasterized_conflict_region_edges(
+                    strand, xs, ys, padding_mm=.16, max_region_edges=320)
+                forbidden_edges |= spatial_strand
+                diag["last_u4_spatial_region_edges"] = len(spatial_strand)
                 diag["u4_corridor_splits"] += 1
                 diag["last_u4_corridor_edge_count"] = len(forbidden_edges)
                 diag["last_u4_corridor_agent"] = agent

@@ -105,3 +105,57 @@ def connected_conflict_corridor(
     if b+1 < len(segments) and b-a+1 < max_edges:
         b += 1
     return frozenset(keys[a:b+1])
+
+
+def rasterized_conflict_region_edges(
+    corridor: frozenset[Any], xs: Any, ys: Any,
+    *, padding_mm: float = .16, max_region_edges: int = 320,
+) -> frozenset[Any]:
+    """Prohibit ALL local graph edges crossing a bounded spatial corridor.
+
+    Unlike blocking the current route's edges alone, this prevents the next
+    CBS child from immediately re-entering the same geometric bottleneck via
+    neighbouring diagonal/axial grid edges. Entirely search-local.
+    """
+    import math
+    from shapely.geometry import LineString
+    from shapely.ops import unary_union
+    if not corridor or not .08 <= padding_mm <= .30:
+        raise ValueError("Invalid spatial CBS corridor")
+    if not 30 <= max_region_edges <= 500:
+        raise ValueError("Unreviewed regional CBS constraint budget")
+    if len(xs) < 2 or len(ys) < 2:
+        raise ValueError("Grid is not spatial")
+    step_x = float(xs[1] - xs[0])
+    step_y = float(ys[1] - ys[0])
+    if step_x <= 0 or step_y <= 0:
+        raise ValueError("Grid orientation changed")
+
+    def point(node: tuple[int, int]) -> tuple[float, float]:
+        return float(xs[node[0]]), float(ys[node[1]])
+
+    shapes = [LineString((point(a), point(b))) for a, b in corridor]
+    region = unary_union(shapes).buffer(padding_mm, resolution=4)
+    minx, miny, maxx, maxy = region.bounds
+    def clamp_index(v: float, zero: float, step: float,
+                    maximum: int) -> int:
+        return max(0, min(maximum, int(math.floor((v - zero)/step))))
+    left = clamp_index(minx, float(xs[0]), step_x, len(xs)-1)
+    right = clamp_index(maxx, float(xs[0]), step_x, len(xs)-1)+1
+    top = clamp_index(miny, float(ys[0]), step_y, len(ys)-1)
+    bottom = clamp_index(maxy, float(ys[0]), step_y, len(ys)-1)+1
+    result = set(corridor)
+    for y in range(top, min(len(ys), bottom+1)):
+        for x in range(left, min(len(xs), right+1)):
+            a = (x, y)
+            for dx, dy in ((1, 0), (0, 1), (1, 1), (-1, 1)):
+                b = (x+dx, y+dy)
+                if not (0 <= b[0] < len(xs) and 0 <= b[1] < len(ys)):
+                    continue
+                if LineString((point(a), point(b))).intersects(region):
+                    result.add((a, b) if a <= b else (b, a))
+                if len(result) > max_region_edges:
+                    # Fail closed to the bounded original region instead of
+                    # introducing an unreviewed board-scale search blackout.
+                    return corridor
+    return frozenset(result)

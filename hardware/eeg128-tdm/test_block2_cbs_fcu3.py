@@ -92,6 +92,7 @@ class CBS3Tests(unittest.TestCase):
     def test_connected_corridor_cbs_and_pinned_u4_escapes(self) -> None:
         from probe_block2_u4_corridors import (
             CH027_PINS, connected_conflict_corridor,
+            rasterized_conflict_region_edges,
         )
 
         class Segment:
@@ -107,6 +108,18 @@ class CBS3Tests(unittest.TestCase):
             segments, object(), 3, .3, max_edges=10)
         self.assertEqual(result, frozenset((0, 1, 2, 3, 4, 5, 6)))
         self.assertEqual(CH027_PINS, ("9a811be0", "515dd677"))
+        import numpy as np
+        xs = np.arange(0., 4., .3)
+        ys = np.arange(0., 4., .3)
+        corridor = frozenset({((4, 4), (5, 4))})
+        expanded = rasterized_conflict_region_edges(
+            corridor, xs, ys, padding_mm=.16)
+        self.assertTrue(corridor.issubset(expanded))
+        self.assertGreater(len(expanded), len(corridor))
+        self.assertLessEqual(len(expanded), 320)
+        with self.assertRaises(ValueError):
+            rasterized_conflict_region_edges(
+                corridor, xs, ys, padding_mm=.5)
         self.assertIn('split_mode="u4-corridor"', BODY)
         for token in (
             '"u4-corridor"',
@@ -115,6 +128,8 @@ class CBS3Tests(unittest.TestCase):
             "connected_conflict_corridor(",
             '"u4_corridor_splits"',
             '"last_u4_corridor_edge_count"',
+            "rasterized_conflict_region_edges(",
+            '"last_u4_spatial_region_edges"',
         ):
             self.assertIn(token, CBS)
         for forbidden in ("SaveBoard(", "make_via(",
