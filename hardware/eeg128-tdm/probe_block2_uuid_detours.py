@@ -22,7 +22,7 @@ U3_GAP_RADIUS_MM = .24
 
 
 def detour_geometry(board: Any) -> tuple[Any, dict[str, Any]]:
-    """Build hard search-only buffers, requiring all 5 pinned UUIDs.
+    """Build hard search-only buffers with verified CH038 replacement mapping.
 
     No eligibility to change protected objects is implied by the geometry.
     The U3.14/U3.15 centre-to-centre stub becomes a forbidden search region
@@ -60,12 +60,20 @@ def detour_geometry(board: Any) -> tuple[Any, dict[str, Any]]:
         else:
             raise RuntimeError("Protected detour UUID changed copper layer")
         found[uid] = shape, track
-    if set(found) != set(FIXED_DETOUR_ITEMS):
-        raise RuntimeError("Protected detour UUID inventory mismatch: " +
-                           ",".join(sorted(set(FIXED_DETOUR_ITEMS)-set(found))))
+    # The #6 diagnostic used the pre-restoration CH038 track. Isolated
+    # CH038 restitution replaces its cut segments BEFORE the 201-victim cut.
+    # Require the four stable pad/via UUIDs; fail closed if any of those
+    # changed. For CH038, rediscover actual F.Cu replacement UUIDs by net.
+    historical_ch038 = "3af750bf-ef0a-495a-9e9c-4af1480ec59d"
+    missing = set(FIXED_DETOUR_ITEMS) - set(found)
+    if missing - {historical_ch038}:
+        raise RuntimeError("Protected fixed-detour UUID inventory mismatch: " +
+                           ",".join(sorted(missing - {historical_ch038})))
     shapes = []
     manifest = []
     for uid, (net, kind) in FIXED_DETOUR_ITEMS.items():
+        if uid == historical_ch038 and uid not in found:
+            continue
         shape, obj = found[uid]
         actual_kind = (
             "pad" if isinstance(obj, pcbnew.PAD)
@@ -77,6 +85,26 @@ def detour_geometry(board: Any) -> tuple[Any, dict[str, Any]]:
         shapes.append(shape.buffer(EXTRA_RADIUS_MM, resolution=16))
         manifest.append({"uuid": uid, "net": net, "kind": kind,
                          "search_padding_mm": EXTRA_RADIUS_MM})
+    replacements = []
+    if historical_ch038 not in found:
+        for track in board.GetTracks():
+            if (track.GetNetname() != "CH038_P_MUX"
+                    or track.GetLayer() != pcbnew.F_Cu
+                    or isinstance(track, (pcbnew.PCB_VIA, pcbnew.PCB_ARC))):
+                continue
+            uid = track.m_Uuid.AsString()
+            copper = LineString((
+                xy(track.GetStart()), xy(track.GetEnd())
+            )).buffer(pcbnew.ToMM(track.GetWidth()) / 2)
+            replacements.append((uid, copper))
+        if not replacements:
+            raise RuntimeError("No protected CH038 F.Cu replacement copper")
+        for uid, copper in sorted(replacements):
+            shapes.append(copper.buffer(EXTRA_RADIUS_MM, resolution=16))
+            manifest.append({
+                "uuid": uid, "net": "CH038_P_MUX",
+                "kind": "replacement_track",
+                "search_padding_mm": EXTRA_RADIUS_MM})
     pad_a = found["0c622acd-a2a9-440d-a4d0-7d8cdbdc7014"][1]
     pad_b = found["dd561592-853d-47ee-a2f3-f824a719d539"][1]
     gap = LineString((
@@ -87,6 +115,9 @@ def detour_geometry(board: Any) -> tuple[Any, dict[str, Any]]:
     return union, {
         "search_only": True,
         "uuid_count": len(manifest),
+        "historical_CH038_uuid_absent": historical_ch038 not in found,
+        "historical_CH038_uuid": historical_ch038,
+        "CH038_replacement_UUIDs": sorted(uid for uid, _ in replacements),
         "protected_uuid_keepouts": manifest,
         "U3_14_15_gap_excluded": True,
         "U3_gap_buffer_mm": U3_GAP_RADIUS_MM,
