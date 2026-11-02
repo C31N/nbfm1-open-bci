@@ -15,6 +15,7 @@ on:
       - "hardware/eeg128-tdm/probe_block2_macro_voronoi.py"
       - "hardware/eeg128-tdm/probe_block2_cbs_fcu3.py"
       - "hardware/eeg128-tdm/probe_block2_u4_corridors.py"
+      - "hardware/eeg128-tdm/test_block2_cbs_fcu3.py"
 permissions:
   contents: read
 jobs:
