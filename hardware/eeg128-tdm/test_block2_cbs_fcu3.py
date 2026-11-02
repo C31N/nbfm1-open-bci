@@ -55,7 +55,7 @@ class CBS3Tests(unittest.TestCase):
     def test_corridor_bundle_is_optional_and_fail_closed(self) -> None:
         for term in (
             'split_mode: str = "single-edge"',
-            'split_mode in ("single-edge", "corridor-bundle")',
+            'split_mode in ("single-edge", "corridor-bundle",',
             'for agent,prohibited in ((i,ei),(j,ej)):',
             'if split_mode == "corridor-bundle":',
             'if segment.distance(rival_line) < clearance_threshold',
@@ -95,7 +95,7 @@ class CBS3Tests(unittest.TestCase):
         )
 
         class Segment:
-            def __init__(self, distance: float):
+            def __init__(self, distance: float) -> None:
                 self.distance_value = distance
 
             def distance(self, _rival: object) -> float:
