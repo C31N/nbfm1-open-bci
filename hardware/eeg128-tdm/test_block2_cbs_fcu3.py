@@ -59,8 +59,8 @@ class CBS3Tests(unittest.TestCase):
             'for agent,prohibited in ((i,ei),(j,ej)):',
             'if split_mode == "corridor-bundle":',
             'if segment.distance(rival_line) < clearance_threshold',
-            'forbidden_edges |= frozenset(local[:2])',
-            'if dist <= 1.05',
+            'bundle = frozenset((prohibited,)) | frozenset(local[:2])',
+            'if gap <= 1.05',
             '"last_corridor_bundle_original_overlap_edges"',
             '"last_corridor_bundle_edge_count"',
         ):
@@ -125,6 +125,11 @@ class CBS3Tests(unittest.TestCase):
             expanded, corridor, ((4, 4), (5, 4)),
             expanded=50, queued=0)
         self.assertEqual([mode for mode, _ in sparse],
+                         ["spatial", "strand"])
+        separate = adaptive_cbs_regions(
+            frozenset(("a", "b", "c")), frozenset(("a", "b")),
+            "a", expanded=50, queued=0)
+        self.assertEqual([mode for mode, _ in separate],
                          ["spatial", "strand", "single-edge-rescue"])
         self.assertTrue(all(((4, 4), (5, 4)) in edges
                             for _, edges in sparse))
