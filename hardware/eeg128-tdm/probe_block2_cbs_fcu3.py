@@ -47,8 +47,8 @@ def spatial_cbs_fcu3(
     from shapely.ops import unary_union
     from route_targeted_closure import obstacles
     from probe_block2_u4_corridors import (
-        connected_conflict_corridor, rasterized_conflict_region_edges,
-        verify_u4_escape_group,
+        adaptive_cbs_regions, connected_conflict_corridor,
+        rasterized_conflict_region_edges, verify_u4_escape_group,
     )
     from shapely.geometry import Point as ShapelyPoint
 
@@ -165,6 +165,10 @@ def spatial_cbs_fcu3(
         "u4_conflict_radius_mm":1.65 if u4_roi is not None else None,
         "u4_first_conflict_priority":u4_roi is not None,
         "u4_corridor_splits":0,
+        "u4_secondary_branches":0,
+        "u4_disconnected_spatial_children":0,
+        "u4_rescue_reroutes_succeeded":0,
+        "u4_secondary_by_type":{"strand":0,"single-edge-rescue":0},
         "start_anchors":start, "goal_anchors":goal,
         "simultaneous_three_net_conflict_search":True,
         "CH038_return_preplaced":True, "qualified":False,
@@ -341,15 +345,13 @@ def spatial_cbs_fcu3(
             "edge_a":ei, "edge_b":ej,
         }
         for agent,prohibited in ((i,ei),(j,ej)):
-            # CBS normally bans exactly one conflicting edge on each branch.
-            # The exploratory corridor-bundle mode bans *every* edge of the
-            # presently occupied path that collides with the other complete
-            # net. This is an aggressive, bounded conflict-directed heuristic,
-            # not a proof of unsatisfiability if no path survives.
-            forbidden_edges = frozenset((prohibited,))
+            # Each CBS disjunction forbids the original conflicting edge
+            # for ONE agent. Spatial/strand options are exploratory
+            # restrictions; optional weaker children preserve paths that a
+            # broad hard corridor would otherwise erase prematurely.
+            options: tuple[tuple[str, frozenset[GridEdge]], ...] = (
+                ("single-edge", frozenset((prohibited,))),)
             if split_mode == "u4-corridor":
-                # Entire CONNECTED offending strand, not a single grid edge.
-                # Both children receive complementary region prohibitions.
                 counterpart = j if agent == i else i
                 rival_line = LineString(
                     [endpoints[counterpart][0]]
@@ -360,21 +362,19 @@ def spatial_cbs_fcu3(
                     prohibited, clearance_threshold, max_edges=10)
                 spatial_strand = rasterized_conflict_region_edges(
                     strand, xs, ys, padding_mm=.16, max_region_edges=320)
-                forbidden_edges |= spatial_strand
-                diag["last_u4_spatial_region_edges"] = len(spatial_strand)
+                options = adaptive_cbs_regions(
+                    spatial_strand, strand, prohibited,
+                    expanded=diag["expanded_cbs_nodes"], queued=len(q))
                 diag["u4_corridor_splits"] += 1
-                diag["last_u4_corridor_edge_count"] = len(forbidden_edges)
+                diag["last_u4_spatial_region_edges"] = len(spatial_strand)
+                diag["last_u4_corridor_edge_count"] = len(spatial_strand)
                 diag["last_u4_corridor_agent"] = agent
-            if split_mode == "corridor-bundle":
+            elif split_mode == "corridor-bundle":
                 counterpart = j if agent == i else i
                 rival_line = LineString(
                     [endpoints[counterpart][0]]
                     + [physical(x) for x in paths[counterpart]]
                     + [endpoints[counterpart][1]])
-                # Restrict the bundle to at most two edges around first conflict.
-                # Banning all ~42 overlapping segments severed BOTH root
-                # search branches in native run #2; this is a local conflict
-                # direction choice, never a full corridor blackout.
                 center_a = physical(prohibited[0])
                 center_b = physical(prohibited[1])
                 center = ((center_a[0]+center_b[0])/2,
@@ -387,23 +387,38 @@ def spatial_cbs_fcu3(
                      for segment,key in path_segments(agent, paths[agent])
                      if segment.distance(rival_line) < clearance_threshold),
                     key=lambda item: item[0])
-                local = [key for dist,key in colliding if dist <= 1.05]
-                forbidden_edges |= frozenset(local[:2])
-                diag["last_corridor_bundle_edge_count"] = len(forbidden_edges)
+                local = [key for gap,key in colliding if gap <= 1.05]
+                bundle = frozenset((prohibited,)) | frozenset(local[:2])
+                options = (("corridor-bundle", bundle),)
+                diag["last_corridor_bundle_edge_count"] = len(bundle)
                 diag["last_corridor_bundle_original_overlap_edges"] = len(colliding)
-            newer=list(limits_by_net)
-            newer[agent]=limits_by_net[agent] | forbidden_edges
-            key=(newer[0],newer[1],newer[2])
-            if key in seen:
-                continue
-            seen.add(key)
-            reroute=low_level(agent,key[agent])
-            if reroute is None:
-                continue
-            newpaths=list(paths)
-            newpaths[agent]=reroute
-            version=(newpaths[0],newpaths[1],newpaths[2])
-            heapq.heappush(q,(score(version),next(counter),key,version))
+            spawned_any = False
+            for option_index, (option_kind, forbidden_edges) in enumerate(options):
+                if (option_index > 0 and spawned_any
+                        and not (len(q) < 16
+                                 and diag["expanded_cbs_nodes"] >= 12)):
+                    break
+                newer=list(limits_by_net)
+                newer[agent]=limits_by_net[agent] | forbidden_edges
+                key=(newer[0],newer[1],newer[2])
+                if key in seen:
+                    continue
+                seen.add(key)
+                reroute=low_level(agent,key[agent])
+                if reroute is None:
+                    if option_kind == "spatial":
+                        diag["u4_disconnected_spatial_children"] += 1
+                    continue
+                newpaths=list(paths)
+                newpaths[agent]=reroute
+                version=(newpaths[0],newpaths[1],newpaths[2])
+                heapq.heappush(q,(score(version),next(counter),key,version))
+                spawned_any = True
+                if option_index > 0:
+                    diag["u4_secondary_branches"] += 1
+                    if option_kind in diag["u4_secondary_by_type"]:
+                        diag["u4_secondary_by_type"][option_kind] += 1
+                    diag["u4_rescue_reroutes_succeeded"] += 1
         if progress and diag["expanded_cbs_nodes"]%10==0:
             progress("CBS3_conflict_tree_progress",{
                 "expanded_cbs_nodes":diag["expanded_cbs_nodes"],

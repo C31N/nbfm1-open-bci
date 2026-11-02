@@ -159,3 +159,32 @@ def rasterized_conflict_region_edges(
                     # introducing an unreviewed board-scale search blackout.
                     return corridor
     return frozenset(result)
+
+
+def adaptive_cbs_regions(
+    spatial: frozenset[Any],
+    strand: frozenset[Any],
+    pivot: Any,
+    *,
+    expanded: int,
+    queued: int,
+) -> tuple[tuple[str, frozenset[Any]], ...]:
+    """Bounded disjunctive CBS alternatives; never relax native DRC.
+
+    Spatial exclusion remains the preferred child. When the open CBS queue
+    shrinks, also retain a weaker but still pivot-forbidden child to avoid
+    incorrectly concluding that the entire escape is disconnected. All
+    variants forbid the original conflict edge for the branched agent.
+    """
+    if expanded < 1 or queued < 0 or pivot not in strand or pivot not in spatial:
+        raise ValueError("Invalid adaptive CBS corridor constraints")
+    if not strand.issubset(spatial):
+        raise ValueError("Spatial U4 corridor must cover original strand")
+    options: list[tuple[str, frozenset[Any]]] = [("spatial", spatial)]
+    if expanded >= 12 and queued < 16 and strand != spatial:
+        options.append(("strand", strand))
+    if expanded >= 32 and queued < 5:
+        single = frozenset((pivot,))
+        if all(keys != single for _, keys in options):
+            options.append(("single-edge-rescue", single))
+    return tuple(options)

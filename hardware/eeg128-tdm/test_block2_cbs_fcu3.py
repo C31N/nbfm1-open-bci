@@ -91,8 +91,8 @@ class CBS3Tests(unittest.TestCase):
 
     def test_connected_corridor_cbs_and_pinned_u4_escapes(self) -> None:
         from probe_block2_u4_corridors import (
-            CH027_PINS, connected_conflict_corridor,
-            rasterized_conflict_region_edges,
+            CH027_PINS, adaptive_cbs_regions,
+            connected_conflict_corridor, rasterized_conflict_region_edges,
         )
 
         class Segment:
@@ -117,6 +117,17 @@ class CBS3Tests(unittest.TestCase):
         self.assertTrue(corridor.issubset(expanded))
         self.assertGreater(len(expanded), len(corridor))
         self.assertLessEqual(len(expanded), 320)
+        strict = adaptive_cbs_regions(
+            expanded, corridor, ((4, 4), (5, 4)),
+            expanded=1, queued=0)
+        self.assertEqual([mode for mode, _ in strict], ["spatial"])
+        sparse = adaptive_cbs_regions(
+            expanded, corridor, ((4, 4), (5, 4)),
+            expanded=50, queued=0)
+        self.assertEqual([mode for mode, _ in sparse],
+                         ["spatial", "strand", "single-edge-rescue"])
+        self.assertTrue(all(((4, 4), (5, 4)) in edges
+                            for _, edges in sparse))
         with self.assertRaises(ValueError):
             rasterized_conflict_region_edges(
                 corridor, xs, ys, padding_mm=.5)
@@ -130,6 +141,9 @@ class CBS3Tests(unittest.TestCase):
             '"last_u4_corridor_edge_count"',
             "rasterized_conflict_region_edges(",
             '"last_u4_spatial_region_edges"',
+            "adaptive_cbs_regions(",
+            '"u4_disconnected_spatial_children"',
+            '"u4_secondary_branches"',
         ):
             self.assertIn(token, CBS)
         for forbidden in ("SaveBoard(", "make_via(",
