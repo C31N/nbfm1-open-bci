@@ -9,6 +9,7 @@ import unittest
 
 from probe_block2_elastic_routes import _nearest_distance, repel_waypoints
 from probe_block2_clearance_cutset import spacing_scenarios
+from probe_block2_frontier_diagnostics import sampled_reachability
 
 ROOT = Path(__file__).resolve().parent
 ELASTIC = (ROOT / "probe_block2_elastic_routes.py").read_text()
@@ -73,6 +74,20 @@ class ElasticPathTests(unittest.TestCase):
             self.assertNotIn(forbidden,
                 (ROOT / "probe_block2_uuid_detours.py").read_text())
 
+    def test_failed_search_frontier_grid_diagnosis_only(self) -> None:
+        import numpy as np
+
+        xs = np.arange(0., 8., .22)
+        ys = np.arange(0., 8., .22)
+        blocked = np.zeros((len(ys), len(xs)), dtype=bool)
+        blocked[:, 18] = True
+        out = sampled_reachability(
+            xs, ys, blocked, (1., 1.), (7., 7.))
+        self.assertFalse(out["same_sampled_free_component"])
+        self.assertTrue(out["not_a_cutset_or_DRC_proof"])
+        self.assertGreater(out["visited_nodes"], 20)
+        self.assertGreater(len(out["frontier_points_mm"]), 0)
+
     def test_no_release_or_layer_relaxation(self) -> None:
         ast.parse(ELASTIC)
         for token in (
@@ -91,6 +106,8 @@ class ElasticPathTests(unittest.TestCase):
             "\"width_aware_fixed_copper\"",
             "native_fixed_copper_0.15mm_width_clearance",
             "fixed_copper_cutset_analysis",
+            "failed_topology_frontier",
+            "inspect_failed_frontier",
             "uuid_detours_enabled",
             "detour_reach = 7.2 if uuid_detours else 4.4",
             "hard_detours",

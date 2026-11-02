@@ -371,6 +371,25 @@ def rubber_band_routes(
         if path is None:
             diag["status"] = "zero_width_topology_unavailable"
             diag["blocked_target"] = net
+            if uuid_detours:
+                # On early exit the former cutset pass was never reached.
+                # Record the actual native UUIDs nearest the failed search
+                # front, without treating sampled reachability as DRC proof.
+                from probe_block2_frontier_diagnostics import (
+                    inspect_failed_frontier,
+                )
+                try:
+                    diag["failed_topology_frontier"] = inspect_failed_frontier(
+                        board, net, endpoints, reference, xs, ys,
+                        blocked, window, hard_detours)
+                except (RuntimeError, ValueError, OSError, KeyError,
+                        TypeError) as exc:
+                    diag["failed_topology_frontier"] = {
+                        "status": "read_only_frontier_probe_unavailable",
+                        "error_type": type(exc).__name__,
+                        "error": str(exc)[:250],
+                        "no_release": True,
+                    }
             emit("zero_width_topology_rejected_" + net)
             return None, diag, reference
         reference[net] = path
