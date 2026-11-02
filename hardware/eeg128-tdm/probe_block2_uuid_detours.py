@@ -29,7 +29,7 @@ def detour_geometry(board: Any) -> tuple[Any, dict[str, Any]]:
     to avoid the microscopically narrow pad gap. No live board mutation.
     """
     import pcbnew
-    from shapely.geometry import LineString, Point, box
+    from shapely.geometry import LineString, Point
     from shapely.ops import unary_union
     from route_targeted_closure import pad_copper_shape, xy
 
