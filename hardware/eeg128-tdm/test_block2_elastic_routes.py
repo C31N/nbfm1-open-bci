@@ -65,6 +65,10 @@ class ElasticPathTests(unittest.TestCase):
             "3af750bf-ef0a-495a-9e9c-4af1480ec59d"],
             ("CH038_P_MUX", "track"))
         self.assertIn("uuid_detours=True", BODY)
+        self.assertIn("detour_reach=7.2 if uuid_detours else 4.",
+                      (ROOT / "probe_block2_macro_voronoi.py").read_text())
+        self.assertIn("detour_reach = 7.2 if uuid_detours else 3.2",
+                      (ROOT / "probe_block2_cbs_fcu3.py").read_text())
         for forbidden in ("SaveBoard(", "make_via(", "ExportGerbers("):
             self.assertNotIn(forbidden,
                 (ROOT / "probe_block2_uuid_detours.py").read_text())
@@ -88,6 +92,7 @@ class ElasticPathTests(unittest.TestCase):
             "native_fixed_copper_0.15mm_width_clearance",
             "fixed_copper_cutset_analysis",
             "uuid_detours_enabled",
+            "detour_reach = 7.2 if uuid_detours else 4.4",
             "hard_detours",
             "inspect_cutset(",
             "tuple(reversed(order))",

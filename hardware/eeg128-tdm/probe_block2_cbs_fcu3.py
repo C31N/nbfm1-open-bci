@@ -64,13 +64,14 @@ def spatial_cbs_fcu3(
     all_ends = [xy for pair in endpoints for xy in pair]
     limits = board.GetBoardEdgesBoundingBox()
     margin = .56
-    x0 = max(min(x for x, _ in all_ends)-3.2,
+    detour_reach = 7.2 if uuid_detours else 3.2
+    x0 = max(min(x for x, _ in all_ends)-detour_reach,
              pcbnew.ToMM(limits.GetX())+margin)
-    x1 = min(max(x for x, _ in all_ends)+3.2,
+    x1 = min(max(x for x, _ in all_ends)+detour_reach,
              pcbnew.ToMM(limits.GetRight())-margin)
-    y0 = max(min(y for _, y in all_ends)-3.2,
+    y0 = max(min(y for _, y in all_ends)-detour_reach,
              pcbnew.ToMM(limits.GetY())+margin)
-    y1 = min(max(y for _, y in all_ends)+3.2,
+    y1 = min(max(y for _, y in all_ends)+detour_reach,
              pcbnew.ToMM(limits.GetBottom())-margin)
     xs = np.arange(x0, x1+step_mm/2, step_mm)
     ys = np.arange(y0, y1+step_mm/2, step_mm)
@@ -136,6 +137,7 @@ def spatial_cbs_fcu3(
         "CH038_return_preplaced":True, "qualified":False,
         "new_vias_added":0,
         "uuid_detours_enabled": uuid_detours,
+        "uuid_detour_reach_mm": detour_reach,
         "uuid_detour_diagnostic": detour_diagnostic,
         "expanded_cbs_nodes":0, "expanded_lowlevel_nodes":0,
         "resolved_conflicts":0,

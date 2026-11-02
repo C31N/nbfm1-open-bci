@@ -280,13 +280,14 @@ def rubber_band_routes(
         detour_geometry(board) if uuid_detours else (None, None))
     coords = [p for name in TARGETS for p in endpoints[name]]
     bbox = board.GetBoardEdgesBoundingBox()
-    x0 = max(min(p[0] for p in coords) - 4.4,
+    detour_reach = 7.2 if uuid_detours else 4.4
+    x0 = max(min(p[0] for p in coords) - detour_reach,
              pcbnew.ToMM(bbox.GetX()) + .25)
-    x1 = min(max(p[0] for p in coords) + 4.4,
+    x1 = min(max(p[0] for p in coords) + detour_reach,
              pcbnew.ToMM(bbox.GetRight()) - .25)
-    y0 = max(min(p[1] for p in coords) - 4.4,
+    y0 = max(min(p[1] for p in coords) - detour_reach,
              pcbnew.ToMM(bbox.GetY()) + .25)
-    y1 = min(max(p[1] for p in coords) + 4.4,
+    y1 = min(max(p[1] for p in coords) + detour_reach,
              pcbnew.ToMM(bbox.GetBottom()) - .25)
     xs = np.arange(x0, x1 + step_mm / 2, step_mm)
     ys = np.arange(y0, y1 + step_mm / 2, step_mm)
@@ -302,6 +303,7 @@ def rubber_band_routes(
         "spanning_tree_paths": {},
         "inflated_micro_hops": {},
         "uuid_detours_enabled": uuid_detours,
+        "uuid_detour_reach_mm": detour_reach,
         "uuid_detour_diagnostic": detour_diagnostic,
     }
     if (len(xs) < 3 or len(ys) < 3 or len(xs) * len(ys) > 180000):

@@ -114,10 +114,18 @@ def macro_routes(
     pts=[point for n in TARGETS for point in endpoints[n]]
     bounds=board.GetBoardEdgesBoundingBox()
     pad=.56
-    x0=max(min(x for x,_ in pts)-4,pcbnew.ToMM(bounds.GetX())+pad)
-    x1=min(max(x for x,_ in pts)+4,pcbnew.ToMM(bounds.GetRight())-pad)
-    y0=max(min(y for _,y in pts)-4,pcbnew.ToMM(bounds.GetY())+pad)
-    y1=min(max(y for _,y in pts)+4,pcbnew.ToMM(bounds.GetBottom())-pad)
+    # The UUID hard gap forbids the short U3 passage. A local 4-mm box
+    # otherwise falsely reports a topological cut where a long bypass
+    # outside that box is still geometrically possible.
+    detour_reach=7.2 if uuid_detours else 4.
+    x0=max(min(x for x,_ in pts)-detour_reach,
+           pcbnew.ToMM(bounds.GetX())+pad)
+    x1=min(max(x for x,_ in pts)+detour_reach,
+           pcbnew.ToMM(bounds.GetRight())-pad)
+    y0=max(min(y for _,y in pts)-detour_reach,
+           pcbnew.ToMM(bounds.GetY())+pad)
+    y1=min(max(y for _,y in pts)+detour_reach,
+           pcbnew.ToMM(bounds.GetBottom())-pad)
     xs=np.arange(x0,x1+step_mm/2,step_mm)
     ys=np.arange(y0,y1+step_mm/2,step_mm)
     if len(xs)<3 or len(ys)<3 or len(xs)*len(ys)>180000:
@@ -128,6 +136,7 @@ def macro_routes(
         "status":"macro_started","macro_grid":[len(xs),len(ys)],
         "macro_step_mm":step_mm,"micro_step_mm":micro_step_mm,
         "uuid_detours_enabled": uuid_detours,
+        "uuid_detour_reach_mm": detour_reach,
         "uuid_detour_diagnostic": detour_diagnostic,
         "component_counts_by_net":{},"medial_ridge_nodes_by_net":{},
         "macro_waypoints":{},"micro_segments_completed":{},
