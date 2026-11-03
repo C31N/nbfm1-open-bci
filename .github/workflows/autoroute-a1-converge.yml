@@ -280,4 +280,4 @@ jobs:
             /tmp/a1conv/CPL-A1.csv
             /tmp/a1conv/gerbers/
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30

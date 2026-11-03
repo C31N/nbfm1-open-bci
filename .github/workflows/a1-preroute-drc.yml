@@ -81,4 +81,4 @@ jobs:
             /tmp/a1-pre/drc.json
             /tmp/a1-pre/summary.json
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 3

@@ -188,4 +188,4 @@ jobs:
             /tmp/a1/route-metrics.json
             /tmp/a1/CPL-routed.csv
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 7

@@ -169,4 +169,4 @@ jobs:
             /tmp/a1fast/drc-round3.json
             /tmp/a1fast/progress.json
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 3

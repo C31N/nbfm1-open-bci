@@ -106,7 +106,7 @@ jobs:
             /tmp/a1/drc.json
             /tmp/a1/drc-exit.txt
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 3
 
       - name: Commit precheck report
         run: |

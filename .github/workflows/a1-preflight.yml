@@ -157,4 +157,4 @@ jobs:
             /tmp/a1-preflight/drc-exit.txt
             /tmp/a1-preflight/summary.json
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 3

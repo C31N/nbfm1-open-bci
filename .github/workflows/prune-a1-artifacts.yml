@@ -1,0 +1,117 @@
+name: Prune temporary A1 routing artifacts
+
+on:
+  schedule:
+    - cron: "23 3 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Preview eligible artifacts without deleting them"
+        type: boolean
+        default: true
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: a1-artifact-prune
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    if: github.repository == 'C31N/nbfm1-open-bci'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+    steps:
+      - name: Remove aged temporary artifacts (allowlist only)
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          """Delete only allowlisted, aged A1 GitHub Actions artifacts."""
+          import datetime as dt
+          import json
+          import os
+          import urllib.error
+          import urllib.request
+          
+          REPOSITORY = os.environ["GITHUB_REPOSITORY"]
+          if REPOSITORY != "C31N/nbfm1-open-bci":
+              raise SystemExit("Refusing to modify artifacts in an unexpected repository")
+          
+          TOKEN = os.environ["GH_TOKEN"]
+          DRY_RUN = os.environ.get("DRY_RUN", "true").lower() == "true"
+          KEEP_DAYS = {
+              "eeg128-a1-precheck": 3,
+              "eeg128-a1-preflight": 3,
+              "a1-preroute-drc": 3,
+              "eeg128-a1-fast-multipass": 3,
+              "eeg128-a1-autoroute": 7,
+          }
+          MAX_DELETIONS_PER_RUN = 50
+          HEADERS = {
+              "Authorization": f"Bearer {TOKEN}",
+              "Accept": "application/vnd.github+json",
+              "X-GitHub-Api-Version": "2022-11-28",
+              "User-Agent": "nbfm1-a1-artifact-retention",
+          }
+          API = f"https://api.github.com/repos/{REPOSITORY}/actions/artifacts"
+          NOW = dt.datetime.now(dt.timezone.utc)
+          
+          
+          def fetch_page(page):
+              request = urllib.request.Request(
+                  f"{API}?per_page=100&page={page}", headers=HEADERS
+              )
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  return json.load(response)["artifacts"]
+          
+          
+          artifacts = []
+          for page in range(1, 101):
+              batch = fetch_page(page)
+              artifacts.extend(batch)
+              if len(batch) < 100:
+                  break
+          else:
+              raise SystemExit("Artifact listing exceeded 100 pages; refusing partial cleanup")
+          
+          candidates = []
+          for artifact in artifacts:
+              days = KEEP_DAYS.get(artifact.get("name"))
+              if days is None or artifact.get("workflow_run") is None:
+                  continue
+              created = dt.datetime.fromisoformat(artifact["created_at"].replace("Z", "+00:00"))
+              if NOW - created >= dt.timedelta(days=days):
+                  candidates.append((created, artifact))
+          
+          candidates.sort(key=lambda pair: pair[0])
+          selected = candidates[:MAX_DELETIONS_PER_RUN]
+          print(
+              f"Scanned {len(artifacts)} artifacts; {len(candidates)} eligible; "
+              f"selected {len(selected)}; dry_run={DRY_RUN}"
+          )
+          
+          for _, artifact in selected:
+              artifact_id = artifact["id"]
+              name = artifact["name"]
+              if DRY_RUN:
+                  print(f"DRY RUN: would delete artifact {artifact_id} ({name})")
+                  continue
+              request = urllib.request.Request(
+                  f"{API}/{artifact_id}", headers=HEADERS, method="DELETE"
+              )
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      if response.status != 204:
+                          raise RuntimeError(f"Unexpected deletion HTTP {response.status}")
+              except urllib.error.HTTPError as error:
+                  if error.code == 404:
+                      print(f"Already removed artifact {artifact_id} ({name})")
+                      continue
+                  raise
+              print(f"Deleted artifact {artifact_id} ({name})")
+          PY
