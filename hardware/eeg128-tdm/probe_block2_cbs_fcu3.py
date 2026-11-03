@@ -165,6 +165,16 @@ def spatial_cbs_fcu3(
         "u4_conflict_radius_mm":1.65 if u4_roi is not None else None,
         "u4_first_conflict_priority":u4_roi is not None,
         "u4_corridor_splits":0,
+        "CBS3_spatial_limit_fallback_triggered":False,
+        "CBS3_spatial_limit_fallback_count":0,
+        "CBS3_spatial_limit_fallback_last_edges":None,
+        "CBS3_spatial_limit_fallback_limit":320,
+        "CBS3_both_children_unspawned_count":0,
+        "CBS3_last_conflict_both_children_unspawned":False,
+        "CBS3_lowlevel_outcomes":{"path_found":0,
+                                  "wall_budget_exhausted":0,
+                                  "node_budget_exhausted":0,
+                                  "frontier_exhausted":0},
         "u4_secondary_branches":0,
         "u4_disconnected_spatial_children":0,
         "u4_rescue_reroutes_succeeded":0,
@@ -209,6 +219,8 @@ def spatial_cbs_fcu3(
         expanded=0
         while q and expanded<max_lowlevel_nodes:
             if time.monotonic()-started >= seconds:
+                diag["CBS3_lowlevel_outcomes"]["wall_budget_exhausted"] += 1
+                diag["expanded_lowlevel_nodes"] += expanded
                 return None
             _,_,g,node=heapq.heappop(q)
             if g!=cost[node]:
@@ -221,6 +233,7 @@ def spatial_cbs_fcu3(
                     path.append(p)
                     p=parents[p]
                 diag["expanded_lowlevel_nodes"]+=expanded
+                diag["CBS3_lowlevel_outcomes"]["path_found"] += 1
                 return tuple(reversed(path))
             for dx,dy in moves:
                 nxt=(node[0]+dx,node[1]+dy)
@@ -243,6 +256,8 @@ def spatial_cbs_fcu3(
                     h=math.dist(physical(nxt),physical(last))
                     heapq.heappush(q,(g2+h,next(counter),g2,nxt))
         diag["expanded_lowlevel_nodes"]+=expanded
+        reason = "node_budget_exhausted" if q else "frontier_exhausted"
+        diag["CBS3_lowlevel_outcomes"][reason] += 1
         return None
 
     def path_segments(agent:int,path:GridPath) -> list[tuple[Any,GridEdge]]:
@@ -344,6 +359,7 @@ def spatial_cbs_fcu3(
             "net_index_pair":[i,j], "closest_clearance_mm":dist,
             "edge_a":ei, "edge_b":ej,
         }
+        spawned_agents = 0
         for agent,prohibited in ((i,ei),(j,ej)):
             # Each CBS disjunction forbids the original conflicting edge
             # for ONE agent. Spatial/strand options are exploratory
@@ -361,7 +377,8 @@ def spatial_cbs_fcu3(
                     path_segments(agent, paths[agent]), rival_line,
                     prohibited, clearance_threshold, max_edges=10)
                 spatial_strand = rasterized_conflict_region_edges(
-                    strand, xs, ys, padding_mm=.16, max_region_edges=320)
+                    strand, xs, ys, padding_mm=.16, max_region_edges=320,
+                    telemetry=diag)
                 options = adaptive_cbs_regions(
                     spatial_strand, strand, prohibited,
                     expanded=diag["expanded_cbs_nodes"], queued=len(q))
@@ -419,6 +436,14 @@ def spatial_cbs_fcu3(
                     if option_kind in diag["u4_secondary_by_type"]:
                         diag["u4_secondary_by_type"][option_kind] += 1
                     diag["u4_rescue_reroutes_succeeded"] += 1
+            if spawned_any:
+                spawned_agents += 1
+        # A bounded inability to spawn either CBS child is not a proof
+        # of geometric impossibility: A* may have reached its own limits.
+        both_unspawned = spawned_agents == 0
+        diag["CBS3_last_conflict_both_children_unspawned"] = both_unspawned
+        if both_unspawned:
+            diag["CBS3_both_children_unspawned_count"] += 1
         if progress and diag["expanded_cbs_nodes"]%10==0:
             progress("CBS3_conflict_tree_progress",{
                 "expanded_cbs_nodes":diag["expanded_cbs_nodes"],
@@ -427,6 +452,22 @@ def spatial_cbs_fcu3(
                 "last_conflict":diag["last_conflict"],
             })
     else:
-        diag["status"]="CBS3_conflict_tree_budget_exhausted"
+        if diag["CBS3_lowlevel_outcomes"]["wall_budget_exhausted"]:
+            diag["status"]="CBS3_wall_budget_exhausted"
+        elif q and diag["expanded_cbs_nodes"] >= max_cbs_nodes:
+            diag["status"]="CBS3_conflict_tree_budget_exhausted"
+        elif diag["CBS3_lowlevel_outcomes"]["node_budget_exhausted"]:
+            diag["status"]="CBS3_lowlevel_node_budget_limited"
+        else:
+            diag["status"]="CBS3_conflict_tree_bounded_dead_end"
+    diag["CBS3_exit_class"] = (
+        "budget" if diag["status"] in (
+            "CBS3_wall_budget_exhausted",
+            "CBS3_conflict_tree_budget_exhausted",
+            "CBS3_lowlevel_node_budget_limited")
+        else "bounded_dead_end")
+    diag["CBS3_spatial_fallback_observed_not_causal_proof"] = (
+        diag["CBS3_spatial_limit_fallback_triggered"])
+    diag["CBS3_geometry_unsatisfiable_proven"] = False
     diag.update(open_cbs_nodes=len(q),wall_s=round(time.monotonic()-started,3))
     return None,diag

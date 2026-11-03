@@ -110,6 +110,7 @@ def connected_conflict_corridor(
 def rasterized_conflict_region_edges(
     corridor: frozenset[Any], xs: Any, ys: Any,
     *, padding_mm: float = .16, max_region_edges: int = 320,
+    telemetry: dict[str, Any] | None = None,
 ) -> frozenset[Any]:
     """Prohibit ALL local graph edges crossing a bounded spatial corridor.
 
@@ -155,8 +156,15 @@ def rasterized_conflict_region_edges(
                 if LineString((point(a), point(b))).intersects(region):
                     result.add((a, b) if a <= b else (b, a))
                 if len(result) > max_region_edges:
-                    # Fail closed to the bounded original region instead of
-                    # introducing an unreviewed board-scale search blackout.
+                    # A planner-only fallback, never proof of infeasibility.
+                    # Preserve the event in the native JSON even if a later
+                    # CBS child finds another path.
+                    if telemetry is not None:
+                        telemetry["CBS3_spatial_limit_fallback_triggered"] = True
+                        telemetry["CBS3_spatial_limit_fallback_count"] = (
+                            telemetry.get("CBS3_spatial_limit_fallback_count", 0) + 1)
+                        telemetry["CBS3_spatial_limit_fallback_last_edges"] = len(result)
+                        telemetry["CBS3_spatial_limit_fallback_limit"] = max_region_edges
                     return corridor
     return frozenset(result)
 

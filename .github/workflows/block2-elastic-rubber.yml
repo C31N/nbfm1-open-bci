@@ -81,6 +81,16 @@ jobs:
                       'independent_replay_verified', 'schematic_parity_qualified'):
               assert d[key] is False and w[key] is False, key
           assert d['new_vias_added'] == w['new_vias_added'] == 0
+          if 'rubber_guided_CBS3_diagnostic' in w:
+              c = w['rubber_guided_CBS3_diagnostic']
+              for key in ('CBS3_spatial_limit_fallback_triggered',
+                          'CBS3_spatial_limit_fallback_count',
+                          'CBS3_lowlevel_outcomes',
+                          'CBS3_both_children_unspawned_count'):
+                  assert key in c, key
+              assert c['CBS3_spatial_limit_fallback_triggered'] is (
+                  c['CBS3_spatial_limit_fallback_count'] > 0)
+              assert c['CBS3_spatial_limit_fallback_count'] >= 0
           if d['candidate_qualified_136']:
               assert d['candidate_native_DRC'] == {
                   'violations': 0, 'warnings': 0, 'unconnected': 136}

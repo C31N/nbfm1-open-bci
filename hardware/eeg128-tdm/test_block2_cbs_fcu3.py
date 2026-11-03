@@ -156,6 +156,40 @@ class CBS3Tests(unittest.TestCase):
             self.assertNotIn(forbidden,
                 (ROOT / "probe_block2_u4_corridors.py").read_text())
 
+    def test_spatial_limit_fallback_and_exit_semantics(self) -> None:
+        from probe_block2_u4_corridors import rasterized_conflict_region_edges
+        import numpy as np
+        xs = np.arange(0., 4., .3)
+        ys = np.arange(0., 4., .3)
+        corridor = frozenset(
+            ((4 + i, 4), (5 + i, 4)) for i in range(4))
+        record: dict[str, object] = {}
+        fallback = rasterized_conflict_region_edges(
+            corridor, xs, ys, max_region_edges=30, telemetry=record)
+        self.assertEqual(fallback, corridor)
+        self.assertIs(record["CBS3_spatial_limit_fallback_triggered"], True)
+        self.assertEqual(record["CBS3_spatial_limit_fallback_count"], 1)
+        self.assertGreater(record["CBS3_spatial_limit_fallback_last_edges"], 30)
+        self.assertEqual(record["CBS3_spatial_limit_fallback_limit"], 30)
+
+        no_fallback: dict[str, object] = {}
+        expanded = rasterized_conflict_region_edges(
+            corridor, xs, ys, max_region_edges=320,
+            telemetry=no_fallback)
+        self.assertGreater(len(expanded), len(corridor))
+        self.assertNotIn("CBS3_spatial_limit_fallback_triggered", no_fallback)
+
+        for token in (
+            '"CBS3_lowlevel_outcomes"',
+            '"CBS3_both_children_unspawned_count"',
+            '"CBS3_last_conflict_both_children_unspawned"',
+            '"CBS3_conflict_tree_bounded_dead_end"',
+            '"CBS3_lowlevel_node_budget_limited"',
+            '"CBS3_geometry_unsatisfiable_proven"',
+            'telemetry=diag',
+        ):
+            self.assertIn(token, CBS)
+
     def test_nbody_runs_cbs_before_restitution(self) -> None:
         for term in (
             '"cbs_three_enabled": cbs_three',
