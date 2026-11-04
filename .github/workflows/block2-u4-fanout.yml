@@ -10,6 +10,7 @@ on:
       - "hardware/eeg128-tdm/probe_block2_cbs_fcu3.py"
       - "hardware/eeg128-tdm/probe_block2_nbody_201.py"
       - "hardware/eeg128-tdm/test_block2_cbs_fcu3.py"
+      - "hardware/eeg128-tdm/test_block2_nbody_201.py"
 permissions:
   contents: read
 jobs:

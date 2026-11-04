@@ -43,7 +43,7 @@ f3596e5c87beda4cc7ffb24bc7fe50749943fb7d4fe0cdea9ce6a9182b7657c3  .github/workfl
 023f7a07a7f196793fae6d2d77ceae5d14a8d71baa67d3a8904dd899d75e021e  .github/workflows/block2-s1s2s3-process-isolated.yml
 4ff0f6115ca1358b3073b1c4e147e619b40420cd8ab9456c66a52d3743a39f1d  .github/workflows/block2-s1s2s3-soft-isolated.yml
 27716b54dca20c6c39ad38b8497e25feea985bb56191b4820c5df1242fac11bd  .github/workflows/block2-selective-trunks.yml
-60462229f865ec62eb841a77154f7dc2311d272ccbc262ed416c5fe2b0e1d801  .github/workflows/block2-u4-fanout.yml
+e44d658a352aa353040eb7be1b7e058db779167197a172f1e3a201b5e995edde  .github/workflows/block2-u4-fanout.yml
 1b33d4c71eabe0553f234a56a1ac3975f686c669c1f964a4481aba3a274dedf4  .github/workflows/ch017-ch022-local-restitution.yml
 63e3177deec640a53b029a4b041244cd287e2bd14ca437fdaf6c764a1aa4f3d1  .github/workflows/ch019-bcu-obstacle-inventory.yml
 5d17fc820a8e03df46ae11b5b4e1653285f69ee38b86660f6c0b79e8dfa759bc  .github/workflows/ch019-ch022-pad-restitution.yml
