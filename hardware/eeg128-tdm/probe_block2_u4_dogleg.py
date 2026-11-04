@@ -23,7 +23,8 @@ U3_PAD7_UUID = "e37256fc-3b9f-435d-8042-f7d4c1147aca"
 def build_u4_lateral_dogleg(
     ports: tuple[Point, ...], endpoints: Endpoints,
     obstacle_bounds: tuple[float, float, float, float],
-    *, side: int, lateral_mm: float, escape_mm: float,
+    *, side: int, lateral_mm: float,
+    escape_mm: float | tuple[float,float,float],
     dogleg_run_mm: float, taper_mm: float = 1.8,
     parallel_mm: float = 1.5, pitch_mm: float = .300,
 ) -> tuple[Wires, tuple[int, ...], Point, dict[str, Any]]:
@@ -35,10 +36,13 @@ def build_u4_lateral_dogleg(
     """
     from shapely.geometry import LineString, box
 
+    escapes = ((escape_mm,)*3 if isinstance(escape_mm,(int,float))
+               else tuple(escape_mm))
     if (len(ports) != 3 or len(endpoints) != 3
             or len(set(ports)) != 3
             or side not in (-1, 1)
-            or not .15 <= escape_mm <= 2.20
+            or len(escapes)!=3
+            or not all(.15 <= e <= 2.20 and math.isfinite(e) for e in escapes)
             or not .45 <= dogleg_run_mm <= 6.0
             or not 1.0 <= taper_mm <= 3.5
             or not 1.5 <= parallel_mm <= 2.5
@@ -84,7 +88,7 @@ def build_u4_lateral_dogleg(
                       obstacle_bounds[normal_axis+2])
     obstacle_far = max(sign*(v-center[normal_axis])
                        for v in normal_corners)
-    bypass = max(escape_mm+dogleg_run_mm+.30, obstacle_far+.50)
+    bypass = max(max(escapes)+dogleg_run_mm+.30, obstacle_far+.50)
     bundle_start = bypass+taper_mm
     tip_displacement = bundle_start+parallel_mm
     if any(sign*(p[normal_axis]-ports[i][normal_axis])
@@ -95,7 +99,7 @@ def build_u4_lateral_dogleg(
     for r,i in enumerate(rank):
         p = list(ports[i])
         isolated = list(p)
-        isolated[normal_axis] += sign*escape_mm
+        isolated[normal_axis] += sign*escapes[i]
         elbow = list(isolated)
         elbow[tangent] += lateral_mm
         elbow[normal_axis] += sign*dogleg_run_mm
@@ -133,7 +137,9 @@ def build_u4_lateral_dogleg(
         "pad_side":sides, "pad_rank":rank,
         "dogleg_side":side,
         "lateral_shift_mm":lateral_mm,
-        "escape_length_mm":escape_mm,
+        "escape_length_mm":max(escapes),
+        "escape_lengths_mm":escapes,
+        "staggered_isolated_escapes":len(set(escapes))>1,
         "dogleg_run_mm":dogleg_run_mm,
         "obstacle_far_mm":obstacle_far,
         "bypass_normal_mm":bypass,
@@ -203,11 +209,29 @@ def native_u4_lateral_preflight(
     rejected=[]
     reject_counts: dict[str,int]={}
     side_samples: dict[int,list[dict[str,Any]]]={-1:[],1:[]}
+    rank=sorted(range(3), key=lambda i:ports[i][tangent])
+    def agent_profile(sorted_values: tuple[float,float,float]
+                      ) -> tuple[float,float,float]:
+        values=[0.,0.,0.]
+        for j,agent in enumerate(rank):
+            values[agent]=sorted_values[j]
+        return tuple(values)
+
     for side,shift0 in ((-1,shifts[0]),(1,shifts[1])):
         for extra in (0.,.55,1.3,2.2):
             lateral=shift0+side*extra
-            for escape in (.18,.65,1.10,1.40,1.70,2.00,2.20):
-                for factor in (.36,.65):
+            uniform=(.18,.65,1.10,1.40,1.70,2.00,2.20)
+            staggered_sorted = (
+                ((1.40,.65,.65),(1.70,.65,.65),
+                 (1.70,1.10,.65),(1.70,1.70,.65))
+                if side==1 else
+                ((.65,.65,1.40),(.65,.65,1.70),
+                 (.65,1.10,1.70),(.65,1.70,1.70)))
+            escapes_to_try=(
+                uniform + tuple(agent_profile(v) for v in staggered_sorted))
+            for escape in escapes_to_try:
+                factors=(.36,) if isinstance(escape,tuple) else (.36,.65)
+                for factor in factors:
                     dogleg_run=max(.45,abs(lateral)*factor)
                     try:
                         proposal=build_u4_lateral_dogleg(
@@ -271,6 +295,8 @@ def native_u4_lateral_preflight(
                     "side":side,
                     "shift":round(diag["lateral_shift_mm"],4),
                     "escape":diag["escape_length_mm"],
+                    "escape_profile":diag["escape_lengths_mm"],
+                    "staggered":diag["staggered_isolated_escapes"],
                     "stage":reason,
                     "agent":i if reason!="board_edge" else None,
                     "blocked_by":blockers[:2]})

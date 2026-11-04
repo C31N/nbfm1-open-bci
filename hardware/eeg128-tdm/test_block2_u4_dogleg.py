@@ -76,6 +76,30 @@ class U4LateralDoglegTests(unittest.TestCase):
                 side=-1,lateral_mm=-3.2,escape_mm=2.30,
                 dogleg_run_mm=1.20)
 
+    def test_staggered_pin_17_escape_preserves_pad_order(self) -> None:
+        wires,sides,normal,diagnostic=build_u4_lateral_dogleg(
+            self.ports,self.endpoints,self.u3_bounds,
+            side=1,lateral_mm=3.2,
+            escape_mm=(.65,1.70,.65),dogleg_run_mm=1.2)
+        # Input order is pin 19, 17, 18: only pin 17 is extended.
+        self.assertEqual(sides,(1,1,1))
+        self.assertEqual(normal,(0.,-1.))
+        self.assertTrue(diagnostic["staggered_isolated_escapes"])
+        self.assertEqual(tuple(diagnostic["escape_lengths_mm"]),
+                         (.65,1.70,.65))
+        for i,wire in enumerate(wires):
+            self.assertAlmostEqual(
+                math.dist(wire[0],wire[1]),
+                diagnostic["escape_lengths_mm"][i],places=8)
+            self.assertGreaterEqual(
+                LineString(wire).distance(box(*self.u3_bounds)),
+                .225-1e-8)
+        self.assertGreaterEqual(
+            min(LineString(wires[i]).distance(LineString(wires[j]))
+                for i in range(3) for j in range(i+1,3)),.300-1e-8)
+        self.assertEqual(diagnostic["tip_pitch_mm"],.300)
+        self.assertEqual(diagnostic["parallel_length_mm"],1.5)
+
     def test_bad_candidate_is_rejected_without_board_changes(self) -> None:
         kwargs=dict(side=-1,lateral_mm=-3.2,escape_mm=.25,
                     dogleg_run_mm=1.2)
