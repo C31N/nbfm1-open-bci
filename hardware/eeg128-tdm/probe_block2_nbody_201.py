@@ -59,7 +59,8 @@ def route_child(board_path: Path, baseline: Path, output: Path,
                 cbs_split_mode: str = "single-edge",
                 cbs_grid_mm: float = .30,
                 macro_three: bool = False,
-                elastic_three: bool = False) -> dict:
+                elastic_three: bool = False,
+                u4_fanout: bool = False) -> dict:
     import pcbnew
     from shapely.geometry import LineString, box
     from shapely.ops import unary_union
@@ -88,6 +89,8 @@ def route_child(board_path: Path, baseline: Path, output: Path,
         raise ValueError("Unreviewed coupled MAPF3 weight")
     if sum((bool(joint_three), bool(cbs_three), bool(macro_three))) > 1:
         raise ValueError("Select exactly one coupled strategy")
+    if u4_fanout and not (elastic_three or cbs_three):
+        raise ValueError("U4 fanout only applies to CBS3 or Elastic")
     if elastic_three and any((joint_three, cbs_three, macro_three)):
         raise ValueError("Elastic three-net strategy must be exclusive")
     if cbs_selection not in ("length", "conflict-volume"):
@@ -141,6 +144,7 @@ def route_child(board_path: Path, baseline: Path, output: Path,
         "cbs_grid_mm": cbs_grid_mm,
         "macro_three_enabled": macro_three,
         "elastic_three_enabled": elastic_three,
+        "u4_deterministic_fanout_enabled": u4_fanout,
         "joint_weight": joint_weight,
         "baseline_DRC": {"violations": 0, "warnings": 0, "unconnected": 139},
         "cut_whitelist_UUIDs": sorted(removed),
@@ -328,7 +332,7 @@ def route_child(board_path: Path, baseline: Path, output: Path,
         elastic_diagnostic = {}
         # .30 mm was strictly more productive than .44 mm in native #4.
         # Preserve the saved time for alternative corridor topologies.
-        for coarse_step in (.30,):
+        for coarse_step in (() if u4_fanout else (.30,)):
             board = pcbnew.LoadBoard(str(trial_board))
             if board is None:
                 raise RuntimeError("Cannot reload elastic scratch PCB")
@@ -372,9 +376,10 @@ def route_child(board_path: Path, baseline: Path, output: Path,
             record["rubber_band_diagnostic"] = rubber_diag
             record["zero_width_reference_nets"] = sorted(references)
             persist("zero_width_topology_and_inflation_checked")
-            if rubber_diag.get("status") == "rubber_inflated_three_unverified":
+            if (rubber_diag.get("status") == "rubber_inflated_three_unverified"
+                    and not u4_fanout):
                 record["elastic_selected_strategy"] = "rubber_inflation"
-            elif references:
+            elif references or u4_fanout:
                 # A missing third rubber path often indicates competition
                 # with earlier soft routes rather than a fixed copper cut.
                 # Let CBS3 reroute ALL agents jointly, without hardening
@@ -392,7 +397,8 @@ def route_child(board_path: Path, baseline: Path, output: Path,
                     selection="conflict-volume",
                     split_mode="u4-corridor",
                     reference_paths=tuple(references.get(net) for net in order),
-                    progress=elastic_progress, uuid_detours=True)
+                    progress=elastic_progress, uuid_detours=True,
+                    u4_fanout=u4_fanout)
                 record["rubber_guided_CBS3_diagnostic"] = cbs_diag
                 record["repulsion_guidance"] = True
                 record["partial_rubber_reference_nets"] = sorted(references)
@@ -401,6 +407,20 @@ def route_child(board_path: Path, baseline: Path, output: Path,
                     record["status"] = "rubber_guided_CBS3_bounded_no_solution"
                     persist("elastic_no_release")
                     return record
+                if u4_fanout:
+                    from probe_block2_u4_corridors import validate_fcu_three_paths
+                    try:
+                        record["u4_fanout_triplet_preflight"] = (
+                            validate_fcu_three_paths(
+                                board,
+                                tuple(board.FindNet(net).GetNetCode()
+                                      for net in order),routes))
+                    except RuntimeError as exc:
+                        record["status"]="U4_fanout_triplet_preflight_rejected"
+                        record["u4_fanout_preflight_error"]=str(exc)[:900]
+                        persist("U4_fanout_preflight_no_release")
+                        return record
+                    persist("U4_fanout_triplet_preflight_success")
                 for net, path in zip(order, routes):
                     if len(path) < 2 or any(p[0] != 0 for p in path):
                         raise RuntimeError("CBS3 proposed non-FCu or via")
@@ -461,8 +481,10 @@ def route_child(board_path: Path, baseline: Path, output: Path,
             board, endpoints3, netcodes3,
             max_cbs_nodes=1000, max_lowlevel_nodes=18000,
             seconds=105, selection=cbs_selection,
-            split_mode=cbs_split_mode, step_mm=cbs_grid_mm,
-            progress=update_conflict)
+            split_mode="u4-corridor" if u4_fanout else cbs_split_mode,
+            step_mm=cbs_grid_mm,
+            progress=update_conflict,uuid_detours=u4_fanout,
+            u4_fanout=u4_fanout)
         record["cbs_three_diagnostic"] = diagnostic
         persist("CBS3_solver_returned")
         if routes is None:
@@ -471,6 +493,17 @@ def route_child(board_path: Path, baseline: Path, output: Path,
             return record
         if len(routes) != 3:
             raise RuntimeError("CBS3 must return exactly three target paths")
+        if u4_fanout:
+            from probe_block2_u4_corridors import validate_fcu_three_paths
+            try:
+                record["u4_fanout_triplet_preflight"] = (
+                    validate_fcu_three_paths(board,netcodes3,routes))
+            except RuntimeError as exc:
+                record["status"]="U4_fanout_triplet_preflight_rejected"
+                record["u4_fanout_preflight_error"]=str(exc)[:900]
+                persist("U4_fanout_preflight_no_release")
+                return record
+            persist("U4_fanout_triplet_preflight_success")
         for net, code, path in zip(order, netcodes3, routes):
             if len(path) < 2 or any(point[0] != 0 for point in path):
                 raise RuntimeError("CBS3 target escaped FCu / via")
@@ -615,7 +648,8 @@ def run(archive: Path, output: Path, order_id: int,
         cbs_split_mode: str = "single-edge",
         cbs_grid_mm: float = .30,
         macro_three: bool = False,
-        elastic_three: bool = False) -> dict:
+        elastic_three: bool = False,
+                u4_fanout: bool = False) -> dict:
     from probe_block2_isolated_s1s2 import pinned_source_copy
     from probe_block2_ch038_restitution import isolated_drc
     if not 0.0 <= future_lane_penalty <= 500.0:
@@ -624,6 +658,8 @@ def run(archive: Path, output: Path, order_id: int,
         raise ValueError("Unreviewed N-body joint heuristic weight")
     if sum((bool(joint_three), bool(cbs_three), bool(macro_three))) > 1:
         raise ValueError("Choose only one coupled solver")
+    if u4_fanout and not (elastic_three or cbs_three):
+        raise ValueError("U4 fanout only applies to CBS3 or Elastic")
     if elastic_three and any((joint_three, cbs_three, macro_three)):
         raise ValueError("Elastic three-net strategy must be exclusive")
     if cbs_selection not in ("length", "conflict-volume"):
@@ -642,6 +678,7 @@ def run(archive: Path, output: Path, order_id: int,
               "cbs_grid_mm": cbs_grid_mm,
               "macro_three_enabled": macro_three,
         "elastic_three_enabled": elastic_three,
+        "u4_deterministic_fanout_enabled": u4_fanout,
               "joint_weight": joint_weight,
               "order": ORDERS[order_id], "source_unchanged": False,
               "candidate_native_DRC": None,
@@ -669,6 +706,7 @@ def run(archive: Path, output: Path, order_id: int,
              *(["--cbs-three"] if cbs_three else []),
              *(["--macro-three"] if macro_three else []),
              *(["--elastic-three"] if elastic_three else []),
+             *(["--u4-fanout"] if u4_fanout else []),
              "--cbs-selection", cbs_selection,
              "--cbs-split-mode", cbs_split_mode,
              "--cbs-grid-mm", str(cbs_grid_mm),
@@ -728,6 +766,7 @@ def main() -> None:
     p.add_argument("--cbs-three", action="store_true")
     p.add_argument("--macro-three", action="store_true")
     p.add_argument("--elastic-three", action="store_true")
+    p.add_argument("--u4-fanout", action="store_true")
     p.add_argument("--cbs-selection", choices=("length", "conflict-volume"),
                    default="length")
     p.add_argument("--cbs-split-mode", choices=("single-edge", "corridor-bundle"),
@@ -748,7 +787,8 @@ def main() -> None:
                              cbs_split_mode=a.cbs_split_mode,
                              cbs_grid_mm=a.cbs_grid_mm,
                              macro_three=a.macro_three,
-                     elastic_three=a.elastic_three)
+                     elastic_three=a.elastic_three,
+                     u4_fanout=a.u4_fanout)
     else:
         if not a.candidate or a.board or a.baseline:
             raise ValueError("Parent expects only --candidate")
@@ -761,7 +801,8 @@ def main() -> None:
                      cbs_split_mode=a.cbs_split_mode,
                      cbs_grid_mm=a.cbs_grid_mm,
                      macro_three=a.macro_three,
-                     elastic_three=a.elastic_three)
+                     elastic_three=a.elastic_three,
+                     u4_fanout=a.u4_fanout)
     print(json.dumps({"status": report["status"],
                       "accepted": False, "fabrication_release": False}))
 

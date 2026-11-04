@@ -196,3 +196,147 @@ def adaptive_cbs_regions(
         if all(keys != single for _, keys in options):
             options.append(("single-edge-rescue", single))
     return tuple(options)
+
+
+def deterministic_u4_fanout_geometry(ports, endpoints, *, lead_mm=1.5,
+                                    parallel_mm=1.5, pitch_mm=.300):
+    """Generate pad/knee/tip wires with a straight 1.5-mm parallel section.
+
+    No board changes; physical copper must pass native obstacle and DRC gates.
+    """
+    import math
+    from shapely.geometry import LineString
+    if (len(ports) != 3 or len(endpoints) != 3
+            or not 1.5 <= lead_mm <= 3.5
+            or not 1.5 <= parallel_mm <= 2.5 or pitch_mm != .300):
+        raise RuntimeError("Unreviewed U4 fanout geometry")
+    spans = [max(p[a] for p in ports)-min(p[a] for p in ports)
+             for a in (0, 1)]
+    tangent = 0 if spans[0] >= spans[1] else 1
+    normal_axis = 1-tangent
+    if spans[tangent] < .600 or spans[normal_axis] > .065:
+        raise RuntimeError("U4 pads not on a common straight pitch row")
+    rank = sorted(range(3), key=lambda i: ports[i][tangent])
+    if any(ports[b][tangent]-ports[a][tangent] < .300-1e-9
+           for a,b in zip(rank,rank[1:])):
+        raise RuntimeError("U4 native pad pitch too narrow")
+    sides, others = [], []
+    for i,port in enumerate(ports):
+        gaps = [math.dist(port,p) for p in endpoints[i]]
+        side = 0 if gaps[0] <= gaps[1] else 1
+        if gaps[side] > 1.2:
+            raise RuntimeError("Target end is not at verified U4 pad")
+        sides.append(side)
+        others.append(endpoints[i][1-side])
+    center = [sum(p[a] for p in ports)/3 for a in (0,1)]
+    sign = (1. if sum(p[normal_axis]-ports[i][normal_axis]
+                      for i,p in enumerate(others))>0 else -1.)
+    if any(sign*(other[normal_axis]-ports[i][normal_axis])
+           <= lead_mm + parallel_mm + .3 for i,other in enumerate(others)):
+        raise RuntimeError("No common outward U4 fanout direction")
+    wires = [None, None, None]
+    for j,i in enumerate(rank):
+        knee = list(center)
+        knee[tangent] += (j-1)*pitch_mm
+        knee[normal_axis] += sign*lead_mm
+        tip = list(knee)
+        tip[normal_axis] += sign*parallel_mm
+        wires[i] = (ports[i],tuple(knee),tuple(tip))
+    for a,b in zip(rank,rank[1:]):
+        if abs(math.dist(wires[a][-1],wires[b][-1])-.300)>1e-8:
+            raise RuntimeError("Parallel fanout pitch drift")
+    clearance = min(LineString(wires[i]).distance(LineString(wires[j]))
+                    for i in range(3) for j in range(i+1,3))
+    if clearance < .300-1e-8:
+        raise RuntimeError("Fanout tracks violate 0.300-mm pitch")
+    normal = (sign,0.) if normal_axis==0 else (0.,sign)
+    return tuple(wires),tuple(sides),normal,{
+        "status":"u4_fanout_planned_not_DRC_qualified",
+        "fanout_paths_mm":wires, "pad_side":sides,
+        "tip_pitch_mm":.300, "minimum_centerline_mm":clearance,
+        "parallel_length_mm":parallel_mm, "transition_mm":lead_mm,
+        "no_new_vias":True, "native_DRC_still_required":True,
+    }
+
+
+def native_u4_fanout_preflight(board, ports, nets, endpoints):
+    """Select the first legal deterministic native F.Cu fanout, or reject."""
+    import pcbnew
+    from shapely.geometry import LineString,box
+    from route_targeted_closure import obstacles,xy
+    if len(nets)!=3 or len(set(nets))!=3:
+        raise RuntimeError("U4 needs three distinct target nets")
+    protected = [
+        t for t in board.GetTracks()
+        if any(t.m_Uuid.AsString().startswith(p) for p in CH027_PINS)]
+    if (len(protected)!=2 or any(
+        t.GetNetname()!="CH027_N_MUX"
+        or t.GetLayer()!=pcbnew.F_Cu
+        or isinstance(t,pcbnew.PCB_VIA) for t in protected)):
+        raise RuntimeError("U4 protected CH027 native tracks changed")
+    bounds=board.GetBoardEdgesBoundingBox()
+    low=(pcbnew.ToMM(bounds.GetX())+.56,
+         pcbnew.ToMM(bounds.GetY())+.56)
+    high=(pcbnew.ToMM(bounds.GetRight())-.56,
+          pcbnew.ToMM(bounds.GetBottom())-.56)
+    failed=[]
+    for lead_mm in (1.5,2.,2.5,3.):
+        try:
+            wires,sides,normal,diag=deterministic_u4_fanout_geometry(
+                ports,endpoints,lead_mm=lead_mm)
+            if any(not (low[0] <= x <= high[0] and
+                        low[1] <= y <= high[1])
+                   for wire in wires for x,y in wire):
+                raise RuntimeError("Fanout outside protected board border")
+            pts=[p for wire in wires for p in wire]
+            region=box(min(p[0] for p in pts)-1.,
+                       min(p[1] for p in pts)-1.,
+                       max(p[0] for p in pts)+1.,
+                       max(p[1] for p in pts)+1.)
+            for i,wire in enumerate(wires):
+                line=LineString(wire)
+                for track in protected:
+                    d=line.distance(LineString((
+                        xy(track.GetStart()),xy(track.GetEnd()))))
+                    min_d=(.15+pcbnew.ToMM(track.GetWidth()))/2+.15
+                    if d < min_d-1e-8:
+                        raise RuntimeError("CH027 protected copper clearance")
+                shape,_=obstacles(board,nets[i],.15,.15,region,.65,
+                                  (pcbnew.F_Cu,pcbnew.B_Cu))
+                if line.relate_pattern(shape[0].buffer(-1e-9),"T********"):
+                    raise RuntimeError("U4 fanout crosses fixed native copper")
+            diag["CH027_protected_UUIDs"]=[
+                t.m_Uuid.AsString() for t in protected]
+            diag["native_obstacle_preflight_passed"]=True
+            return wires,sides,normal,diag
+        except RuntimeError as exc:
+            failed.append({"lead_mm":lead_mm,"reason":str(exc)[:150]})
+    raise RuntimeError("No legal deterministic fanout: "+str(failed)[:700])
+
+
+def validate_fcu_three_paths(board, nets, routes):
+    """No-restoration geometric gate; KiCad after full restitution is final."""
+    import pcbnew
+    from shapely.geometry import LineString,box
+    from route_targeted_closure import obstacles
+    if len(routes)!=3 or len(set(nets))!=3:
+        raise RuntimeError("Complete three-net fanout required")
+    if any(len(route)<2 or any(p[0]!=0 for p in route)
+           for route in routes):
+        raise RuntimeError("Non F.Cu point / via in target bundle")
+    lines=[LineString([(x,y) for _,x,y in route]) for route in routes]
+    gap=min(lines[i].distance(lines[j])
+            for i in range(3) for j in range(i+1,3))
+    if gap < .300-1e-8:
+        raise RuntimeError("Triplet lines violate 0.300-mm clearance")
+    for i,line in enumerate(lines):
+        x0,y0,x1,y1=line.bounds
+        shape,_=obstacles(board,nets[i],.15,.15,
+                          box(x0-1.,y0-1.,x1+1.,y1+1.),.65,
+                          (pcbnew.F_Cu,pcbnew.B_Cu))
+        if line.relate_pattern(shape[0].buffer(-1e-9),"T********"):
+            raise RuntimeError("Triplet crosses fixed native copper")
+    return {"status":"three_FCu_paths_geometrically_preflighted_only",
+            "minimum_centerline_mm":gap,
+            "all_201_whitelist_victims_still_required":True,
+            "native_DRC_still_required":True}

@@ -1,0 +1,105 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+name: Native Block2 deterministic U4 fanout no-release
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/u4-deterministic-fanout-2026-11-04]
+    paths:
+      - ".github/workflows/block2-u4-fanout.yml"
+      - "hardware/eeg128-tdm/probe_block2_u4_corridors.py"
+      - "hardware/eeg128-tdm/probe_block2_cbs_fcu3.py"
+      - "hardware/eeg128-tdm/probe_block2_nbody_201.py"
+      - "hardware/eeg128-tdm/test_block2_cbs_fcu3.py"
+permissions:
+  contents: read
+jobs:
+  no-release-fanout:
+    strategy:
+      fail-fast: false
+      matrix:
+        order: [0, 2, 5]
+        method: [cbs, elastic]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 31
+    container:
+      image: kicad/kicad@sha256:5716d82aa247abdbe512650eb4e8fce5a4031cbbef0a2c8df83208a69fef87b2
+      options: --user 0:0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pinned KiCad 8.0.9 and native geometry
+        run: |
+          set -eu
+          test "$(kicad-cli version)" = "8.0.9"
+          apt-get -o Acquire::Retries=3 update
+          DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 install -y --no-install-recommends python3-shapely python3-pip python3-numpy
+          /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
+      - name: U4 fanout unit tests, syntax and no-release contracts
+        run: |
+          /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_u4_corridors.py hardware/eeg128-tdm/probe_block2_cbs_fcu3.py hardware/eeg128-tdm/probe_block2_nbody_201.py
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_cbs_fcu3.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_nbody_201.py -v
+      - name: Reproduce protected 139 source
+        timeout-minutes: 8
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_mux_en_multihop_route.py \
+            --archive hardware/eeg128-tdm/engineering/block2-ch019-electrode-closed139.zip \
+            --output /tmp/u4-fanout-source139.json \
+            --candidate-output /tmp/u4-fanout-source139.zip
+      - name: Native deterministic U4 breakout and bounded restitution
+        timeout-minutes: 21
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_block2_nbody_201.py \
+            --candidate /tmp/u4-fanout-source139.zip \
+            --order ${{ matrix.order }} \
+            --${{ matrix.method }}-three \
+            --u4-fanout \
+            --output /tmp/u4-fanout-${{ matrix.method }}-${{ matrix.order }}.json
+      - name: Fail closed and require exact 201 UUID inventory
+        run: |
+          ORDER=${{ matrix.order }} METHOD=${{ matrix.method }} /usr/bin/python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          d=json.loads(Path('/tmp/u4-fanout-'+os.environ['METHOD']+'-'+os.environ['ORDER']+'.json').read_text())
+          w=d['child_diagnostic']
+          assert d['source_unchanged']
+          assert d['child_exit_code']==0, d.get('child_stderr_tail')
+          assert w and w['u4_deterministic_fanout_enabled'] is True
+          assert w['original_victim_count']==201
+          assert len(w['cut_whitelist_UUIDs'])==201
+          assert len(w['CH038_cut_UUIDs'])==2
+          assert not set(w['cut_whitelist_UUIDs']).intersection(w['CH038_cut_UUIDs'])
+          assert d['new_vias_added']==w['new_vias_added']==0
+          for k in ('accepted','routing_completed','fabrication_release',
+                    'manufacturing_files','checkpoint_promoted',
+                    'schematic_parity_qualified','independent_replay_verified'):
+              assert d[k] is False and w[k] is False, k
+          f=w.get('rubber_guided_CBS3_diagnostic') or w.get('cbs_three_diagnostic')
+          if f is not None:
+              assert f.get('u4_deterministic_fanout_enabled') is True
+              g=f.get('u4_deterministic_fanout_diagnostic')
+              if g:
+                  assert g['tip_pitch_mm']==0.300
+                  assert g['parallel_length_mm']>=1.5
+                  assert g['native_obstacle_preflight_passed'] is True
+                  assert len(g['CH027_protected_UUIDs'])==2
+          assert not set(w['victims_restored_original_geometry']).intersection(
+              w['victims_routed_new_geometry'])
+          if d['candidate_qualified_136']:
+              assert d['candidate_native_DRC']=={
+                  'violations':0,'warnings':0,'unconnected':136}
+              assert w['fully_restituted'] is True
+              assert len(w['victims_restored_original_geometry'])+len(
+                  w['victims_routed_new_geometry'])==201
+          assert not list(Path('/tmp').rglob('*.gbr'))
+          assert not list(Path('/tmp').rglob('*.drl'))
+          PY
+      - name: Upload short-lived JSON only, never fabrication files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Block2-U4-Fanout-${{ matrix.method }}-${{ matrix.order }}
+          path: |
+            /tmp/u4-fanout-${{ matrix.method }}-${{ matrix.order }}.json
+            /tmp/u4-fanout-source139.json
+          if-no-files-found: ignore
+          retention-days: 1

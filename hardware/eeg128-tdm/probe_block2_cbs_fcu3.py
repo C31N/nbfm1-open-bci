@@ -39,6 +39,7 @@ def spatial_cbs_fcu3(
     progress: Progress | None = None,
     reference_paths: tuple[list[Point] | None, ...] | None = None,
     uuid_detours: bool = False,
+    u4_fanout: bool = False,
 ) -> tuple[list[list[tuple[int, float, float]]] | None, dict[str, Any]]:
     import pcbnew
     import numpy as np
@@ -49,6 +50,7 @@ def spatial_cbs_fcu3(
     from probe_block2_u4_corridors import (
         adaptive_cbs_regions, connected_conflict_corridor,
         rasterized_conflict_region_edges, verify_u4_escape_group,
+        native_u4_fanout_preflight,
     )
     from shapely.geometry import Point as ShapelyPoint
 
@@ -65,6 +67,13 @@ def spatial_cbs_fcu3(
             or any(path is not None and len(path) < 2
                    for path in reference_paths)):
         raise ValueError("Guided CBS3 requires valid known reference paths")
+    if u4_fanout and split_mode != "u4-corridor":
+        raise ValueError("Deterministic U4 fanout needs u4-corridor mode")
+    original_endpoints = endpoints
+    fanout_wires = None
+    fanout_sides = None
+    fanout_normal = None
+    fanout_diag = None
     started = time.monotonic()
     u4_ports = ()
     u4_reservation: dict[str, Any] | None = None
@@ -78,6 +87,29 @@ def spatial_cbs_fcu3(
                 "reason": str(exc)[:250],
                 "qualified": False, "new_vias_added": 0,
             }
+    if u4_fanout:
+        try:
+            if sorted(u4_reservation["U4_pad_numbers"]) != ["17","18","19"]:
+                raise RuntimeError("U4 native target pin numbers changed")
+            fanout_wires,fanout_sides,fanout_normal,fanout_diag = (
+                native_u4_fanout_preflight(
+                    board,u4_ports,nets,original_endpoints))
+        except RuntimeError as exc:
+            return None, {
+                "status":"CBS3_U4_fanout_preflight_blocked",
+                "reason":str(exc)[:900],
+                "u4_deterministic_fanout_enabled":True,
+                "qualified":False,"new_vias_added":0,
+                "geometry_unsatisfiable_proven":False,
+            }
+        revised=[]
+        for i,pair in enumerate(original_endpoints):
+            ends=list(pair)
+            ends[fanout_sides[i]]=fanout_wires[i][-1]
+            revised.append(tuple(ends))
+        endpoints=tuple(revised)
+        if progress:
+            progress("CBS3_U4_fanout_immutable_preplan",fanout_diag)
     from probe_block2_uuid_detours import detour_geometry
     hard_detours, detour_diagnostic = (
         detour_geometry(board) if uuid_detours else (None, None))
@@ -114,9 +146,24 @@ def spatial_cbs_fcu3(
         shape = geometry[0].buffer(-1e-9)
         if hard_detours is not None:
             shape = shape.union(hard_detours)
+        if fanout_wires is not None:
+            shape=shape.union(unary_union([
+                LineString(fanout_wires[j]).buffer(.300-1e-9,resolution=8)
+                for j in range(3) if j != i]))
         prepare(shape)
         shapes.append(shape)
-        masks.append(contains_xy(shape,gx,gy))
+        mask=contains_xy(shape,gx,gy)
+        if fanout_wires is not None:
+            # A* cannot expand inside the U4 pad-to-fanout-tip half-plane.
+            # Copper before the tips is already deterministically reserved.
+            center=(sum(p[0] for p in u4_ports)/3,
+                    sum(p[1] for p in u4_ports)/3)
+            projection=(fanout_normal[0]*(gx-center[0])
+                        +fanout_normal[1]*(gy-center[1]))
+            mask |= projection < (
+                fanout_diag["transition_mm"]
+                +fanout_diag["parallel_length_mm"] - 1e-8)
+        masks.append(mask)
         if progress:
             progress("CBS3_fixed_copper_agent_done",{"agent":i})
 
@@ -162,6 +209,8 @@ def spatial_cbs_fcu3(
         "selection":selection,
         "split_mode":split_mode,
         "u4_coupled_reservation":u4_reservation,
+        "u4_deterministic_fanout_enabled":u4_fanout,
+        "u4_deterministic_fanout_diagnostic":fanout_diag,
         "u4_conflict_radius_mm":1.65 if u4_roi is not None else None,
         "u4_first_conflict_priority":u4_roi is not None,
         "u4_corridor_splits":0,
@@ -348,6 +397,16 @@ def spatial_cbs_fcu3(
                 +[(0,*physical(x)) for x in paths[i]]
                 +[(0,*endpoints[i][1])]
                 for i in range(3)]
+            if fanout_wires is not None:
+                # The scratch board is only mutated later, after all three
+                # routes are simultaneously collision-free in CBS3.
+                for agent,wire in enumerate(fanout_wires):
+                    if fanout_sides[agent] == 0:
+                        result[agent]=([(0,*wire[0]),(0,*wire[1])]
+                                       +result[agent])
+                    else:
+                        result[agent].extend(
+                            ((0,*wire[1]),(0,*wire[0])))
             diag.update(
                 status="CBS3_joint_FCu_candidate_unverified",
                 candidate_path_grid_nodes=[len(p) for p in paths],

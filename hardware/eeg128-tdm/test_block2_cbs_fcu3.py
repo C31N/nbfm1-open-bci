@@ -190,6 +190,75 @@ class CBS3Tests(unittest.TestCase):
         ):
             self.assertIn(token, CBS)
 
+    def test_deterministic_u4_fanout_geometry(self) -> None:
+        from probe_block2_u4_corridors import (
+            deterministic_u4_fanout_geometry,
+        )
+        import math
+        from shapely.geometry import LineString
+        # Three U4 pads on a 1.27-mm row, shuffled with the solver order.
+        pads=((2.54,0.),(0.,0.),(1.27,0.))
+        ends=tuple(((x,-12.),pad) for x,pad in
+                   zip((2.54,0.,1.27),pads))
+        wires,sides,normal,diag=deterministic_u4_fanout_geometry(
+            pads,ends,lead_mm=2.,parallel_mm=1.5)
+        self.assertEqual(sides,(1,1,1))
+        self.assertEqual(normal,(0.,-1.))
+        self.assertEqual(diag["tip_pitch_mm"],.300)
+        self.assertEqual(diag["parallel_length_mm"],1.5)
+        self.assertTrue(diag["no_new_vias"])
+        self.assertEqual(set(wire[0] for wire in wires),set(pads))
+        tips=sorted(wire[-1] for wire in wires)
+        self.assertAlmostEqual(tips[1][0]-tips[0][0],.300,places=8)
+        self.assertAlmostEqual(tips[2][0]-tips[1][0],.300,places=8)
+        for wire in wires:
+            self.assertAlmostEqual(
+                math.dist(wire[1],wire[2]),1.5,places=8)
+        for i in range(3):
+            for j in range(i+1,3):
+                self.assertGreaterEqual(
+                    LineString(wires[i]).distance(LineString(wires[j])),
+                    .300-1e-8)
+        with self.assertRaises(RuntimeError):
+            deterministic_u4_fanout_geometry(pads,ends,lead_mm=1.0)
+        with self.assertRaises(RuntimeError):
+            deterministic_u4_fanout_geometry(
+                ((0.,0.),(.2,0.),(.4,0.)),ends)
+
+    def test_u4_fanout_is_a_no_release_bounded_solver_stage(self) -> None:
+        mod=(ROOT/"probe_block2_u4_corridors.py").read_text()
+        for token in (
+            "def native_u4_fanout_preflight(",
+            "def deterministic_u4_fanout_geometry(",
+            "def validate_fcu_three_paths(",
+            '"native_obstacle_preflight_passed"',
+            '"CH027_protected_UUIDs"',
+            "min_d-1e-8",
+            "all_201_whitelist_victims_still_required",
+        ):
+            self.assertIn(token,mod)
+        for token in (
+            "u4_fanout: bool = False",
+            "native_u4_fanout_preflight(",
+            '"u4_deterministic_fanout_enabled"',
+            '"u4_deterministic_fanout_diagnostic"',
+            "fanout_sides[agent]",
+            "mask |= projection < (",
+            "LineString(fanout_wires[j]).buffer(.300-1e-9",
+        ):
+            self.assertIn(token,CBS)
+        for token in (
+            '"--u4-fanout"',
+            "u4_fanout=u4_fanout",
+            "validate_fcu_three_paths(",
+            '"U4_fanout_triplet_preflight_rejected"',
+            '"u4_fanout_triplet_preflight"',
+        ):
+            self.assertIn(token,BODY)
+        for forbidden in ("make_via(", "SaveBoard(", "ExportGerbers(",
+                          "ExportDrill("):
+            self.assertNotIn(forbidden,mod)
+
     def test_nbody_runs_cbs_before_restitution(self) -> None:
         for term in (
             '"cbs_three_enabled": cbs_three',
