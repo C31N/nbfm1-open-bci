@@ -38,7 +38,7 @@ def build_u4_lateral_dogleg(
     if (len(ports) != 3 or len(endpoints) != 3
             or len(set(ports)) != 3
             or side not in (-1, 1)
-            or not .15 <= escape_mm <= 1.2
+            or not .15 <= escape_mm <= 2.20
             or not .45 <= dogleg_run_mm <= 6.0
             or not 1.0 <= taper_mm <= 3.5
             or not 1.5 <= parallel_mm <= 2.5
@@ -128,6 +128,7 @@ def build_u4_lateral_dogleg(
     return wires,tuple(sides),normal,{
         "status":"u4_lateral_dogleg_proposed_unverified",
         "stages":["isolated_escape","lateral_dogleg","parallel_bundle"],
+        "extended_pad_escape_search":True,
         "fanout_paths_mm":wires,
         "pad_side":sides, "pad_rank":rank,
         "dogleg_side":side,
@@ -205,7 +206,7 @@ def native_u4_lateral_preflight(
     for side,shift0 in ((-1,shifts[0]),(1,shifts[1])):
         for extra in (0.,.55,1.3,2.2):
             lateral=shift0+side*extra
-            for escape in (.18,.36,.65,.90):
+            for escape in (.18,.65,1.10,1.40,1.70,2.00,2.20):
                 for factor in (.36,.65):
                     dogleg_run=max(.45,abs(lateral)*factor)
                     try:
