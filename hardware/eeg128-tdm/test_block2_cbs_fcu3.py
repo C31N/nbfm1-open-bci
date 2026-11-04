@@ -50,7 +50,7 @@ class CBS3Tests(unittest.TestCase):
         self.assertIn('selection=cbs_selection', BODY)
         self.assertIn('"cbs_selection": cbs_selection', BODY)
         self.assertIn("reference_paths=tuple(references.get(net) for net in order)", BODY)
-        self.assertIn("elif references:", BODY)
+        self.assertIn("elif references or u4_fanout:", BODY)
 
     def test_corridor_bundle_is_optional_and_fail_closed(self) -> None:
         for term in (
@@ -67,7 +67,7 @@ class CBS3Tests(unittest.TestCase):
             self.assertIn(term, CBS)
         for term in (
             'cbs_split_mode: str = "single-edge"',
-            'split_mode=cbs_split_mode',
+            'split_mode="u4-corridor" if u4_fanout else cbs_split_mode',
             '"cbs_split_mode": cbs_split_mode',
             'cbs_split_mode=a.cbs_split_mode',
             'cbs_grid_mm=a.cbs_grid_mm',

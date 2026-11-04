@@ -198,8 +198,14 @@ def adaptive_cbs_regions(
     return tuple(options)
 
 
-def deterministic_u4_fanout_geometry(ports, endpoints, *, lead_mm=1.5,
-                                    parallel_mm=1.5, pitch_mm=.300):
+def deterministic_u4_fanout_geometry(
+    ports: tuple[tuple[float,float],...],
+    endpoints: tuple[tuple[tuple[float,float],
+                           tuple[float,float]],...],
+    *, lead_mm: float = 1.5,
+    parallel_mm: float = 1.5, pitch_mm: float = .300,
+) -> tuple[tuple[tuple[tuple[float,float],...],...],
+           tuple[int,...],tuple[float,float],dict[str,Any]]:
     """Generate pad/knee/tip wires with a straight 1.5-mm parallel section.
 
     No board changes; physical copper must pass native obstacle and DRC gates.
@@ -259,7 +265,13 @@ def deterministic_u4_fanout_geometry(ports, endpoints, *, lead_mm=1.5,
     }
 
 
-def native_u4_fanout_preflight(board, ports, nets, endpoints):
+def native_u4_fanout_preflight(
+    board: Any, ports: tuple[tuple[float,float],...],
+    nets: tuple[int,int,int],
+    endpoints: tuple[tuple[tuple[float,float],
+                           tuple[float,float]],...],
+) -> tuple[tuple[tuple[tuple[float,float],...],...],
+           tuple[int,...],tuple[float,float],dict[str,Any]]:
     """Select the first legal deterministic native F.Cu fanout, or reject."""
     import pcbnew
     from shapely.geometry import LineString,box
@@ -314,7 +326,10 @@ def native_u4_fanout_preflight(board, ports, nets, endpoints):
     raise RuntimeError("No legal deterministic fanout: "+str(failed)[:700])
 
 
-def validate_fcu_three_paths(board, nets, routes):
+def validate_fcu_three_paths(
+    board: Any,nets: tuple[int,int,int],
+    routes: list[list[tuple[int,float,float]]],
+) -> dict[str,Any]:
     """No-restoration geometric gate; KiCad after full restitution is final."""
     import pcbnew
     from shapely.geometry import LineString,box
