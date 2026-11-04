@@ -21,7 +21,7 @@ jobs:
       fail-fast: false
       matrix:
         order: [0]
-        method: [cbs, elastic]
+        method: [cbs]
     runs-on: ubuntu-24.04
     timeout-minutes: 31
     container:

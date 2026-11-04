@@ -200,6 +200,8 @@ def native_u4_lateral_preflight(
             max(.4,u3_bounds[tangent+2]-min_t+.35))
     candidates=[]
     rejected=[]
+    reject_counts: dict[str,int]={}
+    side_samples: dict[int,list[dict[str,Any]]]={-1:[],1:[]}
     for side,shift0 in ((-1,shifts[0]),(1,shifts[1])):
         for extra in (0.,.55,1.3,2.2):
             lateral=shift0+side*extra
@@ -212,10 +214,14 @@ def native_u4_lateral_preflight(
                             side=side,lateral_mm=lateral,
                             escape_mm=escape,dogleg_run_mm=dogleg_run)
                     except RuntimeError as exc:
-                        rejected.append({"side":side,"shift":round(lateral,3),
-                                         "escape":escape,
-                                         "stage":"pure_geometry",
-                                         "reason":str(exc)[:95]})
+                        event={"side":side,"shift":round(lateral,3),
+                               "escape":escape,"stage":"pure_geometry",
+                               "reason":str(exc)[:95]}
+                        rejected.append(event)
+                        reject_counts["geometry"] = (
+                            reject_counts.get("geometry",0)+1)
+                        if len(side_samples[side])<3:
+                            side_samples[side].append(event)
                         continue
                     candidates.append(proposal)
     if not candidates:
@@ -253,17 +259,20 @@ def native_u4_lateral_preflight(
                     reason="native_FCu_obstacle"
                     break
         if reason is not None:
-            if len(rejected)<12:
-                blocker=(
+            side=diag["dogleg_side"]
+            key=str(side)+":"+reason
+            reject_counts[key]=reject_counts.get(key,0)+1
+            if len(side_samples[side])<5:
+                blockers=(
                     _native_fanout_blockers(board,nets[i],line)
                     if reason=="native_FCu_obstacle" else [])
-                rejected.append({
-                    "side":diag["dogleg_side"],
+                side_samples[side].append({
+                    "side":side,
                     "shift":round(diag["lateral_shift_mm"],4),
                     "escape":diag["escape_length_mm"],
                     "stage":reason,
                     "agent":i if reason!="board_edge" else None,
-                    "blocked_by":blocker[:2]})
+                    "blocked_by":blockers[:2]})
             continue
         diag.update(
             u3_pin7_UUID=U3_PAD7_UUID,
@@ -276,7 +285,21 @@ def native_u4_lateral_preflight(
             fixed_copper_unchanged=True,
         )
         return wires,sides,normal,diag
+    import json
+    summary={
+        "candidate_count":len(candidates),
+        "tested":tested,
+        "U4_ports_mm":ports,
+        "U3_pad7_UUID":U3_PAD7_UUID,
+        "U3_pad7_bounds_mm":tuple(round(v,5) for v in u3_bounds),
+        "CH027_segments":[{
+            "UUID":tr.m_Uuid.AsString(),
+            "start":xy(tr.GetStart()),"end":xy(tr.GetEnd()),
+        } for tr in protected],
+        "reject_counts":reject_counts,
+        "left_samples":side_samples[-1],
+        "right_samples":side_samples[1],
+    }
     raise RuntimeError(
-        "U4_lateral_dogleg_native_blocked: candidate_count="
-        +str(len(candidates))+" tested="+str(tested)
-        +" failures="+str(rejected[:12])[:2500])
+        "U4_lateral_dogleg_native_blocked: "
+        +json.dumps(summary,separators=(",",":"),sort_keys=True)[:6000])
