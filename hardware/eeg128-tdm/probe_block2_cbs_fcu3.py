@@ -97,7 +97,7 @@ def spatial_cbs_fcu3(
         except RuntimeError as exc:
             return None, {
                 "status":"CBS3_U4_fanout_preflight_blocked",
-                "reason":str(exc)[:900],
+                "reason":str(exc)[:2800],
                 "u4_deterministic_fanout_enabled":True,
                 "qualified":False,"new_vias_added":0,
                 "geometry_unsatisfiable_proven":False,

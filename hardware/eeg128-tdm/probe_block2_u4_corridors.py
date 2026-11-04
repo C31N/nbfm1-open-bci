@@ -265,6 +265,60 @@ def deterministic_u4_fanout_geometry(
     }
 
 
+
+def _native_fanout_blockers(
+    board: Any, net_code: int, line: Any,
+) -> list[dict[str,Any]]:
+    """Name native F.Cu pads/tracks responsible for a rejected fanout."""
+    import pcbnew
+    from shapely.geometry import LineString,Point,box
+    from route_targeted_closure import (
+        pad_copper_shape,xy,POWER,ANALOG_REFERENCE,
+    )
+    result: list[dict[str,Any]]=[]
+    for footprint in board.GetFootprints():
+        for pad in footprint.Pads():
+            if pad.GetNetCode()==net_code or not pad.IsOnLayer(pcbnew.F_Cu):
+                continue
+            raw=pad_copper_shape(pad,pcbnew.F_Cu)
+            gap=line.distance(raw)
+            needed=.075+(.20 if pad.GetNetname() in POWER | ANALOG_REFERENCE
+                          else .15)
+            if gap < needed-1e-8:
+                result.append({
+                    "kind":"pad","ref":footprint.GetReference(),
+                    "pad":pad.GetNumber(),"net":pad.GetNetname(),
+                    "UUID":pad.m_Uuid.AsString(),
+                    "distance_mm":round(gap,6),
+                    "required_mm":round(needed,6),
+                    "deficit_mm":round(needed-gap,6)})
+    for tr in board.GetTracks():
+        if tr.GetNetCode()==net_code:
+            continue
+        if not isinstance(tr,pcbnew.PCB_VIA) and tr.GetLayer()!=pcbnew.F_Cu:
+            continue
+        if isinstance(tr,pcbnew.PCB_VIA):
+            copper=Point(xy(tr.GetPosition())).buffer(pcbnew.ToMM(tr.GetWidth())/2)
+        elif isinstance(tr,pcbnew.PCB_ARC):
+            b=tr.GetBoundingBox()
+            copper=box(pcbnew.ToMM(b.GetX()),pcbnew.ToMM(b.GetY()),
+                       pcbnew.ToMM(b.GetRight()),pcbnew.ToMM(b.GetBottom()))
+        else:
+            copper=LineString((xy(tr.GetStart()),xy(tr.GetEnd()))).buffer(
+                pcbnew.ToMM(tr.GetWidth())/2)
+        gap=line.distance(copper)
+        needed=.075+(.20 if tr.GetNetname() in POWER | ANALOG_REFERENCE
+                      else .15)
+        if gap < needed-1e-8:
+            result.append({
+                "kind":"via" if isinstance(tr,pcbnew.PCB_VIA) else "track",
+                "net":tr.GetNetname(),"UUID":tr.m_Uuid.AsString(),
+                "distance_mm":round(gap,6),
+                "required_mm":round(needed,6),
+                "deficit_mm":round(needed-gap,6)})
+    return sorted(result,key=lambda r:(-r["deficit_mm"],r["UUID"]))[:5]
+
+
 def native_u4_fanout_preflight(
     board: Any, ports: tuple[tuple[float,float],...],
     nets: tuple[int,int,int],
@@ -316,14 +370,18 @@ def native_u4_fanout_preflight(
                 shape,_=obstacles(board,nets[i],.15,.15,region,.65,
                                   (pcbnew.F_Cu,pcbnew.B_Cu))
                 if line.relate_pattern(shape[0].buffer(-1e-9),"T********"):
-                    raise RuntimeError("U4 fanout crosses fixed native copper")
+                    blocking=_native_fanout_blockers(board,nets[i],line)
+                    raise RuntimeError(
+                        "agent="+str(i)+" blocked_by="+str(blocking)[:450]
+                        if blocking else
+                        "agent="+str(i)+" routing_domain_or_zone_blocked")
             diag["CH027_protected_UUIDs"]=[
                 t.m_Uuid.AsString() for t in protected]
             diag["native_obstacle_preflight_passed"]=True
             return wires,sides,normal,diag
         except RuntimeError as exc:
-            failed.append({"lead_mm":lead_mm,"reason":str(exc)[:150]})
-    raise RuntimeError("No legal deterministic fanout: "+str(failed)[:700])
+            failed.append({"lead_mm":lead_mm,"reason":str(exc)[:480]})
+    raise RuntimeError("No legal deterministic fanout: "+str(failed)[:2800])
 
 
 def validate_fcu_three_paths(

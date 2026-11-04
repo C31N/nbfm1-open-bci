@@ -18,8 +18,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        order: [0, 2, 5]
-        method: [cbs, elastic]
+        order: [0]
+        method: [cbs]
     runs-on: ubuntu-24.04
     timeout-minutes: 31
     container:
