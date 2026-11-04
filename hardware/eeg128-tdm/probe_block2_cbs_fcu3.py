@@ -50,9 +50,9 @@ def spatial_cbs_fcu3(
     from probe_block2_u4_corridors import (
         adaptive_cbs_regions, connected_conflict_corridor,
         rasterized_conflict_region_edges, verify_u4_escape_group,
-        native_u4_fanout_preflight,
     )
     from shapely.geometry import Point as ShapelyPoint
+    from probe_block2_u4_dogleg import native_u4_lateral_preflight
 
     if len(endpoints) != 3 or len(nets) != 3 or len(set(nets)) != 3:
         raise ValueError("CBS requires exactly three distinct target nets")
@@ -92,11 +92,11 @@ def spatial_cbs_fcu3(
             if sorted(u4_reservation["U4_pad_numbers"]) != ["17","18","19"]:
                 raise RuntimeError("U4 native target pin numbers changed")
             fanout_wires,fanout_sides,fanout_normal,fanout_diag = (
-                native_u4_fanout_preflight(
+                native_u4_lateral_preflight(
                     board,u4_ports,nets,original_endpoints))
         except RuntimeError as exc:
             return None, {
-                "status":"CBS3_U4_fanout_preflight_blocked",
+                "status":"CBS3_U4_lateral_fanout_preflight_blocked",
                 "reason":str(exc)[:2800],
                 "u4_deterministic_fanout_enabled":True,
                 "qualified":False,"new_vias_added":0,
@@ -109,7 +109,7 @@ def spatial_cbs_fcu3(
             revised.append(tuple(ends))
         endpoints=tuple(revised)
         if progress:
-            progress("CBS3_U4_fanout_immutable_preplan",fanout_diag)
+            progress("CBS3_U4_lateral_dogleg_immutable_preplan",fanout_diag)
     from probe_block2_uuid_detours import detour_geometry
     hard_detours, detour_diagnostic = (
         detour_geometry(board) if uuid_detours else (None, None))

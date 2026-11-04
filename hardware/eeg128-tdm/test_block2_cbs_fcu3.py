@@ -239,7 +239,7 @@ class CBS3Tests(unittest.TestCase):
             self.assertIn(token,mod)
         for token in (
             "u4_fanout: bool = False",
-            "native_u4_fanout_preflight(",
+            "native_u4_lateral_preflight(",
             '"u4_deterministic_fanout_enabled"',
             '"u4_deterministic_fanout_diagnostic"',
             "fanout_sides[agent]",
