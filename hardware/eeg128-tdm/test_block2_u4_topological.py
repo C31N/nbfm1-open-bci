@@ -113,6 +113,7 @@ class NativeTopologicalEscapeTests(unittest.TestCase):
         self.assertIn("for point in wire[:-1]",cbs)
         self.assertIn("reversed(wire[:-1])",cbs)
         self.assertIn("u4_full_fanout_vertices_retained",cbs)
+        self.assertIn("post_fanout_split_mode",cbs)
         self.assertIn('"fully_restituted": False',nbody)
         for unsafe in (
             "make_via(", "SetLayer(", "SetNetCode(",

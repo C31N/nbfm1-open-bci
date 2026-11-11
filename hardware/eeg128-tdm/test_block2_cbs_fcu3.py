@@ -57,7 +57,7 @@ class CBS3Tests(unittest.TestCase):
             'split_mode: str = "single-edge"',
             'split_mode in ("single-edge", "corridor-bundle",',
             'for agent,prohibited in ((i,ei),(j,ej)):',
-            'if split_mode == "corridor-bundle":',
+            'if post_fanout_split_mode == "corridor-bundle":',
             'if segment.distance(rival_line) < clearance_threshold',
             'bundle = frozenset((prohibited,)) | frozenset(local[:2])',
             'if gap <= 1.05',

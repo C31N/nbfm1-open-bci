@@ -86,7 +86,7 @@ jobs:
               g=f.get('u4_deterministic_fanout_diagnostic')
               if g:
                   assert g['tip_pitch_mm']==0.300
-                  assert g['u3_pin7_UUID']=='e37256fc-3b9f-435d-8042-f7d4c1147aca'
+                  assert g['U3_pad7_UUID']=='e37256fc-3b9f-435d-8042-f7d4c1147aca'
                   assert g['minimum_centerline_mm']>=0.300-1e-8
                   assert g['fixed_copper_unchanged'] is True
                   assert g['status']=='topological_U4_three_FCu_escape_proposed'

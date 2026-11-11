@@ -110,6 +110,11 @@ def spatial_cbs_fcu3(
         endpoints=tuple(revised)
         if progress:
             progress("CBS3_U4_topological_preplan_immutable",fanout_diag)
+    # After verified local escape, CBS is no longer allowed to replan U4.
+    # Broad U4 strand bans beyond the tips created artificial dead ends.
+    # Use exact single-edge CBS constraints on the macro side only.
+    post_fanout_split_mode=(
+        "single-edge" if fanout_wires is not None else split_mode)
     from probe_block2_uuid_detours import detour_geometry
     hard_detours, detour_diagnostic = (
         detour_geometry(board) if uuid_detours else (None, None))
@@ -208,6 +213,7 @@ def spatial_cbs_fcu3(
         "step_mm":step_mm, "max_cbs_nodes":max_cbs_nodes,
         "selection":selection,
         "split_mode":split_mode,
+        "post_fanout_split_mode":post_fanout_split_mode,
         "u4_coupled_reservation":u4_reservation,
         "u4_deterministic_fanout_enabled":u4_fanout,
         "u4_deterministic_fanout_diagnostic":fanout_diag,
@@ -432,7 +438,7 @@ def spatial_cbs_fcu3(
             # broad hard corridor would otherwise erase prematurely.
             options: tuple[tuple[str, frozenset[GridEdge]], ...] = (
                 ("single-edge", frozenset((prohibited,))),)
-            if split_mode == "u4-corridor":
+            if post_fanout_split_mode == "u4-corridor":
                 counterpart = j if agent == i else i
                 rival_line = LineString(
                     [endpoints[counterpart][0]]
@@ -451,7 +457,7 @@ def spatial_cbs_fcu3(
                 diag["last_u4_spatial_region_edges"] = len(spatial_strand)
                 diag["last_u4_corridor_edge_count"] = len(spatial_strand)
                 diag["last_u4_corridor_agent"] = agent
-            elif split_mode == "corridor-bundle":
+            elif post_fanout_split_mode == "corridor-bundle":
                 counterpart = j if agent == i else i
                 rival_line = LineString(
                     [endpoints[counterpart][0]]
