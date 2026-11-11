@@ -276,7 +276,6 @@ def native_u4_topological_preflight(
     import numpy as np
     import pcbnew
     from shapely import contains_xy,prepare
-    from shapely.geometry import Point as ShapelyPoint
     from shapely.geometry import box
     from route_targeted_closure import obstacles,pad_copper_shape
     from probe_block2_u4_corridors import CH027_PINS

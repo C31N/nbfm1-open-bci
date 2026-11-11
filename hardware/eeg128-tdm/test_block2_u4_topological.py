@@ -14,7 +14,7 @@ from shapely.geometry import LineString, box
 from shapely.ops import unary_union
 
 from probe_block2_u4_topological import (
-    _astar_grid, _route_candidates, _candidate_lanes,
+    _astar_grid, _route_candidates,
     GRID_MM, COPPER_CENTRE_PITCH_MM, BUNDLE_MM,
     U3_PAD7_UUID,
 )
