@@ -401,12 +401,18 @@ def spatial_cbs_fcu3(
                 # The scratch board is only mutated later, after all three
                 # routes are simultaneously collision-free in CBS3.
                 for agent,wire in enumerate(fanout_wires):
+                    # Preserve ALL individually solved escape vertices;
+                    # replacing them with a straight pad->tip chord would
+                    # silently cross fixed native U3/CH027 copper.
                     if fanout_sides[agent] == 0:
-                        result[agent]=([(0,*wire[0]),(0,*wire[1])]
-                                       +result[agent])
+                        result[agent] = (
+                            [(0,*point) for point in wire[:-1]]
+                            +result[agent])
                     else:
                         result[agent].extend(
-                            ((0,*wire[1]),(0,*wire[0])))
+                            (0,*point) for point in reversed(wire[:-1]))
+                diag["u4_full_fanout_vertices_retained"] = [
+                    len(wire) for wire in fanout_wires]
             diag.update(
                 status="CBS3_joint_FCu_candidate_unverified",
                 candidate_path_grid_nodes=[len(p) for p in paths],

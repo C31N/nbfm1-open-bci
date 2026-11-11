@@ -143,7 +143,7 @@ class U4LateralDoglegTests(unittest.TestCase):
             "obstacles(board,nets[i],.15,.15",
         ):
             self.assertIn(term,src)
-        self.assertIn("native_u4_lateral_preflight(",cbs)
+        self.assertIn("native_u4_topological_preflight(",cbs)
         self.assertIn('u4_fanout: bool = False',cbs)
         for forbidden in ("SaveBoard(", "make_via(", "ExportGerbers(",
                           "ExportDrill(", "SetLayer(", "SetNetCode("):
