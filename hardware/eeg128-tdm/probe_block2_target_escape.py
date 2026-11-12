@@ -202,18 +202,34 @@ def native_target_triplet_preflight(
                 "nearby_native_copper_UUIDs":
                     _native_fanout_blockers(board,nets[i],line)[:6],
             })
+        # Fail closed while prioritising the actual failed triplet
+        # candidates. Full per-agent native reports are too large for
+        # parent/child exception handoff and previously hid this RCA.
+        small_global={
+            "all_three_reachable":global_report["all_three_reachable"],
+            "per_agent":[{
+                "agent":q["agent"],
+                "continuous_polygon_components":
+                    q["continuous_polygon_components"],
+                "shared_component":q["shared_component"],
+            } for q in global_report["per_agent"]],
+        }
         report={
-            "status":"target_triplet_native_preflight_blocked",
-            "near_reference_obstacle_samples":references,
-            "source_pad_refs":pad_refs,
-            "native_target_cluster_hull_mm":pad_bounds,
+            "status":"Target_coupled_postseal_preflight_blocked",
             "target_search":diag,
-            "global_FCu_reachability":global_report,
+            "global_components":small_global,
+            "source_pad_UUIDs":pad_ids,
+            "near_reference_obstacle_UUIDs":[{
+                "agent":r["agent"],
+                "UUIDs":[q["UUID"] for q in
+                         r["nearby_native_copper_UUIDs"][:4]],
+            } for r in references],
             "new_vias_added":0,
             "geometry_unsatisfiable_proven":False,
         }
         raise RuntimeError(
-            json.dumps(report,separators=(",",":"),sort_keys=True)[:5800])
+            "Target_coupled_postseal_preflight_blocked: "
+            +json.dumps(report,separators=(",",":"),sort_keys=False)[:5100])
     lines=tuple(LineString(p) for p in routes)
     if (any(lines[i].relate_pattern(shapes[i],"T********")
             for i in range(3))

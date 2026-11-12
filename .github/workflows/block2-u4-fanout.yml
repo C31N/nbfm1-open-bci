@@ -98,7 +98,10 @@ jobs:
               assert f.get('u4_deterministic_fanout_enabled') is True
               g=f.get('u4_deterministic_fanout_diagnostic')
               if f.get('status')=='CBS3_target_triplet_native_preflight_blocked':
-                  assert 'Target_global_FCu_reachability_blocked' in f['reason'] or 'target_triplet' in f['reason']
+                  assert (
+                      'Target_global_FCu_reachability_blocked' in f['reason']
+                      or 'Target_coupled_postseal_preflight_blocked' in f['reason']
+                      or 'target_triplet' in f['reason'])
                   assert not w['target_nets_routed']
                   assert w['fully_restituted'] is False
               if g and f.get('status')!='CBS3_target_triplet_native_preflight_blocked':
