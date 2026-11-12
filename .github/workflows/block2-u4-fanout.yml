@@ -69,6 +69,7 @@ jobs:
             --order ${{ matrix.order }} \
             --${{ matrix.method }}-three \
             --u4-fanout \
+            --cbs-grid-mm 0.22 \
             --output /tmp/u4-fanout-${{ matrix.method }}-${{ matrix.order }}.json
       - name: Fail closed and require exact 201 UUID inventory
         run: |
