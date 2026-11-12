@@ -80,7 +80,9 @@ def coupled_target_open_space_escapes(
         port=ports[agent]
         candidates=[]
         for side in (outward,-outward):
-            for d in (1.35,2.10,3.00,4.20,5.10):
+            # Prefer pad exits farther into real F.Cu free space.
+            # Near-pad anchors remain deterministic fallbacks.
+            for d in (5.10,4.20,3.00,2.10,1.35):
                 for side_offset in (0.,-.60,.60,-1.20,1.20,-1.80,1.80):
                     target=[port[0],port[1]]
                     target[normal]+=side*d

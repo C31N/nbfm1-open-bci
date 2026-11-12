@@ -428,6 +428,10 @@ def spatial_cbs_fcu3(
         frozen_targets=tuple(LineString(wire) for wire in target_wires)
         diag["target_immutable_escape_sha256"]=target_sha
         diag["u4_immutable_fanout_sha256"]=frozen_sha
+        # An early midpoint frontier failure must still carry both
+        # checked immutable hashes for the fail-closed workflow gate.
+        diag["u4_fanout_sha256_after_macro"]=frozen_sha
+        diag["target_escape_sha256_after_macro"]=target_sha
         diag["u4_sealed_fanout_vertex_counts"]=[
             len(wire) for wire in fanout_wires]
         if progress:
@@ -451,8 +455,26 @@ def spatial_cbs_fcu3(
         for i in range(3):
             base_path=low_level(i,frozenset())
             if base_path is None:
+                from probe_block2_u4_corridors import _native_fanout_blockers
                 diag["status"]="CBS3_post_escape_macro_seed_unavailable"
                 diag["blocked_agent"]=i
+                diag["post_escape_mutual_reservation"]={
+                    "status":"midpoint_individual_macro_seed_blocked",
+                    "blocked_agent":i,
+                    "orders_started":0,
+                    "locked_U4_escape_count":3,
+                    "locked_target_escape_count":3,
+                    "new_vias_added":0,
+                    "macro_variant_limits":[4,3,1],
+                    "native_DRC_still_required":True,
+                    "geometry_unsatisfiable_proven":False,
+                }
+                # This is a reference-chord inventory, NOT an exact
+                # A* cut proof; no protected UUID is removed or moved.
+                diag["macro_seed_near_reference_copper"] = (
+                    _native_fanout_blockers(
+                        board,nets[i],LineString(
+                            (endpoints[i][0],endpoints[i][1])))[:8])
                 diag["CBS3_geometry_unsatisfiable_proven"]=False
                 return None,diag
             macro_seeds.append(macro_line(i,base_path))
