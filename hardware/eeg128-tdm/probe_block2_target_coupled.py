@@ -24,6 +24,8 @@ def coupled_target_open_space_escapes(
     masks:list[Any],shapes:list[Any],xs:Any,ys:Any,
     ports:tuple[Point,...],tangent:int,outward:float,
     *,deadline:float,max_expanded:int=170000,
+    reachable_components:tuple[Any,Any,Any]|None=None,
+    u4_macro_tips:tuple[Point,Point,Point]|None=None,
 ) -> tuple[Wires|None,dict[str,Any]]:
     import numpy as np
     from shapely import contains_xy
@@ -32,13 +34,24 @@ def coupled_target_open_space_escapes(
     from probe_block2_u4_topological import _astar_grid
 
     if (len(masks)!=3 or len(shapes)!=3 or len(ports)!=3
-            or tangent not in (0,1) or outward not in (-1.,1.)):
+            or tangent not in (0,1) or outward not in (-1.,1.)
+            or (reachable_components is not None and
+                (len(reachable_components)!=3 or
+                 any(c is None for c in reachable_components)))
+            or (u4_macro_tips is not None and len(u4_macro_tips)!=3)):
         raise ValueError("Invalid three-target topological source")
     normal=1-tangent
     dx=float(xs[1]-xs[0])
     dy=float(ys[1]-ys[0])
     if abs(dx-.15)>1e-5 or abs(dy-.15)>1e-5:
         raise ValueError("Target search grid pitch must be 0.150mm")
+    if reachable_components is not None:
+        gx_global,gy_global=np.meshgrid(xs,ys)
+        globally_reachable=[
+            contains_xy(comp,gx_global,gy_global)
+            for comp in reachable_components]
+    else:
+        globally_reachable=[None,None,None]
     budgets=Counter()
     order_failures=[]
     expanded_total=0
@@ -53,7 +66,9 @@ def coupled_target_open_space_escapes(
         potential=[]
         for yy in range(max(0,py-4),min(len(ys),py+5)):
             for xx in range(max(0,px-4),min(len(xs),px+5)):
-                if masks[i][yy,xx]:
+                if (masks[i][yy,xx] or
+                        (globally_reachable[i] is not None and
+                         not globally_reachable[i][yy,xx])):
                     continue
                 p=(float(xs[xx]),float(ys[yy]))
                 gap=math.dist(port,p)
@@ -79,9 +94,8 @@ def coupled_target_open_space_escapes(
     def candidate_goals(agent:int) -> list[tuple[int,int]]:
         port=ports[agent]
         candidates=[]
+        global_mask=globally_reachable[agent]
         for side in (outward,-outward):
-            # Prefer pad exits farther into real F.Cu free space.
-            # Near-pad anchors remain deterministic fallbacks.
             for d in (5.10,4.20,3.00,2.10,1.35):
                 for side_offset in (0.,-.60,.60,-1.20,1.20,-1.80,1.80):
                     target=[port[0],port[1]]
@@ -90,9 +104,38 @@ def coupled_target_open_space_escapes(
                     x=int(round((target[0]-float(xs[0]))/.15))
                     y=int(round((target[1]-float(ys[0]))/.15))
                     if (4<=x<len(xs)-4 and 4<=y<len(ys)-4
-                            and not masks[agent][y,x]):
+                            and not masks[agent][y,x]
+                            and (global_mask is None or global_mask[y,x])):
                         candidates.append((x,y))
-        # Remove duplicates while preserving deterministic preference.
+        if global_mask is not None and u4_macro_tips is not None:
+            # Global reachability is required, not merely a fixed local
+            # offset from each target pad. Sample all reachable local
+            # pixels and prefer those facing their own sealed U4 tip.
+            eligible=np.argwhere(global_mask & ~masks[agent])
+            tip=u4_macro_tips[agent]
+            ranking=[]
+            for yy,xx in eligible:
+                if not (4<=xx<len(xs)-4 and 4<=yy<len(ys)-4):
+                    continue
+                px,py=float(xs[xx]),float(ys[yy])
+                dist=math.dist((px,py),port)
+                if not 1.35<=dist<=7.5:
+                    continue
+                score=math.dist((px,py),tip)
+                ranking.append((score,-dist,int(xx),int(yy)))
+            ranking.sort()
+            # Spatial thinning avoids dozens of nearly identical goals.
+            sampled=[]
+            for _,_,xx,yy in ranking:
+                if any((xx-x)**2+(yy-y)**2<16
+                       for x,y in sampled):
+                    continue
+                sampled.append((xx,yy))
+                if len(sampled)>=56:
+                    break
+            candidates=sampled+candidates
+        # Deterministic ordering and duplicate removal; every returned
+        # waypoint belongs to the SAME continuous polygon as U4.
         return list(dict.fromkeys(candidates))
 
     goal_lists=[candidate_goals(i) for i in range(3)]
@@ -192,6 +235,8 @@ def coupled_target_open_space_escapes(
                 "minimum_centerline_mm":gap,
                 "hard_clearance_centreline_mm":.300,
                 "candidate_goals_per_agent":[len(g) for g in goal_lists],
+                "global_fcu_reachability_required":(
+                    reachable_components is not None),
                 "outcomes":dict(budgets),
                 "no_new_vias":True,
                 "native_DRC_still_required":True,
@@ -206,6 +251,8 @@ def coupled_target_open_space_escapes(
         "expanded_nodes":expanded_total,
         "max_expanded_nodes":max_expanded,
         "candidate_goals_per_agent":[len(g) for g in goal_lists],
+        "global_fcu_reachability_required":(
+            reachable_components is not None),
         "best_routed_agents":best,
         "last_blocked_agent":last_blocked_agent,
         "search_wall_budget_exhausted":time.monotonic()>=deadline,

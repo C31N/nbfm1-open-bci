@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-name: Native Block2 paired U4 and target escapes midpoint reservation no-release
+name: Native Block2 FCu global reachability target escape no-release
 on:
   workflow_dispatch:
   push:
@@ -11,6 +11,7 @@ on:
       - "hardware/eeg128-tdm/probe_block2_u4_topological.py"
       - "hardware/eeg128-tdm/probe_block2_target_escape.py"
       - "hardware/eeg128-tdm/probe_block2_target_coupled.py"
+      - "hardware/eeg128-tdm/probe_block2_fcu_reachability.py"
       - "hardware/eeg128-tdm/probe_block2_mutual_reservation.py"
       - "hardware/eeg128-tdm/probe_block2_cbs_fcu3.py"
       - "hardware/eeg128-tdm/probe_block2_nbody_201.py"
@@ -20,6 +21,7 @@ on:
       - "hardware/eeg128-tdm/test_block2_u4_topological.py"
       - "hardware/eeg128-tdm/test_block2_target_escape.py"
       - "hardware/eeg128-tdm/test_block2_target_coupled.py"
+      - "hardware/eeg128-tdm/test_block2_fcu_reachability.py"
       - "hardware/eeg128-tdm/test_block2_mutual_reservation.py"
 permissions:
   contents: read
@@ -44,9 +46,9 @@ jobs:
           apt-get -o Acquire::Retries=3 update
           DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 install -y --no-install-recommends python3-shapely python3-pip python3-numpy
           /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
-      - name: Paired native FCu escapes and mutual midpoint hard-gating tests
+      - name: Continuous FCu connectivity and immutable escape gates
         run: |
-          /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_u4_corridors.py hardware/eeg128-tdm/probe_block2_u4_dogleg.py hardware/eeg128-tdm/probe_block2_u4_topological.py hardware/eeg128-tdm/probe_block2_target_escape.py hardware/eeg128-tdm/probe_block2_target_coupled.py hardware/eeg128-tdm/probe_block2_mutual_reservation.py hardware/eeg128-tdm/probe_block2_cbs_fcu3.py hardware/eeg128-tdm/probe_block2_nbody_201.py
+          /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_u4_corridors.py hardware/eeg128-tdm/probe_block2_u4_dogleg.py hardware/eeg128-tdm/probe_block2_u4_topological.py hardware/eeg128-tdm/probe_block2_target_escape.py hardware/eeg128-tdm/probe_block2_target_coupled.py hardware/eeg128-tdm/probe_block2_fcu_reachability.py hardware/eeg128-tdm/probe_block2_mutual_reservation.py hardware/eeg128-tdm/probe_block2_cbs_fcu3.py hardware/eeg128-tdm/probe_block2_nbody_201.py
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_cbs_fcu3.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_nbody_201.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_u4_dogleg.py -v
@@ -54,6 +56,7 @@ jobs:
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_mutual_reservation.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_target_escape.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_target_coupled.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_fcu_reachability.py -v
       - name: Reproduce protected 139 source
         timeout-minutes: 8
         run: |
@@ -61,7 +64,7 @@ jobs:
             --archive hardware/eeg128-tdm/engineering/block2-ch019-electrode-closed139.zip \
             --output /tmp/u4-fanout-source139.json \
             --candidate-output /tmp/u4-fanout-source139.zip
-      - name: Native target escape then sealed midpoint routing and 201-victim restitution
+      - name: Native global FCu reachability then sealed midpoint routing and 201-victim restitution
         timeout-minutes: 21
         run: |
           /usr/bin/python3 hardware/eeg128-tdm/probe_block2_nbody_201.py \
@@ -94,7 +97,11 @@ jobs:
           if f is not None:
               assert f.get('u4_deterministic_fanout_enabled') is True
               g=f.get('u4_deterministic_fanout_diagnostic')
-              if g:
+              if f.get('status')=='CBS3_target_triplet_native_preflight_blocked':
+                  assert 'Target_global_FCu_reachability_blocked' in f['reason'] or 'target_triplet' in f['reason']
+                  assert not w['target_nets_routed']
+                  assert w['fully_restituted'] is False
+              if g and f.get('status')!='CBS3_target_triplet_native_preflight_blocked':
                   assert g['tip_pitch_mm']==0.300
                   assert g['U3_pad7_UUID']=='e37256fc-3b9f-435d-8042-f7d4c1147aca'
                   assert g['minimum_centerline_mm']>=0.300-1e-8
@@ -122,6 +129,9 @@ jobs:
                   assert t['minimum_target_centerline_mm']>=.300-1e-8
                   assert t['no_new_vias'] is True
                   assert t['fixed_copper_unchanged'] is True
+                  assert t['all_target_tips_same_component_as_U4'] is True
+                  assert t['global_FCu_reachability']['all_three_reachable'] is True
+                  assert all(x['shared_component'] for x in t['global_FCu_reachability']['per_agent'])
                   assert f['target_immutable_escape_sha256']==f['target_escape_sha256_after_macro']
                   assert t['target_escape_immutable_sha256']==f['target_immutable_escape_sha256']
                   assert result['locked_target_escape_count']==3

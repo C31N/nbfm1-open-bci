@@ -74,6 +74,9 @@ def native_target_triplet_preflight(
     from probe_block2_target_coupled import (
         coupled_target_open_space_escapes,
     )
+    from probe_block2_fcu_reachability import (
+        native_reachability_components,
+    )
 
     if (len(nets)!=3 or len(set(nets))!=3 or
             len(u4_sides)!=3 or any(x not in (0,1) for x in u4_sides)
@@ -81,6 +84,16 @@ def native_target_triplet_preflight(
         raise RuntimeError("target_triplet_preflight_invalid_identity")
     pads,ports=_target_pads(board,nets,original_endpoints,u4_sides)
     target_sides=tuple(1-v for v in u4_sides)
+    global_components,global_report=native_reachability_components(
+        board,nets,sealed_u4_wires,ports)
+    if not global_report["all_three_reachable"]:
+        # A disconnected bounded ROI is a blocked candidate, NOT a
+        # global mathematical proof of PCB unroutability. No escape is
+        # sealed until every target pad shares its U4 free polygon.
+        raise RuntimeError(
+            "Target_global_FCu_reachability_blocked: "
+            +json.dumps(
+                global_report,separators=(",",":"),sort_keys=True)[:5100])
     widths=[.15]*3
     if any(not p.IsOnLayer(pcbnew.F_Cu) for p in pads):
         raise RuntimeError("target_pad_FCu_identity_changed")
@@ -136,7 +149,9 @@ def native_target_triplet_preflight(
     started=time.monotonic()
     routes,diag=coupled_target_open_space_escapes(
         masks,shapes,xs,ys,ports,tangent,sign,
-        deadline=started+42.,max_expanded=170000)
+        deadline=started+42.,max_expanded=170000,
+        reachable_components=global_components,
+        u4_macro_tips=bundle_targets)
     pad_ids=[pad.m_Uuid.AsString() for pad in pads]
     pad_refs=[]
     for i,pad in enumerate(pads):
@@ -165,6 +180,7 @@ def native_target_triplet_preflight(
             "source_pad_refs":pad_refs,
             "native_target_cluster_hull_mm":pad_bounds,
             "target_search":diag,
+            "global_FCu_reachability":global_report,
             "new_vias_added":0,
             "geometry_unsatisfiable_proven":False,
         }
@@ -192,6 +208,8 @@ def native_target_triplet_preflight(
         "target_lane_consolidation_required":False,
         "minimum_target_centerline_mm":diag["minimum_centerline_mm"],
         "search":diag,
+        "global_FCu_reachability":global_report,
+        "all_target_tips_same_component_as_U4":True,
         "no_new_vias":True,
         "fixed_copper_unchanged":True,
         "native_DRC_still_required":True,
