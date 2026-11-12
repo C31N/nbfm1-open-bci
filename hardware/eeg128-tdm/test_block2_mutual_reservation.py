@@ -10,7 +10,7 @@ import unittest
 from shapely.geometry import GeometryCollection, LineString
 
 from probe_block2_mutual_reservation import (
-    CLEARANCE_CENTRE_MM,
+    CLEARANCE_CENTRE_MM, Route,
     mutually_reserved_macro_search,
 )
 
@@ -28,13 +28,13 @@ class MutualReservationTests(unittest.TestCase):
 
     def test_three_routes_are_reserved_incrementally_and_in_order(self) -> None:
         observed=[]
-        def route(agent,previous):
+        def route(agent:int,previous:tuple[LineString,...]) -> Route:
             observed.append((agent,len(previous)))
             if len(previous)>0:
                 self.assertTrue(all(isinstance(v,LineString)
                                     for v in previous))
             return ((agent,3),(agent,4))
-        def line(agent,path):
+        def line(agent:int,path:Route) -> LineString:
             return LineString(((agent,3.),(agent,4.)))
         routes,diag=mutually_reserved_macro_search(
             route,line,self.fixed,self.frozen,
@@ -53,9 +53,9 @@ class MutualReservationTests(unittest.TestCase):
         self.assertFalse(diag["fully_restituted"])
 
     def test_all_orders_fail_closed_on_occupied_same_copper(self) -> None:
-        def route(agent,previous):
+        def route(agent:int,previous:tuple[LineString,...]) -> Route:
             return ((agent,0),(agent,1))
-        def line(agent,path):
+        def line(agent:int,path:Route) -> LineString:
             return LineString(((0.,0.),(0.,3.)))
         routes,diag=mutually_reserved_macro_search(
             route,line,self.fixed,self.frozen,
@@ -73,9 +73,9 @@ class MutualReservationTests(unittest.TestCase):
     def test_native_hard_obstacle_rejects_before_reservation(self) -> None:
         forbidden=(LineString(((0.,0.),(0.,2.))).buffer(.25),
                    GeometryCollection(),GeometryCollection())
-        def route(agent,previous):
+        def route(agent:int,previous:tuple[LineString,...]) -> Route:
             return ((agent,0),(agent,1))
-        def line(agent,path):
+        def line(agent:int,path:Route) -> LineString:
             return LineString(((float(agent),0.),
                                (float(agent),2.)))
         routes,diag=mutually_reserved_macro_search(
