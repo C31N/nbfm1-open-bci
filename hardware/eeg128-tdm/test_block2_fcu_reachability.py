@@ -88,6 +88,34 @@ class FcuReachabilityTests(unittest.TestCase):
                 reachable_components=(global_roi,None,forbidden),
                 u4_macro_tips=tips)
 
+    def test_postseal_joint_reachability_required_before_acceptance(self) -> None:
+        xs=np.arange(-8.,8.00001,.15)
+        ys=np.arange(-3.,13.00001,.15)
+        gx,gy=np.meshgrid(xs,ys)
+        ports=((0.,1.5),(0.,4.5),(0.,7.5))
+        shapes=[box(-7.,10.,7.,12.)]*3
+        masks=[contains_xy(shape,gx,gy) for shape in shapes]
+        roi=box(-7.,-2.,7.,9.5)
+        comps=(roi,roi,roi)
+        tips=((-6.,-1.),(-6.,2.),(-6.,5.))
+        checks=[]
+        def rejected(
+            paths:tuple[tuple[tuple[float,float],...],...],
+        ) -> tuple[bool,dict[str,object]]:
+            checks.append(tuple(len(p) for p in paths))
+            return False,{"reason":"fabricated_joint_seal_disconnection"}
+        paths,diag=coupled_target_open_space_escapes(
+            masks,shapes,xs,ys,ports,tangent=1,outward=-1.,
+            deadline=time.monotonic()+6.,max_expanded=30000,
+            reachable_components=comps,u4_macro_tips=tips,
+            postseal_validator=rejected)
+        self.assertIsNone(paths)
+        self.assertGreaterEqual(len(checks),1)
+        self.assertGreaterEqual(
+            diag["outcomes"]["postseal_continuous_component_disconnected"],1)
+        self.assertFalse(diag["geometry_unsatisfiable_proven"])
+        self.assertTrue(diag["postseal_failed_candidates"])
+
     def test_native_no_release_and_cut_witness_contract(self) -> None:
         source=(ROOT/"probe_block2_fcu_reachability.py").read_text()
         target=(ROOT/"probe_block2_target_escape.py").read_text()

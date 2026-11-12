@@ -75,7 +75,7 @@ def native_target_triplet_preflight(
         coupled_target_open_space_escapes,
     )
     from probe_block2_fcu_reachability import (
-        native_reachability_components,
+        continuous_free_reachability,native_reachability_components,
     )
 
     if (len(nets)!=3 or len(set(nets))!=3 or
@@ -144,14 +144,42 @@ def native_target_triplet_preflight(
         shapes.append(shape)
         masks.append(contains_xy(shape,gx,gy))
     # No fixed 0.300-mm target bundle: the native target pads are
-    # 2.600 mm apart. A coupled search now reserves THREE individually
-    # routed F.Cu exits and their full clearance without converging them.
+    # 2.600 mm apart. After EVERY proposed 3-net target escape, ensure
+    # that BOTH foreign target escapes do not partition an agent's
+    # continuous U4-reachable F.Cu polygon.
+    def postseal_check(
+        candidate:Wires,
+    ) -> tuple[bool,dict[str,Any]]:
+        per_agent=[]
+        for i in range(3):
+            foreign=unary_union([
+                LineString(candidate[j]).buffer(
+                    .300-1e-9,resolution=8)
+                for j in range(3) if j!=i])
+            component,check,_=continuous_free_reachability(
+                global_components[i],foreign,
+                bundle_targets[i],candidate[i][-1])
+            per_agent.append({
+                "agent":i,"shared_component":component is not None,
+                "component_count":check["continuous_polygon_components"],
+                "u4_component_index":check["u4_component_index"],
+                "target_tip_component_index":check["target_component_index"],
+            })
+        return all(p["shared_component"] for p in per_agent),{
+            "per_agent":per_agent,
+            "hard_clearance_centreline_mm":.300,
+            "all_three_connected_after_sealing":all(
+                p["shared_component"] for p in per_agent),
+            "geometry_unsatisfiable_proven":False,
+        }
+
     started=time.monotonic()
     routes,diag=coupled_target_open_space_escapes(
         masks,shapes,xs,ys,ports,tangent,sign,
         deadline=started+42.,max_expanded=170000,
         reachable_components=global_components,
-        u4_macro_tips=bundle_targets)
+        u4_macro_tips=bundle_targets,
+        postseal_validator=postseal_check)
     pad_ids=[pad.m_Uuid.AsString() for pad in pads]
     pad_refs=[]
     for i,pad in enumerate(pads):
@@ -210,6 +238,9 @@ def native_target_triplet_preflight(
         "search":diag,
         "global_FCu_reachability":global_report,
         "all_target_tips_same_component_as_U4":True,
+        "all_three_connected_after_target_seal":(
+            diag["postseal_verification"][
+                "all_three_connected_after_sealing"]),
         "no_new_vias":True,
         "fixed_copper_unchanged":True,
         "native_DRC_still_required":True,

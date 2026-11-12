@@ -133,6 +133,9 @@ jobs:
                   assert t['no_new_vias'] is True
                   assert t['fixed_copper_unchanged'] is True
                   assert t['all_target_tips_same_component_as_U4'] is True
+                  assert t['all_three_connected_after_target_seal'] is True
+                  assert t['search']['postseal_continuous_components_verified'] is True
+                  assert t['search']['postseal_component_evaluations']>=1
                   assert t['global_FCu_reachability']['all_three_reachable'] is True
                   assert all(x['shared_component'] for x in t['global_FCu_reachability']['per_agent'])
                   assert f['target_immutable_escape_sha256']==f['target_escape_sha256_after_macro']

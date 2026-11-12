@@ -14,7 +14,7 @@ from collections import Counter
 import itertools
 import math
 import time
-from typing import Any
+from typing import Any, Callable
 
 Point=tuple[float,float]
 Wires=tuple[tuple[Point,...],...]
@@ -26,6 +26,8 @@ def coupled_target_open_space_escapes(
     *,deadline:float,max_expanded:int=170000,
     reachable_components:tuple[Any,Any,Any]|None=None,
     u4_macro_tips:tuple[Point,Point,Point]|None=None,
+    postseal_validator:Callable[
+        [Wires],tuple[bool,dict[str,Any]]] | None=None,
 ) -> tuple[Wires|None,dict[str,Any]]:
     import numpy as np
     from shapely import contains_xy
@@ -58,6 +60,9 @@ def coupled_target_open_space_escapes(
     best=0
     orders_started=0
     last_blocked_agent=None
+    postseal_evaluations=0
+    postseal_failures=[]
+    postseal_success=None
     starts=[]
     initial=[]
     for i,port in enumerate(ports):
@@ -201,10 +206,28 @@ def coupled_target_open_space_escapes(
         order_causes=Counter()
         def recurse(depth:int)->bool:
             nonlocal best,last_blocked_agent
+            nonlocal postseal_evaluations,postseal_success
             if time.monotonic()>=deadline or expanded_total>=max_expanded:
                 return False
             best=max(best,len(routed))
             if depth==3:
+                if postseal_validator is None:
+                    return True
+                if postseal_evaluations>=12:
+                    budgets["postseal_candidate_budget_exhausted"]+=1
+                    return False
+                postseal_evaluations+=1
+                proposed=(routed[0],routed[1],routed[2])
+                accepted,check=postseal_validator(proposed)
+                if not accepted:
+                    budgets["postseal_continuous_component_disconnected"]+=1
+                    if len(postseal_failures)<6:
+                        postseal_failures.append({
+                            "order":ordering,
+                            "rejected_postseal_components":check,
+                        })
+                    return False
+                postseal_success=check
                 return True
             agent=ordering[depth]
             for variant in range((3,2,1)[depth]):
@@ -237,6 +260,10 @@ def coupled_target_open_space_escapes(
                 "candidate_goals_per_agent":[len(g) for g in goal_lists],
                 "global_fcu_reachability_required":(
                     reachable_components is not None),
+                "postseal_component_evaluations":postseal_evaluations,
+                "postseal_continuous_components_verified":(
+                    postseal_validator is not None),
+                "postseal_verification":postseal_success,
                 "outcomes":dict(budgets),
                 "no_new_vias":True,
                 "native_DRC_still_required":True,
@@ -253,6 +280,8 @@ def coupled_target_open_space_escapes(
         "candidate_goals_per_agent":[len(g) for g in goal_lists],
         "global_fcu_reachability_required":(
             reachable_components is not None),
+        "postseal_component_evaluations":postseal_evaluations,
+        "postseal_failed_candidates":postseal_failures,
         "best_routed_agents":best,
         "last_blocked_agent":last_blocked_agent,
         "search_wall_budget_exhausted":time.monotonic()>=deadline,
