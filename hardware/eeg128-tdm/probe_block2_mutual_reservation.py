@@ -29,7 +29,8 @@ def mutually_reserved_macro_search(
     line_for_route: LineForRoute,
     protected_shapes: tuple[Any, Any, Any],
     immutable_fanouts: tuple[LineString, LineString, LineString],
-    *, deadline: float,
+    *, immutable_targets: tuple[LineString, LineString, LineString] | None = None,
+    deadline: float,
     max_orders: int = 6,
 ) -> tuple[tuple[Route, Route, Route] | None, dict[str, Any]]:
     """Coupled priority search: every accepted route seals copper immediately.
@@ -45,11 +46,28 @@ def mutually_reserved_macro_search(
     if any(not isinstance(line,LineString) or line.is_empty
            for line in immutable_fanouts):
         raise ValueError("Invalid sealed U4 escape")
-    for i in range(3):
-        for j in range(i+1,3):
-            if (immutable_fanouts[i].distance(immutable_fanouts[j])
-                    < CLEARANCE_CENTRE_MM-_TOL_MM):
-                raise ValueError("Original U4 fanouts violate 0.300mm pitch")
+    if immutable_targets is not None:
+        if (len(immutable_targets)!=3 or
+                any(not isinstance(line,LineString) or line.is_empty
+                    for line in immutable_targets)):
+            raise ValueError("Invalid immutable native target escapes")
+    all_clusters=(immutable_fanouts,immutable_targets)
+    for cluster in all_clusters:
+        if cluster is None:
+            continue
+        for i in range(3):
+            for j in range(i+1,3):
+                if (cluster[i].distance(cluster[j])
+                        < CLEARANCE_CENTRE_MM-_TOL_MM):
+                    raise ValueError("Sealed escape cluster violates pitch")
+    if immutable_targets is not None:
+        for i in range(3):
+            for j in range(3):
+                if (i!=j and
+                        immutable_fanouts[i].distance(
+                            immutable_targets[j])
+                        < CLEARANCE_CENTRE_MM-_TOL_MM):
+                    raise ValueError("Source-target sealed cross-net collision")
     failures: list[dict[str,Any]]=[]
     stats: Counter[str]=Counter()
     orders_started=0
@@ -107,7 +125,9 @@ def mutually_reserved_macro_search(
                     continue
                 if any(
                     line.distance(other)<CLEARANCE_CENTRE_MM-_TOL_MM
-                    for i,other in enumerate(immutable_fanouts)
+                    for cluster in all_clusters
+                    if cluster is not None
+                    for i,other in enumerate(cluster)
                     if i!=agent
                 ):
                     stats["locked_escape_overlap"]+=1
@@ -145,6 +165,8 @@ def mutually_reserved_macro_search(
                     reserved[i][1].distance(reserved[j][1])
                     for i in range(3) for j in range(i+1,3)),
                 "locked_U4_escape_count":3,
+                "locked_target_escape_count":(
+                    3 if immutable_targets is not None else 0),
                 "new_vias_added":0,
                 "macro_search_counts":dict(stats),
                 "native_DRC_still_required":True,
@@ -163,6 +185,8 @@ def mutually_reserved_macro_search(
         "macro_search_counts":dict(stats),
         "macro_failed_orders":failures[:max_orders],
         "locked_U4_escape_count":3,
+        "locked_target_escape_count":(
+            3 if immutable_targets is not None else 0),
         "new_vias_added":0,
         "geometry_unsatisfiable_proven":False,
         "native_DRC_still_required":True,

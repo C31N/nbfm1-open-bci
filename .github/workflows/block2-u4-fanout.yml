@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-name: Native Block2 locked U4 escape and mutual macro reservation no-release
+name: Native Block2 paired U4 and target escapes midpoint reservation no-release
 on:
   workflow_dispatch:
   push:
@@ -9,6 +9,7 @@ on:
       - "hardware/eeg128-tdm/probe_block2_u4_corridors.py"
       - "hardware/eeg128-tdm/probe_block2_u4_dogleg.py"
       - "hardware/eeg128-tdm/probe_block2_u4_topological.py"
+      - "hardware/eeg128-tdm/probe_block2_target_escape.py"
       - "hardware/eeg128-tdm/probe_block2_mutual_reservation.py"
       - "hardware/eeg128-tdm/probe_block2_cbs_fcu3.py"
       - "hardware/eeg128-tdm/probe_block2_nbody_201.py"
@@ -16,6 +17,7 @@ on:
       - "hardware/eeg128-tdm/test_block2_nbody_201.py"
       - "hardware/eeg128-tdm/test_block2_u4_dogleg.py"
       - "hardware/eeg128-tdm/test_block2_u4_topological.py"
+      - "hardware/eeg128-tdm/test_block2_target_escape.py"
       - "hardware/eeg128-tdm/test_block2_mutual_reservation.py"
 permissions:
   contents: read
@@ -40,14 +42,15 @@ jobs:
           apt-get -o Acquire::Retries=3 update
           DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 install -y --no-install-recommends python3-shapely python3-pip python3-numpy
           /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
-      - name: Locked U4 escape and mutual reservation hard-gating tests
+      - name: Paired native FCu escapes and mutual midpoint hard-gating tests
         run: |
-          /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_u4_corridors.py hardware/eeg128-tdm/probe_block2_u4_dogleg.py hardware/eeg128-tdm/probe_block2_u4_topological.py hardware/eeg128-tdm/probe_block2_mutual_reservation.py hardware/eeg128-tdm/probe_block2_cbs_fcu3.py hardware/eeg128-tdm/probe_block2_nbody_201.py
+          /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_u4_corridors.py hardware/eeg128-tdm/probe_block2_u4_dogleg.py hardware/eeg128-tdm/probe_block2_u4_topological.py hardware/eeg128-tdm/probe_block2_target_escape.py hardware/eeg128-tdm/probe_block2_mutual_reservation.py hardware/eeg128-tdm/probe_block2_cbs_fcu3.py hardware/eeg128-tdm/probe_block2_nbody_201.py
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_cbs_fcu3.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_nbody_201.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_u4_dogleg.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_u4_topological.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_mutual_reservation.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_target_escape.py -v
       - name: Reproduce protected 139 source
         timeout-minutes: 8
         run: |
@@ -55,7 +58,7 @@ jobs:
             --archive hardware/eeg128-tdm/engineering/block2-ch019-electrode-closed139.zip \
             --output /tmp/u4-fanout-source139.json \
             --candidate-output /tmp/u4-fanout-source139.zip
-      - name: Native locked-U4 three-net mutual macro routing then 201-victim restitution
+      - name: Native target escape then sealed midpoint routing and 201-victim restitution
         timeout-minutes: 21
         run: |
           /usr/bin/python3 hardware/eeg128-tdm/probe_block2_nbody_201.py \
@@ -106,12 +109,26 @@ jobs:
                   assert result['macro_variant_limits']==[4,3,1]
                   assert result['native_DRC_still_required'] is True
                   assert f['u4_immutable_fanout_sha256']==f['u4_fanout_sha256_after_macro']
+                  t=f.get('target_triplet_deterministic_escape_diagnostic')
+                  assert t and t['status']=='three_native_target_escapes_preflighted_not_DRC'
+                  assert len(t['target_pad_UUIDs'])==3
+                  assert len(set(t['target_pad_UUIDs']))==3
+                  assert t['pitch_mm']==.300
+                  assert t['parallel_length_mm']>=1.5
+                  assert t['minimum_target_centerline_mm']>=.300-1e-8
+                  assert t['no_new_vias'] is True
+                  assert t['fixed_copper_unchanged'] is True
+                  assert f['target_immutable_escape_sha256']==f['target_escape_sha256_after_macro']
+                  assert t['target_escape_immutable_sha256']==f['target_immutable_escape_sha256']
+                  assert result['locked_target_escape_count']==3
                   if result['status']=='three_macro_paths_reserved_unverified':
                       assert f['post_escape_macros_all_reserved'] is True
                       assert len(result['reservations_per_net'])==3
                       assert result['minimum_post_escape_centreline_mm']>=.300-1e-8
                       assert f['u4_full_fanout_vertices_retained']==[
                           len(wire) for wire in g['fanout_paths_mm']]
+                      assert f['target_full_escape_vertices_retained']==[
+                          len(wire) for wire in t['target_escape_paths_mm']]
           assert not set(w['victims_restored_original_geometry']).intersection(
               w['victims_routed_new_geometry'])
           if d['candidate_qualified_136']:

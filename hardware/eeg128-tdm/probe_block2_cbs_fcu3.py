@@ -53,6 +53,7 @@ def spatial_cbs_fcu3(
     )
     from shapely.geometry import Point as ShapelyPoint
     from probe_block2_u4_topological import native_u4_topological_preflight
+    from probe_block2_target_escape import native_target_triplet_preflight
 
     if len(endpoints) != 3 or len(nets) != 3 or len(set(nets)) != 3:
         raise ValueError("CBS requires exactly three distinct target nets")
@@ -74,6 +75,9 @@ def spatial_cbs_fcu3(
     fanout_sides = None
     fanout_normal = None
     fanout_diag = None
+    target_wires = None
+    target_sides = None
+    target_diag = None
     started = time.monotonic()
     u4_ports = ()
     u4_reservation: dict[str, Any] | None = None
@@ -102,14 +106,32 @@ def spatial_cbs_fcu3(
                 "qualified":False,"new_vias_added":0,
                 "geometry_unsatisfiable_proven":False,
             }
+        if progress:
+            progress("CBS3_U4_topological_preplan_immutable",fanout_diag)
+        try:
+            target_wires,target_sides,target_diag = (
+                native_target_triplet_preflight(
+                    board,original_endpoints,nets,
+                    fanout_sides,fanout_wires))
+        except RuntimeError as exc:
+            return None,{
+                "status":"CBS3_target_triplet_native_preflight_blocked",
+                "reason":str(exc)[:6000],
+                "u4_deterministic_fanout_enabled":True,
+                "u4_deterministic_fanout_diagnostic":fanout_diag,
+                "new_vias_added":0,
+                "qualified":False,
+                "geometry_unsatisfiable_proven":False,
+            }
+        if progress:
+            progress("CBS3_target_triplet_preplan_immutable",target_diag)
         revised=[]
         for i,pair in enumerate(original_endpoints):
             ends=list(pair)
             ends[fanout_sides[i]]=fanout_wires[i][-1]
+            ends[target_sides[i]]=target_wires[i][-1]
             revised.append(tuple(ends))
         endpoints=tuple(revised)
-        if progress:
-            progress("CBS3_U4_topological_preplan_immutable",fanout_diag)
     # After verified local escape, CBS is no longer allowed to replan U4.
     # The frozen U4 copper must not enter any CBS conflict tree. Macro
     # traces are instead reserved immediately, one net at a time.
@@ -154,7 +176,10 @@ def spatial_cbs_fcu3(
         if fanout_wires is not None:
             shape=shape.union(unary_union([
                 LineString(fanout_wires[j]).buffer(.300-1e-9,resolution=8)
-                for j in range(3) if j != i]))
+                for j in range(3) if j != i]
+                +[LineString(target_wires[j]).buffer(
+                    .300-1e-9,resolution=8)
+                  for j in range(3) if j != i]))
         prepare(shape)
         shapes.append(shape)
         mask=contains_xy(shape,gx,gy)
@@ -217,6 +242,7 @@ def spatial_cbs_fcu3(
         "u4_coupled_reservation":u4_reservation,
         "u4_deterministic_fanout_enabled":u4_fanout,
         "u4_deterministic_fanout_diagnostic":fanout_diag,
+        "target_triplet_deterministic_escape_diagnostic":target_diag,
         "u4_conflict_radius_mm":1.65 if u4_roi is not None else None,
         "u4_first_conflict_priority":u4_roi is not None,
         "u4_corridor_splits":0,
@@ -396,6 +422,11 @@ def spatial_cbs_fcu3(
             fanout_wires,separators=(",",":"),allow_nan=False).encode()
         frozen_sha=hashlib.sha256(frozen_bytes).hexdigest()
         frozen_lines=tuple(LineString(wire) for wire in fanout_wires)
+        target_bytes=json.dumps(
+            target_wires,separators=(",",":"),allow_nan=False).encode()
+        target_sha=hashlib.sha256(target_bytes).hexdigest()
+        frozen_targets=tuple(LineString(wire) for wire in target_wires)
+        diag["target_immutable_escape_sha256"]=target_sha
         diag["u4_immutable_fanout_sha256"]=frozen_sha
         diag["u4_sealed_fanout_vertex_counts"]=[
             len(wire) for wire in fanout_wires]
@@ -445,6 +476,7 @@ def spatial_cbs_fcu3(
         routes,mutual_diag=mutually_reserved_macro_search(
             reserved_low_level,macro_line,
             tuple(shapes),frozen_lines,
+            immutable_targets=frozen_targets,
             deadline=started+seconds,max_orders=6)
         diag["post_escape_mutual_reservation"]=mutual_diag
         diag["u4_fanout_sha256_after_macro"]=hashlib.sha256(
@@ -453,6 +485,12 @@ def spatial_cbs_fcu3(
             ).encode()).hexdigest()
         if diag["u4_fanout_sha256_after_macro"] != frozen_sha:
             raise RuntimeError("Immutable U4 escape geometry changed")
+        diag["target_escape_sha256_after_macro"]=hashlib.sha256(
+            json.dumps(
+                target_wires,separators=(",",":"),allow_nan=False,
+            ).encode()).hexdigest()
+        if diag["target_escape_sha256_after_macro"] != target_sha:
+            raise RuntimeError("Immutable target escape geometry changed")
         if routes is None:
             diag["status"]="CBS3_post_escape_mutual_reservation_bounded_no_solution"
             diag["CBS3_exit_class"]=(
@@ -485,6 +523,17 @@ def spatial_cbs_fcu3(
                     (0,*point) for point in reversed(wire[:-1]))
         diag["u4_full_fanout_vertices_retained"]=[
             len(wire) for wire in fanout_wires]
+        for agent,wire in enumerate(target_wires):
+            # Preserve the ENTIRE native-pad->bundle target escape.
+            if target_sides[agent] == 0:
+                output[agent] = (
+                    [(0,*point) for point in wire[:-1]]
+                    +output[agent])
+            else:
+                output[agent].extend(
+                    (0,*point) for point in reversed(wire[:-1]))
+        diag["target_full_escape_vertices_retained"] = [
+            len(wire) for wire in target_wires]
         diag["status"]="CBS3_joint_FCu_candidate_unverified"
         diag["post_escape_macros_all_reserved"]=True
         diag["CBS3_geometry_unsatisfiable_proven"]=False

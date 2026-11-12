@@ -110,6 +110,34 @@ class MutualReservationTests(unittest.TestCase):
         self.assertGreaterEqual(
             diag["macro_search_counts"]["native_copper_segment_collision"],1)
 
+    def test_target_escape_is_hard_for_other_macro_net(self) -> None:
+        targets=(
+            LineString(((0.,8.),(0.,10.))),
+            LineString(((1.,8.),(1.,10.))),
+            LineString(((2.,8.),(2.,10.))),
+        )
+        def route(
+            agent:int,previous:tuple[LineString,...],variant:int,
+        ) -> Route:
+            return ((agent,0),(agent,1))
+        def line(agent:int,path:Route) -> LineString:
+            # Agent 0 is forced across target escape 1 (immutable copper).
+            return LineString(((1.,7.),(1.,11.)))
+        routes,diag=mutually_reserved_macro_search(
+            route,line,self.fixed,self.frozen,
+            immutable_targets=targets,
+            deadline=time.monotonic()+3.,max_orders=1)
+        self.assertIsNone(routes)
+        self.assertEqual(diag["locked_target_escape_count"],3)
+        self.assertGreaterEqual(
+            diag["macro_search_counts"]["locked_escape_overlap"],1)
+        with self.assertRaisesRegex(ValueError,"pitch"):
+            invalid=(targets[0],targets[0],targets[2])
+            mutually_reserved_macro_search(
+                route,line,self.fixed,self.frozen,
+                immutable_targets=invalid,
+                deadline=time.monotonic()+3.,max_orders=1)
+
     def test_native_macro_entry_is_sealed_and_no_cbs_ripup(self) -> None:
         cbs=(ROOT/"probe_block2_cbs_fcu3.py").read_text()
         nbody=(ROOT/"probe_block2_nbody_201.py").read_text()
