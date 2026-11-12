@@ -14,7 +14,7 @@ ROOT=Path(__file__).resolve().parent
 
 
 class _Pad:
-    def __init__(self,agent:int,center:tuple[float,float]):
+    def __init__(self,agent:int,center:tuple[float,float]) -> None:
         self.center=center
         self.net=agent+100
         self.m_Uuid=SimpleNamespace(AsString=lambda: "target-%d" % agent)
@@ -30,7 +30,7 @@ class _Pad:
 
 
 class _Footprint:
-    def __init__(self,pads:list[_Pad]):
+    def __init__(self,pads:list[_Pad]) -> None:
         self.pads=pads
 
     def Pads(self) -> list[_Pad]:
@@ -38,7 +38,7 @@ class _Footprint:
 
 
 class _Board:
-    def __init__(self,pads:list[_Pad]):
+    def __init__(self,pads:list[_Pad]) -> None:
         self.footprints=[_Footprint(pads)]
 
     def GetFootprints(self) -> list[_Footprint]:
