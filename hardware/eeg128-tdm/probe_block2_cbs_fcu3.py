@@ -111,10 +111,10 @@ def spatial_cbs_fcu3(
         if progress:
             progress("CBS3_U4_topological_preplan_immutable",fanout_diag)
     # After verified local escape, CBS is no longer allowed to replan U4.
-    # Broad U4 strand bans beyond the tips created artificial dead ends.
-    # Use exact single-edge CBS constraints on the macro side only.
+    # The frozen U4 copper must not enter any CBS conflict tree. Macro
+    # traces are instead reserved immediately, one net at a time.
     post_fanout_split_mode=(
-        "single-edge" if fanout_wires is not None else split_mode)
+        "mutual-reservation" if fanout_wires is not None else split_mode)
     from probe_block2_uuid_detours import detour_geometry
     hard_detours, detour_diagnostic = (
         detour_geometry(board) if uuid_detours else (None, None))
@@ -263,10 +263,24 @@ def spatial_cbs_fcu3(
     moves=((1,0),(-1,0),(0,1),(0,-1),
            (1,1),(1,-1),(-1,1),(-1,-1))
     counter=itertools.count()
-    def low_level(agent:int, forbidden:frozenset[GridEdge]) -> GridPath | None:
+    def low_level(
+        agent:int, forbidden:frozenset[GridEdge],
+        reserved_macro_lines:tuple[Any,...]=(),
+    ) -> GridPath | None:
         first=start[agent]
         last=goal[agent]
         mask=masks[agent]
+        if reserved_macro_lines:
+            # Hard, cumulative copper-centreline clearance: every previous
+            # 0.15-mm macro trace + 0.15-mm clearance occupies 0.300 mm.
+            reserved_copper=unary_union([
+                line.buffer(.300-1e-9,resolution=8)
+                for line in reserved_macro_lines])
+            mask = mask | contains_xy(reserved_copper,gx,gy)
+            if mask[first[1],first[0]] or mask[last[1],last[0]]:
+                diag.setdefault("mutual_anchor_blocks",0)
+                diag["mutual_anchor_blocks"] += 1
+                return None
         q=[(math.dist(physical(first),physical(last)),
             next(counter),0.0,first)]
         cost={first:0.0}
@@ -358,6 +372,97 @@ def spatial_cbs_fcu3(
                             if d<clearance_threshold:
                                 return i,j,ki,kj,d
         return None
+
+    if fanout_wires is not None:
+        # No CBS nodes can touch or replan any of the three topologically
+        # solved U4 fanouts. They are sealed, immutable virtual F.Cu copper
+        # until the complete candidate passes all subsequent native gates.
+        from probe_block2_mutual_reservation import (
+            mutually_reserved_macro_search,
+        )
+        import hashlib
+        import json
+
+        frozen_bytes=json.dumps(
+            fanout_wires,separators=(",",":"),allow_nan=False).encode()
+        frozen_sha=hashlib.sha256(frozen_bytes).hexdigest()
+        frozen_lines=tuple(LineString(wire) for wire in fanout_wires)
+        diag["u4_immutable_fanout_sha256"]=frozen_sha
+        diag["u4_sealed_fanout_vertex_counts"]=[
+            len(wire) for wire in fanout_wires]
+        if progress:
+            progress("CBS3_post_escape_mutual_reservation_started",{
+                "sealed_fanout_sha256":frozen_sha,
+                "macro_solver":"six_order_hard_mutual_copper_reservation",
+                "hard_clearance_mm":.300,
+                "new_vias_added":0,
+            })
+
+        def macro_line(agent:int,path:GridPath) -> Any:
+            return LineString(
+                [endpoints[agent][0]]
+                +[physical(n) for n in path]
+                +[endpoints[agent][1]])
+
+        def reserved_low_level(
+            agent:int,locked_lines:tuple[Any,...],
+        ) -> GridPath | None:
+            return low_level(agent,frozenset(),locked_lines)
+
+        routes,mutual_diag=mutually_reserved_macro_search(
+            reserved_low_level,macro_line,
+            tuple(shapes),frozen_lines,
+            deadline=started+seconds,max_orders=6)
+        diag["post_escape_mutual_reservation"]=mutual_diag
+        diag["u4_fanout_sha256_after_macro"]=hashlib.sha256(
+            json.dumps(
+                fanout_wires,separators=(",",":"),allow_nan=False,
+            ).encode()).hexdigest()
+        if diag["u4_fanout_sha256_after_macro"] != frozen_sha:
+            raise RuntimeError("Immutable U4 escape geometry changed")
+        if routes is None:
+            diag["status"]="CBS3_post_escape_mutual_reservation_bounded_no_solution"
+            diag["CBS3_exit_class"]=(
+                "budget" if (
+                    time.monotonic()-started >= seconds
+                    or diag["CBS3_lowlevel_outcomes"]["wall_budget_exhausted"]
+                    or diag["CBS3_lowlevel_outcomes"]["node_budget_exhausted"]
+                ) else "bounded_dead_end")
+            diag["CBS3_geometry_unsatisfiable_proven"]=False
+            diag["wall_s"]=round(time.monotonic()-started,3)
+            if progress:
+                progress("CBS3_post_escape_mutual_reservation_rejected",{
+                    "status":diag["status"],
+                    "diagnostic":mutual_diag})
+            return None,diag
+
+        output=[
+            [(0,*endpoints[i][0])]
+            +[(0,*physical(node)) for node in routes[i]]
+            +[(0,*endpoints[i][1])]
+            for i in range(3)]
+        for agent,wire in enumerate(fanout_wires):
+            # Sealed escape vertices are copied byte-for-byte, never
+            # straightened or re-solved by the macro path planner.
+            if fanout_sides[agent]==0:
+                output[agent]=(
+                    [(0,*point) for point in wire[:-1]]+output[agent])
+            else:
+                output[agent].extend(
+                    (0,*point) for point in reversed(wire[:-1]))
+        diag["u4_full_fanout_vertices_retained"]=[
+            len(wire) for wire in fanout_wires]
+        diag["status"]="CBS3_joint_FCu_candidate_unverified"
+        diag["post_escape_macros_all_reserved"]=True
+        diag["CBS3_geometry_unsatisfiable_proven"]=False
+        diag["wall_s"]=round(time.monotonic()-started,3)
+        if progress:
+            progress("CBS3_post_escape_mutual_reservation_proposed",{
+                "orders_started":mutual_diag["orders_started"],
+                "sealed_fanout_sha256":frozen_sha,
+                "native_DRC_still_required":True,
+            })
+        return output,diag
 
     initial_paths=[]
     for i in range(3):
