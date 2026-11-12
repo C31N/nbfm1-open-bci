@@ -102,6 +102,8 @@ jobs:
                   result=f.get('post_escape_mutual_reservation')
                   assert result and result['locked_U4_escape_count']==3
                   assert result['new_vias_added']==0
+                  assert result['orders_started']<=6
+                  assert result['macro_variant_limits']==[4,3,1]
                   assert result['native_DRC_still_required'] is True
                   assert f['u4_immutable_fanout_sha256']==f['u4_fanout_sha256_after_macro']
                   if result['status']=='three_macro_paths_reserved_unverified':

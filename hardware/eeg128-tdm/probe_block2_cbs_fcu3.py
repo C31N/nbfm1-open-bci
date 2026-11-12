@@ -263,9 +263,11 @@ def spatial_cbs_fcu3(
     moves=((1,0),(-1,0),(0,1),(0,-1),
            (1,1),(1,-1),(-1,1),(-1,-1))
     counter=itertools.count()
+    macro_future_masks=None
     def low_level(
         agent:int, forbidden:frozenset[GridEdge],
         reserved_macro_lines:tuple[Any,...]=(),
+        variant:int=0,
     ) -> GridPath | None:
         first=start[agent]
         last=goal[agent]
@@ -318,7 +320,14 @@ def spatial_cbs_fcu3(
                                  and not reference_masks[agent][y,x] else 0.)
                 neighbor_cost = (12.0 if competitor_masks is not None
                                  and competitor_masks[agent][y,x] else 0.0)
-                g2=g+step_mm*(math.hypot(dx,dy)+corridor_cost+neighbor_cost)
+                future_cost = (
+                    (0.,3.,9.,18.)[variant]
+                    if macro_future_masks is not None
+                    and macro_future_masks[agent][y,x]
+                    else 0.)
+                g2=g+step_mm*(
+                    math.hypot(dx,dy)
+                    +corridor_cost+neighbor_cost+future_cost)
                 if g2<cost.get(nxt,float("inf")):
                     cost[nxt]=g2
                     parents[nxt]=node
@@ -404,10 +413,34 @@ def spatial_cbs_fcu3(
                 +[physical(n) for n in path]
                 +[endpoints[agent][1]])
 
+        # First obtain independent legal macro seeds WITHOUT changing any
+        # copper. These are SOFT forecasts for the unsolved neighbours,
+        # never a basis for breaking an existing copper reservation.
+        macro_seeds=[]
+        for i in range(3):
+            base_path=low_level(i,frozenset())
+            if base_path is None:
+                diag["status"]="CBS3_post_escape_macro_seed_unavailable"
+                diag["blocked_agent"]=i
+                diag["CBS3_geometry_unsatisfiable_proven"]=False
+                return None,diag
+            macro_seeds.append(macro_line(i,base_path))
+        macro_future_masks=[
+            contains_xy(
+                unary_union([
+                    macro_seeds[j].buffer(.48,resolution=8)
+                    for j in range(3) if j!=i]),
+                gx,gy)
+            for i in range(3)]
+        diag["macro_future_seed_nodes"]=[
+            len(line.coords) for line in macro_seeds]
+        diag["macro_future_soft_penalties"]=[0.,3.,9.,18.]
+
         def reserved_low_level(
-            agent:int,locked_lines:tuple[Any,...],
+            agent:int,locked_lines:tuple[Any,...],variant:int,
         ) -> GridPath | None:
-            return low_level(agent,frozenset(),locked_lines)
+            return low_level(
+                agent,frozenset(),locked_lines,variant=variant)
 
         routes,mutual_diag=mutually_reserved_macro_search(
             reserved_low_level,macro_line,

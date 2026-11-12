@@ -28,8 +28,8 @@ class MutualReservationTests(unittest.TestCase):
 
     def test_three_routes_are_reserved_incrementally_and_in_order(self) -> None:
         observed=[]
-        def route(agent:int,previous:tuple[LineString,...]) -> Route:
-            observed.append((agent,len(previous)))
+        def route(agent:int,previous:tuple[LineString,...],variant:int) -> Route:
+            observed.append((agent,len(previous),variant))
             if len(previous)>0:
                 self.assertTrue(all(isinstance(v,LineString)
                                     for v in previous))
@@ -40,7 +40,7 @@ class MutualReservationTests(unittest.TestCase):
             route,line,self.fixed,self.frozen,
             deadline=time.monotonic()+3.)
         self.assertIsNotNone(routes)
-        self.assertEqual(observed,[(0,0),(1,1),(2,2)])
+        self.assertEqual(observed,[(0,0,0),(1,1,0),(2,2,0)])
         self.assertEqual(diag["status"],
                          "three_macro_paths_reserved_unverified")
         self.assertEqual(diag["ordering"],(0,1,2))
@@ -53,7 +53,7 @@ class MutualReservationTests(unittest.TestCase):
         self.assertFalse(diag["fully_restituted"])
 
     def test_all_orders_fail_closed_on_occupied_same_copper(self) -> None:
-        def route(agent:int,previous:tuple[LineString,...]) -> Route:
+        def route(agent:int,previous:tuple[LineString,...],variant:int) -> Route:
             return ((agent,0),(agent,1))
         def line(agent:int,path:Route) -> LineString:
             return LineString(((0.,0.),(0.,3.)))
@@ -65,15 +65,39 @@ class MutualReservationTests(unittest.TestCase):
         self.assertEqual(diag["max_orders"],6)
         self.assertEqual(diag["status"],
                          "mutual_macro_reservation_bounded_no_solution")
-        self.assertEqual(
+        self.assertGreaterEqual(
             diag["macro_search_counts"]["reserved_macro_clearance_violation"],6)
         self.assertFalse(diag["geometry_unsatisfiable_proven"])
         self.assertEqual(diag["new_vias_added"],0)
 
+    def test_bounded_alternative_backtracks_only_speculative_macros(self) -> None:
+        observed=[]
+        def route(
+            agent:int,previous:tuple[LineString,...],variant:int,
+        ) -> Route:
+            observed.append((agent,len(previous),variant))
+            x=(-1 if agent==0 and variant else
+               (0 if agent in (0,1) else 1))
+            return ((x,0),(x,1))
+        def line(agent:int,path:Route) -> LineString:
+            x=float(path[0][0])
+            return LineString(((x,0.),(x,1.)))
+        paths,diag=mutually_reserved_macro_search(
+            route,line,self.fixed,self.frozen,
+            deadline=time.monotonic()+5.,max_orders=1)
+        self.assertIsNotNone(paths)
+        self.assertEqual(paths[0][0][0],-1)
+        self.assertEqual(diag["ordering"],(0,1,2))
+        self.assertEqual(diag["macro_variant_limits"],(4,3,1))
+        self.assertGreater(
+            diag["macro_search_counts"]["speculative_macro_branch_backtracks"],0)
+        self.assertEqual(diag["locked_U4_escape_count"],3)
+        self.assertTrue(any(q==(0,0,1) for q in observed))
+
     def test_native_hard_obstacle_rejects_before_reservation(self) -> None:
         forbidden=(LineString(((0.,0.),(0.,2.))).buffer(.25),
                    GeometryCollection(),GeometryCollection())
-        def route(agent:int,previous:tuple[LineString,...]) -> Route:
+        def route(agent:int,previous:tuple[LineString,...],variant:int) -> Route:
             return ((agent,0),(agent,1))
         def line(agent:int,path:Route) -> LineString:
             return LineString(((float(agent),0.),
@@ -93,6 +117,8 @@ class MutualReservationTests(unittest.TestCase):
             "from probe_block2_mutual_reservation import (",
             "mutually_reserved_macro_search(",
             "reserved_copper=unary_union(",
+            "macro_future_soft_penalties",
+            "macro_future_seed_nodes",
             "mask = mask | contains_xy(reserved_copper,gx,gy)",
             '"mutual-reservation" if fanout_wires is not None else split_mode',
             "u4_immutable_fanout_sha256",
