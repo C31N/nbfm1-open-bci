@@ -72,7 +72,7 @@ class CoupledTargetTests(unittest.TestCase):
     def test_no_board_mutations_in_coupled_target_planner(self) -> None:
         s=(ROOT/"probe_block2_target_coupled.py").read_text()
         for tok in (
-            "for ordering in itertools.permutations(range(3))",
+            "priority_orders=((1,2,0)",
             "line.buffer(.300-1e-9",
             "target_speculative_backtracks",
             "target_three_independent_FCu_escapes_proposed",

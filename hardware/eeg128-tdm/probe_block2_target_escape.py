@@ -173,13 +173,42 @@ def native_target_triplet_preflight(
             "geometry_unsatisfiable_proven":False,
         }
 
+    def partial_reservation_check(
+        assigned:dict[int,tuple[Point,...]],
+    ) -> tuple[bool,dict[str,Any]]:
+        # Guarantee remaining nets still have SOME continuous F.Cu path
+        # before committing a candidate to the current search branch.
+        outcome=[]
+        for i in range(3):
+            foreign=unary_union([
+                LineString(wire).buffer(.300-1e-9,resolution=8)
+                for agent,wire in assigned.items() if agent!=i])
+            destination=assigned[i][-1] if i in assigned else ports[i]
+            component,check,_=continuous_free_reachability(
+                global_components[i],foreign,bundle_targets[i],
+                destination)
+            outcome.append({
+                "agent":i,
+                "already_routed":i in assigned,
+                "shared_component":component is not None,
+                "u4_component_index":check["u4_component_index"],
+                "target_component_index":check["target_component_index"],
+            })
+        allowed=all(q["shared_component"] for q in outcome)
+        return allowed,{
+            "assigned_agents":sorted(assigned),
+            "still_reachable":outcome,
+            "all_remaining_continuously_reachable":allowed,
+        }
+
     started=time.monotonic()
     routes,diag=coupled_target_open_space_escapes(
         masks,shapes,xs,ys,ports,tangent,sign,
         deadline=started+42.,max_expanded=170000,
         reachable_components=global_components,
         u4_macro_tips=bundle_targets,
-        postseal_validator=postseal_check)
+        postseal_validator=postseal_check,
+        partial_reservation_validator=partial_reservation_check)
     pad_ids=[pad.m_Uuid.AsString() for pad in pads]
     pad_refs=[]
     for i,pad in enumerate(pads):

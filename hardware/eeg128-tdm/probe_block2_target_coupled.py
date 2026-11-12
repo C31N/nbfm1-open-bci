@@ -11,7 +11,6 @@ speculative THREE-net states may backtrack; never mutate PCB copper.
 from __future__ import annotations
 
 from collections import Counter
-import itertools
 import math
 import time
 from typing import Any, Callable
@@ -28,6 +27,9 @@ def coupled_target_open_space_escapes(
     u4_macro_tips:tuple[Point,Point,Point]|None=None,
     postseal_validator:Callable[
         [Wires],tuple[bool,dict[str,Any]]] | None=None,
+    partial_reservation_validator:Callable[
+        [dict[int,tuple[Point,...]]],
+        tuple[bool,dict[str,Any]]] | None=None,
 ) -> tuple[Wires|None,dict[str,Any]]:
     import numpy as np
     from shapely import contains_xy
@@ -61,6 +63,8 @@ def coupled_target_open_space_escapes(
     orders_started=0
     last_blocked_agent=None
     postseal_evaluations=0
+    partial_reservation_evaluations=0
+    partial_reservation_failures=[]
     postseal_failures=[]
     postseal_success=None
     starts=[]
@@ -197,7 +201,11 @@ def coupled_target_open_space_escapes(
             return wire,"path_found"
         return None,"candidate_frontier_exhausted"
 
-    for ordering in itertools.permutations(range(3)):
+    # Pad 28's earliest escape previously isolated both remaining nets.
+    # Preserve the two scarcer target corridors first in the joint search.
+    priority_orders=((1,2,0),(2,1,0),(1,0,2),
+                     (2,0,1),(0,1,2),(0,2,1))
+    for ordering in priority_orders:
         if time.monotonic()>=deadline or expanded_total>=max_expanded:
             break
         orders_started+=1
@@ -207,6 +215,7 @@ def coupled_target_open_space_escapes(
         def recurse(depth:int)->bool:
             nonlocal best,last_blocked_agent
             nonlocal postseal_evaluations,postseal_success
+            nonlocal partial_reservation_evaluations
             if time.monotonic()>=deadline or expanded_total>=max_expanded:
                 return False
             best=max(best,len(routed))
@@ -240,7 +249,23 @@ def coupled_target_open_space_escapes(
                 routed[agent]=wire
                 reserved.append(line)
                 budgets["target_paths_temporarily_reserved"]+=1
-                if recurse(depth+1):
+                allow_next=True
+                if partial_reservation_validator is not None:
+                    if partial_reservation_evaluations>=80:
+                        budgets["partial_reservation_budget_exhausted"]+=1
+                        allow_next=False
+                    else:
+                        partial_reservation_evaluations+=1
+                        allow_next,part=partial_reservation_validator(routed)
+                        if not allow_next:
+                            budgets["partial_reservation_FCu_cut"]+=1
+                            if len(partial_reservation_failures)<6:
+                                partial_reservation_failures.append({
+                                    "ordering":ordering,
+                                    "depth":depth,
+                                    "failed_geometry":part,
+                                })
+                if allow_next and recurse(depth+1):
                     return True
                 reserved.pop()
                 del routed[agent]
@@ -261,6 +286,8 @@ def coupled_target_open_space_escapes(
                 "global_fcu_reachability_required":(
                     reachable_components is not None),
                 "postseal_component_evaluations":postseal_evaluations,
+                "partial_reservation_evaluations":
+                    partial_reservation_evaluations,
                 "postseal_continuous_components_verified":(
                     postseal_validator is not None),
                 "postseal_verification":postseal_success,
@@ -282,6 +309,9 @@ def coupled_target_open_space_escapes(
             reachable_components is not None),
         "postseal_component_evaluations":postseal_evaluations,
         "postseal_failed_candidates":postseal_failures,
+        "partial_reservation_evaluations":
+            partial_reservation_evaluations,
+        "partial_reservation_failures":partial_reservation_failures,
         "best_routed_agents":best,
         "last_blocked_agent":last_blocked_agent,
         "search_wall_budget_exhausted":time.monotonic()>=deadline,
