@@ -243,7 +243,9 @@ class CBS3Tests(unittest.TestCase):
             '"u4_deterministic_fanout_enabled"',
             '"u4_deterministic_fanout_diagnostic"',
             "fanout_sides[agent]",
-            "mask |= projection < (",
+            "mask |= u4_local_guard & (projection < (",
+            "macro_global_detour_window",
+            "u4_local_escape_guard_radius_mm",
             "LineString(fanout_wires[j]).buffer(.300-1e-9",
         ):
             self.assertIn(token,CBS)

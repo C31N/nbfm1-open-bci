@@ -143,7 +143,7 @@ def spatial_cbs_fcu3(
     all_ends = [xy for pair in endpoints for xy in pair]
     limits = board.GetBoardEdgesBoundingBox()
     margin = .56
-    detour_reach = 7.2 if uuid_detours else 3.2
+    detour_reach = 12.0 if u4_fanout else (7.2 if uuid_detours else 3.2)
     x0 = max(min(x for x, _ in all_ends)-detour_reach,
              pcbnew.ToMM(limits.GetX())+margin)
     x1 = min(max(x for x, _ in all_ends)+detour_reach,
@@ -184,15 +184,18 @@ def spatial_cbs_fcu3(
         shapes.append(shape)
         mask=contains_xy(shape,gx,gy)
         if fanout_wires is not None:
-            # A* cannot expand inside the U4 pad-to-fanout-tip half-plane.
-            # Copper before the tips is already deterministically reserved.
+            # A full-board U4 half-plane eliminated legal global detours.
+            # Keep only the immutable PAD CLUSTER guarded: the actual
+            # source escapes remain SHA-sealed and cross-net hard copper.
             center=(sum(p[0] for p in u4_ports)/3,
                     sum(p[1] for p in u4_ports)/3)
             projection=(fanout_normal[0]*(gx-center[0])
                         +fanout_normal[1]*(gy-center[1]))
-            mask |= projection < (
+            u4_local_guard=contains_xy(
+                ShapelyPoint(center).buffer(3.0),gx,gy)
+            mask |= u4_local_guard & (projection < (
                 fanout_diag["transition_mm"]
-                +fanout_diag["parallel_length_mm"] - 1e-8)
+                +fanout_diag["parallel_length_mm"] - 1e-8))
         masks.append(mask)
         if progress:
             progress("CBS3_fixed_copper_agent_done",{"agent":i})
@@ -266,6 +269,9 @@ def spatial_cbs_fcu3(
         "new_vias_added":0,
         "uuid_detours_enabled": uuid_detours,
         "uuid_detour_reach_mm": detour_reach,
+        "macro_global_detour_window":u4_fanout,
+        "u4_local_escape_guard_radius_mm":3.0 if u4_fanout else None,
+        "macro_search_roi_bounds_mm":(x0,y0,x1,y1),
         "uuid_detour_diagnostic": detour_diagnostic,
         "expanded_cbs_nodes":0, "expanded_lowlevel_nodes":0,
         "resolved_conflicts":0,

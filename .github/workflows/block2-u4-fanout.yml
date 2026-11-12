@@ -113,6 +113,9 @@ jobs:
                   assert g['native_obstacle_preflight_passed'] is True
                   assert len(g['CH027_protected_UUIDs'])==2
                   assert f['post_fanout_split_mode']=='mutual-reservation'
+                  assert f['macro_global_detour_window'] is True
+                  assert f['uuid_detour_reach_mm']==12.0
+                  assert f['u4_local_escape_guard_radius_mm']==3.0
                   result=f.get('post_escape_mutual_reservation')
                   assert result and result['locked_U4_escape_count']==3
                   assert result['new_vias_added']==0
