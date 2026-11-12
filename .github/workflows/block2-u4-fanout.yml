@@ -10,6 +10,7 @@ on:
       - "hardware/eeg128-tdm/probe_block2_u4_dogleg.py"
       - "hardware/eeg128-tdm/probe_block2_u4_topological.py"
       - "hardware/eeg128-tdm/probe_block2_target_escape.py"
+      - "hardware/eeg128-tdm/probe_block2_target_coupled.py"
       - "hardware/eeg128-tdm/probe_block2_mutual_reservation.py"
       - "hardware/eeg128-tdm/probe_block2_cbs_fcu3.py"
       - "hardware/eeg128-tdm/probe_block2_nbody_201.py"
@@ -18,6 +19,7 @@ on:
       - "hardware/eeg128-tdm/test_block2_u4_dogleg.py"
       - "hardware/eeg128-tdm/test_block2_u4_topological.py"
       - "hardware/eeg128-tdm/test_block2_target_escape.py"
+      - "hardware/eeg128-tdm/test_block2_target_coupled.py"
       - "hardware/eeg128-tdm/test_block2_mutual_reservation.py"
 permissions:
   contents: read
@@ -44,13 +46,14 @@ jobs:
           /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
       - name: Paired native FCu escapes and mutual midpoint hard-gating tests
         run: |
-          /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_u4_corridors.py hardware/eeg128-tdm/probe_block2_u4_dogleg.py hardware/eeg128-tdm/probe_block2_u4_topological.py hardware/eeg128-tdm/probe_block2_target_escape.py hardware/eeg128-tdm/probe_block2_mutual_reservation.py hardware/eeg128-tdm/probe_block2_cbs_fcu3.py hardware/eeg128-tdm/probe_block2_nbody_201.py
+          /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_u4_corridors.py hardware/eeg128-tdm/probe_block2_u4_dogleg.py hardware/eeg128-tdm/probe_block2_u4_topological.py hardware/eeg128-tdm/probe_block2_target_escape.py hardware/eeg128-tdm/probe_block2_target_coupled.py hardware/eeg128-tdm/probe_block2_mutual_reservation.py hardware/eeg128-tdm/probe_block2_cbs_fcu3.py hardware/eeg128-tdm/probe_block2_nbody_201.py
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_cbs_fcu3.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_nbody_201.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_u4_dogleg.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_u4_topological.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_mutual_reservation.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_target_escape.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_target_coupled.py -v
       - name: Reproduce protected 139 source
         timeout-minutes: 8
         run: |
@@ -113,8 +116,8 @@ jobs:
                   assert t and t['status']=='three_native_target_escapes_preflighted_not_DRC'
                   assert len(t['target_pad_UUIDs'])==3
                   assert len(set(t['target_pad_UUIDs']))==3
-                  assert t['pitch_mm']==.300
-                  assert t['parallel_length_mm']>=1.5
+                  assert t['hard_centreline_clearance_mm']==.300
+                  assert t['target_lane_consolidation_required'] is False
                   assert t['minimum_target_centerline_mm']>=.300-1e-8
                   assert t['no_new_vias'] is True
                   assert t['fixed_copper_unchanged'] is True

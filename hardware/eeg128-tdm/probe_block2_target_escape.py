@@ -70,8 +70,9 @@ def native_target_triplet_preflight(
     from shapely.geometry import LineString,box
     from shapely.ops import unary_union
     from route_targeted_closure import obstacles,pad_copper_shape
-    from probe_block2_u4_topological import (
-        GRID_MM,_candidate_lanes,_route_candidates,
+    from probe_block2_u4_topological import GRID_MM
+    from probe_block2_target_coupled import (
+        coupled_target_open_space_escapes,
     )
 
     if (len(nets)!=3 or len(set(nets))!=3 or
@@ -129,14 +130,13 @@ def native_target_triplet_preflight(
         prepare(shape)
         shapes.append(shape)
         masks.append(contains_xy(shape,gx,gy))
-    lanes=_candidate_lanes(
-        xs,ys,ports,pad_bounds,sign,tangent)
-    if not lanes:
-        raise RuntimeError("target_escape_has_no_valid_external_lane")
+    # No fixed 0.300-mm target bundle: the native target pads are
+    # 2.600 mm apart. A coupled search now reserves THREE individually
+    # routed F.Cu exits and their full clearance without converging them.
     started=time.monotonic()
-    routes,diag=_route_candidates(
-        masks,shapes,xs,ys,ports,lanes,tangent,sign,
-        deadline=started+38.,max_expanded=220000)
+    routes,diag=coupled_target_open_space_escapes(
+        masks,shapes,xs,ys,ports,tangent,sign,
+        deadline=started+42.,max_expanded=170000)
     pad_ids=[pad.m_Uuid.AsString() for pad in pads]
     pad_refs=[]
     for i,pad in enumerate(pads):
@@ -188,8 +188,8 @@ def native_target_triplet_preflight(
             serialized).hexdigest(),
         "target_escape_vertex_counts":[len(x) for x in routes],
         "target_escape_paths_mm":routes,
-        "pitch_mm":.300,
-        "parallel_length_mm":1.5,
+        "hard_centreline_clearance_mm":.300,
+        "target_lane_consolidation_required":False,
         "minimum_target_centerline_mm":diag["minimum_centerline_mm"],
         "search":diag,
         "no_new_vias":True,

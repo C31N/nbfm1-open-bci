@@ -94,7 +94,8 @@ class TargetTripletTests(TestCase):
             "native_FCu_target_pad_not_found_for_agent_",
             "target_escape_immutable_sha256",
             "target_escape_paths_mm",
-            "_route_candidates(",
+            "coupled_target_open_space_escapes(",
+            "target_lane_consolidation_required",
             "geometry_unsatisfiable_proven",
         ):
             self.assertIn(item,target)
