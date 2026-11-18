@@ -148,9 +148,13 @@ class ElasticJointCorridorRouter:
         width=self.grid.local_corridor_width_mm(points)
         if width>=self.parallel_threshold:
             return "PARALLEL"
-        if width>=self.pinch_threshold:
-            return "STAGGERED_PINCH"
-        return "BLOCKED"
+        if width<self.pinch_threshold:
+            # EDT samples an ALREADY buffered obstacle raster: a local
+            # diameter below 0.60 mm is only a search heuristic. Treating
+            # it as a hard cut incorrectly rejected native-free source
+            # anchors. Exact Shapely copper + segment pitch remain hard.
+            self.stats["subthreshold_EDT_exact_geometry_only"]+=1
+        return "STAGGERED_PINCH"
 
     def _check_transition(
         self,old:tuple[Node,Node,Node],
