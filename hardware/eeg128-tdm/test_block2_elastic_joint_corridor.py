@@ -3,13 +3,12 @@
 """Regression tests for three-head simultaneous F.Cu EDT corridor search."""
 from __future__ import annotations
 
-import time
 import unittest
 from pathlib import Path
 
 import numpy as np
 from shapely import contains_xy
-from shapely.geometry import GeometryCollection,LineString,box
+from shapely.geometry import GeometryCollection,box
 
 from probe_block2_elastic_joint_corridor import (
     BundleState,FCuCorridorGrid,ElasticJointCorridorRouter,

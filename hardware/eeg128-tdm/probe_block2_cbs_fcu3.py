@@ -575,20 +575,15 @@ def spatial_cbs_fcu3(
         # No CBS nodes can touch or replan any of the three topologically
         # solved U4 fanouts. They are sealed, immutable virtual F.Cu copper
         # until the complete candidate passes all subsequent native gates.
-        from probe_block2_mutual_reservation import (
-            mutually_reserved_macro_search,
-        )
         import hashlib
         import json
 
         frozen_bytes=json.dumps(
             fanout_wires,separators=(",",":"),allow_nan=False).encode()
         frozen_sha=hashlib.sha256(frozen_bytes).hexdigest()
-        frozen_lines=tuple(LineString(wire) for wire in fanout_wires)
         target_bytes=json.dumps(
             target_wires,separators=(",",":"),allow_nan=False).encode()
         target_sha=hashlib.sha256(target_bytes).hexdigest()
-        frozen_targets=tuple(LineString(wire) for wire in target_wires)
         diag["target_immutable_escape_sha256"]=target_sha
         diag["u4_immutable_fanout_sha256"]=frozen_sha
         # An early midpoint frontier failure must still carry both
