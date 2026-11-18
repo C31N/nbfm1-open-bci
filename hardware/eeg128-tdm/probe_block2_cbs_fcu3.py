@@ -54,6 +54,7 @@ def spatial_cbs_fcu3(
     from shapely.geometry import Point as ShapelyPoint
     from probe_block2_u4_topological import native_u4_topological_preflight
     from probe_block2_target_escape import native_target_triplet_preflight
+    from probe_block2_fcu_reachability import reachable_midpoint_grid_mask
 
     if len(endpoints) != 3 or len(nets) != 3 or len(set(nets)) != 3:
         raise ValueError("CBS requires exactly three distinct target nets")
@@ -163,6 +164,9 @@ def spatial_cbs_fcu3(
               if u4_ports else None)
     masks=[]
     shapes=[]
+    midpoint_components=[]
+    midpoint_reachability=[]
+    midpoint_blocker_witnesses=[]
     if progress:
         progress("CBS3_fixed_copper_obstacles_started",
                  {"grid_shape":[len(xs),len(ys)]})
@@ -183,6 +187,37 @@ def spatial_cbs_fcu3(
         prepare(shape)
         shapes.append(shape)
         mask=contains_xy(shape,gx,gy)
+        if fanout_wires is not None:
+            # Restrict A* to ONE exact native-copper free polygon
+            # containing BOTH already sealed escape endpoints. Do not
+            # infer impossibility from an A* raster frontier alone.
+            reachable,midcheck,witness=reachable_midpoint_grid_mask(
+                bbox,shape,endpoints[i][0],endpoints[i][1],xs,ys)
+            midcheck["agent"]=i
+            midpoint_reachability.append(midcheck)
+            midpoint_components.append(reachable is not None)
+            if reachable is None:
+                from probe_block2_u4_corridors import (
+                    _native_fanout_blockers,
+                )
+                blockers=_native_fanout_blockers(
+                    board,net,LineString(witness))
+                if not blockers:
+                    blockers=_native_fanout_blockers(
+                        board,net,LineString(endpoints[i]))
+                midpoint_blocker_witnesses.append({
+                    "agent":i,
+                    "witness_segment_mm":witness,
+                    "native_copper_UUID_witnesses":[
+                        item["UUID"] for item in blockers],
+                    "native_copper_details":blockers,
+                    "not_minimum_cut_proof":True,
+                })
+                mask[:]=True
+            else:
+                # Keep ALL existing foreign copper, VCM, L3 and U4
+                # local-guard exclusions. This only ADDS constraints.
+                mask |= ~reachable
         if fanout_wires is not None:
             # A full-board U4 half-plane eliminated legal global detours.
             # Keep only the immutable PAD CLUSTER guarded: the actual
@@ -272,10 +307,20 @@ def spatial_cbs_fcu3(
         "macro_global_detour_window":u4_fanout,
         "u4_local_escape_guard_radius_mm":3.0 if u4_fanout else None,
         "macro_search_roi_bounds_mm":(x0,y0,x1,y1),
+        "midpoint_global_polygon_reachability":midpoint_reachability,
+        "midpoint_native_UUID_cut_witnesses":midpoint_blocker_witnesses,
+        "midpoint_all_three_shared_components":(
+            all(midpoint_components) if fanout_wires is not None else None),
+        "midpoint_polygon_constrained_A_star":fanout_wires is not None,
         "uuid_detour_diagnostic": detour_diagnostic,
         "expanded_cbs_nodes":0, "expanded_lowlevel_nodes":0,
         "resolved_conflicts":0,
     }
+    if fanout_wires is not None and not all(midpoint_components):
+        diag["status"]="CBS3_midpoint_global_FCu_components_disconnected"
+        diag["geometry_unsatisfiable_proven"]=False
+        diag["fully_restituted"]=False
+        return None,diag
     if any(q is None for q in start+goal):
         diag["status"]="CBS3_endpoint_escape_blocked"
         return None,diag

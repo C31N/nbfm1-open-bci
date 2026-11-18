@@ -160,3 +160,33 @@ def native_reachability_components(
         "geometry_unsatisfiable_proven":False,
         "native_DRC_still_required":True,
     }
+
+
+
+def reachable_midpoint_grid_mask(
+    allowed_roi:Any,inflated_fixed_copper:Any,
+    u4_tip:Point,target_tip:Point,xs:Any,ys:Any,
+) -> tuple[Any|None,dict[str,Any],tuple[Point,Point]]:
+    """Exact polygon gate for bounded A*; never relax hard native masks.
+
+    Returns a raster boolean mask where a point belongs to the SAME exact
+    connected free polygon as both sealed escape tips. Grid connectivity is
+    still checked by the ordinary A* solver; no claim is made that a path
+    exists until it passes the exact native copper checks.
+    """
+    import numpy as np
+    from shapely import contains_xy
+    polygon,diag,witness=continuous_free_reachability(
+        allowed_roi,inflated_fixed_copper,u4_tip,target_tip)
+    result=dict(diag)
+    result["midpoint_sealed_tip_reachability_required"]=True
+    result["native_shape_constraints_preserved"]=True
+    result["route_qualified"]=False
+    if polygon is None:
+        result["reachable_grid_nodes"]=0
+        return None,result,witness
+    gx,gy=np.meshgrid(xs,ys)
+    raster=contains_xy(polygon,gx,gy)
+    result["reachable_grid_nodes"]=int(np.count_nonzero(raster))
+    result["global_FCu_polygon_gate_applied"]=True
+    return raster,result,witness

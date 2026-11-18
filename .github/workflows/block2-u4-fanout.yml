@@ -22,6 +22,7 @@ on:
       - "hardware/eeg128-tdm/test_block2_target_escape.py"
       - "hardware/eeg128-tdm/test_block2_target_coupled.py"
       - "hardware/eeg128-tdm/test_block2_fcu_reachability.py"
+      - "hardware/eeg128-tdm/test_block2_midpoint_reach.py"
       - "hardware/eeg128-tdm/test_block2_mutual_reservation.py"
 permissions:
   contents: read
@@ -57,6 +58,7 @@ jobs:
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_target_escape.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_target_coupled.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_fcu_reachability.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_midpoint_reach.py -v
       - name: Reproduce protected 139 source
         timeout-minutes: 8
         run: |
@@ -104,7 +106,17 @@ jobs:
                       or 'target_triplet' in f['reason'])
                   assert not w['target_nets_routed']
                   assert w['fully_restituted'] is False
-              if g and f.get('status')!='CBS3_target_triplet_native_preflight_blocked':
+              if f.get('status')=='CBS3_midpoint_global_FCu_components_disconnected':
+                  assert f['midpoint_polygon_constrained_A_star'] is True
+                  assert f['midpoint_all_three_shared_components'] is False
+                  assert len(f['midpoint_global_polygon_reachability'])==3
+                  assert f['midpoint_native_UUID_cut_witnesses']
+                  assert not w['target_nets_routed']
+                  assert w['fully_restituted'] is False
+              if g and f.get('status') not in (
+                  'CBS3_target_triplet_native_preflight_blocked',
+                  'CBS3_midpoint_global_FCu_components_disconnected',
+              ):
                   assert g['tip_pitch_mm']==0.300
                   assert g['U3_pad7_UUID']=='e37256fc-3b9f-435d-8042-f7d4c1147aca'
                   assert g['minimum_centerline_mm']>=0.300-1e-8
@@ -119,6 +131,13 @@ jobs:
                   assert f['macro_global_detour_window'] is True
                   assert f['uuid_detour_reach_mm']==12.0
                   assert f['u4_local_escape_guard_radius_mm']==3.0
+                  assert f['midpoint_polygon_constrained_A_star'] is True
+                  assert f['midpoint_all_three_shared_components'] is True
+                  assert len(f['midpoint_global_polygon_reachability'])==3
+                  assert all(q['shared_component'] and
+                      q['global_FCu_polygon_gate_applied'] and
+                      q['reachable_grid_nodes']>0
+                      for q in f['midpoint_global_polygon_reachability'])
                   result=f.get('post_escape_mutual_reservation')
                   assert result and result['locked_U4_escape_count']==3
                   assert result['new_vias_added']==0
@@ -161,6 +180,19 @@ jobs:
               assert w['fully_restituted'] is True
               assert len(w['victims_restored_original_geometry'])+len(
                   w['victims_routed_new_geometry'])==201
+          print('MIDPOINT_NO_RELEASE_DIAG='+json.dumps({
+              'status':w.get('status'),
+              'candidate_qualified_136':d.get('candidate_qualified_136'),
+              'unconnected':d.get('candidate_native_DRC'),
+              'victim_restored':len(w.get('victims_restored_original_geometry',[])),
+              'victim_rerouted':len(w.get('victims_routed_new_geometry',[])),
+              'cbs_status':f.get('status') if f else None,
+              'midpoint_reachable':f.get('midpoint_all_three_shared_components') if f else None,
+              'midpoint_polygons':f.get('midpoint_global_polygon_reachability') if f else None,
+              'midpoint_uuid_cut_witnesses':f.get('midpoint_native_UUID_cut_witnesses') if f else None,
+              'midpoint_mutual':f.get('post_escape_mutual_reservation') if f else None,
+              'blocked_agent':f.get('blocked_agent') if f else None,
+          },sort_keys=True,default=str)[:9000])
           assert not list(Path('/tmp').rglob('*.gbr'))
           assert not list(Path('/tmp').rglob('*.drl'))
           PY
