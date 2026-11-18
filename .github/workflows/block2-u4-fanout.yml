@@ -133,6 +133,8 @@ jobs:
                   assert f['u4_local_escape_guard_radius_mm']==3.0
                   assert f['midpoint_polygon_constrained_A_star'] is True
                   assert f['midpoint_all_three_shared_components'] is True
+                  if f.get('macro_future_hard_reservation_radius_mm') is not None:
+                      assert f['macro_future_hard_reservation_radius_mm']==[.300,.420]
                   assert len(f['midpoint_global_polygon_reachability'])==3
                   assert all(q['shared_component'] and
                       q['global_FCu_polygon_gate_applied'] and

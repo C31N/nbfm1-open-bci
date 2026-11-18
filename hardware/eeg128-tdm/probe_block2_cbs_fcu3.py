@@ -54,7 +54,9 @@ def spatial_cbs_fcu3(
     from shapely.geometry import Point as ShapelyPoint
     from probe_block2_u4_topological import native_u4_topological_preflight
     from probe_block2_target_escape import native_target_triplet_preflight
-    from probe_block2_fcu_reachability import reachable_midpoint_grid_mask
+    from probe_block2_fcu_reachability import (
+        reachable_midpoint_grid_mask,continuous_free_reachability,
+    )
 
     if len(endpoints) != 3 or len(nets) != 3 or len(set(nets)) != 3:
         raise ValueError("CBS requires exactly three distinct target nets")
@@ -341,6 +343,7 @@ def spatial_cbs_fcu3(
            (1,1),(1,-1),(-1,1),(-1,-1))
     counter=itertools.count()
     macro_future_masks=None
+    macro_future_strict_masks=None
     def low_level(
         agent:int, forbidden:frozenset[GridEdge],
         reserved_macro_lines:tuple[Any,...]=(),
@@ -349,12 +352,47 @@ def spatial_cbs_fcu3(
         first=start[agent]
         last=goal[agent]
         mask=masks[agent]
+        if macro_future_strict_masks is not None and variant>=2:
+            # Preserve the otherwise unreserved paths of the two other
+            # signals in the speculative branch. These extra hard masks
+            # are heuristics only: if they block an anchor, try another
+            # variant without relaxing any native copper restrictions.
+            forecast=macro_future_strict_masks[agent][variant-2]
+            mask=mask | forecast
+            if mask[first[1],first[0]] or mask[last[1],last[0]]:
+                diag.setdefault("forecast_hard_anchor_blocks",0)
+                diag["forecast_hard_anchor_blocks"]+=1
+                return None
         if reserved_macro_lines:
             # Hard, cumulative copper-centreline clearance: every previous
             # 0.15-mm macro trace + 0.15-mm clearance occupies 0.300 mm.
             reserved_copper=unary_union([
                 line.buffer(.300-1e-9,resolution=8)
                 for line in reserved_macro_lines])
+            # Continuous topology may be severed by an earlier
+            # speculative macro reservation even when the grid reports
+            # only frontier exhaustion. Reject that branch before A*.
+            reserved_component,cut_report,_=continuous_free_reachability(
+                bbox,shapes[agent].union(reserved_copper),
+                endpoints[agent][0],endpoints[agent][1])
+            if reserved_component is None:
+                samples=diag.setdefault(
+                    "post_reservation_component_cut_samples",[])
+                if len(samples)<12:
+                    samples.append({
+                        "blocked_agent":agent,
+                        "reserved_foreign_macro_count":
+                            len(reserved_macro_lines),
+                        "component_count":
+                            cut_report["continuous_polygon_components"],
+                        "min_component_gap_mm":
+                            cut_report["min_component_gap_mm"],
+                        "not_native_copper_minimum_cut":True,
+                        "candidate_still_unqualified":True,
+                    })
+                diag.setdefault("post_reservation_component_cuts",0)
+                diag["post_reservation_component_cuts"]+=1
+                return None
             mask = mask | contains_xy(reserved_copper,gx,gy)
             if mask[first[1],first[0]] or mask[last[1],last[0]]:
                 diag.setdefault("mutual_anchor_blocks",0)
@@ -536,6 +574,17 @@ def spatial_cbs_fcu3(
                     for j in range(3) if j!=i]),
                 gx,gy)
             for i in range(3)]
+        macro_future_strict_masks=[
+            tuple(
+                contains_xy(
+                    unary_union([
+                        macro_seeds[j].buffer(radius,quad_segs=8)
+                        for j in range(3) if j!=i]),
+                    gx,gy)
+                for radius in (.300,.420))
+            for i in range(3)]
+        diag["macro_future_hard_reservation_radius_mm"]=[
+            .300,.420]
         diag["macro_future_seed_nodes"]=[
             len(line.coords) for line in macro_seeds]
         diag["macro_future_soft_penalties"]=[0.,3.,9.,18.]
