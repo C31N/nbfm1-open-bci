@@ -644,17 +644,48 @@ def spatial_cbs_fcu3(
             raise RuntimeError(
                 "Immutable U4/Target escape joint SHA256 drift")
         diag["u4_fanout_sha256_after_macro"]=hashlib.sha256(
-            json.dumps(
-                fanout_wires,separators=(",",":"),allow_nan=False,
-            ).encode()).hexdigest()
-        if diag["u4_fanout_sha256_after_macro"] != frozen_sha:
-            raise RuntimeError("Immutable U4 escape geometry changed")
+            json.dumps(fanout_wires,separators=(",",":"),
+                       allow_nan=False).encode()).hexdigest()
         diag["target_escape_sha256_after_macro"]=hashlib.sha256(
-            json.dumps(
-                target_wires,separators=(",",":"),allow_nan=False,
-            ).encode()).hexdigest()
-        if diag["target_escape_sha256_after_macro"] != target_sha:
-            raise RuntimeError("Immutable target escape geometry changed")
+            json.dumps(target_wires,separators=(",",":"),
+                       allow_nan=False).encode()).hexdigest()
+        if (diag["u4_fanout_sha256_after_macro"] != frozen_sha or
+                diag["target_escape_sha256_after_macro"] != target_sha):
+            raise RuntimeError("Individual escape SHA256 drift")
+        if (joint["status"] != "MIDPOINT_BUNDLE_SOLVED" or
+                joint["closed_nets"] != 3):
+            diag["status"]="CBS3_joint_EDT_midpoint_no_solution"
+            diag["post_escape_mutual_reservation"]={
+                "status":"joint_3net_no_solution",
+                "locked_U4_escape_count":3,
+                "locked_target_escape_count":3,
+                "new_vias_added":0,
+                "orders_started":0,
+                "native_DRC_still_required":True,
+                "geometry_unsatisfiable_proven":False,
+            }
+            diag["CBS3_exit_class"]=(
+                "budget" if "BUDGET" in joint["status"]
+                else "bounded_dead_end")
+            diag["CBS3_geometry_unsatisfiable_proven"]=False
+            diag["wall_s"]=round(time.monotonic()-started,3)
+            if progress:
+                progress("MIDPOINT_elastic_joint_EDT_rejected",{
+                    "diagnostic":joint,"escapes_unchanged":True})
+            return None,diag
+        if routes is None or len(routes)!=3:
+            raise RuntimeError("Joint solver reported success without 3 routes")
+        diag["post_escape_mutual_reservation"]={
+            "status":"joint_bundle_three_macros_proposed_unverified",
+            "locked_U4_escape_count":3,
+            "locked_target_escape_count":3,
+            "new_vias_added":0,
+            "orders_started":0,
+            "native_DRC_still_required":True,
+            "minimum_post_escape_centreline_mm":
+                joint["minimum_complete_centreline_mm"],
+            "simultaneous_routed_nets":3,
+        }
         output=[
             [(0,*endpoints[i][0])]
             +[(0,*physical(node)) for node in routes[i]]
