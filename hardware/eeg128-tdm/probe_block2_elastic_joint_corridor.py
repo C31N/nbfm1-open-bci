@@ -161,12 +161,16 @@ class ElasticJointCorridorRouter:
             if not self.grid.is_segment_drc_clear(i,a,b):
                 self.stats["native_fixed_copper_or_mask"]+=1
                 return False
-            if self._distance(new[i],new[(i+1)%3])<self.pitch-TOL:
-                self.stats["pairwise_point_pitch"]+=1
-                return False
             lines.append(
                 LineString((self.grid.physical(a),self.grid.physical(b)))
                 if a!=b else ShapePoint(self.grid.physical(a)))
+        # Only now are ALL three positions guaranteed to be inside the
+        # PCB grid. Never project an unchecked neighbour to coordinates.
+        for i in range(3):
+            for j in range(i+1,3):
+                if self._distance(new[i],new[j])<self.pitch-TOL:
+                    self.stats["pairwise_point_pitch"]+=1
+                    return False
         for i in range(3):
             for j in range(i+1,3):
                 if lines[i].distance(lines[j])<self.pitch-TOL:
