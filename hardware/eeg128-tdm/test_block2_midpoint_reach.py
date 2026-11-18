@@ -61,11 +61,11 @@ class MidpointFreePolygonTests(unittest.TestCase):
             "midpoint_native_UUID_cut_witnesses",
             "CBS3_midpoint_global_FCu_components_disconnected",
             "mask |= ~reachable",
-            "post_reservation_component_cut_samples",
-            "macro_future_hard_reservation_radius_mm",
-            "macro_future_strict_masks",
-            "historical_alternatives",
-            "macro_history_diversification_count",
+            "elastic_joint_corridor_diagnostic",
+            "combined_immutable_escape_sha256",
+            "elastic_joint_corridor_sha256_after",
+            "CBS3_joint_EDT_midpoint_no_solution",
+            "MIDPOINT_BUNDLE_SOLVED",
         ):
             self.assertIn(token,cbs)
         for token in (
