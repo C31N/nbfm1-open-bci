@@ -185,7 +185,7 @@ class ElasticJointCorridorRouter:
         # corridors any one or two agents may advance while others hold.
         patterns=(
             (1,1,1),(1,0,0),(0,1,0),(0,0,1),
-            (1,1,0),(0,1,1),(1,0,1))
+            (1,1,0),(0,1,1),(1,0,1)
         )
         for turn in (-2,-1,0,1,2):
             heading=(current.heading+turn)%8
