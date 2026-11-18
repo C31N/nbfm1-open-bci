@@ -318,6 +318,24 @@ def spatial_cbs_fcu3(
         "expanded_cbs_nodes":0, "expanded_lowlevel_nodes":0,
         "resolved_conflicts":0,
     }
+    if (fanout_wires is not None and target_wires is not None
+            and all(a is not None for a in start+goal)):
+        # The native buffered copper remains the ONLY clearance authority.
+        # This integrity-protected raster is diagnostic, not a substitute
+        # for true geometry, full victim restitution or native KiCad DRC.
+        import hashlib
+        import json
+        from probe_block2_grid_export import export_sealed_midpoint_grid
+        diag["macro_search_grid_export"]=export_sealed_midpoint_grid(
+            masks,xs,ys,start,goal,
+            hashlib.sha256(json.dumps(
+                fanout_wires,separators=(",",":"),allow_nan=False,
+            ).encode()).hexdigest(),
+            hashlib.sha256(json.dumps(
+                target_wires,separators=(",",":"),allow_nan=False,
+            ).encode()).hexdigest(),
+        )
+        diag["grid_export_is_no_release_diagnostic_only"]=True
     if fanout_wires is not None and not all(midpoint_components):
         diag["status"]="CBS3_midpoint_global_FCu_components_disconnected"
         diag["geometry_unsatisfiable_proven"]=False
