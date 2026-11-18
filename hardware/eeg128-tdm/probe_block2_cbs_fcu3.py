@@ -336,6 +336,48 @@ def spatial_cbs_fcu3(
             ).encode()).hexdigest(),
         )
         diag["grid_export_is_no_release_diagnostic_only"]=True
+        from probe_block2_multinet_cut import (
+            optimistic_fcu_three_net_cut,
+        )
+        diag["optimistic_three_net_FCu_capacity"]=(
+            optimistic_fcu_three_net_cut(
+                masks,start,goal,xs,ys,
+                diagonal_corner_override=False))
+        diag["optimistic_three_net_FCu_capacity_relaxed_diagonals"]=(
+            optimistic_fcu_three_net_cut(
+                masks,start,goal,xs,ys,
+                diagonal_corner_override=True))
+        native_mincut_samples=[]
+        from probe_block2_u4_corridors import _native_fanout_blockers
+        for witness in (
+            diag["optimistic_three_net_FCu_capacity_relaxed_diagonals"]
+            ["vertex_cut_witnesses"][:3]
+        ):
+            px,py=witness["position_mm"]
+            objects=[]
+            for i,net in enumerate(nets):
+                for wire in (
+                    LineString(((px-.66,py),(px+.66,py))),
+                    LineString(((px,py-.66),(px,py+.66))),
+                ):
+                    objects.extend(
+                        _native_fanout_blockers(board,net,wire)[:8])
+            seen_uuids=set()
+            precise=[]
+            for obj in objects:
+                uid=obj.get("UUID")
+                if uid and uid not in seen_uuids:
+                    seen_uuids.add(uid)
+                    precise.append(obj)
+            native_mincut_samples.append({
+                "raster_vertex":witness,
+                "near_cut_native_copper_details":precise[:20],
+                "near_cut_native_copper_UUIDs":[
+                    obj["UUID"] for obj in precise[:20]],
+                "not_native_exact_continuous_minimum_cut":True,
+            })
+        diag["optimistic_raster_cut_near_native_UUIDs"]=(
+            native_mincut_samples)
     if fanout_wires is not None and not all(midpoint_components):
         diag["status"]="CBS3_midpoint_global_FCu_components_disconnected"
         diag["geometry_unsatisfiable_proven"]=False

@@ -13,6 +13,7 @@ on:
       - "hardware/eeg128-tdm/probe_block2_target_coupled.py"
       - "hardware/eeg128-tdm/probe_block2_fcu_reachability.py"
       - "hardware/eeg128-tdm/probe_block2_grid_export.py"
+      - "hardware/eeg128-tdm/probe_block2_multinet_cut.py"
       - "hardware/eeg128-tdm/probe_block2_mutual_reservation.py"
       - "hardware/eeg128-tdm/probe_block2_cbs_fcu3.py"
       - "hardware/eeg128-tdm/probe_block2_nbody_201.py"
@@ -25,6 +26,7 @@ on:
       - "hardware/eeg128-tdm/test_block2_fcu_reachability.py"
       - "hardware/eeg128-tdm/test_block2_midpoint_reach.py"
       - "hardware/eeg128-tdm/test_block2_grid_export.py"
+      - "hardware/eeg128-tdm/test_block2_multinet_cut.py"
       - "hardware/eeg128-tdm/test_block2_mutual_reservation.py"
 permissions:
   contents: read
@@ -51,7 +53,7 @@ jobs:
           /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
       - name: Continuous FCu connectivity and immutable escape gates
         run: |
-          /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_u4_corridors.py hardware/eeg128-tdm/probe_block2_u4_dogleg.py hardware/eeg128-tdm/probe_block2_u4_topological.py hardware/eeg128-tdm/probe_block2_target_escape.py hardware/eeg128-tdm/probe_block2_target_coupled.py hardware/eeg128-tdm/probe_block2_fcu_reachability.py hardware/eeg128-tdm/probe_block2_grid_export.py hardware/eeg128-tdm/probe_block2_mutual_reservation.py hardware/eeg128-tdm/probe_block2_cbs_fcu3.py hardware/eeg128-tdm/probe_block2_nbody_201.py
+          /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_u4_corridors.py hardware/eeg128-tdm/probe_block2_u4_dogleg.py hardware/eeg128-tdm/probe_block2_u4_topological.py hardware/eeg128-tdm/probe_block2_target_escape.py hardware/eeg128-tdm/probe_block2_target_coupled.py hardware/eeg128-tdm/probe_block2_fcu_reachability.py hardware/eeg128-tdm/probe_block2_grid_export.py hardware/eeg128-tdm/probe_block2_multinet_cut.py hardware/eeg128-tdm/probe_block2_mutual_reservation.py hardware/eeg128-tdm/probe_block2_cbs_fcu3.py hardware/eeg128-tdm/probe_block2_nbody_201.py
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_cbs_fcu3.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_nbody_201.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_u4_dogleg.py -v
@@ -62,6 +64,7 @@ jobs:
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_fcu_reachability.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_midpoint_reach.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_grid_export.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_multinet_cut.py -v
       - name: Reproduce protected 139 source
         timeout-minutes: 8
         run: |
@@ -137,6 +140,9 @@ jobs:
                   assert f['grid_export_is_no_release_diagnostic_only'] is True
                   assert f['macro_search_grid_export']['format']=='F_Cu_macro_grid_3nets_diagnostic_v1'
                   assert f['macro_search_grid_export']['accepted'] is False
+                  assert f['optimistic_three_net_FCu_capacity']['new_vias_added']==0
+                  assert f['optimistic_three_net_FCu_capacity']['optimistic_max_vertex_disjoint_paths']<=3
+                  assert f['optimistic_three_net_FCu_capacity_relaxed_diagonals']['native_continuous_FCu_impossibility_proven'] is False
                   assert f['midpoint_polygon_constrained_A_star'] is True
                   assert f['midpoint_all_three_shared_components'] is True
                   if f.get('macro_future_hard_reservation_radius_mm') is not None:
