@@ -142,18 +142,17 @@ class MutualReservationTests(unittest.TestCase):
         cbs=(ROOT/"probe_block2_cbs_fcu3.py").read_text()
         nbody=(ROOT/"probe_block2_nbody_201.py").read_text()
         for token in (
-            "from probe_block2_mutual_reservation import (",
-            "mutually_reserved_macro_search(",
-            "reserved_copper=unary_union(",
-            "macro_future_soft_penalties",
-            "macro_future_seed_nodes",
-            "mask = mask | contains_xy(reserved_copper,gx,gy)",
-            '"mutual-reservation" if fanout_wires is not None else split_mode',
+            "from probe_block2_elastic_joint_corridor import (",
+            "ElasticJointCorridorRouter(",
+            "joint_grid.lock_escape_segments(sealed)",
+            "joint_grid.verify_escape_integrity(sealed)",
+            "elastic_joint_corridor_diagnostic",
+            '"elastic-joint-edt" if fanout_wires is not None else split_mode',
             "u4_immutable_fanout_sha256",
             "u4_fanout_sha256_after_macro",
             "u4_full_fanout_vertices_retained",
             "post_escape_macros_all_reserved",
-            "CBS3_post_escape_mutual_reservation_bounded_no_solution",
+            "CBS3_joint_EDT_midpoint_no_solution",
             "CBS3_geometry_unsatisfiable_proven",
         ):
             self.assertIn(token,cbs)

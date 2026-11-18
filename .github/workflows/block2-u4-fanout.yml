@@ -15,6 +15,7 @@ on:
       - "hardware/eeg128-tdm/probe_block2_grid_export.py"
       - "hardware/eeg128-tdm/probe_block2_multinet_cut.py"
       - "hardware/eeg128-tdm/probe_block2_mutual_reservation.py"
+      - "hardware/eeg128-tdm/probe_block2_elastic_joint_corridor.py"
       - "hardware/eeg128-tdm/probe_block2_cbs_fcu3.py"
       - "hardware/eeg128-tdm/probe_block2_nbody_201.py"
       - "hardware/eeg128-tdm/test_block2_cbs_fcu3.py"
@@ -28,6 +29,7 @@ on:
       - "hardware/eeg128-tdm/test_block2_grid_export.py"
       - "hardware/eeg128-tdm/test_block2_multinet_cut.py"
       - "hardware/eeg128-tdm/test_block2_mutual_reservation.py"
+      - "hardware/eeg128-tdm/test_block2_elastic_joint_corridor.py"
 permissions:
   contents: read
 jobs:
@@ -49,16 +51,17 @@ jobs:
           set -eu
           test "$(kicad-cli version)" = "8.0.9"
           apt-get -o Acquire::Retries=3 update
-          DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 install -y --no-install-recommends python3-shapely python3-pip python3-numpy
+          DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 install -y --no-install-recommends python3-shapely python3-pip python3-numpy python3-scipy
           /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
       - name: Continuous FCu connectivity and immutable escape gates
         run: |
-          /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_u4_corridors.py hardware/eeg128-tdm/probe_block2_u4_dogleg.py hardware/eeg128-tdm/probe_block2_u4_topological.py hardware/eeg128-tdm/probe_block2_target_escape.py hardware/eeg128-tdm/probe_block2_target_coupled.py hardware/eeg128-tdm/probe_block2_fcu_reachability.py hardware/eeg128-tdm/probe_block2_grid_export.py hardware/eeg128-tdm/probe_block2_multinet_cut.py hardware/eeg128-tdm/probe_block2_mutual_reservation.py hardware/eeg128-tdm/probe_block2_cbs_fcu3.py hardware/eeg128-tdm/probe_block2_nbody_201.py
+          /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_u4_corridors.py hardware/eeg128-tdm/probe_block2_u4_dogleg.py hardware/eeg128-tdm/probe_block2_u4_topological.py hardware/eeg128-tdm/probe_block2_target_escape.py hardware/eeg128-tdm/probe_block2_target_coupled.py hardware/eeg128-tdm/probe_block2_fcu_reachability.py hardware/eeg128-tdm/probe_block2_grid_export.py hardware/eeg128-tdm/probe_block2_multinet_cut.py hardware/eeg128-tdm/probe_block2_mutual_reservation.py hardware/eeg128-tdm/probe_block2_elastic_joint_corridor.py hardware/eeg128-tdm/probe_block2_cbs_fcu3.py hardware/eeg128-tdm/probe_block2_nbody_201.py
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_cbs_fcu3.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_nbody_201.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_u4_dogleg.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_u4_topological.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_mutual_reservation.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_elastic_joint_corridor.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_target_escape.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_target_coupled.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_fcu_reachability.py -v
@@ -72,7 +75,7 @@ jobs:
             --archive hardware/eeg128-tdm/engineering/block2-ch019-electrode-closed139.zip \
             --output /tmp/u4-fanout-source139.json \
             --candidate-output /tmp/u4-fanout-source139.zip
-      - name: Native global FCu reachability then sealed midpoint routing and 201-victim restitution
+      - name: Native simultaneous EDT joint midpoint and gated 201 restoration
         timeout-minutes: 21
         run: |
           /usr/bin/python3 hardware/eeg128-tdm/probe_block2_nbody_201.py \
@@ -133,7 +136,7 @@ jobs:
                   assert g['parallel_length_mm']>=1.5
                   assert g['native_obstacle_preflight_passed'] is True
                   assert len(g['CH027_protected_UUIDs'])==2
-                  assert f['post_fanout_split_mode']=='mutual-reservation'
+                  assert f['post_fanout_split_mode']=='elastic-joint-edt'
                   assert f['macro_global_detour_window'] is True
                   assert f['uuid_detour_reach_mm']==12.0
                   assert f['u4_local_escape_guard_radius_mm']==3.0
@@ -154,11 +157,29 @@ jobs:
                       q['reachable_grid_nodes']>0
                       for q in f['midpoint_global_polygon_reachability'])
                   result=f.get('post_escape_mutual_reservation')
+                  joint=f.get('elastic_joint_corridor_diagnostic')
                   assert result and result['locked_U4_escape_count']==3
+                  assert result['locked_target_escape_count']==3
                   assert result['new_vias_added']==0
-                  assert result['orders_started']<=6
-                  assert result['macro_variant_limits']==[6,4,2]
                   assert result['native_DRC_still_required'] is True
+                  assert joint
+                  assert joint['closed_nets'] in (0,3)
+                  assert joint['new_vias_added']==0
+                  assert joint['accepted'] is False
+                  assert joint['routing_completed'] is False
+                  assert joint['fabrication_release'] is False
+                  assert joint['native_DRC_still_required'] is True
+                  assert joint['hard_centreline_pitch_mm']==.300
+                  assert f['combined_immutable_escape_sha256']==f['elastic_joint_corridor_sha256_after']
+                  if joint['status']=='MIDPOINT_BUNDLE_SOLVED':
+                      assert joint['closed_nets']==3
+                      assert f['post_escape_macros_all_reserved'] is True
+                      assert result['simultaneous_routed_nets']==3
+                      assert joint['minimum_complete_centreline_mm']>=.300-1e-8
+                  else:
+                      assert joint['closed_nets']==0
+                      assert not w['target_nets_routed']
+                      assert not w['fully_restituted']
                   assert f['u4_immutable_fanout_sha256']==f['u4_fanout_sha256_after_macro']
                   t=f.get('target_triplet_deterministic_escape_diagnostic')
                   assert t and t['status']=='three_native_target_escapes_preflighted_not_DRC'
@@ -179,9 +200,8 @@ jobs:
                   assert f['target_immutable_escape_sha256']==f['target_escape_sha256_after_macro']
                   assert t['target_escape_immutable_sha256']==f['target_immutable_escape_sha256']
                   assert result['locked_target_escape_count']==3
-                  if result['status']=='three_macro_paths_reserved_unverified':
+                  if result['status']=='joint_bundle_three_macros_proposed_unverified':
                       assert f['post_escape_macros_all_reserved'] is True
-                      assert len(result['reservations_per_net'])==3
                       assert result['minimum_post_escape_centreline_mm']>=.300-1e-8
                       assert f['u4_full_fanout_vertices_retained']==[
                           len(wire) for wire in g['fanout_paths_mm']]
@@ -206,6 +226,8 @@ jobs:
               'midpoint_polygons':f.get('midpoint_global_polygon_reachability') if f else None,
               'midpoint_uuid_cut_witnesses':f.get('midpoint_native_UUID_cut_witnesses') if f else None,
               'midpoint_mutual':f.get('post_escape_mutual_reservation') if f else None,
+              'elastic_joint':f.get('elastic_joint_corridor_diagnostic') if f else None,
+              'elastic_joint_hash':f.get('combined_immutable_escape_sha256') if f else None,
               'blocked_agent':f.get('blocked_agent') if f else None,
           },sort_keys=True,default=str)[:9000])
           assert not list(Path('/tmp').rglob('*.gbr'))

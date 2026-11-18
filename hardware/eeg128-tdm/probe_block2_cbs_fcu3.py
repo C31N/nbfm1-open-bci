@@ -139,7 +139,7 @@ def spatial_cbs_fcu3(
     # The frozen U4 copper must not enter any CBS conflict tree. Macro
     # traces are instead reserved immediately, one net at a time.
     post_fanout_split_mode=(
-        "mutual-reservation" if fanout_wires is not None else split_mode)
+        "elastic-joint-edt" if fanout_wires is not None else split_mode)
     from probe_block2_uuid_detours import detour_geometry
     hard_detours, detour_diagnostic = (
         detour_geometry(board) if uuid_detours else (None, None))
@@ -611,85 +611,43 @@ def spatial_cbs_fcu3(
                 +[physical(n) for n in path]
                 +[endpoints[agent][1]])
 
-        # First obtain independent legal macro seeds WITHOUT changing any
-        # copper. These are SOFT forecasts for the unsolved neighbours,
-        # never a basis for breaking an existing copper reservation.
-        macro_seeds=[]
-        for i in range(3):
-            base_path=low_level(i,frozenset())
-            if base_path is None:
-                from probe_block2_u4_corridors import _native_fanout_blockers
-                diag["status"]="CBS3_post_escape_macro_seed_unavailable"
-                diag["blocked_agent"]=i
-                diag["post_escape_mutual_reservation"]={
-                    "status":"midpoint_individual_macro_seed_blocked",
-                    "blocked_agent":i,
-                    "orders_started":0,
-                    "locked_U4_escape_count":3,
-                    "locked_target_escape_count":3,
-                    "new_vias_added":0,
-                    "macro_variant_limits":[4,3,1],
-                    "native_DRC_still_required":True,
-                    "geometry_unsatisfiable_proven":False,
-                }
-                # This is a reference-chord inventory, NOT an exact
-                # A* cut proof; no protected UUID is removed or moved.
-                diag["macro_seed_near_reference_copper"] = (
-                    _native_fanout_blockers(
-                        board,nets[i],LineString(
-                            (endpoints[i][0],endpoints[i][1])))[:8])
-                diag["CBS3_geometry_unsatisfiable_proven"]=False
-                return None,diag
-            macro_seeds.append(macro_line(i,base_path))
-        macro_future_masks=[
-            contains_xy(
-                unary_union([
-                    macro_seeds[j].buffer(.48,resolution=8)
-                    for j in range(3) if j!=i]),
-                gx,gy)
-            for i in range(3)]
-        macro_future_strict_masks=[
-            tuple(
-                contains_xy(
-                    unary_union([
-                        macro_seeds[j].buffer(radius,quad_segs=8)
-                        for j in range(3) if j!=i]),
-                    gx,gy)
-                for radius in (.300,.420))
-            for i in range(3)]
-        diag["macro_future_hard_reservation_radius_mm"]=[
-            .300,.420]
-        diag["macro_future_seed_nodes"]=[
-            len(line.coords) for line in macro_seeds]
-        diag["macro_future_soft_penalties"]=[0.,3.,9.,18.,27.,36.]
-        diag["macro_history_alternative_buffer_mm"]=.62
-
-        # Same-agent, same-reservation alternatives must explore new
-        # homotopy classes, not six repetitions of the same A* route.
-        # The history is only a soft search penalty; it never removes
-        # native F.Cu copper or rewrites a sealed escape path.
-        attempted_macro_lines:dict[
-            tuple[int,tuple[bytes,...]],list[Any]]={}
-        def reserved_low_level(
-            agent:int,locked_lines:tuple[Any,...],variant:int,
-        ) -> GridPath | None:
-            key=(agent,tuple(line.wkb for line in locked_lines))
-            history=attempted_macro_lines.setdefault(key,[])
-            candidate=low_level(
-                agent,frozenset(),locked_lines,variant=variant,
-                historical_alternatives=tuple(history))
-            if candidate is not None:
-                history.append(macro_line(agent,candidate))
-                if len(history)>6:
-                    del history[0]
-            return candidate
-
-        routes,mutual_diag=mutually_reserved_macro_search(
-            reserved_low_level,macro_line,
-            tuple(shapes),frozen_lines,
-            immutable_targets=frozen_targets,
-            deadline=started+seconds,max_orders=6)
-        diag["post_escape_mutual_reservation"]=mutual_diag
+        # Joint-state A*: all three heads, modes and headings are planned
+        # in ONE search tree. It cannot rip up or modify sealed escapes.
+        from probe_block2_elastic_joint_corridor import (
+            FCuCorridorGrid,ElasticJointCorridorRouter,
+        )
+        sealed=(fanout_wires,target_wires)
+        joint_grid=FCuCorridorGrid(masks,shapes,xs,ys)
+        joint_escape_sha=joint_grid.lock_escape_segments(sealed)
+        diag["combined_immutable_escape_sha256"]=joint_escape_sha
+        if progress:
+            progress("MIDPOINT_elastic_joint_EDT_started",{
+                "joint_max_expansions":28000,
+                "joint_wall_budget_seconds":48,
+                "grid_mm":step_mm,
+                "u4_immutable_fanout_sha256":frozen_sha,
+                "target_immutable_escape_sha256":target_sha,
+                "joint_immutable_sha256":joint_escape_sha,
+                "new_vias_added":0,
+            })
+        joint_router=ElasticJointCorridorRouter(
+            joint_grid,min_pitch_mm=.300,
+            parallel_threshold_mm=1.050,pinch_threshold_mm=.600)
+        joint=joint_router.solve_midpoint(
+            tuple(start),tuple(goal),exact_tips=endpoints,
+            max_expansions=28000,max_seconds=48.)
+        # The trajectory (if any) is only a proposal. Keep the diagnostic
+        # JSON compact; exact native DRC and all 201 restorations are STILL
+        # required before accepting any candidate board.
+        routes=joint.pop("routes",None)
+        diag["elastic_joint_corridor_diagnostic"]=joint
+        diag["elastic_joint_corridor_sha256_after"]=(
+            joint_grid.canonical_sha256(sealed))
+        if (not joint_grid.verify_escape_integrity(sealed) or
+                diag["elastic_joint_corridor_sha256_after"]!=
+                joint_escape_sha):
+            raise RuntimeError(
+                "Immutable U4/Target escape joint SHA256 drift")
         diag["u4_fanout_sha256_after_macro"]=hashlib.sha256(
             json.dumps(
                 fanout_wires,separators=(",",":"),allow_nan=False,
@@ -702,22 +660,6 @@ def spatial_cbs_fcu3(
             ).encode()).hexdigest()
         if diag["target_escape_sha256_after_macro"] != target_sha:
             raise RuntimeError("Immutable target escape geometry changed")
-        if routes is None:
-            diag["status"]="CBS3_post_escape_mutual_reservation_bounded_no_solution"
-            diag["CBS3_exit_class"]=(
-                "budget" if (
-                    time.monotonic()-started >= seconds
-                    or diag["CBS3_lowlevel_outcomes"]["wall_budget_exhausted"]
-                    or diag["CBS3_lowlevel_outcomes"]["node_budget_exhausted"]
-                ) else "bounded_dead_end")
-            diag["CBS3_geometry_unsatisfiable_proven"]=False
-            diag["wall_s"]=round(time.monotonic()-started,3)
-            if progress:
-                progress("CBS3_post_escape_mutual_reservation_rejected",{
-                    "status":diag["status"],
-                    "diagnostic":mutual_diag})
-            return None,diag
-
         output=[
             [(0,*endpoints[i][0])]
             +[(0,*physical(node)) for node in routes[i]]
@@ -746,12 +688,13 @@ def spatial_cbs_fcu3(
         diag["target_full_escape_vertices_retained"] = [
             len(wire) for wire in target_wires]
         diag["status"]="CBS3_joint_FCu_candidate_unverified"
+        diag["elastic_joint_status"]="MIDPOINT_BUNDLE_SOLVED"
         diag["post_escape_macros_all_reserved"]=True
         diag["CBS3_geometry_unsatisfiable_proven"]=False
         diag["wall_s"]=round(time.monotonic()-started,3)
         if progress:
             progress("CBS3_post_escape_mutual_reservation_proposed",{
-                "orders_started":mutual_diag["orders_started"],
+                "joint_states_in_solution":joint["joint_states_in_solution"],
                 "sealed_fanout_sha256":frozen_sha,
                 "native_DRC_still_required":True,
             })

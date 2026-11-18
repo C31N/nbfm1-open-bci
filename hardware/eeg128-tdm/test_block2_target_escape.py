@@ -84,7 +84,7 @@ class TargetTripletTests(TestCase):
             "target_immutable_escape_sha256",
             "target_escape_sha256_after_macro",
             "target_full_escape_vertices_retained",
-            "immutable_targets=frozen_targets",
+            "sealed=(fanout_wires,target_wires)",
             "target_triplet_deterministic_escape_diagnostic",
         ):
             self.assertIn(item,source)
