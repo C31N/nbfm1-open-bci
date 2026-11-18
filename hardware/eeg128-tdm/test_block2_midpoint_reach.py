@@ -64,6 +64,8 @@ class MidpointFreePolygonTests(unittest.TestCase):
             "post_reservation_component_cut_samples",
             "macro_future_hard_reservation_radius_mm",
             "macro_future_strict_masks",
+            "historical_alternatives",
+            "macro_history_diversification_count",
         ):
             self.assertIn(token,cbs)
         for token in (

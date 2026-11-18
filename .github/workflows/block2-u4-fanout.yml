@@ -135,6 +135,7 @@ jobs:
                   assert f['midpoint_all_three_shared_components'] is True
                   if f.get('macro_future_hard_reservation_radius_mm') is not None:
                       assert f['macro_future_hard_reservation_radius_mm']==[.300,.420]
+                      assert f['macro_history_alternative_buffer_mm']==.62
                   assert len(f['midpoint_global_polygon_reachability'])==3
                   assert all(q['shared_component'] and
                       q['global_FCu_polygon_gate_applied'] and
@@ -144,7 +145,7 @@ jobs:
                   assert result and result['locked_U4_escape_count']==3
                   assert result['new_vias_added']==0
                   assert result['orders_started']<=6
-                  assert result['macro_variant_limits']==[4,3,1]
+                  assert result['macro_variant_limits']==[6,4,2]
                   assert result['native_DRC_still_required'] is True
                   assert f['u4_immutable_fanout_sha256']==f['u4_fanout_sha256_after_macro']
                   t=f.get('target_triplet_deterministic_escape_diagnostic')

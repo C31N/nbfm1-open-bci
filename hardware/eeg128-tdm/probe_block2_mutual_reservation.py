@@ -76,7 +76,7 @@ def mutually_reserved_macro_search(
     # Each search branch reserves the first path irrevocably UNTIL that
     # speculative branch fails, then discards the entire branch; original
     # U4 escape copper is NEVER discarded or altered.
-    variants_per_depth=(4,3,1)
+    variants_per_depth=(6,4,2)
 
     for ordering in itertools.islice(
         itertools.permutations(range(3)),max_orders

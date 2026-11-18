@@ -348,16 +348,16 @@ def spatial_cbs_fcu3(
         agent:int, forbidden:frozenset[GridEdge],
         reserved_macro_lines:tuple[Any,...]=(),
         variant:int=0,
+        historical_alternatives:tuple[Any,...]=(),
     ) -> GridPath | None:
         first=start[agent]
         last=goal[agent]
         mask=masks[agent]
-        if macro_future_strict_masks is not None and variant>=2:
-            # Preserve the otherwise unreserved paths of the two other
-            # signals in the speculative branch. These extra hard masks
-            # are heuristics only: if they block an anchor, try another
-            # variant without relaxing any native copper restrictions.
-            forecast=macro_future_strict_masks[agent][variant-2]
+        if macro_future_strict_masks is not None and variant>=4:
+            # The two LAST variants are fail-closed hard corridor
+            # reservations. Earlier variants remain free to explore
+            # independent homotopies around previously rejected paths.
+            forecast=macro_future_strict_masks[agent][variant-4]
             mask=mask | forecast
             if mask[first[1],first[0]] or mask[last[1],last[0]]:
                 diag.setdefault("forecast_hard_anchor_blocks",0)
@@ -398,6 +398,14 @@ def spatial_cbs_fcu3(
                 diag.setdefault("mutual_anchor_blocks",0)
                 diag["mutual_anchor_blocks"] += 1
                 return None
+        alternate_penalty=None
+        if historical_alternatives:
+            rejected_copper=unary_union([
+                line.buffer(.62,resolution=8)
+                for line in historical_alternatives[-5:]])
+            alternate_penalty=contains_xy(rejected_copper,gx,gy)
+            diag.setdefault("macro_history_diversification_count",0)
+            diag["macro_history_diversification_count"]+=1
         q=[(math.dist(physical(first),physical(last)),
             next(counter),0.0,first)]
         cost={first:0.0}
@@ -436,13 +444,19 @@ def spatial_cbs_fcu3(
                 neighbor_cost = (12.0 if competitor_masks is not None
                                  and competitor_masks[agent][y,x] else 0.0)
                 future_cost = (
-                    (0.,3.,9.,18.)[variant]
+                    (0.,3.,9.,18.,27.,36.)[variant]
                     if macro_future_masks is not None
                     and macro_future_masks[agent][y,x]
                     else 0.)
+                alternate_cost=(
+                    (9.0+variant*5.)
+                    if alternate_penalty is not None
+                    and alternate_penalty[y,x]
+                    else 0.)
                 g2=g+step_mm*(
                     math.hypot(dx,dy)
-                    +corridor_cost+neighbor_cost+future_cost)
+                    +corridor_cost+neighbor_cost+future_cost
+                    +alternate_cost)
                 if g2<cost.get(nxt,float("inf")):
                     cost[nxt]=g2
                     parents[nxt]=node
@@ -587,13 +601,28 @@ def spatial_cbs_fcu3(
             .300,.420]
         diag["macro_future_seed_nodes"]=[
             len(line.coords) for line in macro_seeds]
-        diag["macro_future_soft_penalties"]=[0.,3.,9.,18.]
+        diag["macro_future_soft_penalties"]=[0.,3.,9.,18.,27.,36.]
+        diag["macro_history_alternative_buffer_mm"]=.62
 
+        # Same-agent, same-reservation alternatives must explore new
+        # homotopy classes, not six repetitions of the same A* route.
+        # The history is only a soft search penalty; it never removes
+        # native F.Cu copper or rewrites a sealed escape path.
+        attempted_macro_lines:dict[
+            tuple[int,tuple[bytes,...]],list[Any]]={}
         def reserved_low_level(
             agent:int,locked_lines:tuple[Any,...],variant:int,
         ) -> GridPath | None:
-            return low_level(
-                agent,frozenset(),locked_lines,variant=variant)
+            key=(agent,tuple(line.wkb for line in locked_lines))
+            history=attempted_macro_lines.setdefault(key,[])
+            candidate=low_level(
+                agent,frozenset(),locked_lines,variant=variant,
+                historical_alternatives=tuple(history))
+            if candidate is not None:
+                history.append(macro_line(agent,candidate))
+                if len(history)>6:
+                    del history[0]
+            return candidate
 
         routes,mutual_diag=mutually_reserved_macro_search(
             reserved_low_level,macro_line,

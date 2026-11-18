@@ -88,7 +88,7 @@ class MutualReservationTests(unittest.TestCase):
         self.assertIsNotNone(paths)
         self.assertEqual(paths[0][0][0],-1)
         self.assertEqual(diag["ordering"],(0,1,2))
-        self.assertEqual(diag["macro_variant_limits"],(4,3,1))
+        self.assertEqual(diag["macro_variant_limits"],(6,4,2))
         self.assertGreater(
             diag["macro_search_counts"]["speculative_macro_branch_backtracks"],0)
         self.assertEqual(diag["locked_U4_escape_count"],3)
