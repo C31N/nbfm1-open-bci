@@ -253,6 +253,69 @@ class ElasticJointCorridorRouter:
             return False,"full_three_route_pitch_violation",gap
         return True,"exact_unverified_FCu_geometry",gap
 
+    def _rigid_simultaneous_astar(
+        self,start:tuple[Node,Node,Node],
+        goals:tuple[Node,Node,Node],
+        *,deadline:float,max_nodes:int=8500,
+    )->tuple[tuple[tuple[Node,...],...]|None,dict[str,Any]]:
+        """Fast exact-coherent three-head A*: no independent net planning.
+
+        Used only when target head offsets equal source head offsets.
+        Every expansion translates all three traces and validates all
+        three continuous segments against fixed copper and each other.
+        """
+        offsets=tuple((p[0]-start[0][0],p[1]-start[0][1])
+                      for p in start)
+        final_offsets=tuple((p[0]-goals[0][0],p[1]-goals[0][1])
+                            for p in goals)
+        if offsets!=final_offsets:
+            return None,{"status":"rigid_goal_offsets_incompatible",
+                         "expansions":0}
+        def whole(lead:Node)->tuple[Node,Node,Node]:
+            return tuple((lead[0]+d[0],lead[1]+d[1])
+                         for d in offsets)
+        begin=start[0]
+        finish=goals[0]
+        seq=itertools.count()
+        heap=[(self._distance(begin,finish),next(seq),0.,begin)]
+        g_score={begin:0.}
+        parent:dict[Node,Node]={}
+        expanded=0
+        while heap and expanded<max_nodes and time.monotonic()<deadline:
+            _,_,dist,node=heapq.heappop(heap)
+            if dist>g_score[node]+1e-9:
+                continue
+            expanded+=1
+            if node==finish:
+                centres=[node]
+                while centres[-1] in parent:
+                    centres.append(parent[centres[-1]])
+                centres.reverse()
+                states=[whole(point) for point in centres]
+                routes=tuple(tuple(t[i] for t in states)
+                             for i in range(3))
+                return routes,{
+                    "status":"rigid_three_net_joint_path_found",
+                    "expansions":expanded,
+                    "states":len(states)}
+            old=whole(node)
+            for dx,dy in DIRS:
+                nxt=(node[0]+dx,node[1]+dy)
+                news=whole(nxt)
+                if not self._check_transition(old,news):
+                    continue
+                new_g=dist+self._distance(node,nxt)*3.
+                if new_g<g_score.get(nxt,math.inf)-1e-9:
+                    g_score[nxt]=new_g
+                    parent[nxt]=node
+                    heuristic=self._distance(nxt,finish)*3.
+                    heapq.heappush(heap,(
+                        new_g+heuristic,next(seq),new_g,nxt))
+        return None,{
+            "status":("rigid_bundle_budget_exhausted"
+                      if heap else "rigid_bundle_frontier_exhausted"),
+            "expansions":expanded}
+
     def solve_midpoint(
         self,
         u4_anchors:tuple[Node,Node,Node],
@@ -302,6 +365,28 @@ class ElasticJointCorridorRouter:
                for i,p in enumerate(goals)):
             diagnostic["status"]="MIDPOINT_JOINT_TARGET_ANCHORS_INVALID"
             return diagnostic
+        rigid_routes,rigid_diag=self._rigid_simultaneous_astar(
+            tuple(u4_anchors),goals,
+            deadline=started+min(8.,max_seconds*.30),
+            max_nodes=8500)
+        diagnostic["rigid_bundle_preflight"]=rigid_diag
+        if rigid_routes is not None and exact_tips is not None:
+            valid,reason,gap=self._validate_whole_routes(
+                rigid_routes,exact_tips)
+            if valid:
+                diagnostic.update({
+                    "status":"MIDPOINT_BUNDLE_SOLVED",
+                    "closed_nets":3,
+                    "routes":rigid_routes,
+                    "minimum_complete_centreline_mm":gap,
+                    "joint_states_in_solution":len(rigid_routes[0]),
+                    "expansions":rigid_diag["expansions"],
+                    "wall_seconds":round(time.monotonic()-started,3),
+                    "search_mode":"RIGID_SIMULTANEOUS_A_STAR",
+                    "reject_reasons":dict(self.stats),
+                })
+                return diagnostic
+            self.stats[reason]+=1
         counter=itertools.count()
         heap=[(self._heuristic(state,goals),0.,next(counter),state)]
         g_score={state:0.}
