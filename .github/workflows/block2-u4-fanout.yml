@@ -25,6 +25,7 @@ on:
       - "hardware/eeg128-tdm/local_joint_rip_reroute.py"
       - "hardware/eeg128-tdm/local_joint_anchor_preflight.py"
       - "hardware/eeg128-tdm/local_joint_astar_partial_free.py"
+      - "tests/test_three_net_evasion_generator.py"
       - "hardware/eeg128-tdm/test_local_joint_astar_partial_free.py"
       - "hardware/eeg128-tdm/test_local_joint_anchor_preflight.py"
       - "hardware/eeg128-tdm/test_local_joint_rip_reroute.py"
@@ -71,7 +72,7 @@ jobs:
           /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
       - name: Continuous FCu connectivity and immutable escape gates
         run: |
-          PYTHONPATH=hardware/eeg128-tdm /usr/bin/python3 -m pytest -q tests/test_partial_free_cost_model.py
+          PYTHONPATH=hardware/eeg128-tdm /usr/bin/python3 -m pytest -q tests/test_partial_free_cost_model.py tests/test_three_net_evasion_generator.py
           /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_u4_corridors.py hardware/eeg128-tdm/probe_block2_u4_dogleg.py hardware/eeg128-tdm/probe_block2_u4_topological.py hardware/eeg128-tdm/probe_block2_target_escape.py hardware/eeg128-tdm/probe_block2_target_coupled.py hardware/eeg128-tdm/probe_block2_fcu_reachability.py hardware/eeg128-tdm/probe_block2_grid_export.py hardware/eeg128-tdm/probe_block2_multinet_cut.py hardware/eeg128-tdm/probe_block2_native_fcu_bottleneck.py hardware/eeg128-tdm/swig_free_fcu_geometry.py hardware/eeg128-tdm/probe_block2_mutual_reservation.py hardware/eeg128-tdm/probe_block2_elastic_joint_corridor.py hardware/eeg128-tdm/probe_block2_joint_topology_costs.py hardware/eeg128-tdm/probe_block2_hybrid_midpoint.py hardware/eeg128-tdm/joint_start_anchor_resolver.py hardware/eeg128-tdm/local_joint_rip_reroute.py hardware/eeg128-tdm/local_joint_anchor_preflight.py hardware/eeg128-tdm/local_joint_astar_partial_free.py hardware/eeg128-tdm/probe_block2_cbs_fcu3.py hardware/eeg128-tdm/probe_block2_nbody_201.py
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_cbs_fcu3.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_nbody_201.py -v
@@ -342,6 +343,9 @@ jobs:
                       'average_progress_sync_penalty':partial['average_progress_sync_penalty'],
                       'average_progress_sync_penalty_after_third_binding':partial['average_progress_sync_penalty_after_third_binding'],
                       'rejections_by_bound_count':partial['rejections_by_bound_count'],
+                      'three_net_evasion_stages_generated':partial['three_net_evasion_stages_generated'],
+                      'three_net_evasion_stages_admitted':partial['three_net_evasion_stages_admitted'],
+                      'three_net_evasion_stages_expanded':partial['three_net_evasion_stages_expanded'],
                       'cost_model':partial['cost_model'],
                       'frontier_unbound_bias':partial['frontier_unbound_bias'],
                       'mask_prefilter_rejections':partial['native_mask_prefilter_rejections'],

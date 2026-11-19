@@ -17,7 +17,7 @@ import heapq
 import itertools
 import math
 import time
-from typing import Any, Callable, Mapping, Sequence
+from typing import Any, Callable, Iterator, Mapping, Sequence
 
 from shapely.geometry import LineString, Point
 
@@ -218,6 +218,162 @@ class PartialFreeCostModel:
         )["step_cost"]
 
 
+PointMM = Position
+
+
+@dataclass(frozen=True)
+class ThreeNetEvasionConfig:
+    """Strict bounded geometry-first evasion; never weaken PCB pitch."""
+    step_mm: float = .250
+    min_pitch_mm: float = PITCH_MM
+    max_evasion_candidates: int = 32
+
+    def __post_init__(self) -> None:
+        if (not math.isfinite(self.step_mm) or self.step_mm <= 0.
+                or not math.isfinite(self.min_pitch_mm)
+                or self.min_pitch_mm < PITCH_MM
+                or not 1 <= self.max_evasion_candidates <= 64):
+            raise ValueError("Invalid strict ThreeNetEvasionConfig")
+
+
+class ThreeNetEvasionGenerator:
+    """Three-bound-net staged motion preflight; never bypass native checks.
+
+    SYNC_GOAL -> SINGLE_EVADE -> PAIR_EVADE -> COUPLED_TURN.
+    Native callbacks enforce masks, immutable copper and entire trace history;
+    pairwise new-segment checks also protect simultaneous moving traces.
+    """
+
+    def __init__(
+        self, *,
+        net_order: Sequence[str],
+        is_point_clear: Callable[[str, PointMM, float], bool | str],
+        is_segment_clear: Callable[[str, PointMM, PointMM, float], bool | str],
+        record_rejection: Callable[[str, int], None],
+        config: ThreeNetEvasionConfig | None = None,
+    ) -> None:
+        if len(net_order) != 3 or len(set(net_order)) != 3:
+            raise ValueError("Exactly three distinct nets required")
+        self.net_order = tuple(net_order)
+        self.is_point_clear = is_point_clear
+        self.is_segment_clear = is_segment_clear
+        self.record_rejection = record_rejection
+        self.config = config or ThreeNetEvasionConfig()
+
+    @staticmethod
+    def _goal_heading(position: PointMM, target: PointMM) -> int:
+        dx, dy = target[0] - position[0], target[1] - position[1]
+        if abs(dx) + abs(dy) < TOL:
+            return 0
+        return max(range(len(DIRS)), key=lambda h: (
+            (dx * DIRS[h][0] + dy * DIRS[h][1]) /
+            math.hypot(*DIRS[h])))
+
+    @staticmethod
+    def _step_point(position: PointMM, heading: int, step_mm: float) -> PointMM:
+        dx, dy = DIRS[heading % len(DIRS)]
+        magnitude = math.hypot(dx, dy)
+        return (position[0] + step_mm * dx / magnitude,
+                position[1] + step_mm * dy / magnitude)
+
+    def generate_evasion_steps(
+        self,
+        positions: Mapping[str, PointMM | None],
+        headings: Mapping[str, int | None],
+        targets: Targets,
+    ) -> Iterator[tuple[dict[str, PointMM], dict[str, int], str]]:
+        if any(positions.get(n) is None or headings.get(n) is None
+               for n in self.net_order):
+            return
+        original = {n: positions[n] for n in self.net_order}
+        pitch = self.config.min_pitch_mm
+        for a, b in itertools.combinations(self.net_order, 2):
+            if math.dist(original[a], original[b]) < pitch - TOL:
+                self.record_rejection("pair_pitch", 3)
+                return
+        # Never move a target anchor again as part of a three-net move.
+        if any(math.dist(original[n], targets[n]) < TOL
+               for n in self.net_order):
+            return
+
+        goal = {n: self._goal_heading(original[n], targets[n])
+                for n in self.net_order}
+        stages: list[tuple[str, list[tuple[dict[str, int], str]]]] = [
+            ("SYNC_GOAL", [(goal, "SYNC_GOAL")]),
+            ("SINGLE_EVADE", []),
+            ("PAIR_EVADE", []),
+            ("COUPLED_TURN", []),
+        ]
+        for n in self.net_order:
+            for shift in (-1, 1, -2, 2):
+                h = dict(goal)
+                h[n] = (h[n] + shift) % len(DIRS)
+                stages[1][1].append((h, f"SINGLE_EVADE_{n}_{shift:+d}"))
+        for a, b in itertools.combinations(self.net_order, 2):
+            for da, db in ((-1, -1), (1, 1), (-1, 1), (1, -1),
+                           (-2, -2), (2, 2)):
+                h = dict(goal)
+                h[a] = (h[a] + da) % len(DIRS)
+                h[b] = (h[b] + db) % len(DIRS)
+                stages[2][1].append((
+                    h, f"PAIR_EVADE_{a}_{b}_{da:+d}_{db:+d}"))
+        for shift in (-1, 1, -2, 2):
+            h = {n: (goal[n] + shift) % len(DIRS)
+                 for n in self.net_order}
+            stages[3][1].append((h, f"COUPLED_TURN_{shift:+d}"))
+
+        accepted = 0
+        visited: set[tuple[PointMM, ...]] = set()
+        for _stage, proposals in stages:
+            valid_in_stage = 0
+            for new_headings, tag in proposals:
+                if accepted >= self.config.max_evasion_candidates:
+                    return
+                next_pos = {
+                    n: self._step_point(
+                        original[n], new_headings[n], self.config.step_mm)
+                    for n in self.net_order}
+                key = tuple(next_pos[n] for n in self.net_order)
+                if key in visited:
+                    continue
+                visited.add(key)
+                if any(math.dist(next_pos[a], next_pos[b]) < pitch - TOL
+                       for a, b in itertools.combinations(self.net_order, 2)):
+                    self.record_rejection("pair_pitch", 3)
+                    continue
+                segments = {
+                    n: LineString((original[n], next_pos[n]))
+                    for n in self.net_order}
+                if any(segments[a].distance(segments[b]) < pitch - TOL
+                       for a, b in itertools.combinations(self.net_order, 2)):
+                    self.record_rejection("pair_pitch", 3)
+                    continue
+                denied = False
+                for n in self.net_order:
+                    point_result = self.is_point_clear(n, next_pos[n], pitch)
+                    if point_result is not True:
+                        self.record_rejection(
+                            point_result if isinstance(point_result, str)
+                            else "evasion_point_blocked", 3)
+                        denied = True
+                        break
+                    segment_result = self.is_segment_clear(
+                        n, original[n], next_pos[n], pitch)
+                    if segment_result is not True:
+                        self.record_rejection(
+                            segment_result if isinstance(segment_result, str)
+                            else "evasion_segment_blocked", 3)
+                        denied = True
+                        break
+                if denied:
+                    continue
+                accepted += 1
+                valid_in_stage += 1
+                yield next_pos, new_headings, tag
+            if valid_in_stage:
+                return
+
+
 @dataclass(frozen=True)
 class PartialFreeState:
     # Empty route means genuinely unbound; no virtual copper/zero anchor.
@@ -301,6 +457,12 @@ def partial_free_joint_astar(
         "average_progress_sync_penalty": 0.,
         "average_progress_sync_penalty_after_third_binding": 0.,
         "rejections_by_bound_count": {},
+        "three_net_evasion_stages_generated": {s: 0 for s in (
+            "SYNC_GOAL", "SINGLE_EVADE", "PAIR_EVADE", "COUPLED_TURN")},
+        "three_net_evasion_stages_admitted": {s: 0 for s in (
+            "SYNC_GOAL", "SINGLE_EVADE", "PAIR_EVADE", "COUPLED_TURN")},
+        "three_net_evasion_stages_expanded": {s: 0 for s in (
+            "SYNC_GOAL", "SINGLE_EVADE", "PAIR_EVADE", "COUPLED_TURN")},
         "completed_routes": 0,
         "hard_centreline_pitch_mm": hard_pitch_mm,
         "minimum_anchor_pitch_mm": anchor_pitch_mm,
@@ -403,7 +565,7 @@ def partial_free_joint_astar(
 
     def existing_distance(
         agent: int, segment: Point | LineString,
-        paths: tuple[tuple[Node, ...], ...],
+        paths: tuple[tuple[Node, ...], ...], *, record: bool = True,
     ) -> bool:
         for other, route in enumerate(paths):
             if other == agent or not route:
@@ -412,7 +574,8 @@ def partial_free_joint_astar(
             wire = (Point(coords[0]) if len(coords) == 1
                     else LineString(coords))
             if segment.distance(wire) < hard_pitch_mm - TOL:
-                reject_reason("continuous_segment_pitch")
+                if record:
+                    reject_reason("continuous_segment_pitch")
                 return False
         return True
 
@@ -455,6 +618,55 @@ def partial_free_joint_astar(
             reject_reason("continuous_segment_pitch")
             return False
         return True
+
+    def evasion_node(p: PointMM) -> Node:
+        return (int(round((p[0] - float(grid.xs[0])) / grid.res)),
+                int(round((p[1] - float(grid.ys[0])) / grid.res)))
+
+    def evasion_point_clear(
+        net: str, p: PointMM, _min_clear: float,
+    ) -> bool | str:
+        i = NET_NAMES.index(net)
+        node = evasion_node(p)
+        if (not grid.is_point_drc_clear(i, node)
+                or Point(grid.physical(node)).intersects(grid.shapes[i])):
+            diagnostic["native_mask_prefilter_rejections"] += 1
+            return "native_fixed_copper_or_mask"
+        return True
+
+    def evasion_segment_clear(
+        net: str, a: PointMM, b: PointMM, _min_clear: float,
+    ) -> bool | str:
+        i = NET_NAMES.index(net)
+        start_node, end_node = evasion_node(a), evasion_node(b)
+        if (start_node != state.paths[i][-1]
+                or (end_node[0] - start_node[0],
+                    end_node[1] - start_node[1]) not in DIRS):
+            return "evasion_non_adjacent_grid_step"
+        if not grid.is_segment_drc_clear(i, start_node, end_node):
+            diagnostic["native_segment_rejections"] += 1
+            return "native_fixed_copper_or_mask"
+        segment = LineString((grid.physical(start_node),
+                              grid.physical(end_node)))
+        if not existing_distance(i, segment, state.paths, record=False):
+            return "continuous_segment_pitch"
+        return True
+
+    def evasion_rejection(reason: str, bound_count: int) -> None:
+        if bound_count != 3 or active_bind_count != 3:
+            raise RuntimeError("Three-net evasion outside three-bound state")
+        reject_reason(reason)
+
+    evasion_generator = ThreeNetEvasionGenerator(
+        net_order=NET_NAMES,
+        is_point_clear=evasion_point_clear,
+        is_segment_clear=evasion_segment_clear,
+        record_rejection=evasion_rejection,
+        config=ThreeNetEvasionConfig(
+            step_mm=grid.res, min_pitch_mm=hard_pitch_mm,
+            max_evasion_candidates=32),
+    )
+    evasion_stage_for_state: dict[PartialFreeState, str] = {}
 
     start = PartialFreeState(((), (), ()))
     order = itertools.count()
@@ -540,6 +752,9 @@ def partial_free_joint_astar(
         bound = sum(bool(path) for path in state.paths)
         active_bind_count = bound
         diagnostic["search_states_by_bound_count"][bound] += 1
+        if state in evasion_stage_for_state:
+            stage = evasion_stage_for_state[state]
+            diagnostic["three_net_evasion_stages_expanded"][stage] += 1
         if bound == 3 and state in root_by_state:
             root = root_by_state[state]
             expanded_roots.add(root)
@@ -567,6 +782,48 @@ def partial_free_joint_astar(
                 "wall_seconds": round(time.monotonic() - created, 3),
             })
             return diagnostic
+        if bound == 3 and all(
+                route[-1] not in target_sets[i]
+                and len(route) < max_route_nodes
+                for i, route in enumerate(state.paths)):
+            positions = state_positions(state)
+            headings = {NET_NAMES[i]: route_heading(route)
+                        for i, route in enumerate(state.paths)}
+            for proposed, _new_headings, tag in (
+                    evasion_generator.generate_evasion_steps(
+                        positions, headings, physical_targets)):
+                stage = next(s for s in (
+                    "SYNC_GOAL", "SINGLE_EVADE", "PAIR_EVADE", "COUPLED_TURN")
+                             if tag.startswith(s))
+                diagnostic["three_net_evasion_stages_generated"][stage] += 1
+                next_nodes = [evasion_node(proposed[n]) for n in NET_NAMES]
+                if any(next_nodes[i] in state.paths[i] or
+                       (next_nodes[i][0] - state.paths[i][-1][0],
+                        next_nodes[i][1] - state.paths[i][-1][1]) not in DIRS
+                       for i in range(3)):
+                    reject_reason("evasion_grid_snapping_or_self_revisit")
+                    continue
+                # Native snapped segments repeat the exact moving-pair check:
+                # continuous-space proposals are never a DRC waiver.
+                new_segments = [
+                    LineString((grid.physical(state.paths[i][-1]),
+                                grid.physical(next_nodes[i])))
+                    for i in range(3)]
+                if any(new_segments[i].distance(new_segments[j])
+                       < hard_pitch_mm - TOL for i in range(3)
+                       for j in range(i + 1, 3)):
+                    reject_reason("continuous_segment_pitch")
+                    continue
+                routes = tuple((*state.paths[i], next_nodes[i])
+                               for i in range(3))
+                candidate = PartialFreeState(routes)
+                terms = score_transition(state, candidate)
+                cost = (terms["step_cost"] +
+                        .05 * sum(density(i, next_nodes[i])
+                                  for i in range(3)))
+                if push(candidate, g + cost, state, terms):
+                    evasion_stage_for_state[candidate] = stage
+                    diagnostic["three_net_evasion_stages_admitted"][stage] += 1
         for agent in range(3):
             route = state.paths[agent]
             if not route:

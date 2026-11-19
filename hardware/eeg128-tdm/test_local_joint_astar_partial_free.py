@@ -99,6 +99,13 @@ class PartialFreeJointTests(unittest.TestCase):
             report["average_progress_sync_penalty_after_third_binding"], 0.)
         self.assertEqual(set(report["rejections_by_bound_count"]),
                          {"0", "1", "2", "3"})
+        for metric in ("three_net_evasion_stages_generated",
+                       "three_net_evasion_stages_admitted",
+                       "three_net_evasion_stages_expanded"):
+            self.assertEqual(set(report[metric]), {
+                "SYNC_GOAL", "SINGLE_EVADE", "PAIR_EVADE", "COUPLED_TURN"})
+        self.assertGreaterEqual(sum(
+            report["three_net_evasion_stages_generated"].values()), 0)
         self.assertEqual(report["cost_model"], "PartialFreeCostModel-v1")
         self.assertFalse(report["accepted"])
         self.assertFalse(report["fabrication_release"])
