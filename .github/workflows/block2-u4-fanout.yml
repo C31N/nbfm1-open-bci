@@ -14,6 +14,8 @@ on:
       - "hardware/eeg128-tdm/probe_block2_fcu_reachability.py"
       - "hardware/eeg128-tdm/probe_block2_grid_export.py"
       - "hardware/eeg128-tdm/probe_block2_multinet_cut.py"
+      - "hardware/eeg128-tdm/swig_free_fcu_geometry.py"
+      - "hardware/eeg128-tdm/test_swig_free_fcu_geometry.py"
       - "hardware/eeg128-tdm/probe_block2_native_fcu_bottleneck.py"
       - "hardware/eeg128-tdm/probe_block2_mutual_reservation.py"
       - "hardware/eeg128-tdm/probe_block2_elastic_joint_corridor.py"
@@ -61,7 +63,7 @@ jobs:
           /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
       - name: Continuous FCu connectivity and immutable escape gates
         run: |
-          /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_u4_corridors.py hardware/eeg128-tdm/probe_block2_u4_dogleg.py hardware/eeg128-tdm/probe_block2_u4_topological.py hardware/eeg128-tdm/probe_block2_target_escape.py hardware/eeg128-tdm/probe_block2_target_coupled.py hardware/eeg128-tdm/probe_block2_fcu_reachability.py hardware/eeg128-tdm/probe_block2_grid_export.py hardware/eeg128-tdm/probe_block2_multinet_cut.py hardware/eeg128-tdm/probe_block2_native_fcu_bottleneck.py hardware/eeg128-tdm/probe_block2_mutual_reservation.py hardware/eeg128-tdm/probe_block2_elastic_joint_corridor.py hardware/eeg128-tdm/probe_block2_joint_topology_costs.py hardware/eeg128-tdm/probe_block2_hybrid_midpoint.py hardware/eeg128-tdm/probe_block2_cbs_fcu3.py hardware/eeg128-tdm/probe_block2_nbody_201.py
+          /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_u4_corridors.py hardware/eeg128-tdm/probe_block2_u4_dogleg.py hardware/eeg128-tdm/probe_block2_u4_topological.py hardware/eeg128-tdm/probe_block2_target_escape.py hardware/eeg128-tdm/probe_block2_target_coupled.py hardware/eeg128-tdm/probe_block2_fcu_reachability.py hardware/eeg128-tdm/probe_block2_grid_export.py hardware/eeg128-tdm/probe_block2_multinet_cut.py hardware/eeg128-tdm/probe_block2_native_fcu_bottleneck.py hardware/eeg128-tdm/swig_free_fcu_geometry.py hardware/eeg128-tdm/probe_block2_mutual_reservation.py hardware/eeg128-tdm/probe_block2_elastic_joint_corridor.py hardware/eeg128-tdm/probe_block2_joint_topology_costs.py hardware/eeg128-tdm/probe_block2_hybrid_midpoint.py hardware/eeg128-tdm/probe_block2_cbs_fcu3.py hardware/eeg128-tdm/probe_block2_nbody_201.py
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_cbs_fcu3.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_nbody_201.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_u4_dogleg.py -v
@@ -77,6 +79,7 @@ jobs:
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_grid_export.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_multinet_cut.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_native_fcu_bottleneck.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_swig_free_fcu_geometry.py -v
       - name: Reproduce protected 139 source
         timeout-minutes: 8
         run: |
@@ -104,6 +107,10 @@ jobs:
               'status':d['status'],
               'native_polygon_count':d['native_polygon_count'],
               'analytic_approximation_count':d['analytic_approximation_count'],
+              'swig_free_closed_form_object_count':d['swig_free_closed_form_object_count'],
+              'closed_form_pair_count':d['closed_form_pair_count'],
+              'mixed_or_unqualified_pair_count':d['mixed_or_unqualified_pair_count'],
+              'global_joint_three_net_min_cut_proven':d['global_joint_three_net_min_cut_proven'],
               'obstacle_count':d['obstacle_count'],
               'tightest_clear_gap_mm':d['tightest_clear_gap_mm'],
               'max_tracks_strict':d['max_tracks_strict'],

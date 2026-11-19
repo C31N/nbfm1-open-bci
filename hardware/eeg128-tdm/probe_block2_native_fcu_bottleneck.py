@@ -20,6 +20,9 @@ from typing import Any
 
 from shapely.geometry import Polygon, box
 from shapely.ops import nearest_points, unary_union
+from swig_free_fcu_geometry import (
+    CuPrimitive,display_geometry,primitive_distance,primitive_from_kicad,
+)
 
 TRACK_MM=.150
 CLEARANCE_MM=.150
@@ -34,11 +37,13 @@ class NativeObject:
     net:str
     geometry:Any
     polygonization:str
+    primitive:CuPrimitive|None=None
 
     def describe(self)->dict[str,Any]:
         return {
             "uuid":self.uid,"kind":self.kind,"name":self.name,
             "net":self.net,"polygonization":self.polygonization,
+            "closed_form_exact":self.primitive is not None,
             "bbox_mm":[round(v,6) for v in self.geometry.bounds],
         }
 
@@ -95,6 +100,14 @@ def _native_shape(item:Any,kind:str,pcbnew:Any)->tuple[Any,str]:
 
 
 def _copper(item:Any,kind:str,pcbnew:Any)->tuple[Any,str]:
+    if kind in ("TRACK","VIA"):
+        # Exact distance is computed from the native centreline and radius,
+        # not from the buffered display geometry. KiCad 8 SWIG has no
+        # usable ERROR_LOC for the overloaded track/via polygon function.
+        primitive=primitive_from_kicad(item,kind,pcbnew)
+        if primitive is None:
+            raise RuntimeError("Straight copper primitive unavailable")
+        return display_geometry(primitive),"SWIG_free_closed_form"
     try:
         return _native_shape(item,kind,pcbnew)
     except (RuntimeError,TypeError,ValueError,AttributeError,
@@ -140,8 +153,11 @@ def collect(board:Any,center:tuple[float,float],window:float,
             return
         uid=item.m_Uuid.AsString()
         net=item.GetNetname() or ""
-        items.append(NativeObject(uid,kind,name,net,shape,grade))
-        if grade!="SHAPE_POLY_SET_native_0.0001mm":
+        primitive=(primitive_from_kicad(item,kind,pcbnew)
+                   if kind in ("TRACK","VIA","PAD") else None)
+        items.append(NativeObject(uid,kind,name,net,shape,grade,primitive))
+        if grade not in ("SHAPE_POLY_SET_native_0.0001mm",
+                         "SWIG_free_closed_form"):
             warnings.append({"uuid":uid,"kind":kind,"why":grade})
     for foot in board.GetFootprints():
         for pad in foot.Pads():
@@ -186,10 +202,30 @@ def measure(objects:list[NativeObject],*,
             # are not usable net-separating choke points.
             if left.net==right.net:
                 continue
-            if left.geometry.distance(right.geometry)>max_gap:
+            if left.primitive is not None and right.primitive is not None:
+                _,signed_gap,a,b=primitive_distance(
+                    left.primitive,right.primitive)
+                gap=max(0.,signed_gap)
+                p_xy=(a.x,a.y)
+                q_xy=(b.x,b.y)
+                source="closed_form_primitive_pair_exact"
+            else:
+                # Native KiCad PAD/zone polygons retain their recorded
+                # polygonization tolerance. This mixed method is not exact.
+                if left.geometry.distance(right.geometry)>max_gap:
+                    continue
+                p,q=nearest_points(left.geometry,right.geometry)
+                gap=float(p.distance(q))
+                p_xy=(p.x,p.y)
+                q_xy=(q.x,q.y)
+                source=("native_polygon_pair_tolerance_0.0001mm"
+                        if (left.polygonization==
+                            "SHAPE_POLY_SET_native_0.0001mm" and
+                            right.polygonization==
+                            "SHAPE_POLY_SET_native_0.0001mm")
+                        else "mixed_polygon_display_unqualified")
+            if gap>max_gap:
                 continue
-            p,q=nearest_points(left.geometry,right.geometry)
-            gap=float(p.distance(q))
             count=gap_capacity(gap,track,clearance)
             results.append({
                 "uuid_a":left.uid,"uuid_b":right.uid,
@@ -198,8 +234,10 @@ def measure(objects:list[NativeObject],*,
                 "net_a":left.net,"net_b":right.net,
                 "clear_gap_mm":round(gap,6),
                 **count,
-                "closest_pt_a_mm":(round(p.x,6),round(p.y,6)),
-                "closest_pt_b_mm":(round(q.x,6),round(q.y,6)),
+                "closest_pt_a_mm":(round(p_xy[0],6),round(p_xy[1],6)),
+                "closest_pt_b_mm":(round(q_xy[0],6),round(q_xy[1],6)),
+                "gap_measurement_source":source,
+                "closed_form_exact":source=="closed_form_primitive_pair_exact",
                 "both_native_polygonized":(
                     left.polygonization==
                     "SHAPE_POLY_SET_native_0.0001mm" and
@@ -231,8 +269,8 @@ def analyze(board_path:Path,*,x:float=HOTSPOT[0],
     if hashlib.sha256(board_path.read_bytes()).hexdigest()!=checksum:
         raise RuntimeError("Read-only PCB source bytes changed")
     result={
-        "status":("native_local_polygon_gaps_measured"
-                  if not warnings else "native_gap_measurement_has_fallbacks"),
+        "status":("native_plus_swig_free_closed_form_local_gaps"
+                  if not warnings else "local_gaps_include_unqualified_fallbacks"),
         "pcb_sha256_before_and_after":checksum,
         "kicad_version":pcbnew.Version(),
         "hotspot_mm":{"x":x,"y":y},
@@ -242,6 +280,13 @@ def analyze(board_path:Path,*,x:float=HOTSPOT[0],
             "three_tracks_wall_to_wall_mm":3*track+4*clearance,
         },
         "obstacle_count":len(obstacles),
+        "swig_free_closed_form_object_count":sum(
+            o.polygonization=="SWIG_free_closed_form" for o in obstacles),
+        "closed_form_pair_count":sum(
+            g["closed_form_exact"] for g in gaps),
+        "mixed_or_unqualified_pair_count":sum(
+            g["gap_measurement_source"]=="mixed_polygon_display_unqualified"
+            for g in gaps),
         "native_polygon_count":sum(
             o.polygonization=="SHAPE_POLY_SET_native_0.0001mm"
             for o in obstacles),
@@ -260,6 +305,9 @@ def analyze(board_path:Path,*,x:float=HOTSPOT[0],
         "widest_verified_pair_gap_mm":widest_verified,
         "max_tracks_strict":(
             gaps[0]["max_tracks_strict"] if gaps else None),
+        "hotspot_is_local_pairwise_gap_only":True,
+        "global_three_net_cut_certificate":None,
+        "global_joint_three_net_min_cut_proven":False,
         "hotspot_is_global_min_cut_proven":False,
         "min_cut_raster_may_be_quantization_artifact":True,
         "native_global_three_net_unroutability_proven":False,

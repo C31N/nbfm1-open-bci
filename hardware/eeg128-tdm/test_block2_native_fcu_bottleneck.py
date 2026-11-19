@@ -53,63 +53,16 @@ class NativeFcuBottleneckTests(unittest.TestCase):
                        "SHAPE_POLY_SET_native_0.0001mm")
         self.assertFalse(measure([a,b])[0]["both_native_polygonized"])
 
-    def test_kicad8_track_via_arc_native_polygon_overload(self)->None:
-        # Regression: the SHAPE.ConvertToPolygon path produced
-        # AttributeError for every track/via on native KiCad 8.0.9.
+    def test_straight_copper_avoids_unsupported_swig_transform(self)->None:
         from types import SimpleNamespace
         from probe_block2_native_fcu_bottleneck import _copper
 
-        class PolySet:
-            def __init__(self)->None:
-                self.points=[]
-
-            def OutlineCount(self)->int:
-                return int(bool(self.points))
-
-            def Outline(self,index:int)->"PolySet":
-                return self
-
-            def PointCount(self)->int:
-                return len(self.points)
-
-            def CPoint(self,index:int)->SimpleNamespace:
-                return SimpleNamespace(
-                    x=self.points[index][0],y=self.points[index][1])
-
-            def HoleCount(self,index:int)->int:
-                return 0
-
         class FakePcbnew:
-            F_Cu=0
-            ERROR_INSIDE=1
-            SHAPE_POLY_SET=PolySet
-
-            @staticmethod
-            def FromMM(value:float)->int:
-                return round(value*1_000_000)
-
             @staticmethod
             def ToMM(value:int)->float:
                 return value/1_000_000
 
         class CopperItem:
-            def __init__(self)->None:
-                self.calls=0
-
-            def GetEffectiveShape(self,*args:object)->object:
-                raise AssertionError("Do not use unsupported SWIG SHAPE")
-
-            def TransformShapeToPolygon(
-                self,poly:PolySet,layer:int,clearance:int,error:int,error_loc:int
-            )->None:
-                self.calls+=1
-                if (layer,clearance,error,error_loc)!=(0,0,100,1):
-                    raise TypeError("Incorrect KiCad 8 transform overload")
-                poly.points=[
-                    (0,0),(1_000_000,0),
-                    (1_000_000,1_000_000),(0,1_000_000),
-                ]
-
             def GetWidth(self)->int:
                 return 150_000
 
@@ -122,31 +75,30 @@ class NativeFcuBottleneckTests(unittest.TestCase):
             def GetEnd(self)->SimpleNamespace:
                 return SimpleNamespace(x=1_000_000,y=0)
 
-        # Exercise both the newer binding and KiCad 8's enum-unexported
-        # SWIG module without weakening the hard source DRC constraints.
-        old_binding=SimpleNamespace(
-            F_Cu=FakePcbnew.F_Cu,
-            SHAPE_POLY_SET=PolySet,
-            FromMM=FakePcbnew.FromMM,
-            ToMM=FakePcbnew.ToMM,
-        )
-        for kind in ("TRACK","VIA","ARC"):
-            with self.subTest(kind=kind,legacy=False):
-                item=CopperItem()
-                geometry,grade=_copper(item,kind,FakePcbnew)
-                self.assertEqual(item.calls,1)
-                self.assertEqual(grade,"SHAPE_POLY_SET_native_0.0001mm")
-                self.assertAlmostEqual(geometry.area,1.)
+            def TransformShapeToPolygon(self,*args:object)->None:
+                raise AssertionError("Do not use broken KiCad 8 SWIG")
 
         for kind in ("TRACK","VIA"):
-            with self.subTest(kind=kind,legacy=True):
-                item=CopperItem()
-                geometry,grade=_copper(item,kind,old_binding)
-                self.assertEqual(item.calls,0)
-                self.assertEqual(
-                    grade,"native_segment_circle_analytic_approximation:"
-                          "KiCad8_ERROR_LOC_unavailable")
-                self.assertGreater(geometry.area,0.)
+            with self.subTest(kind=kind):
+                shape,grade=_copper(CopperItem(),kind,FakePcbnew)
+                self.assertEqual(grade,"SWIG_free_closed_form")
+                self.assertGreater(shape.area,0.)
+
+    def test_exact_pair_uses_primitives_not_display_polygons(self)->None:
+        from swig_free_fcu_geometry import CuPrimitive,Vec2
+        a=CuPrimitive("TRACK",Vec2(0.,0.),Vec2(4.,0.),.1)
+        b=CuPrimitive("TRACK",Vec2(0.,1.),Vec2(4.,1.),.1)
+        objects=[
+            NativeObject("a","TRACK","A","N1",box(0,0,5,5),
+                         "SWIG_free_closed_form",a),
+            NativeObject("b","TRACK","B","N2",box(0,0,5,5),
+                         "SWIG_free_closed_form",b),
+        ]
+        gap=measure(objects)[0]
+        self.assertTrue(gap["closed_form_exact"])
+        self.assertEqual(gap["gap_measurement_source"],
+                         "closed_form_primitive_pair_exact")
+        self.assertAlmostEqual(gap["clear_gap_mm"],.8)
 
     def test_never_mutates_board_or_claims_global_impossibility(self)->None:
         s=(Path(__file__).resolve().parent/
