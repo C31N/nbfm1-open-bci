@@ -95,6 +95,7 @@ def partial_free_joint_astar(
         "native_mask_prefilter_rejections": 0,
         "native_segment_rejections": 0,
         "density_penalty_applied": True,
+        "weighted_heuristic_epsilon": 2.0,
         "completed_routes": 0,
         "hard_centreline_pitch_mm": hard_pitch_mm,
         "minimum_anchor_pitch_mm": anchor_pitch_mm,
@@ -196,7 +197,10 @@ def partial_free_joint_astar(
 
     start = PartialFreeState(((), (), ()))
     order = itertools.count()
-    heap = [(heuristic(start), 0., next(order), start)]
+    # Bounded weighted A* favours coordinated progress over combinatorial
+    # prefixes. This influences search order ONLY, never geometric gates.
+    epsilon = 2.0
+    heap = [(epsilon * heuristic(start), 0., next(order), start)]
     best: dict[PartialFreeState, float] = {start: 0.}
     expansions = 0
 
@@ -204,7 +208,7 @@ def partial_free_joint_astar(
         if g + 1e-9 >= best.get(state, math.inf):
             return
         best[state] = g
-        heapq.heappush(heap, (g + heuristic(state),
+        heapq.heappush(heap, (g + epsilon * heuristic(state),
                               g, next(order), state))
 
     while heap and expansions < max_expansions:

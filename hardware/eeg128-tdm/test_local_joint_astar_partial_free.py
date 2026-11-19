@@ -61,6 +61,7 @@ class PartialFreeJointTests(unittest.TestCase):
         self.assertGreater(result["binding_actions_valid"], 0)
         self.assertGreater(result["search_states_by_bound_count"][1], 0)
         self.assertTrue(result["density_penalty_applied"])
+        self.assertEqual(result["weighted_heuristic_epsilon"], 2.0)
         self.assertFalse(result["accepted"])
         self.assertFalse(result["routing_completed"])
         self.assertFalse(result["fabrication_release"])
