@@ -11,7 +11,8 @@ This module NEVER edits native board copper or changes release gates.
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from functools import lru_cache
 import hashlib
 import heapq
 import itertools
@@ -36,7 +37,9 @@ class BundleState:
     p2: Node
     p3: Node
     heading: int
-    mode: str
+    # Modes affect diagnostics, not which moves are legal from the
+    # current geometric positions. Merge equivalent joint A* states.
+    mode: str = field(compare=False)
 
     @property
     def points(self) -> tuple[Node,Node,Node]:
@@ -112,14 +115,22 @@ class FCuCorridorGrid:
             for i,p in enumerate(points))
 
     def is_segment_drc_clear(self,agent:int,a:Node,b:Node)->bool:
+        # A physical edge is bidirectional and immutable for the whole
+        # scratch search. Cache exact native clearance without raster
+        # approximation; this is purely a performance improvement.
+        return self._exact_immutable_edge_clear(
+            agent,min(a,b),max(a,b))
+
+    @lru_cache(maxsize=180000)
+    def _exact_immutable_edge_clear(
+        self,agent:int,a:Node,b:Node,
+    )->bool:
         if not (self.is_point_drc_clear(agent,a) and
                 self.is_point_drc_clear(agent,b)):
             return False
         if a==b:
             return not ShapePoint(self.physical(a)).intersects(
                 self.shapes[agent])
-        # Native inflated obstacles are continuous. Diagonal corner cuts
-        # and thin copper/via intrusions are rejected by exact geometry.
         segment=LineString((self.physical(a),self.physical(b)))
         return not segment.intersects(self.shapes[agent])
 
@@ -220,8 +231,9 @@ class ElasticJointCorridorRouter:
     def _heuristic(
         self,state:BundleState,goals:tuple[Node,Node,Node],
     )->float:
-        # A lower bound on the sum of all remaining segment lengths:
-        # unlike the suggested *1.05 multiplier, this stays admissible.
+        # Euclidean lower bound. In the bounded multi-agent search it is
+        # weighted in the priority queue to reduce indecisive detours.
+        # Weighted A* may lose shortest-path optimality, NEVER clearance.
         return sum(self._distance(a,b)
                    for a,b in zip(state.points,goals))
 
@@ -396,10 +408,14 @@ class ElasticJointCorridorRouter:
                 return diagnostic
             self.stats[reason]+=1
         counter=itertools.count()
-        heap=[(self._heuristic(state,goals),0.,next(counter),state)]
+        heuristic_weight=1.65
+        start_h=self._heuristic(state,goals)
+        heap=[(start_h*heuristic_weight,0.,next(counter),state)]
         g_score={state:0.}
         parent:dict[BundleState,BundleState]={}
         expansions=0
+        closest_remaining_mm=start_h
+        closest_state=state
         while heap and expansions<max_expansions:
             if time.monotonic()-started>=max_seconds:
                 diagnostic["status"]="MIDPOINT_JOINT_WALL_BUDGET_EXHAUSTED"
@@ -408,6 +424,10 @@ class ElasticJointCorridorRouter:
             if g>g_score.get(current,math.inf)+1e-9:
                 continue
             expansions+=1
+            remaining=self._heuristic(current,goals)
+            if remaining<closest_remaining_mm:
+                closest_remaining_mm=remaining
+                closest_state=current
             if current.points==goals:
                 chain=self._reconstruct(parent,current)
                 paths=tuple(
@@ -433,6 +453,8 @@ class ElasticJointCorridorRouter:
                     "expansions":expansions,
                     "wall_seconds":round(time.monotonic()-started,3),
                     "reject_reasons":dict(self.stats),
+                    "heuristic_weight":heuristic_weight,
+                    "exact_native_edge_cache":self.grid._exact_immutable_edge_clear.cache_info()._asdict(),
                     "native_DRC_still_required":True,
                 })
                 return diagnostic
@@ -442,7 +464,8 @@ class ElasticJointCorridorRouter:
                     g_score[nxt]=cost
                     parent[nxt]=current
                     h=self._heuristic(nxt,goals)
-                    heapq.heappush(heap,(cost+h,cost,next(counter),nxt))
+                    heapq.heappush(heap,(
+                        cost+heuristic_weight*h,cost,next(counter),nxt))
         else:
             diagnostic["status"]=(
                 "MIDPOINT_JOINT_NODE_BUDGET_EXHAUSTED"
@@ -451,4 +474,10 @@ class ElasticJointCorridorRouter:
         diagnostic["wall_seconds"]=round(time.monotonic()-started,3)
         diagnostic["reject_reasons"]=dict(self.stats)
         diagnostic["open_joint_states_remaining"]=len(heap)
+        diagnostic["closest_remaining_total_mm"]=round(
+            closest_remaining_mm,6)
+        diagnostic["closest_head_positions_grid"]=closest_state.points
+        diagnostic["heuristic_weight"]=heuristic_weight
+        diagnostic["exact_native_edge_cache"]=(
+            self.grid._exact_immutable_edge_clear.cache_info()._asdict())
         return diagnostic

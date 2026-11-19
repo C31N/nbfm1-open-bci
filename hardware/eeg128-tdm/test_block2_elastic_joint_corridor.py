@@ -96,6 +96,23 @@ class ElasticJointCorridorTests(unittest.TestCase):
         self.assertTrue(any(x.mode=="PARALLEL" for x in neighbours))
         self.assertTrue(any(x.mode=="STAGGERED_PINCH" for x in neighbours))
 
+    def test_exact_native_edges_are_cached_symmetrically(self)->None:
+        grid=self._make_grid(self.empty)
+        self.assertTrue(grid.is_segment_drc_clear(0,(5,10),(6,10)))
+        before=grid._exact_immutable_edge_clear.cache_info()
+        self.assertTrue(grid.is_segment_drc_clear(0,(6,10),(5,10)))
+        after=grid._exact_immutable_edge_clear.cache_info()
+        self.assertEqual(after.hits,before.hits+1)
+        self.assertEqual(after.misses,before.misses)
+
+    def test_joint_mode_does_not_multiply_equivalent_states(self)->None:
+        base=BundleState(*self.start,heading=0,mode="PARALLEL")
+        pinch=BundleState(*self.start,heading=0,mode="STAGGERED_PINCH")
+        self.assertEqual(base,pinch)
+        self.assertEqual(hash(base),hash(pinch))
+        other=BundleState(*self.start,heading=1,mode="PARALLEL")
+        self.assertNotEqual(base,other)
+
     def test_no_board_mutation_and_fail_closed_parent_gates(self)->None:
         solver=(ROOT/"probe_block2_elastic_joint_corridor.py").read_text()
         cbs=(ROOT/"probe_block2_cbs_fcu3.py").read_text()
