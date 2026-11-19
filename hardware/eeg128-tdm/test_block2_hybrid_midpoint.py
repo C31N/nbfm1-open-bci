@@ -62,6 +62,8 @@ class HybridMidpointTests(unittest.TestCase):
         self.assertFalse(diag["geometry_unsatisfiable_proven"])
         self.assertIn("anchor_a_star_reasons",diag)
         self.assertIn("anchor_attempts",diag)
+        self.assertIn("local_joint_status",diag)
+        self.assertIn("local_joint_anchor_audit",diag)
         self.assertFalse(diag["planar_order_hard_pruning"])
         self.assertEqual(diag["new_vias_added"],0)
 

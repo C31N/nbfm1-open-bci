@@ -239,6 +239,9 @@ def hybrid_fcu_preflight(
     # independent paths have valid local entry/exit anchors.
     spans={i:_window_slices(p,xs,ys,window)
            for i,p in individual.items()}
+    local_joint_status="not_attempted_missing_bounded_anchors"
+    local_joint_reject_reasons:dict[str,Any]={}
+    local_joint_anchor_audit:dict[str,Any]={}
     if len(spans)==3 and all(v is not None and
                              0<v[0]<v[1]<len(individual[i])-1
                              for i,v in spans.items()):
@@ -282,6 +285,22 @@ def hybrid_fcu_preflight(
             tips_local.append(
                 ((float(xs[route[a][0]]),float(ys[route[a][1]])),
                  (float(xs[route[b][0]]),float(ys[route[b][1]]))))
+        def minimum_head_pitch(nodes:list[Node])->float:
+            coords=[(float(xs[p[0]]),float(ys[p[1]])) for p in nodes]
+            return min(math.dist(coords[i],coords[j])
+                       for i in range(3) for j in range(i+1,3))
+        local_joint_anchor_audit={
+            "source_min_centreline_mm":round(
+                minimum_head_pitch(starts_local),6),
+            "target_min_centreline_mm":round(
+                minimum_head_pitch(goals_local),6),
+            "source_masked_agents":[i for i,p in enumerate(starts_local)
+                if local_masks[i][p[1],p[0]]],
+            "target_masked_agents":[i for i,p in enumerate(goals_local)
+                if local_masks[i][p[1],p[0]]],
+            "fixed_outside_paths_preserved":True,
+            "locked_escape_ripup_permitted":False,
+        }
         solver=ElasticJointCorridorRouter(
             FCuCorridorGrid(local_masks,local_shapes,xs,ys))
         remaining=min(6.,max(.1,deadline-time.monotonic()))
@@ -291,6 +310,8 @@ def hybrid_fcu_preflight(
             max_expansions=1800,max_seconds=remaining,
             midpoint_band_mm=.5)
         counters["local_joint_expansions"]=result["expansions"]
+        local_joint_status=result["status"]
+        local_joint_reject_reasons=result.get("reject_reasons",{})
         if result["status"]=="MIDPOINT_BUNDLE_SOLVED":
             out={}
             for i in range(3):
@@ -328,6 +349,9 @@ def hybrid_fcu_preflight(
         "anchor_a_star_reasons":dict(anchor_reasons),
         "anchor_attempts":anchor_trials,
         "independent_anchor_success_agents":sorted(individual),
+        "local_joint_status":local_joint_status,
+        "local_joint_anchor_audit":local_joint_anchor_audit,
+        "local_joint_reject_reasons":local_joint_reject_reasons,
         **soft_guidance,
         "new_vias_added":0,
         "native_DRC_still_required":True,
