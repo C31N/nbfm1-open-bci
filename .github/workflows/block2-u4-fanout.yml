@@ -354,6 +354,7 @@ jobs:
                       'three_net_evasion_first_wait_expansions':partial['three_net_evasion_first_wait_expansions'],
                       'three_net_evasion_average_expansion_ms':partial['three_net_evasion_average_expansion_ms'],
                       'three_net_evasion_max_expansion_ms':partial['three_net_evasion_max_expansion_ms'],
+                      'three_net_evasion_first_expanded_probe':partial['three_net_evasion_first_expanded_probe'],
                       'cost_model':partial['cost_model'],
                       'frontier_unbound_bias':partial['frontier_unbound_bias'],
                       'mask_prefilter_rejections':partial['native_mask_prefilter_rejections'],

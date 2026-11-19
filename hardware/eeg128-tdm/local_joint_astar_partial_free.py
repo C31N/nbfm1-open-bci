@@ -47,6 +47,7 @@ class PartialFreeWeights:
     edt_reference_mm: float = .85
     pitch_harmony_weight: float = .20
     progress_sync_weight: float = .12
+    target_progress_credit_weight: float = .12
     turn_weight: float = .015
     unbound_heuristic_damp: float = .85
     heuristic_epsilon: float = 2.0
@@ -58,6 +59,7 @@ class PartialFreeWeights:
             self.late_bind_penalty_factor, self.late_bind_reference_mm,
             self.edt_proximity_weight, self.edt_reference_mm,
             self.pitch_harmony_weight, self.progress_sync_weight,
+            self.target_progress_credit_weight,
             self.turn_weight, self.unbound_heuristic_damp,
             self.heuristic_epsilon, self.frontier_unbound_bias)
         if any(not math.isfinite(v) or v < 0. for v in values):
@@ -186,9 +188,16 @@ class PartialFreeCostModel:
             int(prev_headings[net] != next_headings[net])
             for net, p in next_positions.items()
             if p is not None and prev_positions[net] is not None)
+        # Soft positive progress credit; does not change any hard gate.
+        progress_mm = sum(
+            max(0., self._dist(prev_positions[net], targets[net])
+                - self._dist(p, targets[net]))
+            for net, p in next_positions.items()
+            if p is not None and prev_positions[net] is not None)
+        progress_credit = self.w.target_progress_credit_weight * progress_mm
         raw = (displacement + binding_count * self.w.bind_cost
                + third_binding_adjustment + edt_penalty +
-               pitch_penalty + progress_penalty + turning)
+               pitch_penalty + progress_penalty + turning - progress_credit)
         step = max(self.w.min_step_cost, raw)
         if not math.isfinite(step):
             raise ValueError("Invalid cost function result")
@@ -200,6 +209,7 @@ class PartialFreeCostModel:
             "edt_proximity_penalty": edt_penalty,
             "pitch_harmony_penalty": pitch_penalty,
             "progress_sync_penalty": progress_penalty,
+            "target_progress_credit": progress_credit,
             "turn_penalty": turning,
         }
 
@@ -239,7 +249,9 @@ class ThreeNetEvasionConfig:
 class ThreeNetEvasionGenerator:
     """Three-bound-net staged motion preflight; never bypass native checks.
 
-    SYNC_GOAL -> SINGLE_EVADE -> PAIR_EVADE -> COUPLED_TURN.
+    SYNC_GOAL -> SINGLE_EVADE -> PAIR_EVADE -> COUPLED_TURN
+    -> STAGGERED_EVADE -> ASYMMETRIC_EVADE.
+    HOLD members add no new copper; all moving members keep native gates.
     Native callbacks enforce masks, immutable copper and entire trace history;
     the caller MUST enforce new-to-new segments after snapping to its grid.
     """
@@ -293,11 +305,11 @@ class ThreeNetEvasionGenerator:
             if math.dist(original[a], original[b]) < pitch - TOL:
                 self.record_rejection("pair_pitch", 3)
                 return
-        # Never move a target anchor again as part of a three-net move.
-        if any(math.dist(original[n], targets[n]) < TOL
-               for n in self.net_order):
+        # A goal member may HOLD while the other two advance.
+        at_goal = {n for n in self.net_order
+                   if math.dist(original[n], targets[n]) < TOL}
+        if len(at_goal) == len(self.net_order):
             return
-
         goal = {n: self._goal_heading(original[n], targets[n])
                 for n in self.net_order}
         stages: list[tuple[str, list[tuple[dict[str, int], str]]]] = [
@@ -305,6 +317,8 @@ class ThreeNetEvasionGenerator:
             ("SINGLE_EVADE", []),
             ("PAIR_EVADE", []),
             ("COUPLED_TURN", []),
+            ("STAGGERED_EVADE", []),
+            ("ASYMMETRIC_EVADE", []),
         ]
         for n in self.net_order:
             for shift in (-1, 1, -2, 2):
@@ -323,6 +337,29 @@ class ThreeNetEvasionGenerator:
             h = {n: (goal[n] + shift) % len(DIRS)
                  for n in self.net_order}
             stages[3][1].append((h, f"COUPLED_TURN_{shift:+d}"))
+        # A lagging track remains on its existing copper while two tracks
+        # advance; 0/1/2 heading offsets form a bounded corner fanout.
+        for held in self.net_order:
+            moving = tuple(n for n in self.net_order if n != held)
+            for da, db in ((0, 0), (-1, 0), (1, 0),
+                           (0, -1), (0, 1), (-1, 1), (1, -1)):
+                h = dict(goal)
+                h[held] = -1
+                h[moving[0]] = (goal[moving[0]] + da) % len(DIRS)
+                h[moving[1]] = (goal[moving[1]] + db) % len(DIRS)
+                stages[4][1].append((
+                    h, f"STAGGERED_EVADE_{held}_{da:+d}_{db:+d}"))
+        # Opposing turns make the 3-net fanout asymmetric, preserving
+        # the physical order only if all later native gates validate it.
+        for da, db, dc in ((-1, 0, 1), (1, 0, -1),
+                           (-2, 0, 2), (2, 0, -2),
+                           (-1, 1, 0), (1, -1, 0),
+                           (0, -1, 1), (0, 1, -1)):
+            offsets = (da, db, dc)
+            h = {n: (goal[n] + offsets[i]) % len(DIRS)
+                 for i, n in enumerate(self.net_order)}
+            stages[5][1].append((
+                h, f"ASYMMETRIC_EVADE_{da:+d}_{db:+d}_{dc:+d}"))
 
         accepted = 0
         visited: set[tuple[PointMM, ...]] = set()
@@ -331,10 +368,15 @@ class ThreeNetEvasionGenerator:
             for new_headings, tag in proposals:
                 if accepted >= self.config.max_evasion_candidates:
                     return
+                if any(new_headings[n] >= 0 for n in at_goal):
+                    continue
                 next_pos = {
-                    n: self._step_point(
-                        original[n], new_headings[n], self.config.step_mm)
+                    n: (original[n] if new_headings[n] < 0 else
+                        self._step_point(
+                            original[n], new_headings[n], self.config.step_mm))
                     for n in self.net_order}
+                if all(new_headings[n] < 0 for n in self.net_order):
+                    continue
                 key = tuple(next_pos[n] for n in self.net_order)
                 if key in visited:
                     continue
@@ -348,6 +390,10 @@ class ThreeNetEvasionGenerator:
                 # gate with actual native-grid coordinates before A* push.
                 denied = False
                 for n in self.net_order:
+                    if new_headings[n] < 0:
+                        # No new segment on a held route; its history was
+                        # previously validated and remains immutable.
+                        continue
                     point_result = self.is_point_clear(n, next_pos[n], pitch)
                     if point_result is not True:
                         self.record_rejection(
@@ -375,8 +421,22 @@ class ThreeNetEvasionGenerator:
                 accepted += 1
                 valid_in_stage += 1
                 yield next_pos, new_headings, tag
-            if valid_in_stage:
+            # Early cheap success may stop; a COUPLED_TURN alone must not
+            # hide staggers and asymmetric continuations at the bottleneck.
+            if valid_in_stage and _stage in (
+                    "SYNC_GOAL", "SINGLE_EVADE", "PAIR_EVADE"):
                 return
+
+
+def _nearest_target_node(
+    head: Node | None, targets: Sequence[Node],
+    distance: Callable[[Node, Node], float],
+) -> Node:
+    """Deterministic nearest physically eligible anchor, stable on ties."""
+    if not targets:
+        raise ValueError("No eligible native target anchor")
+    return targets[0] if head is None else min(
+        targets, key=lambda candidate: distance(head, candidate))
 
 
 def _evasion_fair_due(
@@ -484,12 +544,16 @@ def partial_free_joint_astar(
         "three_net_evasion_first_wait_expansions": None,
         "three_net_evasion_average_expansion_ms": 0.,
         "three_net_evasion_max_expansion_ms": 0.,
+        "three_net_evasion_first_expanded_probe": None,
         "three_net_evasion_stages_generated": {s: 0 for s in (
-            "SYNC_GOAL", "SINGLE_EVADE", "PAIR_EVADE", "COUPLED_TURN")},
+            "SYNC_GOAL", "SINGLE_EVADE", "PAIR_EVADE", "COUPLED_TURN",
+            "STAGGERED_EVADE", "ASYMMETRIC_EVADE")},
         "three_net_evasion_stages_admitted": {s: 0 for s in (
-            "SYNC_GOAL", "SINGLE_EVADE", "PAIR_EVADE", "COUPLED_TURN")},
+            "SYNC_GOAL", "SINGLE_EVADE", "PAIR_EVADE", "COUPLED_TURN",
+            "STAGGERED_EVADE", "ASYMMETRIC_EVADE")},
         "three_net_evasion_stages_expanded": {s: 0 for s in (
-            "SYNC_GOAL", "SINGLE_EVADE", "PAIR_EVADE", "COUPLED_TURN")},
+            "SYNC_GOAL", "SINGLE_EVADE", "PAIR_EVADE", "COUPLED_TURN",
+            "STAGGERED_EVADE", "ASYMMETRIC_EVADE")},
         "completed_routes": 0,
         "hard_centreline_pitch_mm": hard_pitch_mm,
         "minimum_anchor_pitch_mm": anchor_pitch_mm,
@@ -527,8 +591,13 @@ def partial_free_joint_astar(
     if grid.edt_mm is None:
         raise RuntimeError("Native EDT missing")
     edt_fields = grid.edt_mm
-    physical_targets = {
-        NET_NAMES[i]: grid.physical(target_sets[i][0]) for i in range(3)}
+    @lru_cache(maxsize=8000)
+    def nearest_targets(state: PartialFreeState) -> dict[str, Position]:
+        return {
+            NET_NAMES[i]: grid.physical(_nearest_target_node(
+                state.paths[i][-1] if state.paths[i] else None,
+                target_sets[i], dist))
+            for i in range(3)}
     physical_anchors = {
         NET_NAMES[i]: tuple(grid.physical(p) for p in source_sets[i])
         for i in range(3)}
@@ -545,7 +614,7 @@ def partial_free_joint_astar(
         # spending the entire node budget extending the first bound net.
         # It changes queue order, never transition cost or clearance.
         return (cost_model.heuristic(
-            state_positions(state), physical_targets, physical_anchors)
+            state_positions(state), nearest_targets(state), physical_anchors)
             + cost_model.w.frontier_unbound_bias *
             sum(not path for path in state.paths))
 
@@ -577,7 +646,7 @@ def partial_free_joint_astar(
             raise ValueError("EDT sample for missing bound head")
         return cost_model.transition_components(
             previous, following, prev_headings, next_headings,
-            physical_targets, edt_sample)
+            nearest_targets(prev), edt_sample)
 
     rejection_by_binding: list[Counter[str]] = [Counter() for _ in range(4)]
     active_bind_count = 0
@@ -696,9 +765,13 @@ def partial_free_joint_astar(
 
     def evasion_joint_clear(proposed: Mapping[str, PointMM]) -> bool | str:
         nodes = [evasion_node(proposed[net]) for net in NET_NAMES]
+        # HOLD means no new copper; treat that member as a physical
+        # point when checking concurrent new-to-new segment pitch.
         segments = [
-            LineString((grid.physical(state.paths[i][-1]),
-                        grid.physical(nodes[i])))
+            (Point(grid.physical(nodes[i]))
+             if nodes[i] == state.paths[i][-1]
+             else LineString((grid.physical(state.paths[i][-1]),
+                              grid.physical(nodes[i]))))
             for i in range(3)]
         if any(segments[i].distance(segments[j]) < hard_pitch_mm - TOL
                for i in range(3) for j in range(i + 1, 3)):
@@ -716,6 +789,7 @@ def partial_free_joint_astar(
             max_evasion_candidates=32),
     )
     evasion_stage_for_state: dict[PartialFreeState, str] = {}
+    evasion_parent_for_state: dict[PartialFreeState, PartialFreeState] = {}
 
     start = PartialFreeState(((), (), ()))
     order = itertools.count()
@@ -812,7 +886,10 @@ def partial_free_joint_astar(
         fairness_pop = _evasion_fair_due(
             bool(fair_queue), expansions, last_fair_expansion)
         if not heap and fair_queue:
-            fairness_pop = True
+            # Each fair entry also lives in A*: no heap means duplicates.
+            # Never break the strict one-in-eight fairness-expansion limit.
+            fair_queue.clear()
+            break
         if fairness_pop:
             g, state = fair_queue.popleft()
         else:
@@ -839,9 +916,38 @@ def partial_free_joint_astar(
         bound = sum(bool(path) for path in state.paths)
         active_bind_count = bound
         diagnostic["search_states_by_bound_count"][bound] += 1
+        probe: dict[str, Any] | None = None
+        rejection_before: Counter[str] | None = None
         if state in evasion_stage_for_state:
             stage = evasion_stage_for_state[state]
             diagnostic["three_net_evasion_stages_expanded"][stage] += 1
+            if diagnostic["three_net_evasion_first_expanded_probe"] is None:
+                parent = evasion_parent_for_state[state]
+                before_mm = tuple(
+                    min(dist(parent.paths[i][-1], t) for t in target_sets[i])
+                    for i in range(3))
+                after_mm = tuple(
+                    min(dist(state.paths[i][-1], t) for t in target_sets[i])
+                    for i in range(3))
+                probe = {
+                    "stage": stage, "expansion": expansions,
+                    "target_distance_before_mm": [
+                        round(v, 6) for v in before_mm],
+                    "target_distance_after_mm": [
+                        round(v, 6) for v in after_mm],
+                    "target_progress_by_net_mm": [
+                        round(a - b, 6)
+                        for a, b in zip(before_mm, after_mm)],
+                    "edt_mm_by_net": [
+                        round(float(edt_fields[i][route[-1][1],
+                                                     route[-1][0]]), 6)
+                        for i, route in enumerate(state.paths)],
+                    "admitted_followup_states": 0,
+                    "native_followup_rejections": {},
+                }
+                diagnostic["three_net_evasion_first_expanded_probe"] = probe
+                rejection_before = reject.copy()
+        admitted_this_expansion = 0
         if bound == 3 and state in root_by_state:
             root = root_by_state[state]
             expanded_roots.add(root)
@@ -873,39 +979,47 @@ def partial_free_joint_astar(
                 max_expansion_wall, time.monotonic() - tick)
             update_telemetry()
             return diagnostic
-        if bound == 3 and all(
-                route[-1] not in target_sets[i]
-                and len(route) < max_route_nodes
-                for i, route in enumerate(state.paths)):
+        if (bound == 3
+                and sum(route[-1] not in target_sets[i]
+                        for i, route in enumerate(state.paths)) >= 2
+                and all(len(route) < max_route_nodes
+                        for route in state.paths)):
             positions = state_positions(state)
             headings = {NET_NAMES[i]: route_heading(route)
                         for i, route in enumerate(state.paths)}
             for proposed, _new_headings, tag in (
                     evasion_generator.generate_evasion_steps(
-                        positions, headings, physical_targets)):
-                stage = next(s for s in (
-                    "SYNC_GOAL", "SINGLE_EVADE", "PAIR_EVADE", "COUPLED_TURN")
-                             if tag.startswith(s))
+                        positions, headings, nearest_targets(state))):
+                stage = next(
+                    name for name in diagnostic["three_net_evasion_stages_generated"]
+                    if tag.startswith(name))
                 diagnostic["three_net_evasion_stages_generated"][stage] += 1
                 next_nodes = [evasion_node(proposed[n]) for n in NET_NAMES]
-                if any(next_nodes[i] in state.paths[i] or
-                       (next_nodes[i][0] - state.paths[i][-1][0],
-                        next_nodes[i][1] - state.paths[i][-1][1]) not in DIRS
-                       for i in range(3)):
+                if any(
+                        next_nodes[i] != state.paths[i][-1] and (
+                            next_nodes[i] in state.paths[i] or
+                            (next_nodes[i][0] - state.paths[i][-1][0],
+                             next_nodes[i][1] - state.paths[i][-1][1])
+                            not in DIRS)
+                        for i in range(3)):
                     reject_reason("evasion_grid_snapping_or_self_revisit")
                     continue
                 # The generator has already called evasion_joint_clear
                 # on these EXACT snapped grid segments. A second pairwise
                 # Shapely distance calculation here is redundant; no
                 # constraint is removed from the accepted transition.
-                routes = tuple((*state.paths[i], next_nodes[i])
-                               for i in range(3))
+                routes = tuple(
+                    (state.paths[i] if next_nodes[i] == state.paths[i][-1]
+                     else (*state.paths[i], next_nodes[i]))
+                    for i in range(3))
                 candidate = PartialFreeState(routes)
                 terms = score_transition(state, candidate)
                 cost = (terms["step_cost"] +
                         .05 * sum(density(i, next_nodes[i])
                                   for i in range(3)))
                 if push(candidate, g + cost, state, terms):
+                    admitted_this_expansion += 1
+                    evasion_parent_for_state[candidate] = state
                     evasion_stage_for_state[candidate] = stage
                     diagnostic["three_net_evasion_stages_admitted"][stage] += 1
                     if diagnostic["three_net_evasion_first_admitted_expansion"] is None:
@@ -936,9 +1050,10 @@ def partial_free_joint_astar(
                     # Geometry is checked first; only then compute the
                     # calibrated SOFT transition score.
                     terms = score_transition(state, candidate)
-                    push(candidate,
-                         g + terms["step_cost"] + .05 * density(agent, p),
-                         state, terms)
+                    if push(candidate,
+                            g + terms["step_cost"] + .05 * density(agent, p),
+                            state, terms):
+                        admitted_this_expansion += 1
                 continue
             if len(route) >= max_route_nodes or (
                     route[-1] in target_sets[agent]):
@@ -970,7 +1085,14 @@ def partial_free_joint_astar(
                 candidate = PartialFreeState(tuple(routes))
                 terms = score_transition(state, candidate)
                 cost = terms["step_cost"] + .05 * density(agent, b)
-                push(candidate, g + cost, state, terms)
+                if push(candidate, g + cost, state, terms):
+                    admitted_this_expansion += 1
+        if probe is not None and rejection_before is not None:
+            probe["admitted_followup_states"] = admitted_this_expansion
+            probe["native_followup_rejections"] = {
+                k: reject[k] - rejection_before[k]
+                for k in sorted(reject)
+                if reject[k] > rejection_before[k]}
         elapsed_expansion = time.monotonic() - tick
         expansion_cpu_wall += elapsed_expansion
         max_expansion_wall = max(max_expansion_wall, elapsed_expansion)

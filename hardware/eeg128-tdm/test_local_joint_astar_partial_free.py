@@ -9,7 +9,8 @@ import numpy as np
 from shapely.geometry import GeometryCollection, box
 
 from local_joint_astar_partial_free import (
-    PartialFreeState, _evasion_fair_due, partial_free_joint_astar)
+    PartialFreeState, _evasion_fair_due, _nearest_target_node,
+    partial_free_joint_astar)
 from probe_block2_elastic_joint_corridor import FCuCorridorGrid
 
 Node = tuple[int, int]
@@ -51,6 +52,22 @@ class PartialFreeJointTests(unittest.TestCase):
         self.assertTrue(_evasion_fair_due(True, 1574, 1566))
         with self.assertRaises(ValueError):
             _evasion_fair_due(True, 8, 0, interval=0)
+
+    def test_nearest_native_target_selection_is_deterministic(self) -> None:
+        candidates = ((5, 1), (2, 1), (9, 1))
+        def distance(a: Node, b: Node) -> float:
+            return abs(a[0] - b[0])
+        self.assertEqual(
+            _nearest_target_node((4, 1), candidates, distance),
+            (5, 1))
+        self.assertEqual(
+            _nearest_target_node(None, candidates, distance),
+            candidates[0])
+        self.assertEqual(
+            _nearest_target_node((7, 1), candidates, distance),
+            candidates[0])
+        with self.assertRaises(ValueError):
+            _nearest_target_node((1, 1), (), distance)
 
     def test_none_state_is_genuinely_unbound(self) -> None:
         state = PartialFreeState(((), ((4, 7),), ()))
@@ -124,9 +141,11 @@ class PartialFreeJointTests(unittest.TestCase):
                        "three_net_evasion_stages_admitted",
                        "three_net_evasion_stages_expanded"):
             self.assertEqual(set(report[metric]), {
-                "SYNC_GOAL", "SINGLE_EVADE", "PAIR_EVADE", "COUPLED_TURN"})
+                "SYNC_GOAL", "SINGLE_EVADE", "PAIR_EVADE",
+                "COUPLED_TURN", "STAGGERED_EVADE", "ASYMMETRIC_EVADE"})
         self.assertGreaterEqual(sum(
             report["three_net_evasion_stages_generated"].values()), 0)
+        self.assertIn("three_net_evasion_first_expanded_probe", report)
         self.assertEqual(report["cost_model"], "PartialFreeCostModel-v1")
         self.assertFalse(report["accepted"])
         self.assertFalse(report["fabrication_release"])

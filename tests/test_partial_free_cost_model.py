@@ -236,3 +236,24 @@ def test_progress_synchronization_component_tracks_new_divergence(
     b = model.transition_components(
         before, diverging, headings, headings, targets, _flat_edt(.8))
     assert b["progress_sync_penalty"] > a["progress_sync_penalty"]
+
+def test_target_progress_credit_prefers_forward_motion_without_negative_g(
+    model: PartialFreeCostModel, targets: dict[str, tuple[float, float]],
+) -> None:
+    before = {name: (42.0, 24.0 + 2.6 * i)
+              for i, name in enumerate(targets)}
+    forward = {name: (p[0] + .22, p[1])
+               for name, p in before.items()}
+    backward = {name: (p[0] - .22, p[1])
+                for name, p in before.items()}
+    headings = {name: 0 for name in targets}
+    f = model.transition_components(
+        before, forward, headings, headings, targets, _flat_edt(2.0))
+    b = model.transition_components(
+        before, backward, headings, headings, targets, _flat_edt(2.0))
+    assert f["target_progress_credit"] > 0.
+    assert b["target_progress_credit"] == 0.
+    assert f["step_cost"] < b["step_cost"]
+    assert f["step_cost"] >= model.w.min_step_cost
+    with pytest.raises(ValueError):
+        PartialFreeWeights(target_progress_credit_weight=-.01)

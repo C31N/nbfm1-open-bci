@@ -105,6 +105,77 @@ def test_rejects_pair_pitch_violation_below_300um(
     assert ("pair_pitch", 3) in rejections
 
 
+def test_staggered_evasion_holds_one_track_without_creating_a_segment(
+    targets: Dict[str, PointMM], positions: Dict[str, Optional[PointMM]],
+) -> None:
+    probe, _ = _make_generator()
+    blocked: Dict[str, List[PointMM]] = {n: [] for n in NETS}
+    # The first track is completely blocked. Only channels 1 and 2
+    # have a goal-directed step available, so the first must HOLD.
+    for name in NETS:
+        p = positions[name]
+        blocked[name] = [
+            probe._step_point(p, direction, .250)
+            for direction in range(8)]
+    for name in NETS[1:]:
+        p = positions[name]
+        dest = probe._step_point(
+            p, probe._goal_heading(p, targets[name]), .250)
+        blocked[name] = [
+            q for q in blocked[name] if math.dist(q, dest) > 1e-6]
+    gen, _ = _make_generator(blocked_points=blocked)
+    results = list(gen.generate_evasion_steps(
+        positions, dict.fromkeys(NETS, 0), targets))
+    assert results
+    assert all(tag.startswith("STAGGERED_EVADE")
+               for _, _, tag in results)
+    assert all(next_pos[NETS[0]] == positions[NETS[0]]
+               for next_pos, _, _ in results)
+    assert any(next_pos[NETS[1]] != positions[NETS[1]]
+               and next_pos[NETS[2]] != positions[NETS[2]]
+               for next_pos, _, _ in results)
+
+
+def test_coupled_turn_does_not_suppress_staggered_alternative(
+    targets: Dict[str, PointMM], positions: Dict[str, Optional[PointMM]],
+) -> None:
+    probe, _ = _make_generator()
+    goal = {n: probe._goal_heading(positions[n], targets[n])
+            for n in NETS}
+    coupled = {n: probe._step_point(
+        positions[n], (goal[n] - 1) % 8, .250) for n in NETS}
+    staggered = {
+        NETS[0]: positions[NETS[0]],
+        NETS[1]: probe._step_point(positions[NETS[1]], goal[NETS[1]], .250),
+        NETS[2]: probe._step_point(positions[NETS[2]], goal[NETS[2]], .250),
+    }
+    accepted_keys = {
+        tuple(coupled[n] for n in NETS),
+        tuple(staggered[n] for n in NETS),
+    }
+    rejections: List[Tuple[str, int]] = []
+
+    def record(reason: str, bound: int) -> None:
+        rejections.append((reason, bound))
+
+    generator = ThreeNetEvasionGenerator(
+        net_order=NETS,
+        is_point_clear=lambda _n, _p, _c: True,
+        is_segment_clear=lambda _n, _a, _b, _c: True,
+        is_joint_clear=lambda p: (
+            True if tuple(p[n] for n in NETS) in accepted_keys
+            else "synthetic_blocked_joint"),
+        record_rejection=record,
+        config=ThreeNetEvasionConfig(step_mm=.250),
+    )
+    results = list(generator.generate_evasion_steps(
+        positions, dict.fromkeys(NETS, 0), targets))
+    tags = [tag for _, _, tag in results]
+    assert any(tag.startswith("COUPLED_TURN") for tag in tags)
+    assert any(tag.startswith("STAGGERED_EVADE") for tag in tags)
+    assert ("synthetic_blocked_joint", 3) in rejections
+
+
 def test_respects_max_evasion_candidates_cap(
     targets: Dict[str, PointMM], positions: Dict[str, Optional[PointMM]],
 ) -> None:
