@@ -86,6 +86,8 @@ class HybridMidpointTests(unittest.TestCase):
             "speculative_outside=True",
             "reassemble_speculative_outside(",
             "outside_replan_diagnostic",
+            "not anchor_resolution.outside_paths_speculative",
+            "max_expansions=4800",
             "hybrid_unresolved_global_joint_fallback_required",
             "line.distance(other)<.300-1e-8",
             "restrict_to_window=True",

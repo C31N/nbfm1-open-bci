@@ -341,16 +341,17 @@ def hybrid_fcu_preflight(
                 if local_masks[i][p[1],p[0]]],
             "target_masked_agents":[i for i,p in enumerate(goals_local)
                 if local_masks[i][p[1],p[0]]],
-            "fixed_outside_paths_preserved":True,
+            "fixed_outside_paths_preserved":(
+                not anchor_resolution.outside_paths_speculative),
             "locked_escape_ripup_permitted":False,
         })
         solver=ElasticJointCorridorRouter(
             FCuCorridorGrid(local_masks,local_shapes,xs,ys))
-        remaining=min(6.,max(.1,deadline-time.monotonic()))
+        remaining=min(8.,max(.1,deadline-time.monotonic()))
         result=solver.solve_midpoint(
             tuple(starts_local),tuple(goals_local),
             exact_tips=tuple(tips_local),
-            max_expansions=1800,max_seconds=remaining,
+            max_expansions=4800,max_seconds=remaining,
             midpoint_band_mm=.5)
         counters["local_joint_expansions"]=result["expansions"]
         local_joint_status=result["status"]
