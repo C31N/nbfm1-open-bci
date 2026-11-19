@@ -50,6 +50,7 @@ class PartialFreeWeights:
     turn_weight: float = .015
     unbound_heuristic_damp: float = .85
     heuristic_epsilon: float = 2.0
+    frontier_unbound_bias: float = 6.0
 
     def __post_init__(self) -> None:
         values = (
@@ -58,7 +59,7 @@ class PartialFreeWeights:
             self.edt_proximity_weight, self.edt_reference_mm,
             self.pitch_harmony_weight, self.progress_sync_weight,
             self.turn_weight, self.unbound_heuristic_damp,
-            self.heuristic_epsilon)
+            self.heuristic_epsilon, self.frontier_unbound_bias)
         if any(not math.isfinite(v) or v < 0. for v in values):
             raise ValueError("Nonfinite or negative PartialFreeWeights")
         if (self.min_step_cost < .02 or self.late_bind_reference_mm <= 0.
@@ -286,6 +287,7 @@ def partial_free_joint_astar(
         "density_penalty_applied": True,
         "weighted_heuristic_epsilon": 2.0,
         "cost_model": "PartialFreeCostModel-v1",
+        "frontier_unbound_bias": 6.0,
         "third_binding_transition_attempts": 0,
         "third_binding_native_valid": 0,
         "third_binding_admitted": 0,
@@ -345,8 +347,14 @@ def partial_free_joint_astar(
 
     @lru_cache(maxsize=8000)
     def heuristic(state: PartialFreeState) -> float:
-        return cost_model.heuristic(
+        # The calibrated None-net distance is intentionally damped in
+        # PartialFreeCostModel. A separate FRONTIER-ONLY preference avoids
+        # spending the entire node budget extending the first bound net.
+        # It changes queue order, never transition cost or clearance.
+        return (cost_model.heuristic(
             state_positions(state), physical_targets, physical_anchors)
+            + cost_model.w.frontier_unbound_bias *
+            sum(not path for path in state.paths))
 
     def route_heading(path: tuple[Node, ...]) -> int:
         if len(path) < 2:

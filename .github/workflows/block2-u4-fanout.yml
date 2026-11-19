@@ -335,6 +335,7 @@ jobs:
                       'average_progress_sync_penalty_after_third_binding':partial['average_progress_sync_penalty_after_third_binding'],
                       'rejections_by_bound_count':partial['rejections_by_bound_count'],
                       'cost_model':partial['cost_model'],
+                      'frontier_unbound_bias':partial['frontier_unbound_bias'],
                       'mask_prefilter_rejections':partial['native_mask_prefilter_rejections'],
                       'native_segment_rejections':partial['native_segment_rejections'],
                       'reject_reasons':partial.get('reject_reasons',{}),
