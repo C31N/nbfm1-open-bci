@@ -8,7 +8,7 @@ import unittest
 import numpy as np
 from shapely.geometry import GeometryCollection
 
-from joint_start_anchor_resolver import resolve_window_anchors
+from joint_start_anchor_resolver import AnchorResolution, resolve_window_anchors
 
 
 class Window:
@@ -27,7 +27,12 @@ class AnchorResolverTests(unittest.TestCase):
                                dtype=bool) for _ in range(3)]
         self.shapes = [GeometryCollection() for _ in range(3)]
 
-    def resolve(self, *, paths=None, masks=None, max_shift_nodes=5):
+    def resolve(
+        self, *,
+        paths: tuple[tuple[tuple[int, int], ...], ...] | None = None,
+        masks: list[np.ndarray] | None = None,
+        max_shift_nodes: int = 5,
+    ) -> AnchorResolution:
         return resolve_window_anchors(
             paths if paths is not None else self.paths,
             self.spans,
