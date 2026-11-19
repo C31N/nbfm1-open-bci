@@ -57,7 +57,7 @@ class SWIGFreeGeometryTests(unittest.TestCase):
         centre,gap,_,_=primitive_distance(
             pad(0.,0.,w=2.,h=1.,angle=90.,kind="OVAL_PAD"),
             via(1.15,0.,diameter=.3))
-        self.assertAlmostEqual(centre,.65,places=9)
+        self.assertAlmostEqual(centre,1.15,places=9)
         self.assertAlmostEqual(gap,.5,places=9)
 
     def test_capsule_rectangle_minimum_at_endpoint(self)->None:

@@ -42,6 +42,8 @@ class HybridMidpointTests(unittest.TestCase):
         self.assertIsNotNone(routes,diag)
         self.assertEqual(len(routes),3)
         self.assertEqual(diag["stage_used"],"sequential")
+        self.assertFalse(diag["planar_order_hard_pruning"])
+        self.assertTrue(diag["joint_wall_cost_on_preinflated_shapes"])
         self.assertGreaterEqual(
             diag["minimum_complete_centreline_mm"],.300-1e-8)
         self.assertTrue(diag["native_DRC_still_required"])
@@ -58,6 +60,9 @@ class HybridMidpointTests(unittest.TestCase):
         self.assertIsNone(routes)
         self.assertEqual(diag["stage_used"],"failed")
         self.assertFalse(diag["geometry_unsatisfiable_proven"])
+        self.assertIn("anchor_a_star_reasons",diag)
+        self.assertIn("anchor_attempts",diag)
+        self.assertFalse(diag["planar_order_hard_pruning"])
         self.assertEqual(diag["new_vias_added"],0)
 
     def test_window_slices_do_not_imply_rip_up_of_locked_escapes(self)->None:

@@ -9,7 +9,9 @@ the independent native DRC and 201-victim gates remain mandatory.
 """
 from __future__ import annotations
 
+from collections import Counter
 import itertools
+import math
 import time
 from typing import Any
 
@@ -18,7 +20,9 @@ from shapely import contains_xy
 from shapely.geometry import LineString,Point as ShapePoint
 from shapely.ops import unary_union
 
-from probe_block2_joint_topology_costs import WindowBox,conflict_window
+from probe_block2_joint_topology_costs import (
+    PlanarOrderFilter,WindowBox,conflict_window,
+)
 from probe_block2_u4_topological import _astar_grid
 
 Node=tuple[int,int]
@@ -71,7 +75,25 @@ def hybrid_fcu_preflight(
     window=conflict_window(hotspot,half_window_mm)
     native_shapes=tuple(shapes)
     counters={"sequential_attempts":0,"sequential_solved_agents":0,
-              "local_rip_cycles":0,"local_joint_expansions":0}
+              "local_rip_cycles":0,"local_joint_expansions":0,
+              "anchor_retry_expansions":0}
+    anchor_reasons:Counter[str]=Counter()
+    anchor_trials:list[dict[str,Any]]=[]
+    def point(node:Node)->tuple[float,float]:
+        return float(xs[node[0]]),float(ys[node[1]])
+    sources=tuple(point(p) for p in starts)
+    targets=tuple(point(p) for p in goals)
+    dx=sum(b[0]-a[0] for a,b in zip(sources,targets))
+    dy=sum(b[1]-a[1] for a,b in zip(sources,targets))
+    order=PlanarOrderFilter(
+        sources,targets,(-dy,dx) if math.hypot(dx,dy)>1e-9 else (0.,1.),
+        certified_monotone_region=False,inversion_weight=.08)
+    soft_guidance={
+        "planar_order_endpoints_agree":order.start_goal_order_matches,
+        "planar_order_hard_pruning":order.hard,
+        "planar_order_soft_preference_only":not order.hard,
+        "joint_wall_cost_on_preinflated_shapes":True,
+    }
     individual:dict[int,tuple[Node,...]]={}
     best_partial:dict[int,tuple[Node,...]]={}
 
@@ -94,9 +116,30 @@ def hybrid_fcu_preflight(
                 gy>=window.ymin)&(gy<=window.ymax)
             blocked|=~in_window
         if blocked[begin[1],begin[0]] or blocked[end[1],end[0]]:
+            anchor_reasons["endpoint_masked"]+=1
             return None
-        result,_,_= _astar_grid(
+        result,reason,expanded= _astar_grid(
             blocked,begin,end,max_nodes=1600,deadline=deadline)
+        anchor_reasons[reason]+=1
+        if len(anchor_trials)<32:
+            anchor_trials.append({
+                "agent":agent,"stage":(
+                    "window" if restrict_to_window else "global"),
+                "method":"A_star_1600","result":reason,"expansions":expanded})
+        # Budget exhaustion alone is not proof of a missing F.Cu passage.
+        # Retry only on the unchanged hard masks and only within the
+        # existing time budget; never invent endpoints or remove obstacles.
+        if reason=="node_budget_exhausted" and time.monotonic()<deadline:
+            retried,why,nodes=_astar_grid(
+                blocked,begin,end,max_nodes=6400,deadline=deadline)
+            counters["anchor_retry_expansions"]+=nodes
+            anchor_reasons["retry_"+why]+=1
+            if len(anchor_trials)<32:
+                anchor_trials.append({
+                    "agent":agent,"stage":(
+                        "window" if restrict_to_window else "global"),
+                    "method":"A_star_6400","result":why,"expansions":nodes})
+            result=retried
         if result is None:
             return None
         points=tuple(result)
@@ -105,6 +148,7 @@ def hybrid_fcu_preflight(
         line=LineString(tuple((float(xs[x]),float(ys[y]))
                               for x,y in points))
         if line.intersects(obstacles):
+            anchor_reasons["continuous_native_copper_collision"]+=1
             return None
         return points
 
@@ -141,7 +185,9 @@ def hybrid_fcu_preflight(
                     "local_joint_expansions":0,
                     "minimum_complete_centreline_mm":gap,
                     "new_vias_added":0,"native_DRC_still_required":True,
-                    **counters}
+                    "anchor_a_star_reasons":dict(anchor_reasons),
+                    "anchor_attempts":anchor_trials,
+                    **soft_guidance,**counters}
     # Collect independent source-to-target paths solely as speculative
     # anchors. They are NOT simultaneously legal copper.
     for agent in range(3):
@@ -185,7 +231,9 @@ def hybrid_fcu_preflight(
                     "local_joint_expansions":0,
                     "minimum_complete_centreline_mm":gap,
                     "new_vias_added":0,"native_DRC_still_required":True,
-                    **counters}
+                    "anchor_a_star_reasons":dict(anchor_reasons),
+                    "anchor_attempts":anchor_trials,
+                    **soft_guidance,**counters}
 
     # Stage 3: genuinely local three-agent A* ONLY when all three
     # independent paths have valid local entry/exit anchors.
@@ -260,7 +308,9 @@ def hybrid_fcu_preflight(
                     "minimum_complete_centreline_mm":gap,
                     "new_vias_added":0,
                     "native_DRC_still_required":True,
-                    **counters}
+                    "anchor_a_star_reasons":dict(anchor_reasons),
+                    "anchor_attempts":anchor_trials,
+                    **soft_guidance,**counters}
 
     return None,{
         "status":"hybrid_unresolved_global_joint_fallback_required",
@@ -271,8 +321,14 @@ def hybrid_fcu_preflight(
         "local_window_mm":[window.xmin,window.ymin,
                            window.xmax,window.ymax],
         "local_joint_eligible":(
-            len(spans)==3 and all(v is not None for v in spans.values())),
+            len(spans)==3 and all(
+                v is not None and 0<v[0]<v[1]<len(individual[i])-1
+                for i,v in spans.items())),
         "wall_seconds":round(time.monotonic()-started,3),
+        "anchor_a_star_reasons":dict(anchor_reasons),
+        "anchor_attempts":anchor_trials,
+        "independent_anchor_success_agents":sorted(individual),
+        **soft_guidance,
         "new_vias_added":0,
         "native_DRC_still_required":True,
         "geometry_unsatisfiable_proven":False,
