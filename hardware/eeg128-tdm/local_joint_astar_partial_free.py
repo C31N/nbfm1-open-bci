@@ -48,7 +48,7 @@ class PartialFreeWeights:
     pitch_harmony_weight: float = .20
     progress_sync_weight: float = .12
     turn_weight: float = .015
-    unbound_heuristic_damp: float = .55
+    unbound_heuristic_damp: float = .85
     heuristic_epsilon: float = 2.0
 
     def __post_init__(self) -> None:
@@ -148,18 +148,39 @@ class PartialFreeCostModel:
                 0., self.w.edt_reference_mm - max(0., clearance)
             ) / self.w.edt_reference_mm
 
-        gaps = [self._dist(positions[i], positions[j])
-                for i in range(len(positions))
-                for j in range(i + 1, len(positions))]
-        pitch_penalty = self.w.pitch_harmony_weight * sum(
-            abs(gap - PITCH_MM) for gap in gaps)
+        # Penalize a WORSENING of the pitch deviation, not a repeatedly
+        # charged unavoidable offset between already separated legal nets.
+        # This preserves the exact preference for a 0.300-mm bundle
+        # without exhausting the search on a constant distant pairing.
+        pitch_penalty = 0.
+        names = list(next_positions)
+        for a in range(len(names)):
+            for b in range(a + 1, len(names)):
+                n1, n2 = names[a], names[b]
+                q1, q2 = next_positions[n1], next_positions[n2]
+                if q1 is None or q2 is None:
+                    continue
+                next_dev = abs(self._dist(q1, q2) - PITCH_MM)
+                p1, p2 = prev_positions[n1], prev_positions[n2]
+                prev_dev = (
+                    abs(self._dist(p1, p2) - PITCH_MM)
+                    if p1 is not None and p2 is not None else 0.)
+                pitch_penalty += self.w.pitch_harmony_weight * max(
+                    0., next_dev - prev_dev)
+        # Synchronize net progress by discouraging NEW divergence.
+        # Keeping a fixed feasible offset is never punished on every hop.
         remaining_next = [
             self._dist(p, targets[net])
             for net, p in next_positions.items() if p is not None]
-        progress_penalty = (
-            self.w.progress_sync_weight *
-            (max(remaining_next) - min(remaining_next))
-            if len(remaining_next) >= 2 else 0.)
+        remaining_prev = [
+            self._dist(p, targets[net])
+            for net, p in prev_positions.items() if p is not None]
+        next_range = (max(remaining_next) - min(remaining_next)
+                      if len(remaining_next) >= 2 else 0.)
+        prev_range = (max(remaining_prev) - min(remaining_prev)
+                      if len(remaining_prev) >= 2 else 0.)
+        progress_penalty = (self.w.progress_sync_weight *
+                            max(0., next_range - prev_range))
         turning = self.w.turn_weight * sum(
             int(prev_headings[net] != next_headings[net])
             for net, p in next_positions.items()

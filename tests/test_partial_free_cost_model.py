@@ -202,3 +202,37 @@ def test_heuristic_includes_unbound_none_net_estimate(
         + model._dist((38.6, 41.0), targets["CH030_N_MUX"])
         * model.w.unbound_heuristic_damp
     )
+
+def test_existing_wide_but_unchanged_pitch_is_not_charged_repeatedly(
+    model: PartialFreeCostModel, targets: dict[str, tuple[float, float]],
+) -> None:
+    prev = {
+        "CH028_N_MUX": (40., 35.),
+        "CH029_N_MUX": (40., 35.88),
+        "CH030_N_MUX": (40., 36.76),
+    }
+    advanced = {net: (p[0] + .22, p[1]) for net, p in prev.items()}
+    headings = {net: 0 for net in targets}
+    detail = model.transition_components(
+        prev, advanced, headings, headings, targets, _flat_edt(.9))
+    assert detail["pitch_harmony_penalty"] == pytest.approx(0., abs=1e-12)
+    assert detail["step_cost"] >= model.w.min_step_cost
+
+
+def test_progress_synchronization_component_tracks_new_divergence(
+    model: PartialFreeCostModel, targets: dict[str, tuple[float, float]],
+) -> None:
+    before = {
+        "CH028_N_MUX": (44., 30.),
+        "CH029_N_MUX": (44.3, 30.),
+        "CH030_N_MUX": (44.6, 30.),
+    }
+    together = {name: (p[0], p[1] - .2) for name, p in before.items()}
+    diverging = dict(together)
+    diverging["CH030_N_MUX"] = (40., 38.)
+    headings = {net: 0 for net in targets}
+    a = model.transition_components(
+        before, together, headings, headings, targets, _flat_edt(.8))
+    b = model.transition_components(
+        before, diverging, headings, headings, targets, _flat_edt(.8))
+    assert b["progress_sync_penalty"] > a["progress_sync_penalty"]
