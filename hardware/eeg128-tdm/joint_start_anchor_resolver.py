@@ -29,6 +29,7 @@ class AnchorResolution:
     reason: str
     original_source_pitch_mm: float
     original_target_pitch_mm: float
+    outside_paths_speculative: bool = False
 
     def as_diagnostic(self) -> dict[str, Any]:
         return {
@@ -40,7 +41,8 @@ class AnchorResolution:
             "original_source_pitch_mm": self.original_source_pitch_mm,
             "original_target_pitch_mm": self.original_target_pitch_mm,
             "partial_free_net_is_diagnostic_only": True,
-            "fixed_outside_paths_preserved": True,
+            "fixed_outside_paths_preserved": not self.outside_paths_speculative,
+            "speculative_outside_replan_required": self.outside_paths_speculative,
             "locked_escape_ripup_permitted": False,
             "new_vias_added": 0,
             "accepted": False,
@@ -61,8 +63,15 @@ def resolve_window_anchors(
     max_shift_nodes: int = 5,
     max_side_triplets: int = 24,
     pitch_mm: float = PITCH_MM,
+    speculative_outside: bool = False,
 ) -> AnchorResolution:
-    """Search bounded frozen-prefix / frozen-suffix triplets without ripping.
+    """Search bounded source/target anchor triplets without board mutation.
+
+    With speculative_outside=True, individually computed prefix/suffix paths
+    are discarded rather than mistaken for immutable copper. That mode
+    returns tentative anchors ONLY; every outer segment must be independently
+    rerouted and the complete three-net candidate revalidated before use.
+    Actual copper remains constrained by the supplied native masks/shapes.
 
     Endpoint movement is only *along an independently verified existing
     path*. No off-path projection, clearance waiver, or endpoint invention.
@@ -125,7 +134,8 @@ def resolve_window_anchors(
         return AnchorResolution(
             status, starts, targets, checked, why,
             round(min_pitch(original_s), 6),
-            round(min_pitch(original_t), 6))
+            round(min_pitch(original_t), 6),
+            outside_paths_speculative=speculative_outside)
 
     if any(not row for row in start_options + target_options):
         return outcome(
@@ -155,6 +165,11 @@ def resolve_window_anchors(
             if any(start[i] >= target[i] for i in range(3)):
                 continue
             checked += 1
+            if speculative_outside:
+                return outcome(
+                    "speculative_joint_entry_exit",
+                    "Native mask-clear anchors only; outside reroute mandatory",
+                    checked, start, target)
             frozen = []
             for i, route in enumerate(paths):
                 for part in (route[:start[i] + 1], route[target[i]:]):

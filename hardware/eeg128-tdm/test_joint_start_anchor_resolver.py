@@ -80,6 +80,31 @@ class AnchorResolverTests(unittest.TestCase):
             result.status, "MIDPOINT_JOINT_START_ANCHORS_INVALID")
         self.assertIsNone(result.starts)
 
+    def test_speculative_foreign_paths_may_be_discarded_not_frozen(self) -> None:
+        routes = list(self.paths)
+        routes[1] = tuple([(0, 2), (1, 2), (2, 2)]
+                          + [(x, 6) for x in range(3, 13)])
+        speculative = resolve_window_anchors(
+            tuple(routes), self.spans, self.masks, self.shapes,
+            self.xs, self.ys, Window(), speculative_outside=True)
+        self.assertEqual(speculative.status, "speculative_joint_entry_exit")
+        self.assertIsNotNone(speculative.starts)
+        self.assertIsNotNone(speculative.targets)
+        diag = speculative.as_diagnostic()
+        self.assertTrue(diag["speculative_outside_replan_required"])
+        self.assertFalse(diag["fixed_outside_paths_preserved"])
+        self.assertFalse(diag["accepted"])
+        self.assertFalse(diag["fabrication_release"])
+        self.assertFalse(diag["locked_escape_ripup_permitted"])
+
+    def test_speculative_mode_never_bypasses_native_masks(self) -> None:
+        self.masks[0][2, 3:9] = True
+        speculative = resolve_window_anchors(
+            self.paths, self.spans, self.masks, self.shapes,
+            self.xs, self.ys, Window(), speculative_outside=True)
+        self.assertEqual(speculative.status, "partial_free_net")
+        self.assertIsNone(speculative.starts)
+
     def test_wrong_mask_dimensions_fail_closed(self) -> None:
         self.masks[1] = np.zeros((3, 3), dtype=bool)
         with self.assertRaises(ValueError):
