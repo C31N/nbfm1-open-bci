@@ -21,7 +21,8 @@ from typing import Any
 from shapely.geometry import Polygon, box
 from shapely.ops import nearest_points, unary_union
 from swig_free_fcu_geometry import (
-    CuPrimitive,display_geometry,primitive_distance,primitive_from_kicad,
+    CuPrimitive,display_geometry,native_polygon_to_primitive_distance,
+    primitive_distance,primitive_from_kicad,
 )
 
 TRACK_MM=.150
@@ -209,9 +210,25 @@ def measure(objects:list[NativeObject],*,
                 p_xy=(a.x,a.y)
                 q_xy=(b.x,b.y)
                 source="closed_form_primitive_pair_exact"
+            elif (left.polygonization=="SHAPE_POLY_SET_native_0.0001mm"
+                  and right.primitive is not None):
+                _,signed_gap,pa,pb=native_polygon_to_primitive_distance(
+                    left.geometry,right.primitive)
+                gap=max(0.,signed_gap)
+                p_xy=(pa.x,pa.y)
+                q_xy=(pb.x,pb.y)
+                source="native_polygon_vs_closed_form_tolerance_0.0001mm"
+            elif (right.polygonization=="SHAPE_POLY_SET_native_0.0001mm"
+                  and left.primitive is not None):
+                _,signed_gap,pb,pa=native_polygon_to_primitive_distance(
+                    right.geometry,left.primitive)
+                gap=max(0.,signed_gap)
+                p_xy=(pa.x,pa.y)
+                q_xy=(pb.x,pb.y)
+                source="native_polygon_vs_closed_form_tolerance_0.0001mm"
             else:
-                # Native KiCad PAD/zone polygons retain their recorded
-                # polygonization tolerance. This mixed method is not exact.
+                # Unqualified geometries are retained diagnostically,
+                # but cannot certify a local copper gap or global cut.
                 if left.geometry.distance(right.geometry)>max_gap:
                     continue
                 p,q=nearest_points(left.geometry,right.geometry)
@@ -284,6 +301,10 @@ def analyze(board_path:Path,*,x:float=HOTSPOT[0],
             o.polygonization=="SWIG_free_closed_form" for o in obstacles),
         "closed_form_pair_count":sum(
             g["closed_form_exact"] for g in gaps),
+        "native_polygon_closed_form_pair_count":sum(
+            g["gap_measurement_source"]==
+            "native_polygon_vs_closed_form_tolerance_0.0001mm"
+            for g in gaps),
         "mixed_or_unqualified_pair_count":sum(
             g["gap_measurement_source"]=="mixed_polygon_display_unqualified"
             for g in gaps),

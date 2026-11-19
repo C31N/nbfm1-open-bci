@@ -225,6 +225,36 @@ def primitive_distance(
     return d,d-(ra+rb),ca+u*ra,cb-u*rb
 
 
+
+def native_polygon_to_primitive_distance(
+    polygon:Any,primitive:CuPrimitive
+)->tuple[float,float,Vec2,Vec2]:
+    """Exact capsule-to-provided-polygon gap, not a buffered circle mesh.
+
+    The KiCad native pad polygon may approximate its curved outline to
+    0.0001 mm. That polygonization tolerance is reported separately;
+    the capsule axis and radius do not introduce any sampling error.
+    """
+    from shapely.geometry import LineString,Point as ShapePoint
+    from shapely.ops import nearest_points
+    if polygon.is_empty or not polygon.is_valid:
+        raise ValueError("Invalid native copper polygon")
+    if primitive.kind=="RECT_PAD":
+        native=display_geometry(primitive)
+        x,y=nearest_points(polygon,native)
+        d=float(x.distance(y))
+        return d,d,Vec2(x.x,x.y),Vec2(y.x,y.y)
+    a,b,r=_axis(primitive)
+    axis=(ShapePoint(a.x,a.y) if a==b else
+          LineString(((a.x,a.y),(b.x,b.y))))
+    x,y=nearest_points(polygon,axis)
+    native_pt=Vec2(x.x,x.y)
+    axis_pt=Vec2(y.x,y.y)
+    d=(native_pt-axis_pt).norm()
+    toward=_unit(axis_pt,native_pt)
+    surface=axis_pt+toward*r
+    return d,d-r,native_pt,surface
+
 def compute_max_tracks(
     gap_mm:float,track_width_mm:float,clearance_mm:float
 )->tuple[int,int]:

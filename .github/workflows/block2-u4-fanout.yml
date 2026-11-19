@@ -109,6 +109,7 @@ jobs:
               'analytic_approximation_count':d['analytic_approximation_count'],
               'swig_free_closed_form_object_count':d['swig_free_closed_form_object_count'],
               'closed_form_pair_count':d['closed_form_pair_count'],
+              'native_polygon_closed_form_pair_count':d['native_polygon_closed_form_pair_count'],
               'mixed_or_unqualified_pair_count':d['mixed_or_unqualified_pair_count'],
               'global_joint_three_net_min_cut_proven':d['global_joint_three_net_min_cut_proven'],
               'obstacle_count':d['obstacle_count'],

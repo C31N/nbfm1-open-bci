@@ -8,7 +8,8 @@ import unittest
 
 from swig_free_fcu_geometry import (
     CuPrimitive,Vec2,closest_points_between_segments,
-    compute_max_tracks,primitive_distance,
+    compute_max_tracks,native_polygon_to_primitive_distance,
+    primitive_distance,
 )
 
 
@@ -75,6 +76,17 @@ class SWIGFreeGeometryTests(unittest.TestCase):
         self.assertAlmostEqual(centre,gap)
         _,overlap,_,_=primitive_distance(a,pad(0.,0.,w=.1,h=.1))
         self.assertEqual(overlap,0.)
+
+    def test_native_polygon_to_capsule_has_no_circle_mesh_error(self)->None:
+        from shapely.geometry import box
+        native=box(0.,0.,1.,1.)
+        line=CuPrimitive(
+            "TRACK",Vec2(2.,.5),Vec2(3.,.5),.1)
+        centre,gap,pnative,pcaps=native_polygon_to_primitive_distance(
+            native,line)
+        self.assertAlmostEqual(centre,1.)
+        self.assertAlmostEqual(gap,.9)
+        self.assertAlmostEqual((pnative-pcaps).norm(),.9)
 
     def test_near_tangent_capacity_uses_unrounded_gap(self)->None:
         self.assertEqual(compute_max_tracks(.152312,.15,.15),(0,0))
