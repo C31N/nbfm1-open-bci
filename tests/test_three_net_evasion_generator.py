@@ -16,7 +16,7 @@ def _make_generator(
     blocked_points: Optional[Dict[str, List[PointMM]]] = None,
     blocked_segments: Optional[Dict[str, List[Tuple[PointMM, PointMM]]]] = None,
     cfg: Optional[ThreeNetEvasionConfig] = None,
-):
+) -> tuple[ThreeNetEvasionGenerator, List[Tuple[str, int]]]:
     blocked_pts = blocked_points or {}
     blocked_segs = blocked_segments or {}
     rejections: List[Tuple[str, int]] = []
@@ -56,7 +56,9 @@ def positions() -> Dict[str, Optional[PointMM]]:
             NETS[2]: (40.6, 35.)}
 
 
-def test_sync_goal_emits_direct_step_when_unobstructed(targets, positions):
+def test_sync_goal_emits_direct_step_when_unobstructed(
+    targets: Dict[str, PointMM], positions: Dict[str, Optional[PointMM]],
+) -> None:
     gen, rejections = _make_generator()
     results = list(gen.generate_evasion_steps(
         positions, dict.fromkeys(NETS, 0), targets))
@@ -66,7 +68,9 @@ def test_sync_goal_emits_direct_step_when_unobstructed(targets, positions):
     assert rejections == []
 
 
-def test_skips_when_any_net_is_unbound_none(targets, positions):
+def test_skips_when_any_net_is_unbound_none(
+    targets: Dict[str, PointMM], positions: Dict[str, Optional[PointMM]],
+) -> None:
     gen, rejections = _make_generator()
     positions[NETS[2]] = None
     headings = {NETS[0]: 0, NETS[1]: 0, NETS[2]: None}
@@ -74,7 +78,9 @@ def test_skips_when_any_net_is_unbound_none(targets, positions):
     assert rejections == []
 
 
-def test_single_evade_when_one_net_has_blocked_goal_step(targets, positions):
+def test_single_evade_when_one_net_has_blocked_goal_step(
+    targets: Dict[str, PointMM], positions: Dict[str, Optional[PointMM]],
+) -> None:
     gen_probe, _ = _make_generator()
     blocked = gen_probe._step_point(
         positions[NETS[1]],
@@ -88,7 +94,9 @@ def test_single_evade_when_one_net_has_blocked_goal_step(targets, positions):
     assert rejections and all(bound == 3 for _, bound in rejections)
 
 
-def test_rejects_pair_pitch_violation_below_300um(targets):
+def test_rejects_pair_pitch_violation_below_300um(
+    targets: Dict[str, PointMM],
+) -> None:
     gen, rejections = _make_generator()
     positions = {NETS[0]: (40., 35.), NETS[1]: (40.1, 35.),
                  NETS[2]: (40.2, 35.)}
@@ -97,21 +105,25 @@ def test_rejects_pair_pitch_violation_below_300um(targets):
     assert ("pair_pitch", 3) in rejections
 
 
-def test_respects_max_evasion_candidates_cap(targets, positions):
+def test_respects_max_evasion_candidates_cap(
+    targets: Dict[str, PointMM], positions: Dict[str, Optional[PointMM]],
+) -> None:
     cfg = ThreeNetEvasionConfig(step_mm=.250, max_evasion_candidates=2)
     gen, _ = _make_generator(cfg=cfg)
     assert len(list(gen.generate_evasion_steps(
         positions, dict.fromkeys(NETS, 0), targets))) <= 2
 
 
-def test_pitch_configuration_cannot_be_weakened():
+def test_pitch_configuration_cannot_be_weakened() -> None:
     with pytest.raises(ValueError):
         ThreeNetEvasionConfig(min_pitch_mm=.299)
     with pytest.raises(ValueError):
         ThreeNetEvasionConfig(max_evasion_candidates=0)
 
 
-def test_generator_rejects_direct_blocked_segment(targets, positions):
+def test_generator_rejects_direct_blocked_segment(
+    targets: Dict[str, PointMM], positions: Dict[str, Optional[PointMM]],
+) -> None:
     probe, _ = _make_generator()
     net = NETS[0]
     p0 = positions[net]
