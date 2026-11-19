@@ -142,7 +142,8 @@ class PartialFreeJointTests(unittest.TestCase):
                        "three_net_evasion_stages_expanded"):
             self.assertEqual(set(report[metric]), {
                 "SYNC_GOAL", "SINGLE_EVADE", "PAIR_EVADE",
-                "COUPLED_TURN", "STAGGERED_EVADE", "ASYMMETRIC_EVADE"})
+                "COUPLED_TURN", "STAGGERED_EVADE", "LATERAL_EVADE",
+                "ASYMMETRIC_EVADE"})
         self.assertGreaterEqual(sum(
             report["three_net_evasion_stages_generated"].values()), 0)
         self.assertIn("three_net_evasion_first_expanded_probe", report)

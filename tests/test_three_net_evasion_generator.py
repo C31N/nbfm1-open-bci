@@ -156,7 +156,7 @@ def test_staggered_lateral_bypass_can_turn_two_tracks_90_degrees(
     steps = list(gen.generate_evasion_steps(
         positions, dict.fromkeys(NETS, 0), targets))
     assert steps
-    assert any(tag.startswith("STAGGERED_EVADE")
+    assert any(tag.startswith("LATERAL_EVADE")
                and nxt[NETS[0]] == positions[NETS[0]]
                and nxt[NETS[1]] != positions[NETS[1]]
                and nxt[NETS[2]] != positions[NETS[2]]

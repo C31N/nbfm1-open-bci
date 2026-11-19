@@ -250,7 +250,7 @@ class ThreeNetEvasionGenerator:
     """Three-bound-net staged motion preflight; never bypass native checks.
 
     SYNC_GOAL -> SINGLE_EVADE -> PAIR_EVADE -> COUPLED_TURN
-    -> STAGGERED_EVADE -> ASYMMETRIC_EVADE.
+    -> STAGGERED_EVADE -> LATERAL_EVADE -> ASYMMETRIC_EVADE.
     HOLD members add no new copper; all moving members keep native gates.
     Native callbacks enforce masks, immutable copper and entire trace history;
     the caller MUST enforce new-to-new segments after snapping to its grid.
@@ -294,7 +294,7 @@ class ThreeNetEvasionGenerator:
         self,
         positions: Mapping[str, PointMM | None],
         headings: Mapping[str, int | None],
-        targets: Targets,
+        targets: Targets, *, explore_lateral: bool = True,
     ) -> Iterator[tuple[dict[str, PointMM], dict[str, int], str]]:
         if any(positions.get(n) is None or headings.get(n) is None
                for n in self.net_order):
@@ -318,6 +318,7 @@ class ThreeNetEvasionGenerator:
             ("PAIR_EVADE", []),
             ("COUPLED_TURN", []),
             ("STAGGERED_EVADE", []),
+            ("LATERAL_EVADE", []),
             ("ASYMMETRIC_EVADE", []),
         ]
         for n in self.net_order:
@@ -341,16 +342,20 @@ class ThreeNetEvasionGenerator:
         # advance; 0/1/2 heading offsets form a bounded corner fanout.
         for held in self.net_order:
             moving = tuple(n for n in self.net_order if n != held)
-            for da, db in ((0, 0), (-1, 0), (1, 0),
-                           (0, -1), (0, 1), (-1, 1), (1, -1),
-                           (-2, 0), (2, 0), (0, -2), (0, 2),
-                           (-2, -2), (2, 2)):
-                h = dict(goal)
-                h[held] = -1
-                h[moving[0]] = (goal[moving[0]] + da) % len(DIRS)
-                h[moving[1]] = (goal[moving[1]] + db) % len(DIRS)
-                stages[4][1].append((
-                    h, f"STAGGERED_EVADE_{held}_{da:+d}_{db:+d}"))
+            for stage_index, shifts in (
+                    (4, ((0, 0), (-1, 0), (1, 0),
+                         (0, -1), (0, 1), (-1, 1), (1, -1))),
+                    (5, ((-2, 0), (2, 0), (0, -2), (0, 2),
+                         (-2, -2), (2, 2)))):
+                for da, db in shifts:
+                    h = dict(goal)
+                    h[held] = -1
+                    h[moving[0]] = (goal[moving[0]] + da) % len(DIRS)
+                    h[moving[1]] = (goal[moving[1]] + db) % len(DIRS)
+                    name = ("STAGGERED_EVADE" if stage_index == 4
+                            else "LATERAL_EVADE")
+                    stages[stage_index][1].append((
+                        h, f"{name}_{held}_{da:+d}_{db:+d}"))
         # Opposing turns make the 3-net fanout asymmetric, preserving
         # the physical order only if all later native gates validate it.
         for da, db, dc in ((-1, 0, 1), (1, 0, -1),
@@ -360,12 +365,15 @@ class ThreeNetEvasionGenerator:
             offsets = (da, db, dc)
             h = {n: (goal[n] + offsets[i]) % len(DIRS)
                  for i, n in enumerate(self.net_order)}
-            stages[5][1].append((
+            stages[6][1].append((
                 h, f"ASYMMETRIC_EVADE_{da:+d}_{db:+d}_{dc:+d}"))
 
         accepted = 0
         visited: set[tuple[PointMM, ...]] = set()
         for _stage, proposals in stages:
+            if (_stage in ("LATERAL_EVADE", "ASYMMETRIC_EVADE")
+                    and not explore_lateral):
+                continue
             valid_in_stage = 0
             for new_headings, tag in proposals:
                 if accepted >= self.config.max_evasion_candidates:
@@ -425,8 +433,10 @@ class ThreeNetEvasionGenerator:
                 yield next_pos, new_headings, tag
             # Early cheap success may stop; a COUPLED_TURN alone must not
             # hide staggers and asymmetric continuations at the bottleneck.
-            if valid_in_stage and _stage in (
-                    "SYNC_GOAL", "SINGLE_EVADE", "PAIR_EVADE"):
+            if valid_in_stage and (
+                    _stage in ("SYNC_GOAL", "SINGLE_EVADE", "PAIR_EVADE")
+                    or (_stage == "STAGGERED_EVADE"
+                        and not explore_lateral)):
                 return
 
 
@@ -547,15 +557,16 @@ def partial_free_joint_astar(
         "three_net_evasion_average_expansion_ms": 0.,
         "three_net_evasion_max_expansion_ms": 0.,
         "three_net_evasion_first_expanded_probe": None,
+        "three_net_evasion_deep_probe_states": 0,
         "three_net_evasion_stages_generated": {s: 0 for s in (
             "SYNC_GOAL", "SINGLE_EVADE", "PAIR_EVADE", "COUPLED_TURN",
-            "STAGGERED_EVADE", "ASYMMETRIC_EVADE")},
+            "STAGGERED_EVADE", "LATERAL_EVADE", "ASYMMETRIC_EVADE")},
         "three_net_evasion_stages_admitted": {s: 0 for s in (
             "SYNC_GOAL", "SINGLE_EVADE", "PAIR_EVADE", "COUPLED_TURN",
-            "STAGGERED_EVADE", "ASYMMETRIC_EVADE")},
+            "STAGGERED_EVADE", "LATERAL_EVADE", "ASYMMETRIC_EVADE")},
         "three_net_evasion_stages_expanded": {s: 0 for s in (
             "SYNC_GOAL", "SINGLE_EVADE", "PAIR_EVADE", "COUPLED_TURN",
-            "STAGGERED_EVADE", "ASYMMETRIC_EVADE")},
+            "STAGGERED_EVADE", "LATERAL_EVADE", "ASYMMETRIC_EVADE")},
         "completed_routes": 0,
         "hard_centreline_pitch_mm": hard_pitch_mm,
         "minimum_anchor_pitch_mm": anchor_pitch_mm,
@@ -989,9 +1000,13 @@ def partial_free_joint_astar(
             positions = state_positions(state)
             headings = {NET_NAMES[i]: route_heading(route)
                         for i, route in enumerate(state.paths)}
+            deep_probe = expansions % 16 == 0
+            if deep_probe:
+                diagnostic["three_net_evasion_deep_probe_states"] += 1
             for proposed, _new_headings, tag in (
                     evasion_generator.generate_evasion_steps(
-                        positions, headings, nearest_targets(state))):
+                        positions, headings, nearest_targets(state),
+                        explore_lateral=deep_probe)):
                 stage = next(
                     name for name in diagnostic["three_net_evasion_stages_generated"]
                     if tag.startswith(name))
