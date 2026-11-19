@@ -110,13 +110,22 @@ class NativeFcuBottleneckTests(unittest.TestCase):
                     (1_000_000,1_000_000),(0,1_000_000),
                 ]
 
-        for kind in ("TRACK","VIA","ARC"):
-            with self.subTest(kind=kind):
-                item=CopperItem()
-                geometry,grade=_copper(item,kind,FakePcbnew)
-                self.assertEqual(item.calls,1)
-                self.assertEqual(grade,"SHAPE_POLY_SET_native_0.0001mm")
-                self.assertAlmostEqual(geometry.area,1.)
+        # Exercise both the newer binding and KiCad 8's enum-unexported
+        # SWIG module without weakening the hard source DRC constraints.
+        old_binding=SimpleNamespace(
+            F_Cu=FakePcbnew.F_Cu,
+            SHAPE_POLY_SET=PolySet,
+            FromMM=FakePcbnew.FromMM,
+            ToMM=FakePcbnew.ToMM,
+        )
+        for binding in (FakePcbnew,old_binding):
+            for kind in ("TRACK","VIA","ARC"):
+                with self.subTest(kind=kind,legacy=binding is old_binding):
+                    item=CopperItem()
+                    geometry,grade=_copper(item,kind,binding)
+                    self.assertEqual(item.calls,1)
+                    self.assertEqual(grade,"SHAPE_POLY_SET_native_0.0001mm")
+                    self.assertAlmostEqual(geometry.area,1.)
 
     def test_never_mutates_board_or_claims_global_impossibility(self)->None:
         s=(Path(__file__).resolve().parent/

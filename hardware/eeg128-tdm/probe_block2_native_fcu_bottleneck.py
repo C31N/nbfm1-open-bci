@@ -83,12 +83,14 @@ def _native_shape(item:Any,kind:str,pcbnew:Any)->tuple[Any,str]:
         item.TransformShapeToPolygon(
             native,pcbnew.F_Cu,0,pcbnew.FromMM(.0001))
     else:
-        # KiCad 8/9 tracks, vias and arcs require the five-argument
-        # BOARD_ITEM polygon transform. The SWIG SHAPE returned by
-        # GetEffectiveShape does not expose ConvertToPolygon on KiCad 8.
+        # Tracks/vias/arcs use the BOARD_ITEM five-argument overload.
+        # KiCad 8.0.x does not always export ERROR_INSIDE in its pcbnew
+        # SWIG namespace. The C++ ERROR_LOC enum defines OUTSIDE=0,
+        # INSIDE=1; retain INSIDE without changing copper clearance.
+        # Never use SHAPE.ConvertToPolygon, absent in KiCad 8 SWIG.
+        inside=getattr(pcbnew,"ERROR_INSIDE",1)
         item.TransformShapeToPolygon(
-            native,pcbnew.F_Cu,0,pcbnew.FromMM(.0001),
-            pcbnew.ERROR_INSIDE)
+            native,pcbnew.F_Cu,0,pcbnew.FromMM(.0001),inside)
     return _shapely_native_polygons(native,pcbnew),"SHAPE_POLY_SET_native_0.0001mm"
 
 
