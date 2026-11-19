@@ -25,7 +25,7 @@ class HybridMidpointTests(unittest.TestCase):
         self.goals=((30,8),(30,17),(30,26))
         self.empty=tuple(GeometryCollection() for _ in range(3))
 
-    def make(self,shapes:tuple[object,...]):
+    def make(self,shapes:tuple[object,...])->tuple[list[object],tuple[object,...]]:
         xx,yy=np.meshgrid(self.xs,self.ys)
         masks=[contains_xy(shape,xx,yy) for shape in shapes]
         tips=tuple(((float(self.xs[a[0]]),float(self.ys[a[1]])),
