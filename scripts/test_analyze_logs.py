@@ -160,6 +160,7 @@ class GeminiLogTests(unittest.TestCase):
 
     def test_sdk_caller_does_not_embed_api_key_in_url(self) -> None:
         calls = []
+        self_test_options: list[dict[str, int]] = []
         class Models:
             def generate_content(
                 self, *, model: str, contents: str
@@ -168,8 +169,12 @@ class GeminiLogTests(unittest.TestCase):
                 return types.SimpleNamespace(text="UUID analysis")
         class Client:
             models = Models()
-            def __init__(self, api_key: str) -> None:
+            def __init__(
+                self, api_key: str, http_options: dict[str, int]
+            ) -> None:
                 self.api_key = api_key
+                self.http_options = http_options
+                self_test_options.append(http_options)
             def __enter__(self) -> Client:
                 return self
             def __exit__(self, *args: object) -> bool:
@@ -185,6 +190,7 @@ class GeminiLogTests(unittest.TestCase):
                 "safe routing metrics", "mock-api-key", "mock")
         self.assertEqual(result, "UUID analysis")
         self.assertEqual(calls, [("mock", "safe routing metrics")])
+        self.assertEqual(self_test_options, [{"timeout": 45000}])
 
     def test_exponential_jitter_has_a_finite_hard_cap(self) -> None:
         rng = random.Random(9)

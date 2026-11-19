@@ -291,11 +291,15 @@ def routing_prompt(repo: str, run_id: int, compact: str) -> str:
     )
 
 
-def ask_gemini(text: str, api_key: str, model: str) -> str:
-    """One SDK call; retries and failures are handled by the CI wrapper."""
+def ask_gemini(
+    text: str, api_key: str, model: str, timeout_ms: int = 45_000,
+) -> str:
+    """One time-bounded SDK call; retries are handled by the CI wrapper."""
     from google import genai
 
-    with genai.Client(api_key=api_key) as client:
+    with genai.Client(
+        api_key=api_key, http_options={"timeout": timeout_ms}
+    ) as client:
         response = client.models.generate_content(
             model=model, contents=text)
         return redact(response.text or "")[:MAX_ANSWER]
@@ -327,9 +331,13 @@ def main() -> int:
     parser.add_argument("--out-json", type=Path)
     parser.add_argument("--max-retries", type=int, default=4)
     parser.add_argument("--fail-on-degraded", action="store_true")
+    parser.add_argument("--timeout", type=int, default=45,
+                        help="One Gemini SDK request timeout (seconds)")
     args = parser.parse_args()
     if not REPO.fullmatch(args.repo):
         parser.error("Invalid repository")
+    if not 5 <= args.timeout <= 90:
+        parser.error("Gemini per-request timeout must be 5..90 seconds")
     if not args.log_file and args.run_id < 1:
         parser.error("Provide --run-id or --log-file")
 
@@ -368,7 +376,8 @@ def main() -> int:
                     prompt(args.repo, args.run_id, snippet))
     try:
         envelope = run_with_backoff_and_degraded_mode(
-            lambda: ask_gemini(instructions, api_key, model),
+            lambda: ask_gemini(instructions, api_key, model,
+                               timeout_ms=args.timeout * 1000),
             model, max_retries=args.max_retries)
         write_envelope(envelope, args.out_json)
     except Exception:
