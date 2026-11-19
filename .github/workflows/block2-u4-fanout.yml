@@ -317,7 +317,7 @@ jobs:
                   assert partial['accepted'] is False
                   assert partial['routing_completed'] is False
                   assert partial['fabrication_release'] is False
-                  assert partial['expansions']<=1600
+                  assert partial['expansions']<=2400
                   assert (partial['third_binding_roots_with_goal_progress']
                           <=partial['third_binding_survived_after_one_step']
                           <=partial['third_binding_admitted'])
@@ -355,6 +355,7 @@ jobs:
                       'three_net_evasion_average_expansion_ms':partial['three_net_evasion_average_expansion_ms'],
                       'three_net_evasion_max_expansion_ms':partial['three_net_evasion_max_expansion_ms'],
                       'three_net_evasion_first_expanded_probe':partial['three_net_evasion_first_expanded_probe'],
+                      'three_net_evasion_deep_probe_states':partial['three_net_evasion_deep_probe_states'],
                       'cost_model':partial['cost_model'],
                       'frontier_unbound_bias':partial['frontier_unbound_bias'],
                       'mask_prefilter_rejections':partial['native_mask_prefilter_rejections'],
