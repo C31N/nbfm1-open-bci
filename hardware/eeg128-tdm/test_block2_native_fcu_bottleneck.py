@@ -110,6 +110,18 @@ class NativeFcuBottleneckTests(unittest.TestCase):
                     (1_000_000,1_000_000),(0,1_000_000),
                 ]
 
+            def GetWidth(self)->int:
+                return 150_000
+
+            def GetPosition(self)->SimpleNamespace:
+                return SimpleNamespace(x=0,y=0)
+
+            def GetStart(self)->SimpleNamespace:
+                return SimpleNamespace(x=0,y=0)
+
+            def GetEnd(self)->SimpleNamespace:
+                return SimpleNamespace(x=1_000_000,y=0)
+
         # Exercise both the newer binding and KiCad 8's enum-unexported
         # SWIG module without weakening the hard source DRC constraints.
         old_binding=SimpleNamespace(
@@ -118,14 +130,23 @@ class NativeFcuBottleneckTests(unittest.TestCase):
             FromMM=FakePcbnew.FromMM,
             ToMM=FakePcbnew.ToMM,
         )
-        for binding in (FakePcbnew,old_binding):
-            for kind in ("TRACK","VIA","ARC"):
-                with self.subTest(kind=kind,legacy=binding is old_binding):
-                    item=CopperItem()
-                    geometry,grade=_copper(item,kind,binding)
-                    self.assertEqual(item.calls,1)
-                    self.assertEqual(grade,"SHAPE_POLY_SET_native_0.0001mm")
-                    self.assertAlmostEqual(geometry.area,1.)
+        for kind in ("TRACK","VIA","ARC"):
+            with self.subTest(kind=kind,legacy=False):
+                item=CopperItem()
+                geometry,grade=_copper(item,kind,FakePcbnew)
+                self.assertEqual(item.calls,1)
+                self.assertEqual(grade,"SHAPE_POLY_SET_native_0.0001mm")
+                self.assertAlmostEqual(geometry.area,1.)
+
+        for kind in ("TRACK","VIA"):
+            with self.subTest(kind=kind,legacy=True):
+                item=CopperItem()
+                geometry,grade=_copper(item,kind,old_binding)
+                self.assertEqual(item.calls,0)
+                self.assertEqual(
+                    grade,"native_segment_circle_analytic_approximation:"
+                          "KiCad8_ERROR_LOC_unavailable")
+                self.assertGreater(geometry.area,0.)
 
     def test_never_mutates_board_or_claims_global_impossibility(self)->None:
         s=(Path(__file__).resolve().parent/

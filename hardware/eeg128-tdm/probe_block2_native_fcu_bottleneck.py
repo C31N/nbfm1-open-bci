@@ -83,12 +83,12 @@ def _native_shape(item:Any,kind:str,pcbnew:Any)->tuple[Any,str]:
         item.TransformShapeToPolygon(
             native,pcbnew.F_Cu,0,pcbnew.FromMM(.0001))
     else:
-        # Tracks/vias/arcs use the BOARD_ITEM five-argument overload.
-        # KiCad 8.0.x does not always export ERROR_INSIDE in its pcbnew
-        # SWIG namespace. The C++ ERROR_LOC enum defines OUTSIDE=0,
-        # INSIDE=1; retain INSIDE without changing copper clearance.
-        # Never use SHAPE.ConvertToPolygon, absent in KiCad 8 SWIG.
-        inside=getattr(pcbnew,"ERROR_INSIDE",1)
+        # KiCad 8 SWIG does not export ERROR_LOC. A bare Python int
+        # is not accepted by the native C++ enum parameter (TypeError).
+        # Do not pretend the resulting analytic fallback is exact.
+        inside=getattr(pcbnew,"ERROR_INSIDE",None)
+        if inside is None:
+            raise NotImplementedError("KiCad8_ERROR_LOC_unavailable")
         item.TransformShapeToPolygon(
             native,pcbnew.F_Cu,0,pcbnew.FromMM(.0001),inside)
     return _shapely_native_polygons(native,pcbnew),"SHAPE_POLY_SET_native_0.0001mm"
@@ -112,9 +112,11 @@ def _copper(item:Any,kind:str,pcbnew:Any)->tuple[Any,str]:
                   if kind=="VIA"
                   else LineString((xy(item.GetStart()),xy(item.GetEnd()))))
             geometry=base.buffer(radius,quad_segs=64)
+            cause=("KiCad8_ERROR_LOC_unavailable"
+                   if isinstance(error,NotImplementedError)
+                   else type(error).__name__)
             return geometry,(
-                "native_segment_circle_analytic_approximation:"+
-                type(error).__name__)
+                "native_segment_circle_analytic_approximation:"+cause)
         bb=item.GetBoundingBox()
         geom=box(pcbnew.ToMM(bb.GetX()),pcbnew.ToMM(bb.GetY()),
                  pcbnew.ToMM(bb.GetRight()),pcbnew.ToMM(bb.GetBottom()))
