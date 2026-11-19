@@ -105,6 +105,49 @@ class AnchorResolverTests(unittest.TestCase):
         self.assertEqual(speculative.status, "partial_free_net")
         self.assertIsNone(speculative.starts)
 
+    def test_multi_anchor_choices_are_bounded_and_deterministic(self) -> None:
+        req = dict(
+            paths=self.paths, spans=self.spans, masks=self.masks,
+            shapes=self.shapes, xs=self.xs, ys=self.ys, window=Window(),
+            speculative_outside=True, min_anchor_pitch_mm=.44,
+            max_side_triplets=12, max_solutions=4)
+        a = resolve_window_anchors(**req)
+        b = resolve_window_anchors(**req)
+        self.assertEqual(a.candidate_pairs, b.candidate_pairs)
+        self.assertEqual(len(a.candidate_pairs), 4)
+        self.assertEqual(len(set(a.candidate_pairs)), 4)
+        self.assertGreater(len(set(c[0] for c in a.candidate_pairs)), 1)
+        self.assertGreater(len(set(c[1] for c in a.candidate_pairs)), 1)
+        self.assertEqual(a.candidate_pairs[0], (a.starts, a.targets))
+        self.assertEqual(a.as_diagnostic()["eligible_candidate_count"], 4)
+        self.assertFalse(a.as_diagnostic()["accepted"])
+        self.assertFalse(a.as_diagnostic()["fabrication_release"])
+
+    def test_anchor_minimum_pitch_is_not_relaxed_for_multiple_pairs(self) -> None:
+        routes = tuple(tuple((x, row) for x in range(13))
+                       for row in (2, 3, 4))
+        result = resolve_window_anchors(
+            routes, self.spans, self.masks, self.shapes,
+            self.xs, self.ys, Window(), speculative_outside=True,
+            min_anchor_pitch_mm=.44, max_solutions=4)
+        for start, goal in result.candidate_pairs:
+            for triplet in (start, goal):
+                coords = [
+                    (self.xs[routes[i][triplet[i]][0]],
+                     self.ys[routes[i][triplet[i]][1]])
+                    for i in range(3)]
+                self.assertGreaterEqual(min(
+                    float(np.linalg.norm(np.subtract(coords[i], coords[j])))
+                    for i in range(3) for j in range(i + 1, 3)),
+                    .44 - 1e-8)
+
+    def test_rejects_unbounded_number_of_candidate_solutions(self) -> None:
+        with self.assertRaises(ValueError):
+            resolve_window_anchors(
+                self.paths, self.spans, self.masks, self.shapes,
+                self.xs, self.ys, Window(),
+                speculative_outside=True, max_solutions=13)
+
     def test_wrong_mask_dimensions_fail_closed(self) -> None:
         self.masks[1] = np.zeros((3, 3), dtype=bool)
         with self.assertRaises(ValueError):

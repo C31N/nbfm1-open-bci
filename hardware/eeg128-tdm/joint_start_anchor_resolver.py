@@ -30,6 +30,7 @@ class AnchorResolution:
     original_source_pitch_mm: float
     original_target_pitch_mm: float
     outside_paths_speculative: bool = False
+    candidate_pairs: tuple[tuple[tuple[int, int, int], tuple[int, int, int]], ...] = ()
 
     def as_diagnostic(self) -> dict[str, Any]:
         return {
@@ -37,6 +38,11 @@ class AnchorResolution:
             "start_indices": list(self.starts) if self.starts is not None else None,
             "target_indices": list(self.targets) if self.targets is not None else None,
             "audited_combinations": self.audited_combinations,
+            "eligible_candidate_count": len(self.candidate_pairs),
+            "candidate_anchor_indices": [
+                {"start": list(start), "target": list(target)}
+                for start, target in self.candidate_pairs
+            ],
             "reason": self.reason,
             "original_source_pitch_mm": self.original_source_pitch_mm,
             "original_target_pitch_mm": self.original_target_pitch_mm,
@@ -64,6 +70,8 @@ def resolve_window_anchors(
     max_side_triplets: int = 24,
     pitch_mm: float = PITCH_MM,
     speculative_outside: bool = False,
+    max_solutions: int = 1,
+    min_anchor_pitch_mm: float = PITCH_MM,
 ) -> AnchorResolution:
     """Search bounded source/target anchor triplets without board mutation.
 
@@ -81,7 +89,10 @@ def resolve_window_anchors(
     if (len(paths) != 3 or len(spans) != 3 or len(masks) != 3 or
             len(shapes) != 3 or max_shift_nodes < 0 or
             not 0 < max_side_triplets <= 128 or
-            not math.isfinite(pitch_mm) or pitch_mm < PITCH_MM):
+            not math.isfinite(pitch_mm) or pitch_mm < PITCH_MM or
+            not 1 <= max_solutions <= 12 or
+            not math.isfinite(min_anchor_pitch_mm) or
+            min_anchor_pitch_mm < PITCH_MM):
         raise ValueError("Invalid bounded three-net anchor request")
 
     import numpy as np
@@ -129,13 +140,15 @@ def resolve_window_anchors(
 
     def outcome(status: str, why: str, checked: int = 0,
                 starts: tuple[int, int, int] | None = None,
-                targets: tuple[int, int, int] | None = None
+                targets: tuple[int, int, int] | None = None,
+                pairs: tuple[tuple[tuple[int, int, int], tuple[int, int, int]], ...] = (),
                 ) -> AnchorResolution:
         return AnchorResolution(
             status, starts, targets, checked, why,
             round(min_pitch(original_s), 6),
             round(min_pitch(original_t), 6),
-            outside_paths_speculative=speculative_outside)
+            outside_paths_speculative=speculative_outside,
+            candidate_pairs=pairs)
 
     if any(not row for row in start_options + target_options):
         return outcome(
@@ -145,7 +158,8 @@ def resolve_window_anchors(
         options: list[list[int]], orig: tuple[int, int, int],
     ) -> list[tuple[int, int, int]]:
         candidates = [tuple(comb) for comb in itertools.product(*options)
-                      if min_pitch(tuple(comb)) >= pitch_mm - TOL]
+                      if min_pitch(tuple(comb)) >= max(
+                          pitch_mm, min_anchor_pitch_mm) - TOL]
         candidates.sort(key=lambda c: (
             sum(abs(c[i] - orig[i]) for i in range(3)), c))
         return candidates[:max_side_triplets]
@@ -158,43 +172,65 @@ def resolve_window_anchors(
             "No simultaneous centreline-pitch-compliant triplet")
 
     checked = 0
+    candidates: list[tuple[tuple[int, int, int], tuple[int, int, int]]] = []
     # A prefix / suffix is immutable copper for the proposed local solve.
     # Collision across *different* nets disqualifies the entire attempt.
-    for start in source_candidates:
-        for target in target_candidates:
-            if any(start[i] >= target[i] for i in range(3)):
-                continue
-            checked += 1
-            if speculative_outside:
+    ranked_pairs = sorted(
+        ((si, ti, start, target)
+         for si, start in enumerate(source_candidates)
+         for ti, target in enumerate(target_candidates)),
+        key=lambda entry: (
+            max(entry[0], entry[1]), entry[0] + entry[1],
+            entry[0], entry[1]))
+    for _, _, start, target in ranked_pairs:
+        if any(start[i] >= target[i] for i in range(3)):
+            continue
+        checked += 1
+        if speculative_outside:
+            candidates.append((start, target))
+            if len(candidates) >= max_solutions:
                 return outcome(
                     "speculative_joint_entry_exit",
                     "Native mask-clear anchors only; outside reroute mandatory",
-                    checked, start, target)
-            frozen = []
-            for i, route in enumerate(paths):
-                for part in (route[:start[i] + 1], route[target[i]:]):
-                    if len(part) >= 2:
-                        frozen.append((i, LineString([coord(p) for p in part])))
-            if any(first.distance(second) < pitch_mm - TOL
-                   for k, (net, first) in enumerate(frozen)
-                   for other_net, second in frozen[k + 1:]
-                   if net != other_net):
-                continue
-            # A chosen anchor may not touch any foreign frozen wire.
-            endpoints = ((i, coord(paths[i][start[i]]),
-                          coord(paths[i][target[i]]))
-                         for i in range(3))
-            if any(Point(p).distance(line) < pitch_mm - TOL
-                   for i, source, goal in endpoints
-                   for p in (source, goal)
-                   for net, line in frozen if net != i):
-                continue
-            status = ("direct_window_entry"
-                      if start == original_s and target == original_t
-                      else "shifted_along_path")
+                    checked, candidates[0][0], candidates[0][1],
+                    tuple(candidates))
+            continue
+        frozen = []
+        for i, route in enumerate(paths):
+            for part in (route[:start[i] + 1], route[target[i]:]):
+                if len(part) >= 2:
+                    frozen.append((i, LineString([coord(p) for p in part])))
+        if any(first.distance(second) < pitch_mm - TOL
+               for k, (net, first) in enumerate(frozen)
+               for other_net, second in frozen[k + 1:]
+               if net != other_net):
+            continue
+        # A chosen anchor may not touch any foreign frozen wire.
+        endpoints = ((i, coord(paths[i][start[i]]),
+                      coord(paths[i][target[i]]))
+                     for i in range(3))
+        if any(Point(p).distance(line) < pitch_mm - TOL
+               for i, source, goal in endpoints
+               for p in (source, goal)
+               for net, line in frozen if net != i):
+            continue
+        status = ("direct_window_entry"
+                  if start == original_s and target == original_t
+                  else "shifted_along_path")
+        candidates.append((start, target))
+        if len(candidates) >= max_solutions:
             return outcome(
                 status, "Frozen outside segments collision-free",
-                checked, start, target)
+                checked, candidates[0][0], candidates[0][1],
+                tuple(candidates))
+
+    if candidates:
+        start, target = candidates[0]
+        return outcome(
+            "speculative_joint_entry_exit" if speculative_outside
+            else "shifted_along_path",
+            "Bounded anchor candidates collected", checked,
+            start, target, tuple(candidates))
 
     return outcome(
         "MIDPOINT_JOINT_START_ANCHORS_INVALID",

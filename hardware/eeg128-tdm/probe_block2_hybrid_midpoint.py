@@ -26,6 +26,7 @@ from probe_block2_joint_topology_costs import (
 from probe_block2_u4_topological import _astar_grid
 from joint_start_anchor_resolver import resolve_window_anchors
 from local_joint_rip_reroute import reassemble_speculative_outside
+from local_joint_anchor_preflight import preflight_joint_entry_exit
 
 Node=tuple[int,int]
 Paths=tuple[tuple[Node,...],...]
@@ -237,8 +238,9 @@ def hybrid_fcu_preflight(
                     "anchor_attempts":anchor_trials,
                     **soft_guidance,**counters}
 
-    # Stage 3: genuinely local three-agent A* ONLY when all three
-    # independent paths have valid local entry/exit anchors.
+    # Stage 3: coupled joint-search over several individually valid
+    # source/target combinations. The independently found outside paths are
+    # only search hints; immutable native copper remains in hard shapes.
     spans={i:_window_slices(p,xs,ys,window)
            for i,p in individual.items()}
     local_joint_status="not_attempted_missing_bounded_anchors"
@@ -249,118 +251,130 @@ def hybrid_fcu_preflight(
     if len(spans)==3 and all(v is not None and
                              0<v[0]<v[1]<len(individual[i])-1
                              for i,v in spans.items()):
-        # Frozen source/target escapes stay outside this bounded search.
-        # Independently reachable heads do not constitute a legal bundle.
-        anchor_resolution=resolve_window_anchors(
-            tuple(individual[i] for i in range(3)),
-            tuple(spans[i] for i in range(3)),
-            masks,native_shapes,xs,ys,window,
-            max_shift_nodes=4,max_side_triplets=12,
-        )
-        local_joint_anchor_audit={
-            "conservative_resolver":anchor_resolution.as_diagnostic()}
-        if anchor_resolution.starts is None:
-            # The three global probe paths are speculative; do not promote
-            # their incompatible outer tails to immutable copper. The
-            # actual board and protected escapes stay in native_shapes.
-            speculative=resolve_window_anchors(
-                tuple(individual[i] for i in range(3)),
-                tuple(spans[i] for i in range(3)),
-                masks,native_shapes,xs,ys,window,
-                max_shift_nodes=4,max_side_triplets=12,
-                speculative_outside=True,
-            )
-            local_joint_anchor_audit[
-                "speculative_resolver"]=speculative.as_diagnostic()
-            anchor_resolution=speculative
-        if anchor_resolution.starts is not None and (
-                anchor_resolution.targets is not None):
-            spans={i:(anchor_resolution.starts[i],
-                      anchor_resolution.targets[i]) for i in range(3)}
-        else:
-            local_joint_status=anchor_resolution.status
-    if anchor_resolution is not None and (
-            anchor_resolution.starts is not None):
         from probe_block2_elastic_joint_corridor import (
             ElasticJointCorridorRouter,FCuCorridorGrid,
         )
+        from collections import Counter as RejectCounter
+        preflight_rejections:RejectCounter[str]=RejectCounter()
+        solver_rejections:RejectCounter[str]=RejectCounter()
+        local_joint_attempts:list[dict[str,Any]]=[]
+        selected_spans=tuple(spans[i] for i in range(3))
+        individual_paths=tuple(individual[i] for i in range(3))
+        anchor_resolution=resolve_window_anchors(
+            individual_paths,selected_spans,masks,native_shapes,
+            xs,ys,window,max_shift_nodes=4,max_side_triplets=12,
+            max_solutions=4,min_anchor_pitch_mm=.440,
+        )
+        local_joint_anchor_audit={
+            "conservative_resolver":anchor_resolution.as_diagnostic()}
+        if not anchor_resolution.candidate_pairs:
+            # A speculative route is not actual copper. Discard the
+            # conflicting outer portions but keep every native obstacle.
+            anchor_resolution=resolve_window_anchors(
+                individual_paths,selected_spans,masks,native_shapes,
+                xs,ys,window,max_shift_nodes=4,max_side_triplets=12,
+                speculative_outside=True,max_solutions=4,
+                min_anchor_pitch_mm=.440,
+            )
+            local_joint_anchor_audit["speculative_resolver"]=(
+                anchor_resolution.as_diagnostic())
+        local_joint_anchor_audit["final_resolver"]=(
+            anchor_resolution.as_diagnostic())
         allowed=(gx>=window.xmin)&(gx<=window.xmax)&(
             gy>=window.ymin)&(gy<=window.ymax)
-        local_masks=[]
-        local_shapes=[]
-        starts_local=[]
-        goals_local=[]
-        tips_local=[]
-        for i in range(3):
-            a,b=spans[i]
-            route=individual[i]
-            static_other=[]
-            # Frozen outside geometry applies ONLY when the preliminary
-            # tails are truly retained. In speculative mode their original
-            # paths are discarded and rerouted transactionally after the
-            # local three-net bundle has passed native copper checks.
-            if not anchor_resolution.outside_paths_speculative:
-                for j in range(3):
-                    if j==i:
-                        continue
-                    a2,b2=spans[j]
-                    outside=[
-                        individual[j][:a2+1],
-                        individual[j][b2:],
-                    ]
-                    static_other += [
-                        LineString([(float(xs[x]),float(ys[y]))
-                                    for x,y in seg]).buffer(
-                                        .300-1e-9,quad_segs=8)
-                        for seg in outside if len(seg)>=2
-                    ]
-            foreign=unary_union(static_other) if static_other else (
-                ShapePoint(-1000.,-1000.).buffer(.001))
-            shape=native_shapes[i].union(foreign)
-            local_masks.append(
-                np.asarray(masks[i],dtype=bool) |
-                ~allowed | contains_xy(foreign,gx,gy))
-            local_shapes.append(shape)
-            starts_local.append(route[a])
-            goals_local.append(route[b])
-            tips_local.append(
-                ((float(xs[route[a][0]]),float(ys[route[a][1]])),
-                 (float(xs[route[b][0]]),float(ys[route[b][1]]))))
-        def minimum_head_pitch(nodes:list[Node])->float:
-            coords=[(float(xs[p[0]]),float(ys[p[1]])) for p in nodes]
-            return min(math.dist(coords[i],coords[j])
-                       for i in range(3) for j in range(i+1,3))
-        local_joint_anchor_audit["final_resolver"] = (
-            anchor_resolution.as_diagnostic())
-        local_joint_anchor_audit.update({
-            "source_min_centreline_mm":round(
-                minimum_head_pitch(starts_local),6),
-            "target_min_centreline_mm":round(
-                minimum_head_pitch(goals_local),6),
-            "source_masked_agents":[i for i,p in enumerate(starts_local)
-                if local_masks[i][p[1],p[0]]],
-            "target_masked_agents":[i for i,p in enumerate(goals_local)
-                if local_masks[i][p[1],p[0]]],
-            "fixed_outside_paths_preserved":(
-                not anchor_resolution.outside_paths_speculative),
-            "locked_escape_ripup_permitted":False,
-        })
-        solver=ElasticJointCorridorRouter(
-            FCuCorridorGrid(local_masks,local_shapes,xs,ys))
-        remaining=min(8.,max(.1,deadline-time.monotonic()))
-        result=solver.solve_midpoint(
-            tuple(starts_local),tuple(goals_local),
-            exact_tips=tuple(tips_local),
-            max_expansions=4800,max_seconds=remaining,
-            midpoint_band_mm=.5)
-        counters["local_joint_expansions"]=result["expansions"]
-        local_joint_status=result["status"]
-        local_joint_reject_reasons=result.get("reject_reasons",{})
-        if result["status"]=="MIDPOINT_BUNDLE_SOLVED":
+        # Keep total local expansions bounded across every anchor pair,
+        # not 4,800 per pair. A budget exhausts without PCB writes.
+        remaining_nodes=4800
+        for attempt_index,(source_idxs,target_idxs) in enumerate(
+                anchor_resolution.candidate_pairs):
+            if time.monotonic()>=deadline or remaining_nodes<=0:
+                break
+            current_spans={
+                i:(source_idxs[i],target_idxs[i]) for i in range(3)}
+            local_masks=[]
+            local_shapes=[]
+            starts_local=[]
+            goals_local=[]
+            tips_local=[]
+            for i in range(3):
+                a,b=current_spans[i]
+                route=individual[i]
+                static_other=[]
+                if not anchor_resolution.outside_paths_speculative:
+                    for j in range(3):
+                        if j==i:
+                            continue
+                        a2,b2=current_spans[j]
+                        outside=[
+                            individual[j][:a2+1],
+                            individual[j][b2:],
+                        ]
+                        static_other += [
+                            LineString([
+                                (float(xs[x]),float(ys[y]))
+                                for x,y in seg]).buffer(
+                                    .300-1e-9,quad_segs=8)
+                            for seg in outside if len(seg)>=2
+                        ]
+                foreign=unary_union(static_other) if static_other else None
+                shape=(native_shapes[i].union(foreign)
+                       if foreign is not None else native_shapes[i])
+                local_masks.append(
+                    np.asarray(masks[i],dtype=bool) |
+                    ~allowed |
+                    (contains_xy(foreign,gx,gy)
+                     if foreign is not None else False))
+                local_shapes.append(shape)
+                starts_local.append(route[a])
+                goals_local.append(route[b])
+                tips_local.append((
+                    (float(xs[route[a][0]]),float(ys[route[a][1]])),
+                    (float(xs[route[b][0]]),float(ys[route[b][1]]))))
+            grid=FCuCorridorGrid(local_masks,local_shapes,xs,ys)
+            preflight=preflight_joint_entry_exit(
+                grid,tuple(starts_local),tuple(goals_local))
+            preflight_rejections.update(preflight["reject_reasons"])
+            attempt={
+                "ordinal":attempt_index+1,
+                "source_indices":list(source_idxs),
+                "target_indices":list(target_idxs),
+                "start_pitch_mm":round(min(
+                    math.dist(point(starts_local[i]),point(starts_local[j]))
+                    for i in range(3) for j in range(i+1,3)),6),
+                "target_pitch_mm":round(min(
+                    math.dist(point(goals_local[i]),point(goals_local[j]))
+                    for i in range(3) for j in range(i+1,3)),6),
+                "first_step":preflight,
+                "fixed_outside_paths_preserved":(
+                    not anchor_resolution.outside_paths_speculative),
+            }
+            if preflight["status"]!="JOINT_ANCHOR_FIRST_STEP_FEASIBLE":
+                attempt["status"]=preflight["status"]
+                attempt["expansions"]=0
+                local_joint_attempts.append(attempt)
+                continue
+            remaining=max(.1,deadline-time.monotonic())
+            # Limit each attempt, reserving time and nodes for the next.
+            search_nodes=min(1200,remaining_nodes)
+            solver=ElasticJointCorridorRouter(grid)
+            result=solver.solve_midpoint(
+                tuple(starts_local),tuple(goals_local),
+                exact_tips=tuple(tips_local),
+                max_expansions=search_nodes,
+                max_seconds=min(2.3,remaining),
+                midpoint_band_mm=.5)
+            used=result["expansions"]
+            remaining_nodes-=used
+            counters["local_joint_expansions"]+=used
+            solver_rejections.update(result.get("reject_reasons",{}))
+            attempt["status"]=result["status"]
+            attempt["expansions"]=used
+            attempt["closest_remaining_total_mm"]=result.get(
+                "closest_remaining_total_mm")
+            local_joint_attempts.append(attempt)
+            if result["status"]!="MIDPOINT_BUNDLE_SOLVED":
+                continue
             if anchor_resolution.outside_paths_speculative:
-                # NO reuse of incompatible outside proposal segments.
-                # Every failed flank or continuous DRC check discards the
-                # entire three-net candidate, never partial promotion.
                 triple,outside_replan_diagnostic=(
                     reassemble_speculative_outside(
                         tuple(tuple(p) for p in result["routes"]),
@@ -370,27 +384,51 @@ def hybrid_fcu_preflight(
             else:
                 out={}
                 for i in range(3):
-                    a,b=spans[i]
+                    a,b=current_spans[i]
                     out[i]=individual[i][:a]+tuple(
                         result["routes"][i])+individual[i][b+1:]
                 triple=tuple(out[i] for i in range(3))
-            if triple is not None:
-                ok,gap=_valid_three(
-                    triple,native_shapes,xs,ys,exact_tips)
-                if ok:
-                    return triple,{
-                        "status":"hybrid_three_native_macros_proposed",
-                        "stage_used":"local_joint_astar",
-                        "local_joint_expansions":result["expansions"],
-                        "minimum_complete_centreline_mm":gap,
-                        "new_vias_added":0,
-                        "native_DRC_still_required":True,
-                        "outside_replan_diagnostic":outside_replan_diagnostic,
-                        "anchor_a_star_reasons":dict(anchor_reasons),
-                        "anchor_attempts":anchor_trials,
-                        **soft_guidance,**counters}
-            if outside_replan_diagnostic:
-                local_joint_status=outside_replan_diagnostic["status"]
+            if triple is None:
+                attempt["status"]=outside_replan_diagnostic.get(
+                    "status","LOCAL_JOINT_ROLLBACK")
+                continue
+            ok,gap=_valid_three(
+                triple,native_shapes,xs,ys,exact_tips)
+            if ok:
+                local_joint_anchor_audit.update({
+                    "attempts":local_joint_attempts,
+                    "attempted_anchor_pairs":len(local_joint_attempts),
+                    "fixed_outside_paths_preserved":(
+                        not anchor_resolution.outside_paths_speculative),
+                    "locked_escape_ripup_permitted":False,
+                })
+                return triple,{
+                    "status":"hybrid_three_native_macros_proposed",
+                    "stage_used":"local_joint_astar",
+                    "local_joint_expansions":counters["local_joint_expansions"],
+                    "minimum_complete_centreline_mm":gap,
+                    "new_vias_added":0,
+                    "native_DRC_still_required":True,
+                    "local_joint_anchor_audit":local_joint_anchor_audit,
+                    "outside_replan_diagnostic":outside_replan_diagnostic,
+                    "anchor_a_star_reasons":dict(anchor_reasons),
+                    "anchor_attempts":anchor_trials,
+                    **soft_guidance,**counters}
+            attempt["status"]="LOCAL_JOINT_FULL_ROUTE_DRC_REJECTED"
+        local_joint_anchor_audit.update({
+            "attempts":local_joint_attempts,
+            "attempted_anchor_pairs":len(local_joint_attempts),
+            "selected_anchor_pairs":len(anchor_resolution.candidate_pairs),
+            "first_step_reject_reasons":dict(preflight_rejections),
+            "fixed_outside_paths_preserved":(
+                not anchor_resolution.outside_paths_speculative),
+            "locked_escape_ripup_permitted":False,
+        })
+        local_joint_reject_reasons=dict(solver_rejections)
+        if local_joint_attempts:
+            local_joint_status="MIDPOINT_MULTI_ANCHOR_EXHAUSTED"
+        else:
+            local_joint_status=anchor_resolution.status
 
     return None,{
         "status":"hybrid_unresolved_global_joint_fallback_required",
@@ -411,6 +449,9 @@ def hybrid_fcu_preflight(
         "local_joint_anchor_audit":local_joint_anchor_audit,
         "outside_replan_diagnostic":outside_replan_diagnostic,
         "local_joint_reject_reasons":local_joint_reject_reasons,
+        "multi_anchor_eligible_count":(
+            len(anchor_resolution.candidate_pairs)
+            if anchor_resolution is not None else 0),
         **soft_guidance,
         "new_vias_added":0,
         "native_DRC_still_required":True,

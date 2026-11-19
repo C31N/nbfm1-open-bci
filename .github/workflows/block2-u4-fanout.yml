@@ -23,6 +23,8 @@ on:
       - "hardware/eeg128-tdm/probe_block2_hybrid_midpoint.py"
       - "hardware/eeg128-tdm/joint_start_anchor_resolver.py"
       - "hardware/eeg128-tdm/local_joint_rip_reroute.py"
+      - "hardware/eeg128-tdm/local_joint_anchor_preflight.py"
+      - "hardware/eeg128-tdm/test_local_joint_anchor_preflight.py"
       - "hardware/eeg128-tdm/test_local_joint_rip_reroute.py"
       - "hardware/eeg128-tdm/test_joint_start_anchor_resolver.py"
       - "hardware/eeg128-tdm/probe_block2_cbs_fcu3.py"
@@ -67,7 +69,7 @@ jobs:
           /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
       - name: Continuous FCu connectivity and immutable escape gates
         run: |
-          /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_u4_corridors.py hardware/eeg128-tdm/probe_block2_u4_dogleg.py hardware/eeg128-tdm/probe_block2_u4_topological.py hardware/eeg128-tdm/probe_block2_target_escape.py hardware/eeg128-tdm/probe_block2_target_coupled.py hardware/eeg128-tdm/probe_block2_fcu_reachability.py hardware/eeg128-tdm/probe_block2_grid_export.py hardware/eeg128-tdm/probe_block2_multinet_cut.py hardware/eeg128-tdm/probe_block2_native_fcu_bottleneck.py hardware/eeg128-tdm/swig_free_fcu_geometry.py hardware/eeg128-tdm/probe_block2_mutual_reservation.py hardware/eeg128-tdm/probe_block2_elastic_joint_corridor.py hardware/eeg128-tdm/probe_block2_joint_topology_costs.py hardware/eeg128-tdm/probe_block2_hybrid_midpoint.py hardware/eeg128-tdm/joint_start_anchor_resolver.py hardware/eeg128-tdm/local_joint_rip_reroute.py hardware/eeg128-tdm/probe_block2_cbs_fcu3.py hardware/eeg128-tdm/probe_block2_nbody_201.py
+          /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_u4_corridors.py hardware/eeg128-tdm/probe_block2_u4_dogleg.py hardware/eeg128-tdm/probe_block2_u4_topological.py hardware/eeg128-tdm/probe_block2_target_escape.py hardware/eeg128-tdm/probe_block2_target_coupled.py hardware/eeg128-tdm/probe_block2_fcu_reachability.py hardware/eeg128-tdm/probe_block2_grid_export.py hardware/eeg128-tdm/probe_block2_multinet_cut.py hardware/eeg128-tdm/probe_block2_native_fcu_bottleneck.py hardware/eeg128-tdm/swig_free_fcu_geometry.py hardware/eeg128-tdm/probe_block2_mutual_reservation.py hardware/eeg128-tdm/probe_block2_elastic_joint_corridor.py hardware/eeg128-tdm/probe_block2_joint_topology_costs.py hardware/eeg128-tdm/probe_block2_hybrid_midpoint.py hardware/eeg128-tdm/joint_start_anchor_resolver.py hardware/eeg128-tdm/local_joint_rip_reroute.py hardware/eeg128-tdm/local_joint_anchor_preflight.py hardware/eeg128-tdm/probe_block2_cbs_fcu3.py hardware/eeg128-tdm/probe_block2_nbody_201.py
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_cbs_fcu3.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_nbody_201.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_u4_dogleg.py -v
@@ -78,6 +80,7 @@ jobs:
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_hybrid_midpoint.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_joint_start_anchor_resolver.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_local_joint_rip_reroute.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_local_joint_anchor_preflight.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_target_escape.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_target_coupled.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_fcu_reachability.py -v
@@ -275,6 +278,34 @@ jobs:
               assert w['fully_restituted'] is True
               assert len(w['victims_restored_original_geometry'])+len(
                   w['victims_routed_new_geometry'])==201
+          hybrid=f.get('hybrid_corridor_diagnostic') if f else None
+          if hybrid:
+              audit=hybrid.get('local_joint_anchor_audit') or {}
+              multi={
+                  'status':hybrid.get('local_joint_status'),
+                  'eligible_anchor_pairs':hybrid.get('multi_anchor_eligible_count',0),
+                  'attempted_anchor_pairs':audit.get('attempted_anchor_pairs',0),
+                  'candidate_details':[{
+                      'ordinal':a.get('ordinal'),
+                      'source_indices':a.get('source_indices'),
+                      'target_indices':a.get('target_indices'),
+                      'start_pitch_mm':a.get('start_pitch_mm'),
+                      'target_pitch_mm':a.get('target_pitch_mm'),
+                      'status':a.get('status'),
+                      'expansions':a.get('expansions'),
+                      'first_step_rejections':(a.get('first_step') or {}).get('reject_reasons',{}),
+                  } for a in audit.get('attempts',[])],
+                  'local_joint_expansions':hybrid.get('local_joint_expansions'),
+                  'joint_search_rejections':hybrid.get('local_joint_reject_reasons'),
+                  'restored_count':len(w.get('victims_restored_original_geometry',[])),
+                  'rerouted_count':len(w.get('victims_routed_new_geometry',[])),
+                  'all_three_closed':bool(w.get('target_nets_routed')),
+                  'accepted':False,
+                  'fabrication_release':False,
+              }
+              assert audit.get('locked_escape_ripup_permitted') is not True
+              assert hybrid.get('new_vias_added')==0
+              print('MULTI_ANCHOR_SUMMARY='+json.dumps(multi,sort_keys=True))
           print('MIDPOINT_NO_RELEASE_DIAG='+json.dumps({
               'status':w.get('status'),
               'candidate_qualified_136':d.get('candidate_qualified_136'),
