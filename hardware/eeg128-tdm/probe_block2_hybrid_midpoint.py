@@ -17,7 +17,7 @@ from typing import Any
 
 import numpy as np
 from shapely import contains_xy
-from shapely.geometry import LineString,Point as ShapePoint
+from shapely.geometry import LineString
 from shapely.ops import unary_union
 
 from probe_block2_joint_topology_costs import (
