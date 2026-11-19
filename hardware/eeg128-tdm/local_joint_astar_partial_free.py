@@ -241,7 +241,7 @@ class ThreeNetEvasionGenerator:
 
     SYNC_GOAL -> SINGLE_EVADE -> PAIR_EVADE -> COUPLED_TURN.
     Native callbacks enforce masks, immutable copper and entire trace history;
-    pairwise new-segment checks also protect simultaneous moving traces.
+    the caller MUST enforce new-to-new segments after snapping to its grid.
     """
 
     def __init__(
@@ -341,13 +341,9 @@ class ThreeNetEvasionGenerator:
                        for a, b in itertools.combinations(self.net_order, 2)):
                     self.record_rejection("pair_pitch", 3)
                     continue
-                segments = {
-                    n: LineString((original[n], next_pos[n]))
-                    for n in self.net_order}
-                if any(segments[a].distance(segments[b]) < pitch - TOL
-                       for a, b in itertools.combinations(self.net_order, 2)):
-                    self.record_rejection("pair_pitch", 3)
-                    continue
+                # These are only pre-snap candidate hints. The caller
+                # repeats the hard continuous segment-to-segment pitch
+                # gate with actual native-grid coordinates before A* push.
                 denied = False
                 for n in self.net_order:
                     point_result = self.is_point_clear(n, next_pos[n], pitch)
