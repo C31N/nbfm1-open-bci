@@ -53,6 +53,71 @@ class NativeFcuBottleneckTests(unittest.TestCase):
                        "SHAPE_POLY_SET_native_0.0001mm")
         self.assertFalse(measure([a,b])[0]["both_native_polygonized"])
 
+    def test_kicad8_track_via_arc_native_polygon_overload(self)->None:
+        # Regression: the SHAPE.ConvertToPolygon path produced
+        # AttributeError for every track/via on native KiCad 8.0.9.
+        from types import SimpleNamespace
+        from probe_block2_native_fcu_bottleneck import _copper
+
+        class PolySet:
+            def __init__(self)->None:
+                self.points=[]
+
+            def OutlineCount(self)->int:
+                return int(bool(self.points))
+
+            def Outline(self,index:int):
+                return self
+
+            def PointCount(self)->int:
+                return len(self.points)
+
+            def CPoint(self,index:int):
+                return SimpleNamespace(
+                    x=self.points[index][0],y=self.points[index][1])
+
+            def HoleCount(self,index:int)->int:
+                return 0
+
+        class FakePcbnew:
+            F_Cu=0
+            ERROR_INSIDE=1
+            SHAPE_POLY_SET=PolySet
+
+            @staticmethod
+            def FromMM(value:float)->int:
+                return round(value*1_000_000)
+
+            @staticmethod
+            def ToMM(value:int)->float:
+                return value/1_000_000
+
+        class CopperItem:
+            def __init__(self)->None:
+                self.calls=0
+
+            def GetEffectiveShape(self,*args):
+                raise AssertionError("Do not use unsupported SWIG SHAPE")
+
+            def TransformShapeToPolygon(
+                self,poly,layer,clearance,error,error_loc
+            )->None:
+                self.calls+=1
+                if (layer,clearance,error,error_loc)!=(0,0,100,1):
+                    raise TypeError("Incorrect KiCad 8 transform overload")
+                poly.points=[
+                    (0,0),(1_000_000,0),
+                    (1_000_000,1_000_000),(0,1_000_000),
+                ]
+
+        for kind in ("TRACK","VIA","ARC"):
+            with self.subTest(kind=kind):
+                item=CopperItem()
+                geometry,grade=_copper(item,kind,FakePcbnew)
+                self.assertEqual(item.calls,1)
+                self.assertEqual(grade,"SHAPE_POLY_SET_native_0.0001mm")
+                self.assertAlmostEqual(geometry.area,1.)
+
     def test_never_mutates_board_or_claims_global_impossibility(self)->None:
         s=(Path(__file__).resolve().parent/
            "probe_block2_native_fcu_bottleneck.py").read_text()

@@ -83,15 +83,12 @@ def _native_shape(item:Any,kind:str,pcbnew:Any)->tuple[Any,str]:
         item.TransformShapeToPolygon(
             native,pcbnew.F_Cu,0,pcbnew.FromMM(.0001))
     else:
-        # KiCad 8 PCB_TRACK / PCB_VIA do not accept the PAD-only
-        # TransformShapeToPolygon signature. First request their native
-        # effective SHAPE and convert it into native polygon vertices.
-        shape=item.GetEffectiveShape(pcbnew.F_Cu)
-        if isinstance(shape,pcbnew.SHAPE_POLY_SET):
-            native=pcbnew.SHAPE_POLY_SET(shape)
-        else:
-            shape.ConvertToPolygon(
-                native,pcbnew.FromMM(.0001),pcbnew.ERROR_INSIDE)
+        # KiCad 8/9 tracks, vias and arcs require the five-argument
+        # BOARD_ITEM polygon transform. The SWIG SHAPE returned by
+        # GetEffectiveShape does not expose ConvertToPolygon on KiCad 8.
+        item.TransformShapeToPolygon(
+            native,pcbnew.F_Cu,0,pcbnew.FromMM(.0001),
+            pcbnew.ERROR_INSIDE)
     return _shapely_native_polygons(native,pcbnew),"SHAPE_POLY_SET_native_0.0001mm"
 
 
