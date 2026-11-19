@@ -294,6 +294,10 @@ def partial_free_joint_astar(
         "third_binding_expanded_roots": 0,
         "third_binding_survived_after_one_step": 0,
         "third_binding_survival_rate": 0.,
+        "third_binding_roots_with_goal_progress": 0,
+        "third_binding_goal_progress_rate": 0.,
+        "third_binding_best_goal_progress_mm": 0.,
+        "third_binding_max_targets_reached": 0,
         "average_progress_sync_penalty": 0.,
         "average_progress_sync_penalty_after_third_binding": 0.,
         "rejections_by_bound_count": {},
@@ -464,6 +468,15 @@ def partial_free_joint_astar(
     admitted_roots: set[PartialFreeState] = set()
     expanded_roots: set[PartialFreeState] = set()
     survived_roots: set[PartialFreeState] = set()
+    progress_roots: set[PartialFreeState] = set()
+    best_goal_progress_mm = 0.
+    max_targets_reached = 0
+
+    def target_distance_sum(state: PartialFreeState) -> float:
+        # Only compare fully bound, physically routed states. This is
+        # telemetry, never a validity shortcut or replacement for DRC.
+        return sum(min(dist(route[-1], p) for p in target_sets[i])
+                   for i, route in enumerate(state.paths))
 
     def push(
         state: PartialFreeState, g: float,
@@ -500,6 +513,14 @@ def partial_free_joint_astar(
         # Denominator = unique native-valid third-bind states enqueued.
         diagnostic["third_binding_survival_rate"] = round(
             len(survived_roots) / max(1, len(admitted_roots)), 6)
+        diagnostic["third_binding_roots_with_goal_progress"] = (
+            len(progress_roots))
+        diagnostic["third_binding_goal_progress_rate"] = round(
+            len(progress_roots) / max(1, len(admitted_roots)), 6)
+        diagnostic["third_binding_best_goal_progress_mm"] = round(
+            best_goal_progress_mm, 6)
+        diagnostic["third_binding_max_targets_reached"] = (
+            max_targets_reached)
         diagnostic["average_progress_sync_penalty"] = round(
             sync_sum / max(1, sync_count), 6)
         diagnostic["average_progress_sync_penalty_after_third_binding"] = round(
@@ -524,6 +545,15 @@ def partial_free_joint_astar(
             expanded_roots.add(root)
             if state != root:
                 survived_roots.add(root)
+                improvement = (target_distance_sum(root)
+                               - target_distance_sum(state))
+                if improvement > 1e-8:
+                    progress_roots.add(root)
+                    best_goal_progress_mm = max(
+                        best_goal_progress_mm, improvement)
+            max_targets_reached = max(max_targets_reached, sum(
+                route[-1] in target_sets[i]
+                for i, route in enumerate(state.paths)))
         if finished(state):
             update_telemetry()
             diagnostic.update({

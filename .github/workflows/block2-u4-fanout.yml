@@ -317,6 +317,10 @@ jobs:
                   assert partial['routing_completed'] is False
                   assert partial['fabrication_release'] is False
                   assert partial['expansions']<=1600
+                  assert (partial['third_binding_roots_with_goal_progress']
+                          <=partial['third_binding_survived_after_one_step']
+                          <=partial['third_binding_admitted'])
+                  assert 0.<=partial['third_binding_goal_progress_rate']<=1.
                   assert partial['search_states_by_bound_count'][0]>=1
                   print('PARTIAL_FREE_SUMMARY='+json.dumps({
                       'status':partial['status'],
@@ -331,6 +335,10 @@ jobs:
                       'third_binding_expanded_roots':partial['third_binding_expanded_roots'],
                       'third_binding_survived_after_one_step':partial['third_binding_survived_after_one_step'],
                       'third_binding_survival_rate':partial['third_binding_survival_rate'],
+                      'third_binding_roots_with_goal_progress':partial['third_binding_roots_with_goal_progress'],
+                      'third_binding_goal_progress_rate':partial['third_binding_goal_progress_rate'],
+                      'third_binding_best_goal_progress_mm':partial['third_binding_best_goal_progress_mm'],
+                      'third_binding_max_targets_reached':partial['third_binding_max_targets_reached'],
                       'average_progress_sync_penalty':partial['average_progress_sync_penalty'],
                       'average_progress_sync_penalty_after_third_binding':partial['average_progress_sync_penalty_after_third_binding'],
                       'rejections_by_bound_count':partial['rejections_by_bound_count'],

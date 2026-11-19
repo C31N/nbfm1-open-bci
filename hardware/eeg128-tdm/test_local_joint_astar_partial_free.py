@@ -82,6 +82,17 @@ class PartialFreeJointTests(unittest.TestCase):
             report["third_binding_survival_rate"], 0.)
         self.assertLessEqual(
             report["third_binding_survival_rate"], 1.)
+        self.assertLessEqual(
+            report["third_binding_roots_with_goal_progress"],
+            report["third_binding_survived_after_one_step"])
+        self.assertGreaterEqual(report["third_binding_goal_progress_rate"], 0.)
+        self.assertLessEqual(report["third_binding_goal_progress_rate"], 1.)
+        self.assertGreaterEqual(
+            report["third_binding_best_goal_progress_mm"], 0.)
+        self.assertGreaterEqual(
+            report["third_binding_max_targets_reached"], 0)
+        self.assertLessEqual(
+            report["third_binding_max_targets_reached"], 3)
         self.assertGreaterEqual(
             report["average_progress_sync_penalty"], 0.)
         self.assertGreaterEqual(
