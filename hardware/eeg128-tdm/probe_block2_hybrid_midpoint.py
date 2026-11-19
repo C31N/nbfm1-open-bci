@@ -27,6 +27,7 @@ from probe_block2_u4_topological import _astar_grid
 from joint_start_anchor_resolver import resolve_window_anchors
 from local_joint_rip_reroute import reassemble_speculative_outside
 from local_joint_anchor_preflight import preflight_joint_entry_exit
+from local_joint_astar_partial_free import partial_free_joint_astar
 
 Node=tuple[int,int]
 Paths=tuple[tuple[Node,...],...]
@@ -247,6 +248,7 @@ def hybrid_fcu_preflight(
     local_joint_reject_reasons:dict[str,Any]={}
     local_joint_anchor_audit:dict[str,Any]={}
     outside_replan_diagnostic:dict[str,Any]={}
+    partial_free_diagnostic:dict[str,Any]={}
     anchor_resolution=None
     if len(spans)==3 and all(v is not None and
                              0<v[0]<v[1]<len(individual[i])-1
@@ -285,6 +287,76 @@ def hybrid_fcu_preflight(
         # Keep total local expansions bounded across every anchor pair,
         # not 4,800 per pair. A budget exhausts without PCB writes.
         remaining_nodes=4800
+        if (anchor_resolution.outside_paths_speculative
+                and anchor_resolution.candidate_pairs
+                and time.monotonic()<deadline):
+            # Real partial-free A*: all three route histories begin EMPTY,
+            # with None heads; binding can occur after other heads move.
+            # Only speculative outside tails are discarded. Native copper,
+            # U4/target escapes, power exclusions and Block 1 never move.
+            source_sets=tuple(tuple(dict.fromkeys(
+                individual[i][pair[0][i]]
+                for pair in anchor_resolution.candidate_pairs))
+                for i in range(3))
+            target_sets=tuple(tuple(dict.fromkeys(
+                individual[i][pair[1][i]]
+                for pair in anchor_resolution.candidate_pairs))
+                for i in range(3))
+            partial_grid=FCuCorridorGrid([
+                np.asarray(masks[i],dtype=bool) | ~allowed
+                for i in range(3)],native_shapes,xs,ys)
+            partial_result=partial_free_joint_astar(
+                partial_grid,source_sets,target_sets,
+                max_expansions=min(1600,remaining_nodes),
+                max_seconds=min(4.,max(.1,deadline-time.monotonic())),
+                max_route_nodes=64)
+            used=partial_result["expansions"]
+            remaining_nodes-=used
+            counters["local_joint_expansions"]+=used
+            solver_rejections.update(
+                partial_result.get("reject_reasons",{}))
+            partial_free_diagnostic={
+                k:v for k,v in partial_result.items() if k!="routes"}
+            local_joint_anchor_audit["partial_free"]=(
+                partial_free_diagnostic)
+            if (partial_result["status"]==
+                    "PARTIAL_FREE_THREE_LOCAL_ROUTES_PROPOSED"):
+                # The candidate is not complete PCB copper until BOTH
+                # speculative flanks are rerouted and all tracks pass
+                # continuous native three-net validation.
+                triple,outside_replan_diagnostic=(
+                    reassemble_speculative_outside(
+                        tuple(tuple(p) for p in partial_result["routes"]),
+                        starts,goals,exact_tips,native_shapes,
+                        xs,ys,route_one,
+                    ))
+                partial_free_diagnostic["outside_replan_status"]=(
+                    outside_replan_diagnostic["status"])
+                if triple is not None:
+                    ok,gap=_valid_three(
+                        triple,native_shapes,xs,ys,exact_tips)
+                    if ok:
+                        local_joint_anchor_audit.update({
+                            "attempts":[],
+                            "attempted_anchor_pairs":0,
+                            "locked_escape_ripup_permitted":False,
+                            "fixed_outside_paths_preserved":False,
+                        })
+                        return triple,{
+                            "status":"hybrid_three_native_macros_proposed",
+                            "stage_used":"local_joint_astar",
+                            "search_mode":"partial_free_dynamic",
+                            "local_joint_expansions":used,
+                            "minimum_complete_centreline_mm":gap,
+                            "new_vias_added":0,
+                            "native_DRC_still_required":True,
+                            "local_joint_anchor_audit":local_joint_anchor_audit,
+                            "partial_free_diagnostic":partial_free_diagnostic,
+                            "outside_replan_diagnostic":outside_replan_diagnostic,
+                            "anchor_a_star_reasons":dict(anchor_reasons),
+                            "anchor_attempts":anchor_trials,
+                            **soft_guidance,**counters}
+                    partial_free_diagnostic["full_route_DRC_passed"]=ok
         for attempt_index,(source_idxs,target_idxs) in enumerate(
                 anchor_resolution.candidate_pairs):
             if time.monotonic()>=deadline or remaining_nodes<=0:
@@ -355,7 +427,7 @@ def hybrid_fcu_preflight(
                 continue
             remaining=max(.1,deadline-time.monotonic())
             # Limit each attempt, reserving time and nodes for the next.
-            search_nodes=min(1200,remaining_nodes)
+            search_nodes=min(800,remaining_nodes)
             solver=ElasticJointCorridorRouter(grid)
             result=solver.solve_midpoint(
                 tuple(starts_local),tuple(goals_local),
@@ -427,6 +499,8 @@ def hybrid_fcu_preflight(
         local_joint_reject_reasons=dict(solver_rejections)
         if local_joint_attempts:
             local_joint_status="MIDPOINT_MULTI_ANCHOR_EXHAUSTED"
+        elif partial_free_diagnostic:
+            local_joint_status=partial_free_diagnostic["status"]
         else:
             local_joint_status=anchor_resolution.status
 
@@ -448,6 +522,7 @@ def hybrid_fcu_preflight(
         "local_joint_status":local_joint_status,
         "local_joint_anchor_audit":local_joint_anchor_audit,
         "outside_replan_diagnostic":outside_replan_diagnostic,
+        "partial_free_diagnostic":partial_free_diagnostic,
         "local_joint_reject_reasons":local_joint_reject_reasons,
         "multi_anchor_eligible_count":(
             len(anchor_resolution.candidate_pairs)
