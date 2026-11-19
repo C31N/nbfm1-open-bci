@@ -68,6 +68,30 @@ class PartialFreeJointTests(unittest.TestCase):
         self.assertEqual(result["new_vias_added"], 0)
         self.assertEqual(tuple(m.tobytes() for m in self.masks), before)
 
+    def test_third_binding_survival_and_rejection_telemetry(self) -> None:
+        report = self.solve()
+        self.assertGreater(report["third_binding_transition_attempts"], 0)
+        self.assertGreater(report["third_binding_native_valid"], 0)
+        self.assertLessEqual(
+            report["third_binding_admitted"],
+            report["third_binding_native_valid"])
+        self.assertLessEqual(
+            report["third_binding_survived_after_one_step"],
+            report["third_binding_admitted"])
+        self.assertGreaterEqual(
+            report["third_binding_survival_rate"], 0.)
+        self.assertLessEqual(
+            report["third_binding_survival_rate"], 1.)
+        self.assertGreaterEqual(
+            report["average_progress_sync_penalty"], 0.)
+        self.assertGreaterEqual(
+            report["average_progress_sync_penalty_after_third_binding"], 0.)
+        self.assertEqual(set(report["rejections_by_bound_count"]),
+                         {"0", "1", "2", "3"})
+        self.assertEqual(report["cost_model"], "PartialFreeCostModel-v1")
+        self.assertFalse(report["accepted"])
+        self.assertFalse(report["fabrication_release"])
+
     def test_blocked_fcu_mask_prefilter_never_claims_route(self) -> None:
         # A full raster wall is not allowed to be overcome by cost bias.
         self.masks[1][7, 4] = True

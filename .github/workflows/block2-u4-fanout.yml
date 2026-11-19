@@ -67,10 +67,11 @@ jobs:
           set -eu
           test "$(kicad-cli version)" = "8.0.9"
           apt-get -o Acquire::Retries=3 update
-          DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 install -y --no-install-recommends python3-shapely python3-pip python3-numpy python3-scipy
+          DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 install -y --no-install-recommends python3-shapely python3-pip python3-numpy python3-scipy python3-pytest
           /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
       - name: Continuous FCu connectivity and immutable escape gates
         run: |
+          PYTHONPATH=hardware/eeg128-tdm /usr/bin/python3 -m pytest -q tests/test_partial_free_cost_model.py
           /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_u4_corridors.py hardware/eeg128-tdm/probe_block2_u4_dogleg.py hardware/eeg128-tdm/probe_block2_u4_topological.py hardware/eeg128-tdm/probe_block2_target_escape.py hardware/eeg128-tdm/probe_block2_target_coupled.py hardware/eeg128-tdm/probe_block2_fcu_reachability.py hardware/eeg128-tdm/probe_block2_grid_export.py hardware/eeg128-tdm/probe_block2_multinet_cut.py hardware/eeg128-tdm/probe_block2_native_fcu_bottleneck.py hardware/eeg128-tdm/swig_free_fcu_geometry.py hardware/eeg128-tdm/probe_block2_mutual_reservation.py hardware/eeg128-tdm/probe_block2_elastic_joint_corridor.py hardware/eeg128-tdm/probe_block2_joint_topology_costs.py hardware/eeg128-tdm/probe_block2_hybrid_midpoint.py hardware/eeg128-tdm/joint_start_anchor_resolver.py hardware/eeg128-tdm/local_joint_rip_reroute.py hardware/eeg128-tdm/local_joint_anchor_preflight.py hardware/eeg128-tdm/local_joint_astar_partial_free.py hardware/eeg128-tdm/probe_block2_cbs_fcu3.py hardware/eeg128-tdm/probe_block2_nbody_201.py
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_cbs_fcu3.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_nbody_201.py -v
@@ -324,6 +325,16 @@ jobs:
                       'moves_while_unbound':partial['moves_while_other_nets_unbound'],
                       'bindings_examined':partial['binding_actions_examined'],
                       'bindings_valid':partial['binding_actions_valid'],
+                      'third_bindings_attempted':partial['third_binding_transition_attempts'],
+                      'third_bindings_native_valid':partial['third_binding_native_valid'],
+                      'third_bindings_admitted':partial['third_binding_admitted'],
+                      'third_binding_expanded_roots':partial['third_binding_expanded_roots'],
+                      'third_binding_survived_after_one_step':partial['third_binding_survived_after_one_step'],
+                      'third_binding_survival_rate':partial['third_binding_survival_rate'],
+                      'average_progress_sync_penalty':partial['average_progress_sync_penalty'],
+                      'average_progress_sync_penalty_after_third_binding':partial['average_progress_sync_penalty_after_third_binding'],
+                      'rejections_by_bound_count':partial['rejections_by_bound_count'],
+                      'cost_model':partial['cost_model'],
                       'mask_prefilter_rejections':partial['native_mask_prefilter_rejections'],
                       'native_segment_rejections':partial['native_segment_rejections'],
                       'reject_reasons':partial.get('reject_reasons',{}),

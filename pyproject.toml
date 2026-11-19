@@ -10,4 +10,5 @@ select = ["E9", "F"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["hardware/eeg128-tdm"]
 addopts = "-ra --strict-markers"
