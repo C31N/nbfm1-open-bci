@@ -307,7 +307,10 @@ def hybrid_fcu_preflight(
                 for i in range(3)],native_shapes,xs,ys)
             partial_result=partial_free_joint_astar(
                 partial_grid,source_sets,target_sets,
-                max_expansions=min(1600,remaining_nodes),
+                # Run #72 used only ~2.2s for 1600 expansions. Reuse
+                # the existing 4s wall and 4800 overall cap to examine
+                # additional exact-native-valid three-net detours.
+                max_expansions=min(2400,remaining_nodes),
                 max_seconds=min(4.,max(.1,deadline-time.monotonic())),
                 max_route_nodes=64)
             used=partial_result["expansions"]

@@ -342,7 +342,9 @@ class ThreeNetEvasionGenerator:
         for held in self.net_order:
             moving = tuple(n for n in self.net_order if n != held)
             for da, db in ((0, 0), (-1, 0), (1, 0),
-                           (0, -1), (0, 1), (-1, 1), (1, -1)):
+                           (0, -1), (0, 1), (-1, 1), (1, -1),
+                           (-2, 0), (2, 0), (0, -2), (0, 2),
+                           (-2, -2), (2, 2)):
                 h = dict(goal)
                 h[held] = -1
                 h[moving[0]] = (goal[moving[0]] + da) % len(DIRS)

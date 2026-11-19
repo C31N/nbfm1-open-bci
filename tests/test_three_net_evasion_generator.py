@@ -136,6 +136,33 @@ def test_staggered_evasion_holds_one_track_without_creating_a_segment(
                for next_pos, _, _ in results)
 
 
+def test_staggered_lateral_bypass_can_turn_two_tracks_90_degrees(
+    targets: Dict[str, PointMM], positions: Dict[str, Optional[PointMM]],
+) -> None:
+    probe, _ = _make_generator()
+    blocked: Dict[str, List[PointMM]] = {n: [] for n in NETS}
+    for name in NETS:
+        p = positions[name]
+        blocked[name] = [
+            probe._step_point(p, heading, .250)
+            for heading in range(8)]
+    for name in NETS[1:]:
+        p = positions[name]
+        heading = (probe._goal_heading(p, targets[name]) + 2) % 8
+        allowed = probe._step_point(p, heading, .250)
+        blocked[name] = [
+            q for q in blocked[name] if math.dist(q, allowed) > 1e-6]
+    gen, _ = _make_generator(blocked_points=blocked)
+    steps = list(gen.generate_evasion_steps(
+        positions, dict.fromkeys(NETS, 0), targets))
+    assert steps
+    assert any(tag.startswith("STAGGERED_EVADE")
+               and nxt[NETS[0]] == positions[NETS[0]]
+               and nxt[NETS[1]] != positions[NETS[1]]
+               and nxt[NETS[2]] != positions[NETS[2]]
+               for nxt, _, tag in steps)
+
+
 def test_coupled_turn_does_not_suppress_staggered_alternative(
     targets: Dict[str, PointMM], positions: Dict[str, Optional[PointMM]],
 ) -> None:
