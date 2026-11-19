@@ -86,8 +86,22 @@ def classify_gemini_exception(
     Unknown exceptions fail closed as real errors. This prevents accidental
     masking of implementation bugs, auth failures or model/config errors.
     """
-    if isinstance(error, (GeminiTransientError, GeminiPermanentError)):
-        return error
+    if isinstance(error, GeminiTransientError):
+        # Even library-created exception reasons must not be trusted:
+        # they might contain SDK payloads, credentials or log excerpts.
+        code = error.status_code
+        if code in TRANSIENT_HTTP_CODES:
+            return GeminiTransientError(f"HTTP_{code}_TRANSIENT", code)
+        if code is None:
+            return GeminiTransientError("TRANSPORT_UNAVAILABLE")
+        return GeminiPermanentError("UNEXPECTED_TRANSIENT_STATUS")
+    if isinstance(error, GeminiPermanentError):
+        if error.reason == "EMPTY_MODEL_OUTPUT":
+            return GeminiPermanentError("EMPTY_MODEL_OUTPUT")
+        code = error.status_code
+        if isinstance(code, int):
+            return GeminiPermanentError(f"HTTP_{code}_PERMANENT", code)
+        return GeminiPermanentError("GEMINI_PERMANENT_ERROR")
     if isinstance(error, (TimeoutError, ConnectionError)):
         return GeminiTransientError("TRANSPORT_TIMEOUT_OR_CONNECTION")
     name = type(error).__name__

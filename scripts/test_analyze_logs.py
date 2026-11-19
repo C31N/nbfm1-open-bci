@@ -256,6 +256,17 @@ class GeminiLogTests(unittest.TestCase):
                 request, "mock", max_retries=0)
             self.assertEqual(env.status, "degraded")
 
+    def test_typed_permanent_error_does_not_export_arbitrary_detail(self) -> None:
+        def request() -> str:
+            raise wrapper.GeminiPermanentError(
+                "private-info-GEMINI_API_KEY=AIzaAAAAAAAAAAAAAAAAAAAA")
+        env = wrapper.run_with_backoff_and_degraded_mode(
+            request, "mock", max_retries=0)
+        self.assertEqual(env.status, "error")
+        metadata = json.dumps(wrapper.serialize_envelope(env))
+        self.assertNotIn("AIza", metadata)
+        self.assertNotIn("private-info", metadata)
+
     def test_401_and_unknown_program_errors_do_not_turn_green(self) -> None:
         ClientError = type("ClientError", (Exception,), {})
         for failure in (ClientError("401 INVALID_API_KEY"),
@@ -284,7 +295,7 @@ class GeminiLogTests(unittest.TestCase):
                 "--max-retries", "2",
             ]
             ServerError = type("ServerError", (Exception,), {})
-            def failure(*_: object) -> str:
+            def failure(*_args: object, **_kwargs: object) -> str:
                 raise ServerError("503 UNAVAILABLE high demand")
             output = io.StringIO()
             with mock.patch.dict(os.environ, {
