@@ -81,6 +81,8 @@ class HybridMidpointTests(unittest.TestCase):
         for term in (
             "local_rip_reroute",
             "local_joint_astar",
+            "resolve_window_anchors(",
+            "anchor_resolution.as_diagnostic()",
             "hybrid_unresolved_global_joint_fallback_required",
             "line.distance(other)<.300-1e-8",
             "restrict_to_window=True",

@@ -24,6 +24,7 @@ from probe_block2_joint_topology_costs import (
     PlanarOrderFilter,WindowBox,conflict_window,
 )
 from probe_block2_u4_topological import _astar_grid
+from joint_start_anchor_resolver import resolve_window_anchors
 
 Node=tuple[int,int]
 Paths=tuple[tuple[Node,...],...]
@@ -242,9 +243,28 @@ def hybrid_fcu_preflight(
     local_joint_status="not_attempted_missing_bounded_anchors"
     local_joint_reject_reasons:dict[str,Any]={}
     local_joint_anchor_audit:dict[str,Any]={}
+    anchor_resolution=None
     if len(spans)==3 and all(v is not None and
                              0<v[0]<v[1]<len(individual[i])-1
                              for i,v in spans.items()):
+        # Frozen source/target escapes stay outside this bounded search.
+        # Independently reachable heads do not constitute a legal bundle.
+        anchor_resolution=resolve_window_anchors(
+            tuple(individual[i] for i in range(3)),
+            tuple(spans[i] for i in range(3)),
+            masks,native_shapes,xs,ys,window,
+            max_shift_nodes=4,max_side_triplets=12,
+        )
+        local_joint_anchor_audit={
+            "anchor_resolver":anchor_resolution.as_diagnostic()}
+        if anchor_resolution.starts is not None and (
+                anchor_resolution.targets is not None):
+            spans={i:(anchor_resolution.starts[i],
+                      anchor_resolution.targets[i]) for i in range(3)}
+        else:
+            local_joint_status=anchor_resolution.status
+    if anchor_resolution is not None and (
+            anchor_resolution.starts is not None):
         from probe_block2_elastic_joint_corridor import (
             ElasticJointCorridorRouter,FCuCorridorGrid,
         )
@@ -290,6 +310,7 @@ def hybrid_fcu_preflight(
             return min(math.dist(coords[i],coords[j])
                        for i in range(3) for j in range(i+1,3))
         local_joint_anchor_audit={
+            "anchor_resolver":anchor_resolution.as_diagnostic(),
             "source_min_centreline_mm":round(
                 minimum_head_pitch(starts_local),6),
             "target_min_centreline_mm":round(
@@ -342,9 +363,8 @@ def hybrid_fcu_preflight(
         "local_window_mm":[window.xmin,window.ymin,
                            window.xmax,window.ymax],
         "local_joint_eligible":(
-            len(spans)==3 and all(
-                v is not None and 0<v[0]<v[1]<len(individual[i])-1
-                for i,v in spans.items())),
+            anchor_resolution is not None
+            and anchor_resolution.starts is not None),
         "wall_seconds":round(time.monotonic()-started,3),
         "anchor_a_star_reasons":dict(anchor_reasons),
         "anchor_attempts":anchor_trials,
