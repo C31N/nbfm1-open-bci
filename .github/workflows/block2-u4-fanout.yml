@@ -14,6 +14,7 @@ on:
       - "hardware/eeg128-tdm/probe_block2_fcu_reachability.py"
       - "hardware/eeg128-tdm/probe_block2_grid_export.py"
       - "hardware/eeg128-tdm/probe_block2_multinet_cut.py"
+      - "hardware/eeg128-tdm/probe_block2_native_fcu_bottleneck.py"
       - "hardware/eeg128-tdm/probe_block2_mutual_reservation.py"
       - "hardware/eeg128-tdm/probe_block2_elastic_joint_corridor.py"
       - "hardware/eeg128-tdm/probe_block2_cbs_fcu3.py"
@@ -28,6 +29,7 @@ on:
       - "hardware/eeg128-tdm/test_block2_midpoint_reach.py"
       - "hardware/eeg128-tdm/test_block2_grid_export.py"
       - "hardware/eeg128-tdm/test_block2_multinet_cut.py"
+      - "hardware/eeg128-tdm/test_block2_native_fcu_bottleneck.py"
       - "hardware/eeg128-tdm/test_block2_mutual_reservation.py"
       - "hardware/eeg128-tdm/test_block2_elastic_joint_corridor.py"
 permissions:
@@ -55,7 +57,7 @@ jobs:
           /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
       - name: Continuous FCu connectivity and immutable escape gates
         run: |
-          /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_u4_corridors.py hardware/eeg128-tdm/probe_block2_u4_dogleg.py hardware/eeg128-tdm/probe_block2_u4_topological.py hardware/eeg128-tdm/probe_block2_target_escape.py hardware/eeg128-tdm/probe_block2_target_coupled.py hardware/eeg128-tdm/probe_block2_fcu_reachability.py hardware/eeg128-tdm/probe_block2_grid_export.py hardware/eeg128-tdm/probe_block2_multinet_cut.py hardware/eeg128-tdm/probe_block2_mutual_reservation.py hardware/eeg128-tdm/probe_block2_elastic_joint_corridor.py hardware/eeg128-tdm/probe_block2_cbs_fcu3.py hardware/eeg128-tdm/probe_block2_nbody_201.py
+          /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_u4_corridors.py hardware/eeg128-tdm/probe_block2_u4_dogleg.py hardware/eeg128-tdm/probe_block2_u4_topological.py hardware/eeg128-tdm/probe_block2_target_escape.py hardware/eeg128-tdm/probe_block2_target_coupled.py hardware/eeg128-tdm/probe_block2_fcu_reachability.py hardware/eeg128-tdm/probe_block2_grid_export.py hardware/eeg128-tdm/probe_block2_multinet_cut.py hardware/eeg128-tdm/probe_block2_native_fcu_bottleneck.py hardware/eeg128-tdm/probe_block2_mutual_reservation.py hardware/eeg128-tdm/probe_block2_elastic_joint_corridor.py hardware/eeg128-tdm/probe_block2_cbs_fcu3.py hardware/eeg128-tdm/probe_block2_nbody_201.py
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_cbs_fcu3.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_nbody_201.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_u4_dogleg.py -v
@@ -68,6 +70,7 @@ jobs:
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_midpoint_reach.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_grid_export.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_multinet_cut.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_native_fcu_bottleneck.py -v
       - name: Reproduce protected 139 source
         timeout-minutes: 8
         run: |
@@ -75,6 +78,32 @@ jobs:
             --archive hardware/eeg128-tdm/engineering/block2-ch019-electrode-closed139.zip \
             --output /tmp/u4-fanout-source139.json \
             --candidate-output /tmp/u4-fanout-source139.zip
+      - name: Native SHAPE_POLY_SET FCu bottleneck read-only measurement
+        timeout-minutes: 4
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_block2_native_fcu_bottleneck.py \
+            --archive /tmp/u4-fanout-source139.zip \
+            --x 48.145 --y 35.750 --window 2.5 \
+            --output /tmp/native-fcu-bottleneck.json
+          /usr/bin/python3 - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('/tmp/native-fcu-bottleneck.json').read_text())
+          assert d['source_board_unchanged'] is True
+          assert d['native_global_three_net_unroutability_proven'] is False
+          assert d['design_rules_mm']['three_tracks_wall_to_wall_mm']==1.05
+          assert all(d[k] is False for k in (
+              'accepted','routing_completed','fabrication_release'))
+          print('NATIVE_FCU_BOTTLENECK_SUMMARY='+json.dumps({
+              'status':d['status'],
+              'native_polygon_count':d['native_polygon_count'],
+              'obstacle_count':d['obstacle_count'],
+              'tightest_clear_gap_mm':d['tightest_clear_gap_mm'],
+              'max_tracks_strict':d['max_tracks_strict'],
+              'narrowest_gaps':d['narrowest_gaps'][:4],
+              'warnings':d['native_polygon_warnings'][:4],
+          },sort_keys=True))
+          PY
       - name: Native simultaneous EDT joint midpoint and gated 201 restoration
         timeout-minutes: 21
         run: |
@@ -241,5 +270,6 @@ jobs:
           path: |
             /tmp/u4-fanout-${{ matrix.method }}-${{ matrix.order }}.json
             /tmp/u4-fanout-source139.json
+            /tmp/native-fcu-bottleneck.json
           if-no-files-found: ignore
           retention-days: 1
