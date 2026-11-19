@@ -251,12 +251,14 @@ class ThreeNetEvasionGenerator:
         is_segment_clear: Callable[[str, PointMM, PointMM, float], bool | str],
         record_rejection: Callable[[str, int], None],
         config: ThreeNetEvasionConfig | None = None,
+        is_joint_clear: Callable[[Mapping[str, PointMM]], bool | str] | None = None,
     ) -> None:
         if len(net_order) != 3 or len(set(net_order)) != 3:
             raise ValueError("Exactly three distinct nets required")
         self.net_order = tuple(net_order)
         self.is_point_clear = is_point_clear
         self.is_segment_clear = is_segment_clear
+        self.is_joint_clear = is_joint_clear
         self.record_rejection = record_rejection
         self.config = config or ThreeNetEvasionConfig()
 
@@ -363,6 +365,13 @@ class ThreeNetEvasionGenerator:
                         break
                 if denied:
                     continue
+                if self.is_joint_clear is not None:
+                    joint_result = self.is_joint_clear(next_pos)
+                    if joint_result is not True:
+                        self.record_rejection(
+                            joint_result if isinstance(joint_result, str)
+                            else "evasion_joint_blocked", 3)
+                        continue
                 accepted += 1
                 valid_in_stage += 1
                 yield next_pos, new_headings, tag
@@ -624,6 +633,11 @@ def partial_free_joint_astar(
     ) -> bool | str:
         i = NET_NAMES.index(net)
         node = evasion_node(p)
+        current = state.paths[i][-1]
+        if (node in state.paths[i]
+                or (node[0] - current[0], node[1] - current[1])
+                not in DIRS):
+            return "evasion_grid_snapping_or_self_revisit"
         if (not grid.is_point_drc_clear(i, node)
                 or Point(grid.physical(node)).intersects(grid.shapes[i])):
             diagnostic["native_mask_prefilter_rejections"] += 1
@@ -653,10 +667,22 @@ def partial_free_joint_astar(
             raise RuntimeError("Three-net evasion outside three-bound state")
         reject_reason(reason)
 
+    def evasion_joint_clear(proposed: Mapping[str, PointMM]) -> bool | str:
+        nodes = [evasion_node(proposed[net]) for net in NET_NAMES]
+        segments = [
+            LineString((grid.physical(state.paths[i][-1]),
+                        grid.physical(nodes[i])))
+            for i in range(3)]
+        if any(segments[i].distance(segments[j]) < hard_pitch_mm - TOL
+               for i in range(3) for j in range(i + 1, 3)):
+            return "continuous_segment_pitch"
+        return True
+
     evasion_generator = ThreeNetEvasionGenerator(
         net_order=NET_NAMES,
         is_point_clear=evasion_point_clear,
         is_segment_clear=evasion_segment_clear,
+        is_joint_clear=evasion_joint_clear,
         record_rejection=evasion_rejection,
         config=ThreeNetEvasionConfig(
             step_mm=grid.res, min_pitch_mm=hard_pitch_mm,

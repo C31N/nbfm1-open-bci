@@ -134,3 +134,26 @@ def test_generator_rejects_direct_blocked_segment(
     assert results
     assert all(not tag.startswith("SYNC_GOAL") for _, _, tag in results)
     assert ("evasion_segment_blocked", 3) in rejected
+
+def test_joint_native_gate_rejections_are_logged_at_three_bound(
+    targets: Dict[str, PointMM], positions: Dict[str, Optional[PointMM]],
+) -> None:
+    rejections: List[Tuple[str, int]] = []
+
+    def record(reason: str, bound_count: int) -> None:
+        rejections.append((reason, bound_count))
+
+    generator = ThreeNetEvasionGenerator(
+        net_order=NETS,
+        is_point_clear=lambda _n, _p, _c: True,
+        is_segment_clear=lambda _n, _a, _b, _c: True,
+        is_joint_clear=lambda _p: "continuous_segment_pitch",
+        record_rejection=record,
+        config=ThreeNetEvasionConfig(step_mm=.250),
+    )
+    assert list(generator.generate_evasion_steps(
+        positions, dict.fromkeys(NETS, 0), targets)) == []
+    assert rejections and all((reason, count) ==
+                              ("continuous_segment_pitch", 3)
+                              or (reason == "pair_pitch" and count == 3)
+                              for reason, count in rejections)
