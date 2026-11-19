@@ -10,13 +10,12 @@ the independent native DRC and 201-victim gates remain mandatory.
 from __future__ import annotations
 
 import itertools
-import math
 import time
 from typing import Any
 
 import numpy as np
 from shapely import contains_xy
-from shapely.geometry import LineString,Point as ShapePoint,box
+from shapely.geometry import LineString,Point as ShapePoint
 from shapely.ops import unary_union
 
 from probe_block2_joint_topology_costs import WindowBox,conflict_window

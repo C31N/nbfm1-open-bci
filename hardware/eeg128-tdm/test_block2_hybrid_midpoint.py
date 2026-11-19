@@ -3,7 +3,6 @@
 """Read-only staged hybrid three-net local corridor diagnostics."""
 from __future__ import annotations
 
-import time
 import unittest
 from pathlib import Path
 
