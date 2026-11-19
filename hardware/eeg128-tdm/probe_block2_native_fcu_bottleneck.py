@@ -224,7 +224,9 @@ def analyze(board_path:Path,*,x:float=HOTSPOT[0],
     gaps=measure(obstacles,track=track,clearance=clearance,max_gap=max_gap)
     verified=[g for g in gaps if g["both_native_polygonized"]]
     widest_verified=max((g["clear_gap_mm"] for g in verified),default=None)
-    tightest=min((g["clear_gap_mm"] for g in verified),default=None)
+    tightest=min((g["clear_gap_mm"] for g in gaps),default=None)
+    tightest_native=min(
+        (g["clear_gap_mm"] for g in verified),default=None)
     if hashlib.sha256(board_path.read_bytes()).hexdigest()!=checksum:
         raise RuntimeError("Read-only PCB source bytes changed")
     result={
@@ -251,9 +253,12 @@ def analyze(board_path:Path,*,x:float=HOTSPOT[0],
         "narrowest_gaps":gaps[:60],
         "all_gap_pairs_checked":len(gaps),
         "tightest_clear_gap_mm":tightest,
+        "tightest_gap_is_fully_native_polygonized":(
+            gaps[0]["both_native_polygonized"] if gaps else None),
+        "tightest_fully_native_clear_gap_mm":tightest_native,
         "widest_verified_pair_gap_mm":widest_verified,
         "max_tracks_strict":(
-            verified[0]["max_tracks_strict"] if verified else None),
+            gaps[0]["max_tracks_strict"] if gaps else None),
         "hotspot_is_global_min_cut_proven":False,
         "min_cut_raster_may_be_quantization_artifact":True,
         "native_global_three_net_unroutability_proven":False,

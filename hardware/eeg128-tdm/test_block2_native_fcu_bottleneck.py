@@ -64,6 +64,8 @@ class NativeFcuBottleneckTests(unittest.TestCase):
             "pcb_sha256_before_and_after",
             "max_tracks_edge_to_edge",
             "tightest_clear_gap_mm",
+            "tightest_gap_is_fully_native_polygonized",
+            "tightest_fully_native_clear_gap_mm",
             "source_board_unchanged",
         ):
             self.assertIn(word,s)
