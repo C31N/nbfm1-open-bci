@@ -36,6 +36,9 @@ jobs:
       - name: Pytest
         run: pytest -q
 
+      - name: Gemini diagnostic offline regression tests
+        run: python -m unittest discover -s scripts -p 'test_analyze_logs.py' -v
+
       - name: Zero-debt gate
         run: python scripts/check_zero_debt.py
 
