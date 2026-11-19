@@ -14,6 +14,11 @@ import sys
 import time
 from pathlib import Path
 
+from gemini_ci_diagnostic_wrapper import (
+    DiagnosticEnvelope, run_with_backoff_and_degraded_mode,
+    write_envelope,
+)
+
 MAX_INPUT_BYTES = 1_500_000
 MAX_LINES = 110
 MAX_SNIPPET = 13_000
@@ -287,32 +292,29 @@ def routing_prompt(repo: str, run_id: int, compact: str) -> str:
 
 
 def ask_gemini(text: str, api_key: str, model: str) -> str:
+    """One SDK call; retries and failures are handled by the CI wrapper."""
     from google import genai
 
     with genai.Client(api_key=api_key) as client:
-        for attempt in range(4):
-            try:
-                response = client.models.generate_content(
-                    model=model, contents=text
-                )
-                result = response.text or ""
-                if not result.strip():
-                    raise RuntimeError("Gemini returned no text")
-                return redact(result)[:MAX_ANSWER]
-            except Exception as exc:
-                message = str(exc)
-                # Only transient throttling/server-capacity responses are
-                # retryable. Auth, model-not-found and safety errors fail fast.
-                transient = (
-                    type(exc).__name__ in ("ServerError", "ClientError")
-                    and (re.search(r"\b(?:429|503)\b", message)
-                         or "RESOURCE_EXHAUSTED" in message
-                         or "UNAVAILABLE" in message)
-                )
-                if not transient or attempt == 3:
-                    raise
-                time.sleep((2, 5, 10)[attempt])
-    raise RuntimeError("Unreachable retry loop")
+        response = client.models.generate_content(
+            model=model, contents=text)
+        return redact(response.text or "")[:MAX_ANSWER]
+
+
+def _append_degraded_summary(
+    run_id: int, reason: str, attempts_used: int,
+) -> None:
+    summary = os.getenv("GITHUB_STEP_SUMMARY", "")
+    if summary:
+        with Path(summary).open("a", encoding="utf-8") as stream:
+            stream.write(
+                f"## Gemini Fehleranalyse – Run {run_id}: degraded\n\n"
+                "Externe API vorübergehend nicht verfügbar: "
+                f"`{html.escape(reason)}` nach {attempts_used} Versuchen.\n\n"
+                "Keine Gemini-Analyse erzeugt. Das Ergebnis des "
+                "ursprünglichen CI-/KiCad-Laufs bleibt unverändert. "
+                "Keine Hardware-/Fertigungsfreigabe.\n"
+            )
 
 
 def main() -> int:
@@ -322,6 +324,9 @@ def main() -> int:
     parser.add_argument("--log-file", type=Path)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--routing-artifacts", action="store_true")
+    parser.add_argument("--out-json", type=Path)
+    parser.add_argument("--max-retries", type=int, default=4)
+    parser.add_argument("--fail-on-degraded", action="store_true")
     args = parser.parse_args()
     if not REPO.fullmatch(args.repo):
         parser.error("Invalid repository")
@@ -347,19 +352,44 @@ def main() -> int:
         return 0
 
     api_key = os.getenv("GEMINI_API_KEY", "")
-    if not api_key:
-        print("GEMINI_API_KEY repository secret not available.", file=sys.stderr)
-        return 2
     model = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+    if not api_key:
+        envelope = DiagnosticEnvelope(
+            status="error", degraded_reason="MISSING_GEMINI_API_KEY",
+            model=model, attempts_used=0, max_retries=args.max_retries,
+            total_elapsed_s=0.0, analysis_text=None, attempts=[])
+        write_envelope(envelope, args.out_json)
+        print("Gemini configuration error: MISSING_GEMINI_API_KEY",
+              file=sys.stderr)
+        return 2
+
+    instructions = (routing_prompt(args.repo, args.run_id, snippet)
+                    if args.routing_artifacts else
+                    prompt(args.repo, args.run_id, snippet))
     try:
-        instructions = (routing_prompt(args.repo, args.run_id, snippet)
-                        if args.routing_artifacts else
-                        prompt(args.repo, args.run_id, snippet))
-        answer = ask_gemini(instructions, api_key, model)
-    except Exception as exc:
-        print("Gemini unavailable (" + type(exc).__name__ + "): " +
-              redact(str(exc))[:250], file=sys.stderr)
+        envelope = run_with_backoff_and_degraded_mode(
+            lambda: ask_gemini(instructions, api_key, model),
+            model, max_retries=args.max_retries)
+        write_envelope(envelope, args.out_json)
+    except Exception:
+        # Unexpected implementation / filesystem errors must remain red.
+        print("Gemini integration error: UNEXPECTED_EXCEPTION",
+              file=sys.stderr)
         return 1
+    if envelope.status == "degraded":
+        reason = envelope.degraded_reason or "TRANSIENT_UNAVAILABLE"
+        print("::warning title=Gemini diagnosis degraded::" +
+              reason + " after " + str(envelope.attempts_used) +
+              " attempts; original CI/KiCad result unchanged.")
+        _append_degraded_summary(
+            args.run_id, reason, envelope.attempts_used)
+        return 1 if args.fail_on_degraded else 0
+    if envelope.status == "error":
+        print("Gemini diagnosis error: " +
+              (envelope.degraded_reason or "UNKNOWN_PERMANENT_ERROR"),
+              file=sys.stderr)
+        return 1
+    answer = envelope.analysis_text or ""
     print("\n=== Gemini Diagnose (unverbindlich, read-only) ===\n")
     print(answer)
     print("\n=== Ende der Diagnose; PCB-Freigabe bleibt gesperrt ===")

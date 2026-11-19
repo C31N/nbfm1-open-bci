@@ -65,9 +65,19 @@ jobs:
           if [ "$GEMINI_ROUTING_MODE" = "true" ]; then
             python scripts/analyze_logs.py \
               --repo "$GITHUB_REPOSITORY" \
-              --run-id "$FAILED_RUN_ID" --routing-artifacts
+              --run-id "$FAILED_RUN_ID" --routing-artifacts \
+              --out-json "$RUNNER_TEMP/gemini-diagnostic.json"
           else
             python scripts/analyze_logs.py \
               --repo "$GITHUB_REPOSITORY" \
-              --run-id "$FAILED_RUN_ID"
+              --run-id "$FAILED_RUN_ID" \\
+              --out-json "$RUNNER_TEMP/gemini-diagnostic.json"
           fi
+      - name: Preserve structured Gemini diagnostic metadata
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gemini-diagnostic-${{ github.run_id }}
+          path: ${{ runner.temp }}/gemini-diagnostic.json
+          if-no-files-found: ignore
+          retention-days: 7
