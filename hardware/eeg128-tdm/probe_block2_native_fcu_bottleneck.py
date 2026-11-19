@@ -18,7 +18,7 @@ from pathlib import Path
 import tempfile
 from typing import Any
 
-from shapely.geometry import LineString, Polygon, box
+from shapely.geometry import Polygon, box
 from shapely.ops import nearest_points, unary_union
 
 TRACK_MM=.150
@@ -79,11 +79,19 @@ def _native_shape(item:Any,kind:str,pcbnew:Any)->tuple[Any,str]:
         if filled is None or filled.OutlineCount()==0:
             raise RuntimeError("F.Cu zone lacks native filled polys")
         native=pcbnew.SHAPE_POLY_SET(filled)
-    else:
-        # KiCad's own BOARD_CONNECTED_ITEM polygonization accepts this
-        # signature on 8.0.9; error is 0.0001 mm inside copper.
+    elif kind=="PAD":
         item.TransformShapeToPolygon(
             native,pcbnew.F_Cu,0,pcbnew.FromMM(.0001))
+    else:
+        # KiCad 8 PCB_TRACK / PCB_VIA do not accept the PAD-only
+        # TransformShapeToPolygon signature. First request their native
+        # effective SHAPE and convert it into native polygon vertices.
+        shape=item.GetEffectiveShape(pcbnew.F_Cu)
+        if isinstance(shape,pcbnew.SHAPE_POLY_SET):
+            native=pcbnew.SHAPE_POLY_SET(shape)
+        else:
+            shape.ConvertToPolygon(
+                native,pcbnew.FromMM(.0001),pcbnew.ERROR_INSIDE)
     return _shapely_native_polygons(native,pcbnew),"SHAPE_POLY_SET_native_0.0001mm"
 
 
@@ -92,8 +100,22 @@ def _copper(item:Any,kind:str,pcbnew:Any)->tuple[Any,str]:
         return _native_shape(item,kind,pcbnew)
     except (RuntimeError,TypeError,ValueError,AttributeError,
             NotImplementedError) as error:
-        # Conservative fallback helps diagnosis, but prevents an
-        # assertion that the computed gap is exactly native.
+        from shapely.geometry import LineString, Point
+        # When the KiCad 8 SWIG conversion overload is unavailable, use
+        # the real native physical segment / via centre and width rather
+        # than a false, overlapping bounding box. A circular buffer with
+        # 64 segments/quadrant is a measurable approximation and CANNOT
+        # authorize native geometric feasibility or fabrication.
+        if kind in ("TRACK","VIA"):
+            radius=pcbnew.ToMM(item.GetWidth())/2.
+            xy=lambda pt:(pcbnew.ToMM(pt.x),pcbnew.ToMM(pt.y))
+            base=(Point(xy(item.GetPosition()))
+                  if kind=="VIA"
+                  else LineString((xy(item.GetStart()),xy(item.GetEnd()))))
+            geometry=base.buffer(radius,quad_segs=64)
+            return geometry,(
+                "native_segment_circle_analytic_approximation:"+
+                type(error).__name__)
         bb=item.GetBoundingBox()
         geom=box(pcbnew.ToMM(bb.GetX()),pcbnew.ToMM(bb.GetY()),
                  pcbnew.ToMM(bb.GetRight()),pcbnew.ToMM(bb.GetBottom()))
@@ -217,7 +239,13 @@ def analyze(board_path:Path,*,x:float=HOTSPOT[0],
             "three_tracks_wall_to_wall_mm":3*track+4*clearance,
         },
         "obstacle_count":len(obstacles),
-        "native_polygon_count":len(obstacles)-len(warnings),
+        "native_polygon_count":sum(
+            o.polygonization=="SHAPE_POLY_SET_native_0.0001mm"
+            for o in obstacles),
+        "analytic_approximation_count":sum(
+            o.polygonization.startswith(
+                "native_segment_circle_analytic_approximation")
+            for o in obstacles),
         "native_polygon_warnings":warnings,
         "obstacles":[o.describe() for o in obstacles],
         "narrowest_gaps":gaps[:60],

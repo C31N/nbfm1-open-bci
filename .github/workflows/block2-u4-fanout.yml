@@ -91,12 +91,13 @@ jobs:
           d=json.loads(Path('/tmp/native-fcu-bottleneck.json').read_text())
           assert d['source_board_unchanged'] is True
           assert d['native_global_three_net_unroutability_proven'] is False
-          assert d['design_rules_mm']['three_tracks_wall_to_wall_mm']==1.05
+          assert abs(d['design_rules_mm']['three_tracks_wall_to_wall_mm']-1.05)<1e-9
           assert all(d[k] is False for k in (
               'accepted','routing_completed','fabrication_release'))
           print('NATIVE_FCU_BOTTLENECK_SUMMARY='+json.dumps({
               'status':d['status'],
               'native_polygon_count':d['native_polygon_count'],
+              'analytic_approximation_count':d['analytic_approximation_count'],
               'obstacle_count':d['obstacle_count'],
               'tightest_clear_gap_mm':d['tightest_clear_gap_mm'],
               'max_tracks_strict':d['max_tracks_strict'],
