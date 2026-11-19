@@ -10,7 +10,7 @@ head positions. No board writes, zone changes, via creation or release.
 """
 from __future__ import annotations
 
-from collections import Counter
+from collections import Counter, deque
 from dataclasses import dataclass
 from functools import lru_cache
 import heapq
@@ -462,6 +462,7 @@ def partial_free_joint_astar(
         "average_progress_sync_penalty": 0.,
         "average_progress_sync_penalty_after_third_binding": 0.,
         "rejections_by_bound_count": {},
+        "three_net_evasion_fair_queue_pop_count": 0,
         "three_net_evasion_stages_generated": {s: 0 for s in (
             "SYNC_GOAL", "SINGLE_EVADE", "PAIR_EVADE", "COUPLED_TURN")},
         "three_net_evasion_stages_admitted": {s: 0 for s in (
@@ -696,6 +697,11 @@ def partial_free_joint_astar(
     # prefixes. This influences search order ONLY, never geometric gates.
     epsilon = cost_model.w.heuristic_epsilon
     heap = [(epsilon * heuristic(start), 0., next(order), start)]
+    # Fairness lane permits a small quota of exact-native-valid three-net
+    # evasion children to be expanded rather than starved by single moves.
+    # Each candidate remains in weighted A*, with unchanged g and all gates.
+    fair_queue: deque[tuple[float, PartialFreeState]] = deque()
+    expanded_cost: dict[PartialFreeState, float] = {}
     best: dict[PartialFreeState, float] = {start: 0.}
     expansions = 0
     root_by_state: dict[PartialFreeState, PartialFreeState] = {}
@@ -763,14 +769,26 @@ def partial_free_joint_astar(
             str(i): dict(sorted(counter.items()))
             for i, counter in enumerate(rejection_by_binding)}
 
-    while heap and expansions < max_expansions:
+    while (heap or fair_queue) and expansions < max_expansions:
         if time.monotonic() - created >= max_seconds:
             diagnostic["status"] = "PARTIAL_FREE_WALL_BUDGET_EXHAUSTED"
             break
-        _, g, _, state = heapq.heappop(heap)
+        # At most one fair evasion expansion in eight A* expansions.
+        # No candidate is explored without passing the same native gates.
+        fairness_pop = bool(fair_queue and (
+            not heap or (expansions > 0 and expansions % 8 == 0)))
+        if fairness_pop:
+            g, state = fair_queue.popleft()
+        else:
+            _, g, _, state = heapq.heappop(heap)
         if g > best.get(state, math.inf) + 1e-9:
             continue
+        if g >= expanded_cost.get(state, math.inf) - 1e-9:
+            continue
+        expanded_cost[state] = g
         expansions += 1
+        if fairness_pop:
+            diagnostic["three_net_evasion_fair_queue_pop_count"] += 1
         bound = sum(bool(path) for path in state.paths)
         active_bind_count = bound
         diagnostic["search_states_by_bound_count"][bound] += 1
@@ -846,6 +864,9 @@ def partial_free_joint_astar(
                 if push(candidate, g + cost, state, terms):
                     evasion_stage_for_state[candidate] = stage
                     diagnostic["three_net_evasion_stages_admitted"][stage] += 1
+                    # Prevent the fairness lane from dominating memory or A*.
+                    if len(fair_queue) < 32:
+                        fair_queue.append((g + cost, candidate))
         for agent in range(3):
             route = state.paths[agent]
             if not route:

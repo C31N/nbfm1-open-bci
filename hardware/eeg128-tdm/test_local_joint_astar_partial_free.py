@@ -99,6 +99,8 @@ class PartialFreeJointTests(unittest.TestCase):
             report["average_progress_sync_penalty_after_third_binding"], 0.)
         self.assertEqual(set(report["rejections_by_bound_count"]),
                          {"0", "1", "2", "3"})
+        self.assertGreaterEqual(
+            report["three_net_evasion_fair_queue_pop_count"], 0)
         for metric in ("three_net_evasion_stages_generated",
                        "three_net_evasion_stages_admitted",
                        "three_net_evasion_stages_expanded"):
