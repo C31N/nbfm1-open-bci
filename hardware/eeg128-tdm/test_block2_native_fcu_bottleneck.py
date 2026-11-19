@@ -66,13 +66,13 @@ class NativeFcuBottleneckTests(unittest.TestCase):
             def OutlineCount(self)->int:
                 return int(bool(self.points))
 
-            def Outline(self,index:int):
+            def Outline(self,index:int)->"PolySet":
                 return self
 
             def PointCount(self)->int:
                 return len(self.points)
 
-            def CPoint(self,index:int):
+            def CPoint(self,index:int)->SimpleNamespace:
                 return SimpleNamespace(
                     x=self.points[index][0],y=self.points[index][1])
 
@@ -96,11 +96,11 @@ class NativeFcuBottleneckTests(unittest.TestCase):
             def __init__(self)->None:
                 self.calls=0
 
-            def GetEffectiveShape(self,*args):
+            def GetEffectiveShape(self,*args:object)->object:
                 raise AssertionError("Do not use unsupported SWIG SHAPE")
 
             def TransformShapeToPolygon(
-                self,poly,layer,clearance,error,error_loc
+                self,poly:PolySet,layer:int,clearance:int,error:int,error_loc:int
             )->None:
                 self.calls+=1
                 if (layer,clearance,error,error_loc)!=(0,0,100,1):
