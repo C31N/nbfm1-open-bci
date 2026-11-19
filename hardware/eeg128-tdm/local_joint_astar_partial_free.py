@@ -379,6 +379,20 @@ class ThreeNetEvasionGenerator:
                 return
 
 
+def _evasion_fair_due(
+    queued: bool, expansions: int, last_fair_expansion: int,
+    interval: int = 8,
+) -> bool:
+    """Admit first valid evasion immediately, then at most once per interval.
+
+    This is a scheduling preference only. It never changes path g costs,
+    native geometry, branch gates, or the maximum expansion count.
+    """
+    if interval < 1:
+        raise ValueError("Invalid evasion fairness interval")
+    return queued and expansions - last_fair_expansion >= interval
+
+
 @dataclass(frozen=True)
 class PartialFreeState:
     # Empty route means genuinely unbound; no virtual copper/zero anchor.
@@ -463,6 +477,13 @@ def partial_free_joint_astar(
         "average_progress_sync_penalty_after_third_binding": 0.,
         "rejections_by_bound_count": {},
         "three_net_evasion_fair_queue_pop_count": 0,
+        "three_net_evasion_fair_queue_peak": 0,
+        "three_net_evasion_fair_queue_stale_pops": 0,
+        "three_net_evasion_first_admitted_expansion": None,
+        "three_net_evasion_first_expanded_expansion": None,
+        "three_net_evasion_first_wait_expansions": None,
+        "three_net_evasion_average_expansion_ms": 0.,
+        "three_net_evasion_max_expansion_ms": 0.,
         "three_net_evasion_stages_generated": {s: 0 for s in (
             "SYNC_GOAL", "SINGLE_EVADE", "PAIR_EVADE", "COUPLED_TURN")},
         "three_net_evasion_stages_admitted": {s: 0 for s in (
@@ -569,6 +590,13 @@ def partial_free_joint_astar(
         reject[reason] += 1
         rejection_by_binding[active_bind_count][reason] += 1
 
+    @lru_cache(maxsize=8192)
+    def immutable_route_geometry(route: tuple[Node, ...]) -> Point | LineString:
+        # Physical route histories are immutable tuples. Reusing Shapely
+        # geometries changes performance only, never native clearance.
+        coords = tuple(grid.physical(p) for p in route)
+        return Point(coords[0]) if len(coords) == 1 else LineString(coords)
+
     def existing_distance(
         agent: int, segment: Point | LineString,
         paths: tuple[tuple[Node, ...], ...], *, record: bool = True,
@@ -576,9 +604,7 @@ def partial_free_joint_astar(
         for other, route in enumerate(paths):
             if other == agent or not route:
                 continue
-            coords = tuple(grid.physical(p) for p in route)
-            wire = (Point(coords[0]) if len(coords) == 1
-                    else LineString(coords))
+            wire = immutable_route_geometry(route)
             if segment.distance(wire) < hard_pitch_mm - TOL:
                 if record:
                     reject_reason("continuous_segment_pitch")
@@ -614,7 +640,7 @@ def partial_free_joint_astar(
         # Redundant exact whole-history validation before a scratch return.
         wires = []
         for i, route in enumerate(state.paths):
-            line = LineString([grid.physical(p) for p in route])
+            line = immutable_route_geometry(route)
             if not line.is_valid or line.intersects(grid.shapes[i]):
                 reject_reason("native_fixed_copper_or_mask")
                 return False
@@ -701,6 +727,9 @@ def partial_free_joint_astar(
     # evasion children to be expanded rather than starved by single moves.
     # Each candidate remains in weighted A*, with unchanged g and all gates.
     fair_queue: deque[tuple[float, PartialFreeState]] = deque()
+    last_fair_expansion = -8
+    expansion_cpu_wall = 0.
+    max_expansion_wall = 0.
     expanded_cost: dict[PartialFreeState, float] = {}
     best: dict[PartialFreeState, float] = {start: 0.}
     expansions = 0
@@ -768,27 +797,45 @@ def partial_free_joint_astar(
         diagnostic["rejections_by_bound_count"] = {
             str(i): dict(sorted(counter.items()))
             for i, counter in enumerate(rejection_by_binding)}
+        diagnostic["three_net_evasion_average_expansion_ms"] = round(
+            1000. * expansion_cpu_wall / max(1, expansions), 4)
+        diagnostic["three_net_evasion_max_expansion_ms"] = round(
+            1000. * max_expansion_wall, 4)
 
     while (heap or fair_queue) and expansions < max_expansions:
         if time.monotonic() - created >= max_seconds:
             diagnostic["status"] = "PARTIAL_FREE_WALL_BUDGET_EXHAUSTED"
             break
-        # At most one fair evasion expansion in eight A* expansions.
-        # No candidate is explored without passing the same native gates.
-        fairness_pop = bool(fair_queue and (
-            not heap or (expansions > 0 and expansions % 8 == 0)))
+        # The FIRST fair candidate is eligible on the next expansion,
+        # independent of the global expansion modulo. Later fair picks
+        # are rate-limited by the last real pick (1 per eight expansions).
+        fairness_pop = _evasion_fair_due(
+            bool(fair_queue), expansions, last_fair_expansion)
+        if not heap and fair_queue:
+            fairness_pop = True
         if fairness_pop:
             g, state = fair_queue.popleft()
         else:
             _, g, _, state = heapq.heappop(heap)
         if g > best.get(state, math.inf) + 1e-9:
+            if fairness_pop:
+                diagnostic["three_net_evasion_fair_queue_stale_pops"] += 1
             continue
         if g >= expanded_cost.get(state, math.inf) - 1e-9:
+            if fairness_pop:
+                diagnostic["three_net_evasion_fair_queue_stale_pops"] += 1
             continue
+        tick = time.monotonic()
         expanded_cost[state] = g
         expansions += 1
         if fairness_pop:
+            last_fair_expansion = expansions
             diagnostic["three_net_evasion_fair_queue_pop_count"] += 1
+            if diagnostic["three_net_evasion_first_expanded_expansion"] is None:
+                diagnostic["three_net_evasion_first_expanded_expansion"] = expansions
+                first = diagnostic["three_net_evasion_first_admitted_expansion"]
+                diagnostic["three_net_evasion_first_wait_expansions"] = (
+                    expansions - first if first is not None else None)
         bound = sum(bool(path) for path in state.paths)
         active_bind_count = bound
         diagnostic["search_states_by_bound_count"][bound] += 1
@@ -821,6 +868,10 @@ def partial_free_joint_astar(
                 "reject_reasons": dict(reject),
                 "wall_seconds": round(time.monotonic() - created, 3),
             })
+            expansion_cpu_wall += time.monotonic() - tick
+            max_expansion_wall = max(
+                max_expansion_wall, time.monotonic() - tick)
+            update_telemetry()
             return diagnostic
         if bound == 3 and all(
                 route[-1] not in target_sets[i]
@@ -843,17 +894,10 @@ def partial_free_joint_astar(
                        for i in range(3)):
                     reject_reason("evasion_grid_snapping_or_self_revisit")
                     continue
-                # Native snapped segments repeat the exact moving-pair check:
-                # continuous-space proposals are never a DRC waiver.
-                new_segments = [
-                    LineString((grid.physical(state.paths[i][-1]),
-                                grid.physical(next_nodes[i])))
-                    for i in range(3)]
-                if any(new_segments[i].distance(new_segments[j])
-                       < hard_pitch_mm - TOL for i in range(3)
-                       for j in range(i + 1, 3)):
-                    reject_reason("continuous_segment_pitch")
-                    continue
+                # The generator has already called evasion_joint_clear
+                # on these EXACT snapped grid segments. A second pairwise
+                # Shapely distance calculation here is redundant; no
+                # constraint is removed from the accepted transition.
                 routes = tuple((*state.paths[i], next_nodes[i])
                                for i in range(3))
                 candidate = PartialFreeState(routes)
@@ -864,9 +908,15 @@ def partial_free_joint_astar(
                 if push(candidate, g + cost, state, terms):
                     evasion_stage_for_state[candidate] = stage
                     diagnostic["three_net_evasion_stages_admitted"][stage] += 1
-                    # Prevent the fairness lane from dominating memory or A*.
+                    if diagnostic["three_net_evasion_first_admitted_expansion"] is None:
+                        diagnostic["three_net_evasion_first_admitted_expansion"] = expansions
+                    # Never waive the A* heap; fairness only adds a bounded
+                    # alternate read path over an already native-valid state.
                     if len(fair_queue) < 32:
                         fair_queue.append((g + cost, candidate))
+                        diagnostic["three_net_evasion_fair_queue_peak"] = max(
+                            diagnostic["three_net_evasion_fair_queue_peak"],
+                            len(fair_queue))
         for agent in range(3):
             route = state.paths[agent]
             if not route:
@@ -921,6 +971,9 @@ def partial_free_joint_astar(
                 terms = score_transition(state, candidate)
                 cost = terms["step_cost"] + .05 * density(agent, b)
                 push(candidate, g + cost, state, terms)
+        elapsed_expansion = time.monotonic() - tick
+        expansion_cpu_wall += elapsed_expansion
+        max_expansion_wall = max(max_expansion_wall, elapsed_expansion)
 
     if diagnostic["status"] != "PARTIAL_FREE_WALL_BUDGET_EXHAUSTED":
         diagnostic["status"] = (

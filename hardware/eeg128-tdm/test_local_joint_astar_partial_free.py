@@ -9,7 +9,7 @@ import numpy as np
 from shapely.geometry import GeometryCollection, box
 
 from local_joint_astar_partial_free import (
-    PartialFreeState, partial_free_joint_astar)
+    PartialFreeState, _evasion_fair_due, partial_free_joint_astar)
 from probe_block2_elastic_joint_corridor import FCuCorridorGrid
 
 Node = tuple[int, int]
@@ -39,6 +39,18 @@ class PartialFreeJointTests(unittest.TestCase):
         return partial_free_joint_astar(
             self.grid(), self.source, self.goal,
             max_expansions=max_expansions, max_seconds=3.)
+
+    def test_fair_queue_first_candidate_is_immediately_eligible(self) -> None:
+        self.assertTrue(_evasion_fair_due(True, 1566, -8))
+        self.assertTrue(_evasion_fair_due(True, 1, -8))
+        self.assertFalse(_evasion_fair_due(False, 1566, -8))
+
+    def test_fair_queue_rate_limit_tracks_last_actual_pop(self) -> None:
+        self.assertFalse(_evasion_fair_due(True, 1567, 1566))
+        self.assertFalse(_evasion_fair_due(True, 1573, 1566))
+        self.assertTrue(_evasion_fair_due(True, 1574, 1566))
+        with self.assertRaises(ValueError):
+            _evasion_fair_due(True, 8, 0, interval=0)
 
     def test_none_state_is_genuinely_unbound(self) -> None:
         state = PartialFreeState(((), ((4, 7),), ()))
@@ -101,6 +113,13 @@ class PartialFreeJointTests(unittest.TestCase):
                          {"0", "1", "2", "3"})
         self.assertGreaterEqual(
             report["three_net_evasion_fair_queue_pop_count"], 0)
+        self.assertGreaterEqual(
+            report["three_net_evasion_average_expansion_ms"], 0.)
+        self.assertGreaterEqual(
+            report["three_net_evasion_max_expansion_ms"], 0.)
+        self.assertLessEqual(report["three_net_evasion_fair_queue_peak"], 32)
+        self.assertGreaterEqual(
+            report["three_net_evasion_fair_queue_stale_pops"], 0)
         for metric in ("three_net_evasion_stages_generated",
                        "three_net_evasion_stages_admitted",
                        "three_net_evasion_stages_expanded"):
