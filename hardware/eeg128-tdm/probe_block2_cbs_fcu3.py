@@ -611,6 +611,7 @@ def spatial_cbs_fcu3(
         from probe_block2_elastic_joint_corridor import (
             FCuCorridorGrid,ElasticJointCorridorRouter,
         )
+        from probe_block2_hybrid_midpoint import hybrid_fcu_preflight
         sealed=(fanout_wires,target_wires)
         joint_grid=FCuCorridorGrid(masks,shapes,xs,ys)
         joint_escape_sha=joint_grid.lock_escape_segments(sealed)
@@ -625,17 +626,58 @@ def spatial_cbs_fcu3(
                 "joint_immutable_sha256":joint_escape_sha,
                 "new_vias_added":0,
             })
-        joint_router=ElasticJointCorridorRouter(
-            joint_grid,min_pitch_mm=.300,
-            parallel_threshold_mm=1.050,pinch_threshold_mm=.600)
-        joint=joint_router.solve_midpoint(
-            tuple(start),tuple(goal),exact_tips=endpoints,
-            max_expansions=28000,max_seconds=48.)
+        hybrid_routes,hybrid_diag=hybrid_fcu_preflight(
+            masks,shapes,xs,ys,tuple(start),tuple(goal),endpoints,
+            hotspot=(48.145,35.750),half_window_mm=2.5,
+            budget_seconds=10.)
+        diag["hybrid_corridor_diagnostic"]=hybrid_diag
+        diag["local_joint_expansions"]=hybrid_diag[
+            "local_joint_expansions"]
+        diag["stage_used"]=hybrid_diag["stage_used"]
+        if hybrid_routes is not None:
+            joint={
+                "status":"MIDPOINT_BUNDLE_SOLVED",
+                "closed_nets":3,
+                "routes":hybrid_routes,
+                "minimum_complete_centreline_mm":
+                    hybrid_diag["minimum_complete_centreline_mm"],
+                "joint_states_in_solution":sum(
+                    len(p) for p in hybrid_routes),
+                "expansions":hybrid_diag["local_joint_expansions"],
+                "stage_used":hybrid_diag["stage_used"],
+                "native_DRC_still_required":True,
+                "hard_centreline_pitch_mm":.300,
+                "new_vias_added":0,
+                "accepted":False,
+                "routing_completed":False,
+                "fabrication_release":False,
+            }
+        else:
+            cut=diag.get(
+                "optimistic_three_net_FCu_capacity_relaxed_diagonals",{})
+            witness=cut.get("vertex_cut_witnesses",[])
+            gate=tuple(witness[0]["position_mm"]) if witness else (
+                48.145,35.750)
+            capacity=max(1,int(cut.get(
+                "optimistic_max_vertex_disjoint_paths",1)))
+            joint_router=ElasticJointCorridorRouter(
+                joint_grid,min_pitch_mm=.300,
+                parallel_threshold_mm=1.050,
+                pinch_threshold_mm=.600)
+            joint=joint_router.solve_midpoint(
+                tuple(start),tuple(goal),exact_tips=endpoints,
+                max_expansions=28000,max_seconds=48.,
+                gate_point_mm=gate,corridor_capacity=capacity,
+                midpoint_band_mm=.50)
+            diag["stage_used"]="global_joint_fallback"
         # The trajectory (if any) is only a proposal. Keep the diagnostic
         # JSON compact; exact native DRC and all 201 restorations are STILL
         # required before accepting any candidate board.
         routes=joint.pop("routes",None)
         diag["elastic_joint_corridor_diagnostic"]=joint
+        diag["topological_ordering_mode"]="soft_unless_monotone_certified"
+        diag["wall_hugging_clearance_source"]="native_prebuffered_copper"
+        diag["midpoint_band_max_gap_mm"]=.50
         diag["elastic_joint_corridor_sha256_after"]=(
             joint_grid.canonical_sha256(sealed))
         if (not joint_grid.verify_escape_integrity(sealed) or

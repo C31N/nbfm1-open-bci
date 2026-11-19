@@ -22,6 +22,9 @@ import time
 from typing import Any, Sequence
 
 from shapely.geometry import LineString, Point as ShapePoint
+from probe_block2_joint_topology_costs import (
+    JointHeuristic,PlanarOrderFilter,WallHuggingCost,
+)
 
 Node = tuple[int, int]
 PITCH_MM = .300
@@ -151,6 +154,9 @@ class ElasticJointCorridorRouter:
         self.parallel_threshold=parallel_threshold_mm
         self.pinch_threshold=pinch_threshold_mm
         self.stats:Counter[str]=Counter()
+        self._planar_order:PlanarOrderFilter|None=None
+        self._wall_cost:WallHuggingCost|None=None
+        self._goal_heuristic:JointHeuristic|None=None
 
     def _distance(self,a:Node,b:Node)->float:
         return math.dist(self.grid.physical(a),self.grid.physical(b))
@@ -221,6 +227,12 @@ class ElasticJointCorridorRouter:
                 if pts in seen or not self._check_transition(
                     current.points,pts):
                     continue
+                if self._planar_order is not None:
+                    allowed,_=self._planar_order.evaluate(
+                        [self.grid.physical(p) for p in pts])
+                    if not allowed:
+                        self.stats["certified_monotone_order_inversion"]+=1
+                        continue
                 seen.add(pts)
                 candidates.append(BundleState(
                     pts[0],pts[1],pts[2],heading,
@@ -231,9 +243,11 @@ class ElasticJointCorridorRouter:
     def _heuristic(
         self,state:BundleState,goals:tuple[Node,Node,Node],
     )->float:
-        # Euclidean lower bound. In the bounded multi-agent search it is
-        # weighted in the priority queue to reduce indecisive detours.
-        # Weighted A* may lose shortest-path optimality, NEVER clearance.
+        # Soft octile / optional gate congestion. No raster witness ever
+        # becomes an unvalidated hard routing obstruction.
+        if self._goal_heuristic is not None:
+            return self._goal_heuristic.estimate([
+                self.grid.physical(p) for p in state.points])
         return sum(self._distance(a,b)
                    for a,b in zip(state.points,goals))
 
@@ -242,7 +256,16 @@ class ElasticJointCorridorRouter:
         steer=.015 if a.heading!=b.heading else 0.
         d01=abs(self._distance(b.p1,b.p2)-self.pitch)
         d12=abs(self._distance(b.p2,b.p3)-self.pitch)
-        return cost+steer+.03*(d01+d12)
+        penalty=0.
+        if self._wall_cost is not None:
+            penalty+=sum(
+                self._wall_cost.cost(i,self.grid.physical(p))
+                for i,p in enumerate(b.points))
+        if self._planar_order is not None:
+            _,order_penalty=self._planar_order.evaluate(
+                [self.grid.physical(p) for p in b.points])
+            penalty+=order_penalty
+        return cost+steer+.03*(d01+d12)+penalty
 
     @staticmethod
     def _reconstruct(
@@ -346,11 +369,38 @@ class ElasticJointCorridorRouter:
         initial_heading:int|None=None,
         max_expansions:int=30000,
         max_seconds:float=48.,
+        gate_point_mm:tuple[float,float]|None=None,
+        corridor_capacity:int=1,
+        midpoint_band_mm:float=.50,
     )->dict[str,Any]:
+        if not 0.<midpoint_band_mm<=.60:
+            raise ValueError("Midpoint bridge band outside hard limit")
         if self.grid.edt_mm is None:
             self.grid.build_distance_field()
         started=time.monotonic()
         goals=tuple(target_anchors)
+        source_coords=[self.grid.physical(p) for p in u4_anchors]
+        goal_coords=[self.grid.physical(p) for p in target_anchors]
+        dx=sum(b[0]-a[0] for a,b in zip(
+            source_coords,goal_coords))
+        dy=sum(b[1]-a[1] for a,b in zip(
+            source_coords,goal_coords))
+        axis=(-dy,dx)
+        if math.hypot(*axis)<1e-8:
+            axis=(0.,1.)
+        self._planar_order=PlanarOrderFilter(
+            source_coords,goal_coords,axis,
+            certified_monotone_region=False,
+            inversion_weight=.08)
+        self._wall_cost=WallHuggingCost(
+            lambda i,p:self.grid.shapes[i].distance(ShapePoint(p)),
+            hug_band_mm=.50,hug_weight=.12)
+        threshold=gate_point_mm[0] if gate_point_mm is not None else None
+        self._goal_heuristic=JointHeuristic(
+            goal_coords,gate_point=gate_point_mm,
+            gate_x_threshold=threshold,
+            corridor_capacity=corridor_capacity,
+            congestion_weight=.4,epsilon=1.2)
         if initial_heading is None:
             dx=sum(b[0]-a[0] for a,b in zip(
                 u4_anchors,target_anchors))
@@ -376,6 +426,14 @@ class ElasticJointCorridorRouter:
                 "STAGGERED_PINCH":self.pinch_threshold},
             "native_DRC_still_required":True,
             "geometry_unsatisfiable_proven":False,
+            "planar_order_hard_pruning":False,
+            "planar_order_endpoints_agree":
+                self._planar_order.start_goal_order_matches,
+            "wall_hugging_native_shape_cost_active":True,
+            "gate_point_mm":gate_point_mm,
+            "corridor_capacity_heuristic":corridor_capacity,
+            "weight_epsilon":1.2,
+            "midpoint_band_mm":midpoint_band_mm,
         }
         if not self._check_transition(state.points,state.points):
             diagnostic["status"]="MIDPOINT_JOINT_START_ANCHORS_INVALID"
@@ -408,7 +466,8 @@ class ElasticJointCorridorRouter:
                 return diagnostic
             self.stats[reason]+=1
         counter=itertools.count()
-        heuristic_weight=1.65
+        # JointHeuristic includes the 1.2 bounded weighted-A* factor.
+        heuristic_weight=1.0
         start_h=self._heuristic(state,goals)
         heap=[(start_h*heuristic_weight,0.,next(counter),state)]
         g_score={state:0.}
@@ -428,10 +487,18 @@ class ElasticJointCorridorRouter:
             if remaining<closest_remaining_mm:
                 closest_remaining_mm=remaining
                 closest_state=current
-            if current.points==goals:
+            band_gap=max(self._distance(p,q) for p,q in zip(
+                current.points,goals))
+            # Tolerant midpoint is only a CANDIDATE. The connecting
+            # three copper segments and all full routes remain exact.
+            band_join=(current.points!=goals and
+                       band_gap<=midpoint_band_mm and
+                       self._check_transition(current.points,goals))
+            if current.points==goals or band_join:
                 chain=self._reconstruct(parent,current)
                 paths=tuple(
-                    tuple(state.points[i] for state in chain)
+                    tuple(state.points[i] for state in chain)+
+                    ((goals[i],) if band_join else ())
                     for i in range(3))
                 if exact_tips is not None:
                     valid,reason,gap=self._validate_whole_routes(
@@ -449,7 +516,9 @@ class ElasticJointCorridorRouter:
                     "closed_nets":3,
                     "routes":paths,
                     "minimum_complete_centreline_mm":gap,
-                    "joint_states_in_solution":len(chain),
+                    "joint_states_in_solution":len(chain)+(1 if band_join else 0),
+                    "band_midpoint_connection_used":band_join,
+                    "band_join_max_gap_mm":round(band_gap,6),
                     "expansions":expansions,
                     "wall_seconds":round(time.monotonic()-started,3),
                     "reject_reasons":dict(self.stats),

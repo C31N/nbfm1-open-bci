@@ -17,6 +17,8 @@ on:
       - "hardware/eeg128-tdm/probe_block2_native_fcu_bottleneck.py"
       - "hardware/eeg128-tdm/probe_block2_mutual_reservation.py"
       - "hardware/eeg128-tdm/probe_block2_elastic_joint_corridor.py"
+      - "hardware/eeg128-tdm/probe_block2_joint_topology_costs.py"
+      - "hardware/eeg128-tdm/probe_block2_hybrid_midpoint.py"
       - "hardware/eeg128-tdm/probe_block2_cbs_fcu3.py"
       - "hardware/eeg128-tdm/probe_block2_nbody_201.py"
       - "hardware/eeg128-tdm/test_block2_cbs_fcu3.py"
@@ -32,6 +34,8 @@ on:
       - "hardware/eeg128-tdm/test_block2_native_fcu_bottleneck.py"
       - "hardware/eeg128-tdm/test_block2_mutual_reservation.py"
       - "hardware/eeg128-tdm/test_block2_elastic_joint_corridor.py"
+      - "hardware/eeg128-tdm/test_block2_joint_topology_costs.py"
+      - "hardware/eeg128-tdm/test_block2_hybrid_midpoint.py"
 permissions:
   contents: read
 jobs:
@@ -57,13 +61,15 @@ jobs:
           /usr/bin/python3 -m pip install --break-system-packages --ignore-installed --no-deps shapely==2.1.2
       - name: Continuous FCu connectivity and immutable escape gates
         run: |
-          /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_u4_corridors.py hardware/eeg128-tdm/probe_block2_u4_dogleg.py hardware/eeg128-tdm/probe_block2_u4_topological.py hardware/eeg128-tdm/probe_block2_target_escape.py hardware/eeg128-tdm/probe_block2_target_coupled.py hardware/eeg128-tdm/probe_block2_fcu_reachability.py hardware/eeg128-tdm/probe_block2_grid_export.py hardware/eeg128-tdm/probe_block2_multinet_cut.py hardware/eeg128-tdm/probe_block2_native_fcu_bottleneck.py hardware/eeg128-tdm/probe_block2_mutual_reservation.py hardware/eeg128-tdm/probe_block2_elastic_joint_corridor.py hardware/eeg128-tdm/probe_block2_cbs_fcu3.py hardware/eeg128-tdm/probe_block2_nbody_201.py
+          /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_u4_corridors.py hardware/eeg128-tdm/probe_block2_u4_dogleg.py hardware/eeg128-tdm/probe_block2_u4_topological.py hardware/eeg128-tdm/probe_block2_target_escape.py hardware/eeg128-tdm/probe_block2_target_coupled.py hardware/eeg128-tdm/probe_block2_fcu_reachability.py hardware/eeg128-tdm/probe_block2_grid_export.py hardware/eeg128-tdm/probe_block2_multinet_cut.py hardware/eeg128-tdm/probe_block2_native_fcu_bottleneck.py hardware/eeg128-tdm/probe_block2_mutual_reservation.py hardware/eeg128-tdm/probe_block2_elastic_joint_corridor.py hardware/eeg128-tdm/probe_block2_joint_topology_costs.py hardware/eeg128-tdm/probe_block2_hybrid_midpoint.py hardware/eeg128-tdm/probe_block2_cbs_fcu3.py hardware/eeg128-tdm/probe_block2_nbody_201.py
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_cbs_fcu3.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_nbody_201.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_u4_dogleg.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_u4_topological.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_mutual_reservation.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_elastic_joint_corridor.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_joint_topology_costs.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_hybrid_midpoint.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_target_escape.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_target_coupled.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_fcu_reachability.py -v
@@ -105,7 +111,7 @@ jobs:
               'warnings':d['native_polygon_warnings'][:4],
           },sort_keys=True))
           PY
-      - name: Native simultaneous EDT joint midpoint and gated 201 restoration
+      - name: Native hybrid midpoint and gated 201 restitution
         timeout-minutes: 21
         run: |
           /usr/bin/python3 hardware/eeg128-tdm/probe_block2_nbody_201.py \
@@ -200,6 +206,16 @@ jobs:
                   assert joint['fabrication_release'] is False
                   assert joint['native_DRC_still_required'] is True
                   assert joint['hard_centreline_pitch_mm']==.300
+                  assert f['hybrid_corridor_diagnostic']['stage_used'] in (
+                      'sequential','local_rip_reroute',
+                      'local_joint_astar','failed')
+                  assert f['local_joint_expansions']>=0
+                  assert f['stage_used'] in (
+                      'sequential','local_rip_reroute',
+                      'local_joint_astar','global_joint_fallback')
+                  assert f['topological_ordering_mode']=='soft_unless_monotone_certified'
+                  assert f['wall_hugging_clearance_source']=='native_prebuffered_copper'
+                  assert f['midpoint_band_max_gap_mm']==.50
                   assert f['combined_immutable_escape_sha256']==f['elastic_joint_corridor_sha256_after']
                   if joint['status']=='MIDPOINT_BUNDLE_SOLVED':
                       assert joint['closed_nets']==3
@@ -257,6 +273,9 @@ jobs:
               'midpoint_uuid_cut_witnesses':f.get('midpoint_native_UUID_cut_witnesses') if f else None,
               'midpoint_mutual':f.get('post_escape_mutual_reservation') if f else None,
               'elastic_joint':f.get('elastic_joint_corridor_diagnostic') if f else None,
+              'stage_used':f.get('stage_used') if f else None,
+              'local_joint_expansions':f.get('local_joint_expansions') if f else None,
+              'hybrid':f.get('hybrid_corridor_diagnostic') if f else None,
               'elastic_joint_hash':f.get('combined_immutable_escape_sha256') if f else None,
               'blocked_agent':f.get('blocked_agent') if f else None,
           },sort_keys=True,default=str)[:9000])
