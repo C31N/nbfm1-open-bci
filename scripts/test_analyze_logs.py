@@ -338,6 +338,20 @@ class GeminiLogTests(unittest.TestCase):
             self.assertEqual(json.loads(result.read_text())["status"],
                              "error")
 
+    def test_workflow_cli_both_modes_have_no_spurious_shell_argument(self) -> None:
+        workflow = (Path(__file__).resolve().parents[1] /
+                    ".github/workflows/gemini-failure-analysis.yml")
+        content = workflow.read_text(encoding="utf-8")
+        self.assertIn(
+            '--run-id "$FAILED_RUN_ID" --out-json "$RUNNER_TEMP/gemini-diagnostic.json"',
+            content)
+        self.assertIn(
+            '--run-id "$FAILED_RUN_ID" --routing-artifacts',
+            content)
+        self.assertNotIn(
+            '--run-id "$FAILED_RUN_ID" ' + chr(92) * 2,
+            content)
+
     def test_hardware_gates_explicitly_blocked(self) -> None:
         prompt = analyze_logs.prompt(
             "C31N/nbfm1-open-bci", 12, "error: DRC 139"
