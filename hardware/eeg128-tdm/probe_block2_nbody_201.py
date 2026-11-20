@@ -255,7 +255,9 @@ def route_child(board_path: Path, baseline: Path, output: Path,
     record["post_201_cut_scratch_sha256"] = scratch_sha256
     record["scratch_post_cut_geometry"] = analyze_scratch(
         trial_board, set(removed), set(CH038),
-        expected_sha256=scratch_sha256)
+        expected_sha256=scratch_sha256,
+        removed_victim_net_map={
+            uid: geometry["net"] for uid, geometry in removed.items()})
     if record["scratch_post_cut_geometry"]["new_vias_added"] != 0:
         raise RuntimeError("Scratch audit changed via inventory")
     persist("scratch_post_201_cut_native_geometry_audited_no_release")

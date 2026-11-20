@@ -119,8 +119,10 @@ def directions_at_scratch(
                 peer_pitch = min(segment.distance(other) for j, other
                                  in enumerate(lines) if i != j)
                 peer_deficit = max(0., PITCH - peer_pitch)
-                witnesses = rank_fcu_witnesses(
-                    objects, net, a, b, set(), limit=max_witnesses)
+                witnesses = [
+                    {**item, "provenance": "actual_post_201_cut_scratch_PCB"}
+                    for item in rank_fcu_witnesses(
+                        objects, net, a, b, set(), limit=max_witnesses)]
                 verified_blockers = [
                     o for o in witnesses
                     if o["measurement_method"] !=
@@ -241,6 +243,7 @@ def analyze_scratch(
     replaced_ch038: set[str],
     *,
     expected_sha256: str | None = None,
+    removed_victim_net_map: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Inspects exact persisted post-cut scratch bytes; no PCB write."""
     import pcbnew
@@ -251,6 +254,9 @@ def analyze_scratch(
         raise RuntimeError("Unqualified victim/CH038 UUID inventory")
     if removed_victims & replaced_ch038:
         raise RuntimeError("Protected CH038 overlap with victim whitelist")
+    if (removed_victim_net_map is not None
+            and set(removed_victim_net_map) != removed_victims):
+        raise RuntimeError("Victim UUID-to-net map does not match cut")
     before = hashlib.sha256(board_path.read_bytes()).hexdigest()
     if expected_sha256 is not None and expected_sha256 != before:
         raise RuntimeError("Scratch board changed since verified post-cut gate")
@@ -307,6 +313,19 @@ def analyze_scratch(
         "victim_uuids_present_after_cut": actually_remaining,
         "old_ch038_uuids_present_after_replacement": present_replaced,
         "scratch_fcu_object_count": len(copper),
+        "scratch_fcu_objects": [
+            {**item.describe(), "layer": "F.Cu"} for item in copper],
+        "ch031_scratch_fcu_objects_in_roi": [
+            {**item.describe(), "layer": "F.Cu"}
+            for item in copper if item.net == "CH031_N_MUX"],
+        "ch031_scratch_fcu_uuids_anywhere": sorted(
+            uid for uid, item in all_items.items()
+            if item["net"] == "CH031_N_MUX"
+            and item["layer"] == "F.Cu"),
+        "ch031_removed_victim_uuids": (
+            sorted(uid for uid, net in removed_victim_net_map.items()
+                   if net == "CH031_N_MUX")
+            if removed_victim_net_map is not None else None),
         "scratch_fcu_geometry_warnings": warnings,
         "three_net_state_count": len(states),
         "scratch_direction_counts": counts,

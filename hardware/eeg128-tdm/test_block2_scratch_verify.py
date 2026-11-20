@@ -112,6 +112,9 @@ class ScratchGeometryTests(unittest.TestCase):
             right["scratch_classification"], "SCRATCH_FIXED_FCU_COPPER")
         self.assertEqual(
             right["closest_fcu_objects"][0]["uuid"], "scratch-fixed")
+        self.assertEqual(
+            right["closest_fcu_objects"][0]["provenance"],
+            "actual_post_201_cut_scratch_PCB")
         self.assertLess(
             right["closest_fcu_objects"][0]["new_trace_copper_gap_mm"], .15)
         self.assertAlmostEqual(PITCH, .3)

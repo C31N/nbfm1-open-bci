@@ -185,6 +185,17 @@ jobs:
                      for z in scratch['u3_witnesses'])
           assert scratch['three_net_state_count']==3
           assert sum(scratch['scratch_direction_counts'].values())==72
+          assert scratch['scratch_fcu_object_count']==len(
+              scratch['scratch_fcu_objects'])
+          assert len(scratch['ch031_scratch_fcu_objects_in_roi'])<=len(
+              scratch['ch031_scratch_fcu_uuids_anywhere'])
+          assert scratch['ch031_removed_victim_uuids'] is not None
+          assert all(obj['layer']=='F.Cu'
+                     for obj in scratch['scratch_fcu_objects'])
+          assert all(p['provenance']=='actual_post_201_cut_scratch_PCB'
+                     for st in scratch['states']
+                     for probe in st['direction_probes']
+                     for p in probe['closest_fcu_objects'])
           assert all(len(st['direction_probes'])==24
                      and len(st['joint_scratch_probes'])==27
                      for st in scratch['states'])
@@ -203,6 +214,12 @@ jobs:
               'victim_uuids_present_after_cut':len(
                   scratch['victim_uuids_present_after_cut']),
               'direction_counts':scratch['scratch_direction_counts'],
+              'scratch_objects':scratch['scratch_fcu_objects'],
+              'ch031_scratch_roi':scratch['ch031_scratch_fcu_objects_in_roi'],
+              'ch031_scratch_all_FCu_UUIDs':
+                  scratch['ch031_scratch_fcu_uuids_anywhere'],
+              'ch031_removed_UUIDs':
+                  scratch['ch031_removed_victim_uuids'],
               'top_CH030_directions':[{
                   'role':st['sample_role'],
                   'directions':[{
