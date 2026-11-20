@@ -247,6 +247,18 @@ def route_child(board_path: Path, baseline: Path, output: Path,
          if isinstance(t, pcbnew.PCB_VIA)} != base_vias):
         raise RuntimeError("A via changed in scratch cut")
     persist("immutable_201_cut_native_copper_verified")
+    # Read-only audit of the ACTUAL on-disk scratch PCB right after
+    # the 201-segment cut, before any path planning or restitution.
+    # This is observational only; no copper mutation is authorized.
+    from probe_block2_scratch_verify import analyze_scratch
+    scratch_sha256 = file_hash(trial_board)
+    record["post_201_cut_scratch_sha256"] = scratch_sha256
+    record["scratch_post_cut_geometry"] = analyze_scratch(
+        trial_board, set(removed), set(CH038),
+        expected_sha256=scratch_sha256)
+    if record["scratch_post_cut_geometry"]["new_vias_added"] != 0:
+        raise RuntimeError("Scratch audit changed via inventory")
+    persist("scratch_post_201_cut_native_geometry_audited_no_release")
     order = ORDERS[order_id]
     victim_lanes = unary_union([
         LineString((v["start"], v["end"])).buffer(v["width_mm"]/2 + .25)

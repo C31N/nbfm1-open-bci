@@ -99,6 +99,21 @@ class NBody201Tests(unittest.TestCase):
         ):
             self.assertIn(token, code)
 
+    def test_scratch_geometry_audit_runs_after_cut_before_solver(self) -> None:
+        text = SOURCE.read_text(encoding="utf-8")
+        after_cut = text.index(
+            'persist("immutable_201_cut_native_copper_verified")')
+        check = text.index(
+            'record["scratch_post_cut_geometry"] = analyze_scratch(')
+        before_solver = text.index(
+            'record["topology_after_CH038"] = {')
+        self.assertLess(after_cut, check)
+        self.assertLess(check, before_solver)
+        self.assertIn('expected_sha256=scratch_sha256', text)
+        self.assertIn(
+            'persist("scratch_post_201_cut_native_geometry_audited_no_release")',
+            text)
+
     def test_elastic_rubber_fallback_is_exclusive(self) -> None:
         code = SOURCE.read_text(encoding="utf-8")
         for token in (

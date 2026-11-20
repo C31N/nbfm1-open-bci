@@ -34,6 +34,9 @@ on:
       - "hardware/eeg128-tdm/test_joint_start_anchor_resolver.py"
       - "hardware/eeg128-tdm/probe_block2_cbs_fcu3.py"
       - "hardware/eeg128-tdm/probe_block2_nbody_201.py"
+      - "hardware/eeg128-tdm/probe_block2_scratch_verify.py"
+      - "hardware/eeg128-tdm/test_block2_scratch_verify.py"
+      - "scripts/verify_scratch_u3_witnesses.py"
       - "hardware/eeg128-tdm/test_block2_cbs_fcu3.py"
       - "hardware/eeg128-tdm/test_block2_nbody_201.py"
       - "hardware/eeg128-tdm/test_block2_u4_dogleg.py"
@@ -75,7 +78,7 @@ jobs:
       - name: Continuous FCu connectivity and immutable escape gates
         run: |
           PYTHONPATH=hardware/eeg128-tdm /usr/bin/python3 -m pytest -q tests/test_partial_free_cost_model.py tests/test_three_net_evasion_generator.py
-          /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_search_choke_uuid.py hardware/eeg128-tdm/probe_block2_u4_corridors.py hardware/eeg128-tdm/probe_block2_u4_dogleg.py hardware/eeg128-tdm/probe_block2_u4_topological.py hardware/eeg128-tdm/probe_block2_target_escape.py hardware/eeg128-tdm/probe_block2_target_coupled.py hardware/eeg128-tdm/probe_block2_fcu_reachability.py hardware/eeg128-tdm/probe_block2_grid_export.py hardware/eeg128-tdm/probe_block2_multinet_cut.py hardware/eeg128-tdm/probe_block2_native_fcu_bottleneck.py hardware/eeg128-tdm/swig_free_fcu_geometry.py hardware/eeg128-tdm/probe_block2_mutual_reservation.py hardware/eeg128-tdm/probe_block2_elastic_joint_corridor.py hardware/eeg128-tdm/probe_block2_joint_topology_costs.py hardware/eeg128-tdm/probe_block2_hybrid_midpoint.py hardware/eeg128-tdm/joint_start_anchor_resolver.py hardware/eeg128-tdm/local_joint_rip_reroute.py hardware/eeg128-tdm/local_joint_anchor_preflight.py hardware/eeg128-tdm/local_joint_astar_partial_free.py hardware/eeg128-tdm/probe_block2_cbs_fcu3.py hardware/eeg128-tdm/probe_block2_nbody_201.py
+          /usr/bin/python3 -m py_compile scripts/verify_scratch_u3_witnesses.py hardware/eeg128-tdm/probe_block2_scratch_verify.py hardware/eeg128-tdm/probe_block2_search_choke_uuid.py hardware/eeg128-tdm/probe_block2_u4_corridors.py hardware/eeg128-tdm/probe_block2_u4_dogleg.py hardware/eeg128-tdm/probe_block2_u4_topological.py hardware/eeg128-tdm/probe_block2_target_escape.py hardware/eeg128-tdm/probe_block2_target_coupled.py hardware/eeg128-tdm/probe_block2_fcu_reachability.py hardware/eeg128-tdm/probe_block2_grid_export.py hardware/eeg128-tdm/probe_block2_multinet_cut.py hardware/eeg128-tdm/probe_block2_native_fcu_bottleneck.py hardware/eeg128-tdm/swig_free_fcu_geometry.py hardware/eeg128-tdm/probe_block2_mutual_reservation.py hardware/eeg128-tdm/probe_block2_elastic_joint_corridor.py hardware/eeg128-tdm/probe_block2_joint_topology_costs.py hardware/eeg128-tdm/probe_block2_hybrid_midpoint.py hardware/eeg128-tdm/joint_start_anchor_resolver.py hardware/eeg128-tdm/local_joint_rip_reroute.py hardware/eeg128-tdm/local_joint_anchor_preflight.py hardware/eeg128-tdm/local_joint_astar_partial_free.py hardware/eeg128-tdm/probe_block2_cbs_fcu3.py hardware/eeg128-tdm/probe_block2_nbody_201.py
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_cbs_fcu3.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_nbody_201.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_u4_dogleg.py -v
@@ -89,6 +92,7 @@ jobs:
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_local_joint_anchor_preflight.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_local_joint_astar_partial_free.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_search_choke_uuid.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_scratch_verify.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_target_escape.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_target_coupled.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_fcu_reachability.py -v
@@ -165,6 +169,51 @@ jobs:
                     'manufacturing_files','checkpoint_promoted',
                     'schematic_parity_qualified','independent_replay_verified'):
               assert d[k] is False and w[k] is False, k
+          # This report is generated from the actual NBODY scratch board
+          # AFTER the cut, BEFORE routing, with a pinned on-disk hash.
+          scratch=w.get('scratch_post_cut_geometry')
+          assert scratch, 'native post-201-cut scratch geometry absent'
+          assert scratch['schema']=='block2_actual_scratch_post201_geometry_v1'
+          assert scratch['post_cut_sha256_pinned'] is True
+          assert scratch['scratch_board_sha256_before_and_after']==w[
+              'post_201_cut_scratch_sha256']
+          assert scratch['victim_uuids_present_after_cut']==[]
+          assert scratch['removed_victim_uuids_count']==201
+          assert scratch['old_ch038_uuids_present_after_replacement']==[]
+          assert all(z['present_in_scratch'] and z['name_and_net_match']
+                     and not z['removed_in_201_cut']
+                     for z in scratch['u3_witnesses'])
+          assert scratch['three_net_state_count']==3
+          assert sum(scratch['scratch_direction_counts'].values())==72
+          assert all(len(st['direction_probes'])==24
+                     and len(st['joint_scratch_probes'])==27
+                     for st in scratch['states'])
+          assert scratch['all_keepouts_and_roi_gates_included'] is False
+          assert scratch['three_track_global_cut_proven'] is False
+          assert scratch['restoration_attempted'] is False
+          assert scratch['new_vias_added']==0
+          assert all(scratch[k] is False for k in (
+              'accepted','routing_completed','fabrication_release'))
+          Path('/tmp/block2-actual-postcut-scratch-uuid.json').write_text(
+              json.dumps(scratch,indent=2,sort_keys=True)+'\n')
+          print('POSTCUT_SCRATCH_SUMMARY='+json.dumps({
+              'scratch_sha256':scratch['scratch_board_sha256_before_and_after'],
+              'u3_witnesses':scratch['u3_witnesses'],
+              'removed_victims':scratch['removed_victim_uuids_count'],
+              'victim_uuids_present_after_cut':len(
+                  scratch['victim_uuids_present_after_cut']),
+              'direction_counts':scratch['scratch_direction_counts'],
+              'top_CH030_directions':[{
+                  'role':st['sample_role'],
+                  'directions':[{
+                      'heading':p['heading_index'],
+                      'classification':p['scratch_classification'],
+                      'nearest':p['closest_fcu_objects'][:2],
+                  } for p in st['direction_probes']
+                    if p['net']=='CH030_N_MUX'],
+              } for st in scratch['states']],
+              'release':False,
+          },sort_keys=True))
           f=w.get('rubber_guided_CBS3_diagnostic') or w.get('cbs_three_diagnostic')
           if f is not None:
               assert f.get('u4_deterministic_fanout_enabled') is True
@@ -430,5 +479,6 @@ jobs:
             /tmp/u4-fanout-source139.json
             /tmp/native-fcu-bottleneck.json
             /tmp/block2-three-net-choke-uuid.json
+            /tmp/block2-actual-postcut-scratch-uuid.json
           if-no-files-found: ignore
           retention-days: 1
