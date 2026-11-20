@@ -25,6 +25,8 @@ on:
       - "hardware/eeg128-tdm/local_joint_rip_reroute.py"
       - "hardware/eeg128-tdm/local_joint_anchor_preflight.py"
       - "hardware/eeg128-tdm/local_joint_astar_partial_free.py"
+      - "hardware/eeg128-tdm/probe_block2_search_choke_uuid.py"
+      - "hardware/eeg128-tdm/test_block2_search_choke_uuid.py"
       - "tests/test_three_net_evasion_generator.py"
       - "hardware/eeg128-tdm/test_local_joint_astar_partial_free.py"
       - "hardware/eeg128-tdm/test_local_joint_anchor_preflight.py"
@@ -73,7 +75,7 @@ jobs:
       - name: Continuous FCu connectivity and immutable escape gates
         run: |
           PYTHONPATH=hardware/eeg128-tdm /usr/bin/python3 -m pytest -q tests/test_partial_free_cost_model.py tests/test_three_net_evasion_generator.py
-          /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_u4_corridors.py hardware/eeg128-tdm/probe_block2_u4_dogleg.py hardware/eeg128-tdm/probe_block2_u4_topological.py hardware/eeg128-tdm/probe_block2_target_escape.py hardware/eeg128-tdm/probe_block2_target_coupled.py hardware/eeg128-tdm/probe_block2_fcu_reachability.py hardware/eeg128-tdm/probe_block2_grid_export.py hardware/eeg128-tdm/probe_block2_multinet_cut.py hardware/eeg128-tdm/probe_block2_native_fcu_bottleneck.py hardware/eeg128-tdm/swig_free_fcu_geometry.py hardware/eeg128-tdm/probe_block2_mutual_reservation.py hardware/eeg128-tdm/probe_block2_elastic_joint_corridor.py hardware/eeg128-tdm/probe_block2_joint_topology_costs.py hardware/eeg128-tdm/probe_block2_hybrid_midpoint.py hardware/eeg128-tdm/joint_start_anchor_resolver.py hardware/eeg128-tdm/local_joint_rip_reroute.py hardware/eeg128-tdm/local_joint_anchor_preflight.py hardware/eeg128-tdm/local_joint_astar_partial_free.py hardware/eeg128-tdm/probe_block2_cbs_fcu3.py hardware/eeg128-tdm/probe_block2_nbody_201.py
+          /usr/bin/python3 -m py_compile hardware/eeg128-tdm/probe_block2_search_choke_uuid.py hardware/eeg128-tdm/probe_block2_u4_corridors.py hardware/eeg128-tdm/probe_block2_u4_dogleg.py hardware/eeg128-tdm/probe_block2_u4_topological.py hardware/eeg128-tdm/probe_block2_target_escape.py hardware/eeg128-tdm/probe_block2_target_coupled.py hardware/eeg128-tdm/probe_block2_fcu_reachability.py hardware/eeg128-tdm/probe_block2_grid_export.py hardware/eeg128-tdm/probe_block2_multinet_cut.py hardware/eeg128-tdm/probe_block2_native_fcu_bottleneck.py hardware/eeg128-tdm/swig_free_fcu_geometry.py hardware/eeg128-tdm/probe_block2_mutual_reservation.py hardware/eeg128-tdm/probe_block2_elastic_joint_corridor.py hardware/eeg128-tdm/probe_block2_joint_topology_costs.py hardware/eeg128-tdm/probe_block2_hybrid_midpoint.py hardware/eeg128-tdm/joint_start_anchor_resolver.py hardware/eeg128-tdm/local_joint_rip_reroute.py hardware/eeg128-tdm/local_joint_anchor_preflight.py hardware/eeg128-tdm/local_joint_astar_partial_free.py hardware/eeg128-tdm/probe_block2_cbs_fcu3.py hardware/eeg128-tdm/probe_block2_nbody_201.py
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_cbs_fcu3.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_nbody_201.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_u4_dogleg.py -v
@@ -86,6 +88,7 @@ jobs:
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_local_joint_rip_reroute.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_local_joint_anchor_preflight.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_local_joint_astar_partial_free.py -v
+          /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_search_choke_uuid.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_target_escape.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_target_coupled.py -v
           /usr/bin/python3 -m unittest discover -s hardware/eeg128-tdm -p test_block2_fcu_reachability.py -v
@@ -391,6 +394,32 @@ jobs:
           assert not list(Path('/tmp').rglob('*.gbr'))
           assert not list(Path('/tmp').rglob('*.drl'))
           PY
+      - name: Read-only local F.Cu top-states and UUID choke correlation
+        timeout-minutes: 3
+        run: |
+          /usr/bin/python3 hardware/eeg128-tdm/probe_block2_search_choke_uuid.py \
+            --candidate /tmp/u4-fanout-${{ matrix.method }}-${{ matrix.order }}.json \
+            --archive /tmp/u4-fanout-source139.zip \
+            --output /tmp/block2-three-net-choke-uuid.json
+          /usr/bin/python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report=json.loads(Path('/tmp/block2-three-net-choke-uuid.json').read_text())
+          assert report['source_board_unchanged'] is True
+          assert report['victim_uuids_removed_from_witness_model']==201
+          assert report['replaced_CH038_uuids_excluded']==2
+          assert report['sample_count']>=1
+          assert report['global_three_route_cut_proven'] is False
+          assert report['native_local_unroutability_proven'] is False
+          assert report['no_new_vias'] is True
+          assert report['restoration_not_attempted'] is True
+          assert report['no_zone_fill_performed'] is True
+          assert all(report[k] is False for k in (
+              'accepted','routing_completed','fabrication_release'))
+          for state in report['top_three_net_states']:
+              assert len(state['heads'])==3
+              assert len(state['direction_probes'])==24
+          PY
       - name: Upload short-lived JSON only, never fabrication files
         if: always()
         uses: actions/upload-artifact@v4
@@ -400,5 +429,6 @@ jobs:
             /tmp/u4-fanout-${{ matrix.method }}-${{ matrix.order }}.json
             /tmp/u4-fanout-source139.json
             /tmp/native-fcu-bottleneck.json
+            /tmp/block2-three-net-choke-uuid.json
           if-no-files-found: ignore
           retention-days: 1

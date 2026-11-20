@@ -558,6 +558,8 @@ def partial_free_joint_astar(
         "three_net_evasion_max_expansion_ms": 0.,
         "three_net_evasion_first_expanded_probe": None,
         "three_net_evasion_deep_probe_states": 0,
+        "three_net_choke_states": [],
+        "three_net_choke_probe_version": "read_only_fcu_choke_v1",
         "three_net_evasion_stages_generated": {s: 0 for s in (
             "SYNC_GOAL", "SINGLE_EVADE", "PAIR_EVADE", "COUPLED_TURN",
             "STAGGERED_EVADE", "LATERAL_EVADE", "ASYMMETRIC_EVADE")},
@@ -827,6 +829,19 @@ def partial_free_joint_astar(
     progress_roots: set[PartialFreeState] = set()
     best_goal_progress_mm = 0.
     max_targets_reached = 0
+    # Retain only a tiny set of EXPANDED, fully bound states. No change
+    # to best/heap/fairness, transition costs, or native gates.
+    choke_samples: dict[str, tuple[float, float, PartialFreeState]] = {}
+
+    def save_choke_sample(
+        key: str, state: PartialFreeState, progress: float,
+    ) -> None:
+        total = target_distance_sum(state)
+        previous = choke_samples.get(key)
+        if (previous is None or progress > previous[0] + TOL
+                or (abs(progress - previous[0]) <= TOL
+                    and total < previous[1] - TOL)):
+            choke_samples[key] = (progress, total, state)
 
     def target_distance_sum(state: PartialFreeState) -> float:
         # Only compare fully bound, physically routed states. This is
@@ -963,6 +978,13 @@ def partial_free_joint_astar(
         admitted_this_expansion = 0
         if bound == 3 and state in root_by_state:
             root = root_by_state[state]
+            root_progress = (target_distance_sum(root)
+                             - target_distance_sum(state))
+            save_choke_sample("MAX_GOAL_PROGRESS", state, root_progress)
+            stage_name = evasion_stage_for_state.get(state)
+            if stage_name in ("STAGGERED_EVADE", "LATERAL_EVADE",
+                              "COUPLED_TURN", "ASYMMETRIC_EVADE"):
+                save_choke_sample(stage_name, state, root_progress)
             expanded_roots.add(root)
             if state != root:
                 survived_roots.add(root)
@@ -1113,6 +1135,80 @@ def partial_free_joint_astar(
         elapsed_expansion = time.monotonic() - tick
         expansion_cpu_wall += elapsed_expansion
         max_expansion_wall = max(max_expansion_wall, elapsed_expansion)
+
+    # Diagnostic-only nearest-neighbour audit; never enqueue a move.
+    # Every geometry gate uses the same native scratch masks/shapes and
+    # full immutable route histories as the router.
+    for label, (progress, total, sampled) in sorted(choke_samples.items()):
+        heads: list[dict[str, Any]] = []
+        probes: list[dict[str, Any]] = []
+        for i, route in enumerate(sampled.paths):
+            at = route[-1]
+            current_mm = grid.physical(at)
+            eta = (float(edt_fields[i][at[1], at[0]])
+                   if grid.is_point_drc_clear(i, at) else 0.)
+            heads.append({
+                "net": NET_NAMES[i], "grid_xy": list(at),
+                "xy_mm": [round(v, 6) for v in current_mm],
+                "heading_index": route_heading(route),
+                "heading_grid": list(DIRS[route_heading(route)]),
+                "edt_native_mask_mm": round(eta, 6),
+                "target_distance_mm": round(
+                    min(dist(at, p) for p in target_sets[i]), 6),
+                "route_grid": [list(node) for node in route],
+            })
+            for direction_index, (dx, dy) in enumerate(DIRS):
+                nxt = (at[0] + dx, at[1] + dy)
+                next_mm = (float(grid.xs[0] + nxt[0] * grid.res),
+                           float(grid.ys[0] + nxt[1] * grid.res))
+                in_bounds = (0 <= nxt[0] < grid.width
+                             and 0 <= nxt[1] < grid.height)
+                segment = LineString((current_mm, next_mm))
+                point_clear = in_bounds and grid.is_point_drc_clear(i, nxt)
+                segment_clear = (point_clear
+                                 and grid.is_segment_drc_clear(i, at, nxt))
+                pair_gap = min((
+                    segment.distance(immutable_route_geometry(other))
+                    for j, other in enumerate(sampled.paths)
+                    if j != i and other), default=math.inf)
+                shape_gap = float(segment.distance(grid.shapes[i]))
+                if not in_bounds:
+                    block = "OUTSIDE_RASTER_BOUNDS"
+                elif nxt in route:
+                    block = "ROUTE_SELF_REVISIT"
+                elif not point_clear:
+                    block = "HARD_NATIVE_MASK_OR_ROI"
+                elif not segment_clear:
+                    block = "HARD_NATIVE_FIXED_COPPER_SEGMENT"
+                elif pair_gap < hard_pitch_mm - TOL:
+                    block = "HARD_OTHER_NET_TRACE_PITCH"
+                else:
+                    block = "NATIVE_PRECHECK_CLEAR"
+                probes.append({
+                    "net": NET_NAMES[i], "heading_index": direction_index,
+                    "direction_grid": [dx, dy],
+                    "from_mm": [round(v, 6) for v in current_mm],
+                    "to_mm": [round(v, 6) for v in next_mm],
+                    "to_grid": list(nxt),
+                    "classification": block,
+                    "native_mask_clear": bool(point_clear),
+                    "native_segment_clear": bool(segment_clear),
+                    "nearest_other_route_centreline_mm": (
+                        round(pair_gap, 6) if math.isfinite(pair_gap) else None),
+                    "pair_pitch_deficit_mm": (
+                        round(max(0., hard_pitch_mm - pair_gap), 6)
+                        if math.isfinite(pair_gap) else 0.),
+                    "distance_to_inflated_native_shape_mm": round(shape_gap, 6),
+                    "destination_edt_mm": (
+                        round(float(edt_fields[i][nxt[1], nxt[0]]), 6)
+                        if in_bounds else None),
+                })
+        diagnostic["three_net_choke_states"].append({
+            "sample_role": label,
+            "progress_from_third_bind_root_mm": round(progress, 6),
+            "remaining_target_distance_sum_mm": round(total, 6),
+            "heads": heads, "direction_probes": probes,
+        })
 
     if diagnostic["status"] != "PARTIAL_FREE_WALL_BUDGET_EXHAUSTED":
         diagnostic["status"] = (
