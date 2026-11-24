@@ -140,3 +140,8 @@ Only after review may it replace the primary schematic:
 ```bash
 python3 generate_schematic.py --replace-primary
 ```
+
+
+## Latest Block 2 scratch diagnostics (not released)
+
+The latest locally reported Block 2 result is #101 (five depth-18 states, still 0/3 complete F.Cu paths), but its original evidence is not checked into GitHub. See [reported #101 status](engineering/block2_diagnose101_aktueller_stand.md) and [fail-closed #102 plan](engineering/block2_diagnose102_pruefplan.md). The latest independently verified GitHub native Block2 run is #79. Fabrication status remains unchanged.
